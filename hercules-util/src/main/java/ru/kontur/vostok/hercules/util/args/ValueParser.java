@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.gateway.args;
+package ru.kontur.vostok.hercules.util.args;
 
 /**
  * Util class provides methods to parse strings into appropriate values

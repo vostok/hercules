@@ -1,4 +1,6 @@
-package ru.kontur.vostok.hercules.protocol;
+package ru.kontur.vostok.hercules.protocol.decoder;
+
+import ru.kontur.vostok.hercules.protocol.Type;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -7,16 +9,52 @@ import java.nio.charset.StandardCharsets;
  * @author Gregory Koshelev
  */
 public class Decoder {
-    private final byte[] data;
     private final ByteBuffer buffer;
 
     public Decoder(byte[] data) {
-        this.data = data;
         this.buffer = ByteBuffer.wrap(data);
     }
 
-    Object read(Type type) {
-        return decoders[type.value].apply(this);
+    /**
+     * Read value of type specified.
+     * <p>
+     * Type.BYTE as java.lang.Byte                                              <br>
+     * Type.SHORT as java.lang.Short                                            <br>
+     * Type.INTEGER as java.lang.Integer                                        <br>
+     * Type.LONG as java.lang.Long                                              <br>
+     * Type.FLAG as java.lang.Boolean                                           <br>
+     * Type.FLOAT as java.lang.Float                                            <br>
+     * Type.DOUBLE as java.lang.Double                                          <br>
+     * Type.STRING as byte[] (array of UTF-8 bytes)                             <br>
+     * Type.TEXT as byte[] (array of UTF-8 bytes)                               <br>
+     * Type.BYTE_ARRAY as byte[]                                                <br>
+     * Type.SHORT_ARRAY as short[]                                              <br>
+     * Type.INTEGER_ARRAY as int[]                                              <br>
+     * Type.LONG_ARRAY as long[]                                                <br>
+     * Type.FLAG_ARRAY as boolean[]                                             <br>
+     * Type.FLOAT_ARRAY as float[]                                              <br>
+     * Type.DOUBLE_ARRAY as double[]                                            <br>
+     * Type.STRING_ARRAY as byte[][] (array of array of UTF-8 bytes)            <br>
+     * Type.TEXT_ARRAY as byte[] (array of array of UTF-8 bytes)                <br>
+     * Type.BYTE_VECTOR as byte[]                                               <br>
+     * Type.SHORT_VECTOR as short[]                                             <br>
+     * Type.INTEGER_VECTOR as int[]                                             <br>
+     * Type.LONG_VECTOR as long[]                                               <br>
+     * Type.FLAG_VECTOR as boolean[]                                            <br>
+     * Type.FLOAT_VECTOR as float[]                                             <br>
+     * Type.DOUBLE_VECTOR as double[]                                           <br>
+     * Type.STRING_VECTOR as byte[][] (array of array of UTF-8 bytes)           <br>
+     * Type.TEXT_VECTOR as byte[] (array of array of UTF-8 bytes)               <br>
+     * </p>
+     * @param type of value to be read which defines decoder as described above
+     * @return decoded value
+     */
+    public Object read(Type type) {
+        return decoders[type.value].decode(this);
+    }
+
+    public int skip(Type type) {
+        return skippers[type.value].skip(this);
     }
 
     /* --- Read data types --- */
@@ -259,14 +297,41 @@ public class Decoder {
         return array;
     }
 
-    /* --- Utility methods --- */
+    /* Skip methods */
 
-    public int readArrayLength() {
-        return readInteger();
+    public int skipByte() {
+        skip(SIZEOF_BYTE);
+        return SIZEOF_BYTE;
     }
 
-    public int readVectorLength() {
-        return readUnsignedByte();
+    public int skipShort() {
+        skip(SIZEOF_SHORT);
+        return SIZEOF_SHORT;
+    }
+
+    public int skipInteger() {
+        skip(SIZEOF_INTEGER);
+        return SIZEOF_INTEGER;
+    }
+
+    public int skipLong() {
+        skip(SIZEOF_LONG);
+        return SIZEOF_LONG;
+    }
+
+    public int skipFlag() {
+        skip(SIZEOF_FLAG);
+        return SIZEOF_FLAG;
+    }
+
+    public int skipFloat() {
+        skip(SIZEOF_FLOAT);
+        return SIZEOF_FLOAT;
+    }
+
+    public int skipDouble() {
+        skip(SIZEOF_DOUBLE);
+        return SIZEOF_DOUBLE;
     }
 
     public int skipString() {
@@ -435,13 +500,25 @@ public class Decoder {
         return skipped + SIZEOF_VECTOR_LENGTH;
     }
 
-    public void skip(int bytesToSkip) {
-        buffer.position(buffer.position() + bytesToSkip);
+    /* --- Utility methods --- */
+
+    public int readArrayLength() {
+        return readInteger();
+    }
+
+    public int readVectorLength() {
+        return readUnsignedByte();
     }
 
     public int position() {
         return buffer.position();
     }
+
+    public void skip(int bytesToSkip) {
+        buffer.position(buffer.position() + bytesToSkip);
+    }
+
+    /* --- sizeof --- */
 
     private final static int SIZEOF_BYTE = 1;
     private final static int SIZEOF_SHORT = 2;
@@ -455,6 +532,9 @@ public class Decoder {
     private final static int SIZEOF_VECTOR_LENGTH = 1;
     private final static int SIZEOF_ARRAY_LENGTH = 4;
 
+    /**
+     * Type decoders
+     */
     private final static TypeDecoder[] decoders = {
             decoder -> null,
             Decoder::readByte,
@@ -712,5 +792,267 @@ public class Decoder {
             decoder -> null,
             decoder -> null,
             decoder -> null,
+    };
+
+    /**
+     * Skip methods
+     */
+    private static TypeSkipper[] skippers = {
+            decoder -> 0,
+            Decoder::skipByte,
+            Decoder::skipShort,
+            Decoder::skipInteger,
+            Decoder::skipLong,
+            Decoder::skipFlag,
+            Decoder::skipFloat,
+            Decoder::skipDouble,
+            Decoder::skipString,
+            Decoder::skipText,
+            decoder -> 0,
+            Decoder::skipByteArray,
+            Decoder::skipShortArray,
+            Decoder::skipIntegerArray,
+            Decoder::skipLongArray,
+            Decoder::skipFlagArray,
+            Decoder::skipFloatArray,
+            Decoder::skipDoubleArray,
+            Decoder::skipStringArray,
+            Decoder::skipTextArray,
+            decoder -> 0,
+            Decoder::skipByteVector,
+            Decoder::skipShortVector,
+            Decoder::skipIntegerVector,
+            Decoder::skipLongVector,
+            Decoder::skipFlagVector,
+            Decoder::skipFloatVector,
+            Decoder::skipDoubleVector,
+            Decoder::skipStringVector,
+            Decoder::skipTextVector,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
+            decoder -> 0,
     };
 }

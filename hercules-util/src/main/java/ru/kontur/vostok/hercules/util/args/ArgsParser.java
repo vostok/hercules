@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.gateway.args;
+package ru.kontur.vostok.hercules.util.args;
 
 import java.util.HashMap;
 import java.util.Map;

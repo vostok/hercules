@@ -1,4 +1,7 @@
-package ru.kontur.vostok.hercules.protocol;
+package ru.kontur.vostok.hercules.protocol.decoder;
+
+import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Type;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,12 +20,10 @@ public class EventReader {
     private int count;
     private int remaining;
 
-    public EventReader(byte[] data, Set<String> tags) {
+    private EventReader(byte[] data, Set<String> tags) {
         this.data = data;
         this.decoder = new Decoder(data);
         this.tags = (tags != null) ? tags : Collections.emptySet();
-
-        remaining = count = readEventsCount();
     }
 
     public boolean hasNext() {
@@ -51,6 +52,8 @@ public class EventReader {
             if (tags.contains(tagKey)) {
                 Event.TagValue tagValue = readTagValue();
                 tagValues.put(tagKey, tagValue);
+            } else {
+                skipTagValue();
             }
         }
 
@@ -83,5 +86,21 @@ public class EventReader {
         Object value = decoder.read(type);
 
         return new Event.TagValue(type, value);
+    }
+    private void skipTagValue() {
+        Type type = decoder.readType();
+        decoder.skip(type);
+    }
+
+    public static EventReader batchReader(byte[] data, Set<String> tags) {
+        EventReader reader = new EventReader(data, tags);
+        reader.remaining = reader.count = reader.readEventsCount();
+        return reader;
+    }
+
+    public static EventReader singleReader(byte[] data, Set<String> tags) {
+        EventReader reader = new EventReader(data, tags);
+        reader.remaining = reader.count = 1;
+        return reader;
     }
 }

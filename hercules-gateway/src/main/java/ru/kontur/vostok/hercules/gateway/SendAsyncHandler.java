@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.gateway;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.EventReader;
+import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 
 import java.util.Set;
@@ -21,7 +21,7 @@ public class SendAsyncHandler extends GatewayHandler {
         exchange.getRequestReceiver().receiveFullBytes(
                 (exch, bytes) -> {
                     exch.dispatch(() -> {
-                        EventReader reader = new EventReader(bytes, tags);
+                        EventReader reader = EventReader.batchReader(bytes, tags);
                         while (reader.hasNext()) {
                             Event event = reader.read();
                             eventSender.send(event, topic, partitions, shardingKey, null, null);

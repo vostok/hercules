@@ -1,6 +1,8 @@
-package ru.kontur.vostok.hercules.protocol;
+package ru.kontur.vostok.hercules.protocol.decoder;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Type;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -32,7 +34,7 @@ public class DecoderTest {
         Set<String> tags = new HashSet<>();
         tags.addAll(Arrays.asList("host", "timestamp"));
 
-        EventReader reader = new EventReader(data, tags);
+        EventReader reader = EventReader.batchReader(data, tags);
         assertEquals(1, reader.count());
         assertTrue(reader.hasNext());
 

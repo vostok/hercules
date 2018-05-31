@@ -4,14 +4,13 @@ import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
-import ru.kontur.vostok.hercules.gateway.args.ArgsParser;
+import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
+import ru.kontur.vostok.hercules.util.args.ArgsParser;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -22,15 +21,20 @@ import java.util.concurrent.TimeUnit;
 public class GatewayApplication {
     private static Undertow undertow;
     private static EventSender eventSender;
+    private static CuratorClient curatorClient;
 
     public static void main(String[] args) {
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties producerProperties = readProperties(parameters.getOrDefault("producer.properties", "producer.properties"));
+        Properties producerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("producer.properties", "producer.properties"));
+        Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
 
         eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()));
 
-        StreamRepository streamRepository = new StreamRepository();
+        curatorClient = new CuratorClient(curatorProperties);
+        curatorClient.start();
+
+        StreamRepository streamRepository = new StreamRepository(curatorClient);
 
         AuthManager authManager = new AuthManager();
         HttpHandler sendAsyncHandler = new SendAsyncHandler(authManager, eventSender, streamRepository);
@@ -66,15 +70,11 @@ public class GatewayApplication {
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
         }
-    }
 
-    private static Properties readProperties(String path) {
-        Properties properties = new Properties();
-        try(InputStream in = new FileInputStream(path)) {
-            properties.load(in);
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        try {
+            curatorClient.stop();
+        } catch (Throwable e) {
+            e.printStackTrace();//TODO: Process error
         }
-        return properties;
     }
 }

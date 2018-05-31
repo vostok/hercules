@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.auth.Action;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
+import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 
 import java.util.Arrays;
@@ -50,7 +51,18 @@ public abstract class GatewayHandler implements HttpHandler {
             return;
         }
 
-        BaseStream baseStream = streamRepository.getBaseStream(stream);
+        Optional<Stream> optionalBaseStream = streamRepository.read(stream);
+        if (!optionalBaseStream.isPresent()) {
+            exchange.setStatusCode(404);
+            exchange.endExchange();
+            return;
+        }
+        Stream baseStream = optionalBaseStream.get();
+        if (!(baseStream instanceof BaseStream)) {
+            exchange.setStatusCode(400);
+            exchange.endExchange();
+            return;
+        }
 
         String[] shardingKey = baseStream.getShardingKey();
         int partitions = baseStream.getPartitions();

@@ -18,13 +18,15 @@
         <kafka-clients.version>1.1.0</kafka-clients.version>
         <zookeeper.version>3.4.12</zookeeper.version>
         <curator.version>4.0.1</curator.version>
-
         <cassandra-driver.version>3.5.0</cassandra-driver.version>
         <undertow.version>2.0.7.Final</undertow.version>
         <metrics.version>4.0.2</metrics.version>
+        <jackson.version>2.9.5</jackson.version>
+        <guava.version>20.0</guava.version>
     </properties>
 
     <modules>
+        <module>hercules-util</module>
         <module>hercules-protocol</module>
         <module>hercules-partitioner</module>
         <module>hercules-meta</module>
@@ -92,6 +94,35 @@
                 <version>${metrics.version}</version>
             </dependency>
 
+            <!-- Jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <!-- Google Guava -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-util</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-protocol</artifactId>
