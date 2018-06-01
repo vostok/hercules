@@ -1,8 +1,5 @@
 package ru.kontur.vostok.hercules.gateway;
 
-import io.undertow.Handlers;
-import io.undertow.Undertow;
-import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -19,62 +16,67 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class GatewayApplication {
-    private static Undertow undertow;
+    private static HttpServer server;
     private static EventSender eventSender;
     private static CuratorClient curatorClient;
 
     public static void main(String[] args) {
-        Map<String, String> parameters = ArgsParser.parse(args);
+        long start = System.currentTimeMillis();
 
-        Properties producerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("producer.properties", "producer.properties"));
-        Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
+        try {
+            Map<String, String> parameters = ArgsParser.parse(args);
 
-        eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()));
+            Properties httpserverProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
+            Properties producerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("producer.properties", "producer.properties"));
+            Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
 
-        curatorClient = new CuratorClient(curatorProperties);
-        curatorClient.start();
+            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()));
 
-        StreamRepository streamRepository = new StreamRepository(curatorClient);
+            curatorClient = new CuratorClient(curatorProperties);
+            curatorClient.start();
 
-        AuthManager authManager = new AuthManager();
-        HttpHandler sendAsyncHandler = new SendAsyncHandler(authManager, eventSender, streamRepository);
-        HttpHandler sendHandler = new SendHandler(authManager, eventSender, streamRepository);
+            StreamRepository streamRepository = new StreamRepository(curatorClient);
+            AuthManager authManager = new AuthManager();
 
-        HttpHandler handler = Handlers.routing()
-                .get("/ping", exchange -> {
-                    exchange.setStatusCode(200);
-                    exchange.endExchange();
-                })
-                .post("/stream/sendAsync", sendAsyncHandler)
-                .post("/stream/send", sendHandler);
-
-        undertow = Undertow
-                .builder()
-                .addHttpListener(6306, "0.0.0.0")
-                .setHandler(handler)
-                .build();
-        undertow.start();
+            server = new HttpServer(httpserverProperties, authManager, eventSender, streamRepository);
+            server.start();
+        } catch (Throwable e) {
+            e.printStackTrace();
+            shutdown();
+            return;
+        }
 
         Runtime.getRuntime().addShutdownHook(new Thread(GatewayApplication::shutdown));
+
+        System.out.println("Gateway started for " + (System.currentTimeMillis() - start) + " millis" );
     }
 
-    static void shutdown() {
+    private static void shutdown() {
+        long start = System.currentTimeMillis();
+        System.out.println("Started Gateway shutdown");
         try {
-            undertow.stop();
+            if (server != null) {
+                server.stop();
+            }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
         }
 
         try {
-            eventSender.stop(5_000, TimeUnit.MILLISECONDS);
+            if (eventSender != null) {
+                eventSender.stop(5_000, TimeUnit.MILLISECONDS);
+            }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
         }
 
         try {
-            curatorClient.stop();
+            if (curatorClient != null) {
+                curatorClient.stop();
+            }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
         }
+        System.out.println("Finished Gateway shutdown for " + (System.currentTimeMillis() - start) + " millis");
     }
 }
