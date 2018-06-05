@@ -300,164 +300,164 @@ public class Decoder {
     /* Skip methods */
 
     public int skipByte() {
-        skip(SIZEOF_BYTE);
-        return SIZEOF_BYTE;
+        skip(SizeOf.BYTE);
+        return SizeOf.BYTE;
     }
 
     public int skipShort() {
-        skip(SIZEOF_SHORT);
-        return SIZEOF_SHORT;
+        skip(SizeOf.SHORT);
+        return SizeOf.SHORT;
     }
 
     public int skipInteger() {
-        skip(SIZEOF_INTEGER);
-        return SIZEOF_INTEGER;
+        skip(SizeOf.INTEGER);
+        return SizeOf.INTEGER;
     }
 
     public int skipLong() {
-        skip(SIZEOF_LONG);
-        return SIZEOF_LONG;
+        skip(SizeOf.LONG);
+        return SizeOf.LONG;
     }
 
     public int skipFlag() {
-        skip(SIZEOF_FLAG);
-        return SIZEOF_FLAG;
+        skip(SizeOf.FLAG);
+        return SizeOf.FLAG;
     }
 
     public int skipFloat() {
-        skip(SIZEOF_FLOAT);
-        return SIZEOF_FLOAT;
+        skip(SizeOf.FLOAT);
+        return SizeOf.FLOAT;
     }
 
     public int skipDouble() {
-        skip(SIZEOF_DOUBLE);
-        return SIZEOF_DOUBLE;
+        skip(SizeOf.DOUBLE);
+        return SizeOf.DOUBLE;
     }
 
     public int skipString() {
         int length = readUnsignedByte();
         skip(length);
 
-        return length + SIZEOF_STRING_LENGTH;
+        return length + SizeOf.STRING_LENGTH;
     }
 
     public int skipText() {
         int length = readInteger();
         skip(length);
 
-        return length + SIZEOF_TEXT_LENGTH;
+        return length + SizeOf.TEXT_LENGTH;
     }
 
     public int skipByteArray() {
         int length = readArrayLength();
-        int bytesToSkip = length * SIZEOF_BYTE;
+        int bytesToSkip = length * SizeOf.BYTE;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_ARRAY_LENGTH;
+        return bytesToSkip + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipByteVector() {
         int length = readVectorLength();
-        int bytesToSkip = length * SIZEOF_BYTE;
+        int bytesToSkip = length * SizeOf.BYTE;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_VECTOR_LENGTH;
+        return bytesToSkip + SizeOf.VECTOR_LENGTH;
     }
 
     public int skipShortArray() {
         int length = readArrayLength();
-        int bytesToSkip = length * SIZEOF_SHORT;
+        int bytesToSkip = length * SizeOf.SHORT;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_ARRAY_LENGTH;
+        return bytesToSkip + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipShortVector() {
         int length = readVectorLength();
-        int bytesToSkip = length * SIZEOF_SHORT;
+        int bytesToSkip = length * SizeOf.SHORT;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_VECTOR_LENGTH;
+        return bytesToSkip + SizeOf.VECTOR_LENGTH;
     }
 
     public int skipIntegerArray() {
         int length = readArrayLength();
-        int bytesToSkip = length * SIZEOF_INTEGER;
+        int bytesToSkip = length * SizeOf.INTEGER;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_ARRAY_LENGTH;
+        return bytesToSkip + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipIntegerVector() {
         int length = readVectorLength();
-        int bytesToSkip = length * SIZEOF_INTEGER;
+        int bytesToSkip = length * SizeOf.INTEGER;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_VECTOR_LENGTH;
+        return bytesToSkip + SizeOf.VECTOR_LENGTH;
     }
 
     public int skipLongArray() {
         int length = readArrayLength();
-        int bytesToSkip = length * SIZEOF_LONG;
+        int bytesToSkip = length * SizeOf.LONG;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_ARRAY_LENGTH;
+        return bytesToSkip + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipLongVector() {
         int length = readVectorLength();
-        int bytesToSkip = length * SIZEOF_LONG;
+        int bytesToSkip = length * SizeOf.LONG;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_VECTOR_LENGTH;
+        return bytesToSkip + SizeOf.VECTOR_LENGTH;
     }
 
     public int skipFlagArray() {
         int length = readArrayLength();
-        int bytesToSkip = length * SIZEOF_FLAG;
+        int bytesToSkip = length * SizeOf.FLAG;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_ARRAY_LENGTH;
+        return bytesToSkip + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipFlagVector() {
         int length = readVectorLength();
-        int bytesToSkip = length * SIZEOF_FLAG;
+        int bytesToSkip = length * SizeOf.FLAG;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_VECTOR_LENGTH;
+        return bytesToSkip + SizeOf.VECTOR_LENGTH;
     }
 
     public int skipFloatArray() {
         int length = readArrayLength();
-        int bytesToSkip = length * SIZEOF_FLOAT;
+        int bytesToSkip = length * SizeOf.FLOAT;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_ARRAY_LENGTH;
+        return bytesToSkip + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipFloatVector() {
         int length = readVectorLength();
-        int bytesToSkip = length * SIZEOF_FLOAT;
+        int bytesToSkip = length * SizeOf.FLOAT;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_VECTOR_LENGTH;
+        return bytesToSkip + SizeOf.VECTOR_LENGTH;
     }
 
     public int skipDoubleArray() {
         int length = readArrayLength();
-        int bytesToSkip = length * SIZEOF_DOUBLE;
+        int bytesToSkip = length * SizeOf.DOUBLE;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_ARRAY_LENGTH;
+        return bytesToSkip + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipDoubleVector() {
         int length = readVectorLength();
-        int bytesToSkip = length * SIZEOF_DOUBLE;
+        int bytesToSkip = length * SizeOf.DOUBLE;
         skip(bytesToSkip);
 
-        return bytesToSkip + SIZEOF_VECTOR_LENGTH;
+        return bytesToSkip + SizeOf.VECTOR_LENGTH;
     }
 
     public int skipStringArray() {
@@ -467,7 +467,7 @@ public class Decoder {
             skipped += skipString();
         }
 
-        return skipped + SIZEOF_ARRAY_LENGTH;
+        return skipped + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipStringVector() {
@@ -477,7 +477,7 @@ public class Decoder {
             skipped += skipString();
         }
 
-        return skipped + SIZEOF_VECTOR_LENGTH;
+        return skipped + SizeOf.VECTOR_LENGTH;
     }
 
     public int skipTextArray() {
@@ -487,7 +487,7 @@ public class Decoder {
             skipped += skipText();
         }
 
-        return skipped + SIZEOF_ARRAY_LENGTH;
+        return skipped + SizeOf.ARRAY_LENGTH;
     }
 
     public int skipTextVector() {
@@ -497,7 +497,7 @@ public class Decoder {
             skipped += skipText();
         }
 
-        return skipped + SIZEOF_VECTOR_LENGTH;
+        return skipped + SizeOf.VECTOR_LENGTH;
     }
 
     /* --- Utility methods --- */
@@ -517,20 +517,6 @@ public class Decoder {
     public void skip(int bytesToSkip) {
         buffer.position(buffer.position() + bytesToSkip);
     }
-
-    /* --- sizeof --- */
-
-    private final static int SIZEOF_BYTE = 1;
-    private final static int SIZEOF_SHORT = 2;
-    private final static int SIZEOF_INTEGER = 4;
-    private final static int SIZEOF_LONG = 8;
-    private final static int SIZEOF_FLAG = 1;
-    private final static int SIZEOF_FLOAT = 4;
-    private final static int SIZEOF_DOUBLE = 8;
-    private final static int SIZEOF_STRING_LENGTH = 1;
-    private final static int SIZEOF_TEXT_LENGTH = 4;
-    private final static int SIZEOF_VECTOR_LENGTH = 1;
-    private final static int SIZEOF_ARRAY_LENGTH = 4;
 
     /**
      * Type decoders

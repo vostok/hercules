@@ -17,7 +17,7 @@ public class ShardReadStateReader implements Iterator<ShardReadState> {
         this.decoder = new Decoder(data);
         if(0 == data.length) {
             this.remaining = 0;
-        } else if (data.length < 4) {
+        } else if (data.length < SizeOf.INTEGER) {
             throw new InvalidDataException();
         } else {
             this.remaining = decoder.readInteger();
