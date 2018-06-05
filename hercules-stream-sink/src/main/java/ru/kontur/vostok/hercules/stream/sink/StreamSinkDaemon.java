@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.sink.stream;
+package ru.kontur.vostok.hercules.stream.sink;
 
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -9,15 +9,22 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.Produced;
-import org.omg.CORBA.ServerRequest;
+import ru.kontur.vostok.hercules.kafka.util.EventDeserializer;
+import ru.kontur.vostok.hercules.kafka.util.EventSerde;
+import ru.kontur.vostok.hercules.kafka.util.EventSerializer;
+import ru.kontur.vostok.hercules.kafka.util.EventStreamPartitioner;
+import ru.kontur.vostok.hercules.kafka.util.VoidSerde;
+import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
+import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,57 +41,25 @@ public class StreamSinkDaemon {
 
         String derived = "stream.derived";
         List<String> topics = Collections.singletonList("stream-test");
+        Set<String> tags = new HashSet<>(Arrays.asList("host", "timestamp"));
+        String[] shardingKey = {"host"};
+        int partitions = 2;
+
         Predicate<Void, Event> filter = (k, v) -> {
             return true;
         };
 
-        Serde<Void> keySerde = new Serde<Void>() {
-            @Override
-            public void configure(Map<String, ?> configs, boolean isKey) {
+        Serde<Void> keySerde = new VoidSerde();
 
-            }
+        EventSerializer serializer = new EventSerializer();
+        EventDeserializer deserializer = new EventDeserializer(tags);
+        Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
 
-            @Override
-            public void close() {
-
-            }
-
-            @Override
-            public Serializer<Void> serializer() {
-                return ;
-            }
-
-            @Override
-            public Deserializer<Void> deserializer() {
-                return null;
-            }
-        };
-
-        Serde<Event> valueSerde = new Serde<Event>() {
-            @Override
-            public void configure(Map<String, ?> configs, boolean isKey) {
-
-            }
-
-            @Override
-            public void close() {
-
-            }
-
-            @Override
-            public Serializer<Event> serializer() {
-                return null;
-            }
-
-            @Override
-            public Deserializer<Event> deserializer() {
-                return null;
-            }
-        }
+        EventStreamPartitioner partitioner = new EventStreamPartitioner(new HashPartitioner(new NaiveHasher()), shardingKey, partitions);
 
         StreamsBuilder builder = new StreamsBuilder();
         KStream<Void, Event> kStream = builder.stream(topics);
-        kStream.filter(filter).to(derived, Produced.with());
+        kStream.filter(filter).to(derived, Produced.with(keySerde, valueSerde, partitioner));
 
         kafkaStreams = new KafkaStreams(builder.build(), config);
 
