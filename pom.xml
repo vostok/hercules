@@ -35,6 +35,7 @@
         <module>hercules-stream-sink</module>
         <module>hercules-timeline-sink</module>
         <module>hercules-kafka-util</module>
+        <module>hercules-stream-api</module>
     </modules>
 
     <dependencyManagement>
