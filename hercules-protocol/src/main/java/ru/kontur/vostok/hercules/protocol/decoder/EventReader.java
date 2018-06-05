@@ -23,7 +23,7 @@ public class EventReader {
     private EventReader(byte[] data, Set<String> tags) {
         this.data = data;
         this.decoder = new Decoder(data);
-        this.tags = (tags != null) ? tags : Collections.emptySet();
+        this.tags = tags;
     }
 
     public boolean hasNext() {
@@ -46,10 +46,10 @@ public class EventReader {
         long timestamp = readTimestamp();
         short tagsCount = readTagsCount();
 
-        Map<String, Event.TagValue> tagValues = new HashMap<>(tags.size());
+        Map<String, Event.TagValue> tagValues = tags != null ? new HashMap<>(tags.size()) : new HashMap<>();
         for (int i = 0; i < tagsCount; i++) {
             String tagKey = readTagKey();
-            if (tags.contains(tagKey)) {
+            if (tags == null || tags.contains(tagKey)) {
                 Event.TagValue tagValue = readTagValue();
                 tagValues.put(tagKey, tagValue);
             } else {
@@ -100,6 +100,18 @@ public class EventReader {
 
     public static EventReader singleReader(byte[] data, Set<String> tags) {
         EventReader reader = new EventReader(data, tags);
+        reader.remaining = reader.count = 1;
+        return reader;
+    }
+
+    public static EventReader batchReader(byte[] data) {
+        EventReader reader = new EventReader(data, null);
+        reader.remaining = reader.count = reader.readEventsCount();
+        return reader;
+    }
+
+    public static EventReader singleReader(byte[] data) {
+        EventReader reader = new EventReader(data, null);
         reader.remaining = reader.count = 1;
         return reader;
     }
