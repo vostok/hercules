@@ -6,6 +6,7 @@ import io.undertow.util.Headers;
 import org.apache.kafka.streams.StreamsBuilder;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.ShardReadState;
+import ru.kontur.vostok.hercules.protocol.StreamReadState;
 
 import java.util.Deque;
 import java.util.List;
@@ -25,7 +26,10 @@ public class ReadStreamHandler implements HttpHandler {
         String streamName = queryParameters.get("stream").getFirst();
         int take = Integer.valueOf(queryParameters.get("take").getFirst());
 
-        EventStreamContent streamContent = streamReader.getStreamContent(streamName, take);
+        EventStreamContent streamContent = streamReader.getStreamContent(streamName, new StreamReadState(2, new ShardReadState[]{
+                new ShardReadState(0, 3),
+                new ShardReadState(1, 3)
+        }), take);
 
         StringBuilder res = new StringBuilder();
         res.append("PartReadedCount: ").append(streamContent.getState().getShardCount()).append("\n");

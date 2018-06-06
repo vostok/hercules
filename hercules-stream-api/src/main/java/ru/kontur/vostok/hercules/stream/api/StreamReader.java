@@ -4,11 +4,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.Partitioner;
-import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.streams.KafkaStreams;
-import ru.kontur.vostok.hercules.kafka.util.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.VoidDeserializer;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.ShardReadState;
@@ -29,7 +26,7 @@ public class StreamReader {
     }
 
 
-    public EventStreamContent getStreamContent(String streamName, int take) {
+    public EventStreamContent getStreamContent(String streamName, StreamReadState readState, int take) {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", "localhost:9092");
@@ -47,26 +44,24 @@ public class StreamReader {
                     .collect(Collectors.toList());
 
             consumer.assign(partitions);
-            consumer.seekToBeginning(partitions);
+
+            Map<Integer, Long> offsets = partitions.stream().collect(Collectors.toMap(TopicPartition::partition, p -> 0L));
+            offsets.putAll(stateToMap(readState));
+
+            for (TopicPartition partition : partitions) {
+                consumer.seek(partition, offsets.get(partition.partition()));
+            }
 
             ConsumerRecords<Void, String> poll = consumer.poll(1000);
 
-            Map<Integer, Long> offsets = new HashMap<>();
-
             List<String> result = new ArrayList<>(poll.count());
             for (ConsumerRecord<Void, String> record : poll) {
-                // FIXME
                 result.add(record.value());
-                offsets.put(record.partition(), record.offset());
+                offsets.put(record.partition(), record.offset() + 1);
+
             }
             return new EventStreamContent(
-                    new StreamReadState(
-                            offsets.size(),
-                            offsets.entrySet().stream()
-                                    .map(e -> new ShardReadState(e.getKey(), e.getValue()))
-                                    .collect(Collectors.toList())
-                                    .toArray(new ShardReadState[]{})
-                    ),
+                    stateFromMap(offsets),
                     result.toArray(new String[]{})
             );
         }
@@ -76,11 +71,22 @@ public class StreamReader {
         }
     }
 
-
-
-
-
     public void stop(long timeout, TimeUnit timeUnit) {
         //consumer.close(timeout, timeUnit);
+    }
+
+    private static Map<Integer, Long> stateToMap(StreamReadState state) {
+        return Arrays.stream(state.getShardStates())
+                .collect(Collectors.toMap(ShardReadState::getPartition, ShardReadState::getOffset));
+    }
+
+    private static StreamReadState stateFromMap(Map<Integer, Long> map) {
+        return new StreamReadState(
+                map.size(),
+                map.entrySet().stream()
+                    .map(e -> new ShardReadState(e.getKey(), e.getValue()))
+                    .collect(Collectors.toList())
+                    .toArray(new ShardReadState[]{})
+        );
     }
 }
