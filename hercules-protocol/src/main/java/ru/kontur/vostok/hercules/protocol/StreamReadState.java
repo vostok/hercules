@@ -10,5 +10,11 @@ public class StreamReadState {
         this.shardStates = shardStates;
     }
 
+    public int getShardCount() {
+        return shardCount;
+    }
 
+    public ShardReadState[] getShardStates() {
+        return shardStates;
+    }
 }
