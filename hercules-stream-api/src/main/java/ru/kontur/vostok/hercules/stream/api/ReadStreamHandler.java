@@ -15,7 +15,11 @@ import java.util.stream.Collectors;
 
 public class ReadStreamHandler implements HttpHandler {
 
-    private final StreamReader streamReader = new StreamReader(null, null);
+    private final StreamReader streamReader;
+
+    public ReadStreamHandler(StreamReader streamReader) {
+        this.streamReader = streamReader;
+    }
 
     @Override
     public void handleRequest(HttpServerExchange httpServerExchange) throws Exception {
@@ -24,12 +28,17 @@ public class ReadStreamHandler implements HttpHandler {
 
         Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
         String streamName = queryParameters.get("stream").getFirst();
+        int k = Integer.valueOf(queryParameters.get("k").getFirst());
+        int n = Integer.valueOf(queryParameters.get("n").getFirst());
         int take = Integer.valueOf(queryParameters.get("take").getFirst());
 
-        EventStreamContent streamContent = streamReader.getStreamContent(streamName, new StreamReadState(2, new ShardReadState[]{
-                new ShardReadState(0, 3),
-                new ShardReadState(1, 3)
-        }), take);
+        EventStreamContent streamContent = streamReader.getStreamContent(
+                streamName,
+                new StreamReadState(new ShardReadState[]{}),
+                k,
+                n,
+                take
+        );
 
         StringBuilder res = new StringBuilder();
         res.append("PartReadedCount: ").append(streamContent.getState().getShardCount()).append("\n");

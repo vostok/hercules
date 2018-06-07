@@ -22,18 +22,18 @@ public class StreamApiApplication {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties httpserverProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
+            Properties httpServerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
             Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
-            readStreamHandler = new ReadStreamHandler();
+            readStreamHandler = new ReadStreamHandler(new StreamReader(null, null, new StreamRepository(curatorClient)));
 
             StreamRepository streamRepository = new StreamRepository(curatorClient);
             AuthManager authManager = new AuthManager();
 
-            server = new HttpServer(httpserverProperties, authManager, readStreamHandler, streamRepository);
+            server = new HttpServer(httpServerProperties, authManager, readStreamHandler, streamRepository);
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();

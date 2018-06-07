@@ -1,7 +1,12 @@
 package ru.kontur.vostok.hercules.meta.stream;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Gregory Koshelev
@@ -36,6 +41,25 @@ public abstract class Stream {
     }
     public void setShardingKey(String[] shardingKey) {
         this.shardingKey = shardingKey;
+    }
+
+    @JsonIgnore
+    public int[] partitionsForLogicalSharding(int k, int n) {
+        if (partitions == n) {
+            return new int[]{k};
+        } else if (partitions < n) {
+            if (k < partitions) {
+                return new int[]{k};
+            } else {
+                return new int[]{};
+            }
+        } else {
+            int[] res = new int[(partitions - k - 1)/ n + 1];
+            for (int i = 0; i < res.length; ++i ) {
+                res[i] = k + i * n;
+            }
+            return res;
+        }
     }
 
     public long getTtl() {

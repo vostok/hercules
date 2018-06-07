@@ -7,6 +7,8 @@ import org.apache.kafka.clients.producer.Partitioner;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.VoidDeserializer;
+import ru.kontur.vostok.hercules.meta.stream.Stream;
+import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.ShardReadState;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
@@ -19,14 +21,16 @@ public class StreamReader {
 
 //    private final KafkaConsumer<Void, byte[]> consumer;
     private final Partitioner partitioner;
+    private final StreamRepository streamRepository;
 
-    public StreamReader(Properties properties, Partitioner partitioner) {
+    public StreamReader(Properties properties, Partitioner partitioner, StreamRepository streamRepository) {
   //      this.consumer = new KafkaConsumer<Void, byte[]>(properties);
         this.partitioner = partitioner;
+        this.streamRepository = streamRepository;
     }
 
 
-    public EventStreamContent getStreamContent(String streamName, StreamReadState readState, int take) {
+    public EventStreamContent getStreamContent(String streamName, StreamReadState readState, int k, int n, int take) {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", "localhost:9092");
@@ -38,9 +42,10 @@ public class StreamReader {
 
         try (KafkaConsumer<Void, String> consumer = new KafkaConsumer<Void, String>(props)) {
 
-            List<TopicPartition> partitions = consumer.partitionsFor(streamName).stream()
-                    .map(partitionInfo -> new TopicPartition(partitionInfo.topic(), partitionInfo.partition()))
-                    .sorted(Comparator.comparing(TopicPartition::partition))
+            Stream stream = streamRepository.read(streamName).get();
+
+            Collection<TopicPartition> partitions = Arrays.stream(stream.partitionsForLogicalSharding(k, n))
+                    .mapToObj(partition -> new TopicPartition(stream.getName(), partition))
                     .collect(Collectors.toList());
 
             consumer.assign(partitions);
@@ -52,7 +57,7 @@ public class StreamReader {
                 consumer.seek(partition, offsets.get(partition.partition()));
             }
 
-            ConsumerRecords<Void, String> poll = consumer.poll(1000);
+            ConsumerRecords<Void, String> poll = consumer.poll(1000); //FIXME: to config
 
             List<String> result = new ArrayList<>(poll.count());
             for (ConsumerRecord<Void, String> record : poll) {
@@ -67,7 +72,7 @@ public class StreamReader {
         }
         catch (Exception e) {
             e.printStackTrace();
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 
@@ -82,7 +87,6 @@ public class StreamReader {
 
     private static StreamReadState stateFromMap(Map<Integer, Long> map) {
         return new StreamReadState(
-                map.size(),
                 map.entrySet().stream()
                     .map(e -> new ShardReadState(e.getKey(), e.getValue()))
                     .collect(Collectors.toList())

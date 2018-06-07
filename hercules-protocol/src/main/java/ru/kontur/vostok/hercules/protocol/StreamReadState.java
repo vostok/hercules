@@ -5,8 +5,8 @@ public class StreamReadState {
     private final int shardCount;
     private final ShardReadState[] shardStates;
 
-    public StreamReadState(int shardCount, ShardReadState[] shardStates) {
-        this.shardCount = shardCount;
+    public StreamReadState(ShardReadState[] shardStates) {
+        this.shardCount = shardStates.length;
         this.shardStates = shardStates;
     }
 
