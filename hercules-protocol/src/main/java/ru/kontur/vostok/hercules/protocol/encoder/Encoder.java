@@ -1,15 +1,11 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
 import ru.kontur.vostok.hercules.protocol.decoder.SizeOf;
-import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
-import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.wrapException;
 
 
 public class Encoder {
@@ -86,7 +82,7 @@ public class Encoder {
             writeVectorLength(bytes.length, "String bytes length must be lesser than 256");
             stream.write(bytes);
         } catch (IOException e) {
-            throw  new RuntimeException(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -120,7 +116,7 @@ public class Encoder {
 
     public void writeUnsignedByteArray(int[] array) {
         writeArrayLength(array.length);
-        for(int ub : array) {
+        for (int ub : array) {
             writeUnsignedByte(ub);
         }
     }
@@ -134,7 +130,7 @@ public class Encoder {
 
     public void writeShortArray(short[] array) {
         writeArrayLength(array.length);
-        for(short s : array) {
+        for (short s : array) {
             writeShort(s);
         }
     }
@@ -148,7 +144,7 @@ public class Encoder {
 
     public void writeIntegerArray(int[] array) {
         writeArrayLength(array.length);
-        for(int i: array) {
+        for (int i : array) {
             writeInteger(i);
         }
     }
@@ -162,84 +158,84 @@ public class Encoder {
 
     public void writeLongArray(long[] array) {
         writeArrayLength(array.length);
-        for(long l: array) {
+        for (long l : array) {
             writeLong(l);
         }
     }
 
     public void writeLongVector(long[] vector) {
         writeVectorLength(vector.length);
-        for (long l: vector) {
+        for (long l : vector) {
             writeLong(l);
         }
     }
 
     public void writeFlagArray(boolean[] array) {
         writeArrayLength(array.length);
-        for(boolean b: array) {
+        for (boolean b : array) {
             writeFlag(b);
         }
     }
 
     public void writeFlagVector(boolean[] vector) {
         writeVectorLength(vector.length);
-        for (boolean b: vector) {
+        for (boolean b : vector) {
             writeFlag(b);
         }
     }
 
     public void writeFloatArray(float[] array) {
         writeArrayLength(array.length);
-        for(float f: array) {
+        for (float f : array) {
             writeFloat(f);
         }
     }
 
     public void writeFloatVector(float[] vector) {
         writeVectorLength(vector.length);
-        for (float f: vector) {
+        for (float f : vector) {
             writeFloat(f);
         }
     }
 
     public void writeDoubleArray(double[] array) {
         writeArrayLength(array.length);
-        for(double d: array) {
+        for (double d : array) {
             writeDouble(d);
         }
     }
 
     public void writeDoubleVector(double[] vector) {
         writeVectorLength(vector.length);
-        for (double d: vector) {
+        for (double d : vector) {
             writeDouble(d);
         }
     }
 
     public void writeStringArray(String[] array) {
         writeArrayLength(array.length);
-        for(String s: array) {
+        for (String s : array) {
             writeString(s);
         }
     }
 
     public void writeStringVector(String[] vector) {
         writeVectorLength(vector.length);
-        for (String s: vector) {
+        for (String s : vector) {
             writeString(s);
         }
     }
 
     public void writeTextArray(String[] array) {
         writeArrayLength(array.length);
-        for(String s: array) {
+        for (String s : array) {
             writeText(s);
         }
     }
 
     public void writeTextVector(String[] vector) {
         writeVectorLength(vector.length);
-        for (String s: vector) {
+        for (String s : vector) {
             writeText(s);
         }
     }
