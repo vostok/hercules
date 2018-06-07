@@ -32,6 +32,8 @@ public class StreamReader {
 
     public EventStreamContent getStreamContent(String streamName, StreamReadState readState, int k, int n, int take) {
 
+        // FIXME How does it works with multi threading?
+
         Properties props = new Properties();
         props.put("bootstrap.servers", "localhost:9092");
         props.put("group.id", "consumer-tutorial");

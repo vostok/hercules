@@ -23,6 +23,7 @@
         <metrics.version>4.0.2</metrics.version>
         <jackson.version>2.9.5</jackson.version>
         <guava.version>20.0</guava.version>
+        <unirest.version>1.4.9</unirest.version>
     </properties>
 
     <modules>
@@ -36,6 +37,7 @@
         <module>hercules-timeline-sink</module>
         <module>hercules-kafka-util</module>
         <module>hercules-stream-api</module>
+        <module>hercules-cli-tools</module>
     </modules>
 
     <dependencyManagement>
@@ -125,6 +127,13 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+
+            <!-- Unirest -->
+            <dependency>
+                <groupId>com.mashape.unirest</groupId>
+                <artifactId>unirest-java</artifactId>
+                <version>${unirest.version}</version>
             </dependency>
 
             <dependency>
