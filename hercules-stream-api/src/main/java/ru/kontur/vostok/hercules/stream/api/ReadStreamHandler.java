@@ -7,7 +7,13 @@ import org.apache.kafka.streams.StreamsBuilder;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.ShardReadState;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
+import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
+import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
+import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
+import ru.kontur.vostok.hercules.protocol.encoder.EventStreamContentWriter;
 
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -24,31 +30,29 @@ public class ReadStreamHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange httpServerExchange) throws Exception {
 
-        httpServerExchange.getResponseHeaders().add(Headers.CONTENT_TYPE, "text/plain");
+        // FIXME: Well, this is dirty code
+        httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
 
-        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
-        String streamName = queryParameters.get("stream").getFirst();
-        int k = Integer.valueOf(queryParameters.get("k").getFirst());
-        int n = Integer.valueOf(queryParameters.get("n").getFirst());
-        int take = Integer.valueOf(queryParameters.get("take").getFirst());
+            Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
+            String streamName = queryParameters.get("stream").getFirst();
+            int k = Integer.valueOf(queryParameters.get("k").getFirst());
+            int n = Integer.valueOf(queryParameters.get("n").getFirst());
+            int take = Integer.valueOf(queryParameters.get("take").getFirst());
 
-        EventStreamContent streamContent = streamReader.getStreamContent(
-                streamName,
-                new StreamReadState(new ShardReadState[]{}),
-                k,
-                n,
-                take
-        );
+            EventStreamContent streamContent = streamReader.getStreamContent(
+                    streamName,
+                    StreamReadStateReader.read(new Decoder(message)),
+                    k,
+                    n,
+                    take
+            );
 
-        StringBuilder res = new StringBuilder();
-        res.append("PartReadedCount: ").append(streamContent.getState().getShardCount()).append("\n");
-        for (ShardReadState state : streamContent.getState().getShardStates()) {
-            res.append("  shard: ").append(state.getPartition()).append(" offset:").append(state.getOffset()).append("\n");
-        }
-        res.append("Total events: ").append(streamContent.getEventCount()).append("\n");
-        for (String event : streamContent.getEvents()) {
-            res.append("> ").append(event).append("\n");
-        }
-        httpServerExchange.getResponseSender().send(res.toString());
+            httpServerExchange.getResponseHeaders().add(Headers.CONTENT_TYPE, "text/plain");
+
+            Encoder encoder = new Encoder();
+            EventStreamContentWriter.write(encoder, streamContent);
+            httpServerExchange.getResponseSender().send(ByteBuffer.wrap(encoder.getBytes()));
+
+        });
     }
 }
