@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.meta.timeline;
 
+import ru.kontur.vostok.hercules.meta.filter.Filter;
+
 /**
  * @author Gregory Koshelev
  */
@@ -10,7 +12,7 @@ public class Timeline {
     private long ttl;
     private long timetrapSize;
     private String[] streams;
-    private String[] filters;//TODO: Should be replaced with prepared filters
+    private Filter[] filters;
 
     public String getName() {
         return name;
@@ -54,10 +56,10 @@ public class Timeline {
         this.streams = streams;
     }
 
-    public String[] getFilters() {
+    public Filter[] getFilters() {
         return filters;
     }
-    public void setFilters(String[] filters) {
+    public void setFilters(Filter[] filters) {
         this.filters = filters;
     }
 }

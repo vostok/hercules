@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util;
+package ru.kontur.vostok.hercules.kafka.util.serialization;
 
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;

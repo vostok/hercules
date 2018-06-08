@@ -1,10 +1,10 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TagValue;
 import ru.kontur.vostok.hercules.protocol.Type;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -46,11 +46,11 @@ public class EventReader {
         long timestamp = readTimestamp();
         short tagsCount = readTagsCount();
 
-        Map<String, Event.TagValue> tagValues = tags != null ? new HashMap<>(tags.size()) : new HashMap<>();
+        Map<String, TagValue> tagValues = tags != null ? new HashMap<>(tags.size()) : new HashMap<>();
         for (int i = 0; i < tagsCount; i++) {
             String tagKey = readTagKey();
             if (tags == null || tags.contains(tagKey)) {
-                Event.TagValue tagValue = readTagValue();
+                TagValue tagValue = readTagValue();
                 tagValues.put(tagKey, tagValue);
             } else {
                 skipTagValue();
@@ -81,11 +81,11 @@ public class EventReader {
     private int position() {
         return decoder.position();
     }
-    private Event.TagValue readTagValue() {
+    private TagValue readTagValue() {
         Type type = decoder.readType();
         Object value = decoder.read(type);
 
-        return new Event.TagValue(type, value);
+        return new TagValue(type, value);
     }
     private void skipTagValue() {
         Type type = decoder.readType();

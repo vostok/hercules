@@ -1,30 +1,15 @@
 package ru.kontur.vostok.hercules.stream.sink;
 
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serializer;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.Predicate;
-import org.apache.kafka.streams.kstream.Produced;
-import ru.kontur.vostok.hercules.kafka.util.EventDeserializer;
-import ru.kontur.vostok.hercules.kafka.util.EventSerde;
-import ru.kontur.vostok.hercules.kafka.util.EventSerializer;
-import ru.kontur.vostok.hercules.kafka.util.EventStreamPartitioner;
-import ru.kontur.vostok.hercules.kafka.util.VoidSerde;
-import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
-import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
-import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
+import ru.kontur.vostok.hercules.meta.stream.Stream;
+import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.util.args.ArgsParser;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,47 +17,74 @@ import java.util.concurrent.TimeUnit;
  */
 public class StreamSinkDaemon {
     private static final Object lock = new Object();
-    private static KafkaStreams kafkaStreams;
+
+    private static CuratorClient curatorClient;
+    private static StreamSink streamSink;
 
     public static void main(String[] args) {
-        Properties props = new Properties();
-        StreamsConfig config = new StreamsConfig(props);
-        //TODO: Deserializer!
+        long start = System.currentTimeMillis();
 
-        String derived = "stream.derived";
-        List<String> topics = Collections.singletonList("stream-test");
-        Set<String> tags = new HashSet<>(Arrays.asList("host", "timestamp"));
-        String[] shardingKey = {"host"};
-        int partitions = 2;
+        Map<String, String> parameters = ArgsParser.parse(args);
 
-        Predicate<Void, Event> filter = (k, v) -> {
-            return true;
-        };
+        Properties streamsProperties = PropertiesUtil.readProperties(parameters.getOrDefault("streams.properties", "streams.properties"));
+        Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
+        Properties sinkProperties = PropertiesUtil.readProperties(parameters.getOrDefault("sink.properties", "sink.properties"));
 
-        Serde<Void> keySerde = new VoidSerde();
+        //TODO: Validate sinkProperties
+        if (!sinkProperties.containsKey("derived")) {
+            System.out.println("Validation fails (sink.properties): 'derived' should be specified");
+            return;
+        }
 
-        EventSerializer serializer = new EventSerializer();
-        EventDeserializer deserializer = new EventDeserializer(tags);
-        Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
+        try {
+            curatorClient = new CuratorClient(curatorProperties);
+            curatorClient.start();
 
-        EventStreamPartitioner partitioner = new EventStreamPartitioner(new HashPartitioner(new NaiveHasher()), shardingKey, partitions);
+            StreamRepository streamRepository = new StreamRepository(curatorClient);
 
-        StreamsBuilder builder = new StreamsBuilder();
-        KStream<Void, Event> kStream = builder.stream(topics);
-        kStream.filter(filter).to(derived, Produced.with(keySerde, valueSerde, partitioner));
+            String derivedName = sinkProperties.getProperty("derived");
+            Optional<Stream> derivedOptional = streamRepository.read(derivedName);
+            if (!derivedOptional.isPresent()) {
+                throw new IllegalArgumentException("Unknown derived stream");
+            }
+            Stream derived = derivedOptional.get();
+            if (!(derived instanceof DerivedStream)) {
+                throw new IllegalArgumentException("Specified stream isn't derived one");
+            }
 
-        kafkaStreams = new KafkaStreams(builder.build(), config);
+            streamSink = new StreamSink(streamsProperties, (DerivedStream) derived);
+            streamSink.start();
+        } catch (Throwable e) {
+            e.printStackTrace();
+            shutdown();
+            return;
+        }
 
         Runtime.getRuntime().addShutdownHook(new Thread(StreamSinkDaemon::shutdown));
 
-        kafkaStreams.start();
+        System.out.println("Stream Sink Daemon started for " + (System.currentTimeMillis() - start) + " millis");
     }
 
     private static void shutdown() {
-        synchronized (lock) {
-            if (kafkaStreams != null) {
-                kafkaStreams.close(5_000, TimeUnit.MILLISECONDS);
+        long start = System.currentTimeMillis();
+        System.out.println("Prepare Stream Sink Daemon to be shutdown");
+
+        try {
+            if (streamSink != null) {
+                streamSink.stop(5_000, TimeUnit.MILLISECONDS);
             }
+        } catch (Throwable e) {
+            e.printStackTrace();//TODO: Process error
         }
+
+        try {
+            if (curatorClient != null) {
+                curatorClient.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();//TODO: Process error
+        }
+
+        System.out.println("Finished Stream Sink Daemon shutdown for " + (System.currentTimeMillis() - start) + " millis");
     }
 }

@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util;
+package ru.kontur.vostok.hercules.kafka.util.serialization;
 
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -9,14 +9,9 @@ import java.util.Map;
 /**
  * @author Gregory Koshelev
  */
-public class WrapperSerde<T> implements Serde<T> {
-    private final Serializer<T> serializer;
-    private final Deserializer<T> deserializer;
-
-    public WrapperSerde(Serializer<T> serializer, Deserializer<T> deserializer) {
-        this.serializer = serializer;
-        this.deserializer = deserializer;
-    }
+public class VoidSerde implements Serde<Void> {
+    private final VoidSerializer serializer = new VoidSerializer();
+    private final VoidDeserializer deserializer = new VoidDeserializer();
 
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
@@ -31,12 +26,12 @@ public class WrapperSerde<T> implements Serde<T> {
     }
 
     @Override
-    public Serializer<T> serializer() {
+    public Serializer<Void> serializer() {
         return serializer;
     }
 
     @Override
-    public Deserializer<T> deserializer() {
+    public Deserializer<Void> deserializer() {
         return deserializer;
     }
 }
