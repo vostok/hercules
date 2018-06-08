@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.stream.api;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.Partitioner;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.VoidDeserializer;
@@ -35,7 +34,7 @@ public class StreamReader {
     public StreamReader(Properties properties, StreamRepository streamRepository) {
         this.streamRepository = streamRepository;
         this.servers = properties.getProperty("bootstrap.servers");
-        this.pollTimeout = PropertiesUtil.get(properties,"poll.timeout", 1000);
+        this.pollTimeout = PropertiesUtil.get(properties, "poll.timeout", 1000);
     }
 
     public EventStreamContent getStreamContent(String streamName, StreamReadState readState, int k, int n, int take) {
@@ -81,13 +80,11 @@ public class StreamReader {
                         stateFromMap(offsets),
                         result.toArray(new String[]{})
                 );
-            }
-            finally {
+            } finally {
                 consumer.close();
                 activeConsumers.remove(consumer);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
@@ -107,9 +104,9 @@ public class StreamReader {
     private static StreamReadState stateFromMap(Map<Integer, Long> map) {
         return new StreamReadState(
                 map.entrySet().stream()
-                    .map(e -> new ShardReadState(e.getKey(), e.getValue()))
-                    .collect(Collectors.toList())
-                    .toArray(new ShardReadState[]{})
+                        .map(e -> new ShardReadState(e.getKey(), e.getValue()))
+                        .collect(Collectors.toList())
+                        .toArray(new ShardReadState[]{})
         );
     }
 

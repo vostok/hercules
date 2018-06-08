@@ -25,7 +25,7 @@ public class StreamApiClient {
             Thread t = new Thread(() -> {
                 try {
                     while (true) {
-                        getStreamContent("stream-api-testZZZZ", 10);
+                        getStreamContent("stream-api-test", 10);
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
