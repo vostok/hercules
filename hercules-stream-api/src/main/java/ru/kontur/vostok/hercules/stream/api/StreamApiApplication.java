@@ -8,7 +8,6 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 
 public class StreamApiApplication {
@@ -30,7 +29,7 @@ public class StreamApiApplication {
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
-            streamReader = new StreamReader(consumerProperties, null, new StreamRepository(curatorClient));
+            streamReader = new StreamReader(consumerProperties, new StreamRepository(curatorClient));
 
             server = new HttpServer(httpServerProperties, new AuthManager(), new ReadStreamHandler(streamReader));
             server.start();
@@ -64,7 +63,7 @@ public class StreamApiApplication {
         }
         try {
             if (streamReader != null) {
-                streamReader.stop(5_000, TimeUnit.MILLISECONDS);
+                streamReader.stop();
             }
         }
         catch (Throwable e) {

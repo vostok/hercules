@@ -34,26 +34,33 @@ public class ReadStreamHandler implements HttpHandler {
 
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
-                Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
-                String streamName = queryParameters.get("stream").getFirst();
-                int k = Integer.valueOf(queryParameters.get("k").getFirst());
-                int n = Integer.valueOf(queryParameters.get("n").getFirst());
-                int take = Integer.valueOf(queryParameters.get("take").getFirst());
+                try {
+                    Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
+                    String streamName = queryParameters.get("stream").getFirst();
+                    int k = Integer.valueOf(queryParameters.get("k").getFirst());
+                    int n = Integer.valueOf(queryParameters.get("n").getFirst());
+                    int take = Integer.valueOf(queryParameters.get("take").getFirst());
 
-                EventStreamContent streamContent = streamReader.getStreamContent(
-                        streamName,
-                        StreamReadStateReader.read(new Decoder(message)),
-                        k,
-                        n,
-                        take
-                );
+                    EventStreamContent streamContent = streamReader.getStreamContent(
+                            streamName,
+                            StreamReadStateReader.read(new Decoder(message)),
+                            k,
+                            n,
+                            take
+                    );
 
-                exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, OCTET_STREAM);
+                    exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, OCTET_STREAM);
 
-                Encoder encoder = new Encoder();
-                EventStreamContentWriter.write(encoder, streamContent);
-                exchange.getResponseSender().send(ByteBuffer.wrap(encoder.getBytes()));
-                exchange.endExchange();
+                    Encoder encoder = new Encoder();
+                    EventStreamContentWriter.write(encoder, streamContent);
+                    exchange.getResponseSender().send(ByteBuffer.wrap(encoder.getBytes()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    exchange.setStatusCode(500);
+                }
+                finally {
+                    exchange.endExchange();
+                }
             });
         });
     }

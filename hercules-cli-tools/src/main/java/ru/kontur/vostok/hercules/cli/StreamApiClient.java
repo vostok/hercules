@@ -7,11 +7,12 @@ import ru.kontur.vostok.hercules.protocol.ShardReadState;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventStreamContentReader;
-import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StreamApiClient {
 
@@ -19,7 +20,27 @@ public class StreamApiClient {
 
     public static void main(String[] args) throws Exception {
 
-        getStreamContent("stream-api-test", 10);
+        List<Thread> ts = new ArrayList<>();
+        for (int i = 0; i < 100; ++i) {
+            Thread t = new Thread(() -> {
+                try {
+                    while (true) {
+                        getStreamContent("stream-api-testZZZZ", 10);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            ts.add(t);
+        }
+        ts.forEach(Thread::start);
+        ts.forEach(t -> {
+            try {
+                t.join();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
 
 
         Unirest.shutdown();
@@ -56,9 +77,8 @@ public class StreamApiClient {
             System.out.println(String.format("> Partition %d, offset %d", shardReadState.getPartition(), shardReadState.getOffset()));
         }
         System.out.println("Content:");
-        for (String event: eventStreamContent.getEvents()) {
+        for (String event : eventStreamContent.getEvents()) {
             System.out.println("> " + event);
         }
-
     }
 }
