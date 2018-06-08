@@ -4,14 +4,17 @@ import ru.kontur.vostok.hercules.protocol.Type;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * @author Gregory Koshelev
  */
 public class Decoder {
+    private final byte[] data;
     private final ByteBuffer buffer;
 
     public Decoder(byte[] data) {
+        this.data = data;
         this.buffer = ByteBuffer.wrap(data);
     }
 
@@ -516,6 +519,10 @@ public class Decoder {
 
     public void skip(int bytesToSkip) {
         buffer.position(buffer.position() + bytesToSkip);
+    }
+
+    public byte[] subarray(int from, int toExclusive) {
+        return Arrays.copyOfRange(data, from, toExclusive);
     }
 
     /**

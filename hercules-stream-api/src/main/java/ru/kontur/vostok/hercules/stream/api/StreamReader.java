@@ -8,6 +8,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.ShardReadState;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
@@ -48,7 +49,7 @@ public class StreamReader {
         props.put("value.deserializer", StringDeserializer.class.getName());
 
         try {
-            KafkaConsumer<Void, String> consumer = new KafkaConsumer<Void, String>(props);
+            KafkaConsumer<Void, Event> consumer = new KafkaConsumer<>(props);
             activeConsumers.putIfAbsent(consumer, DUMMY);
 
             try {
@@ -68,17 +69,17 @@ public class StreamReader {
                     consumer.seek(partition, offsets.get(partition.partition()));
                 }
 
-                ConsumerRecords<Void, String> poll = consumer.poll(pollTimeout);
+                ConsumerRecords<Void, Event> poll = consumer.poll(pollTimeout);
 
-                List<String> result = new ArrayList<>(poll.count());
-                for (ConsumerRecord<Void, String> record : poll) {
+                List<Event> result = new ArrayList<>(poll.count());
+                for (ConsumerRecord<Void, Event> record : poll) {
                     result.add(record.value());
                     offsets.put(record.partition(), record.offset() + 1);
                 }
 
                 return new EventStreamContent(
                         stateFromMap(offsets),
-                        result.toArray(new String[]{})
+                        result.toArray(new Event[]{})
                 );
             } finally {
                 consumer.close();

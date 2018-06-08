@@ -16,39 +16,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class StreamApiClient {
+public class GatewayClient {
 
     private static final String HOST = "http://localhost:6306/";
 
     public static void main(String[] args) throws Exception {
 
-        List<Thread> ts = new ArrayList<>();
-        for (int i = 0; i < 100; ++i) {
-            Thread t = new Thread(() -> {
-                try {
-                    while (true) {
-                        getStreamContent("stream-api-test", 10);
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            ts.add(t);
-        }
-        ts.forEach(Thread::start);
-        ts.forEach(t -> {
-            try {
-                t.join();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
 
         Unirest.shutdown();
     }
 
-    private static void getStreamContent(String streamName, int take) throws Exception {
+    private static void sendEvent(String streamName, int take) throws Exception {
 
         Encoder encoder = new Encoder();
         StreamReadStateWriter.write(encoder, new StreamReadState(new ShardReadState[]{

@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -45,13 +46,13 @@ public class DecoderTest {
         assertEquals(1, event.getVersion());
         assertEquals(1527679920000000L, event.getTimestamp());
 
-        Map<String, Event.TagValue> tagValues = event.getTags();
+        Map<String, Variant> tagValues = event.getTags();
         assertNotNull(tagValues);
         assertEquals(2, tagValues.size());
         assertTrue(tagValues.containsKey("host"));
         assertTrue(tagValues.containsKey("timestamp"));
 
-        Event.TagValue hostTagValue = tagValues.get("host");
+        Variant hostTagValue = tagValues.get("host");
         assertNotNull(hostTagValue);
         assertEquals(Type.STRING, hostTagValue.getType());
         Object host = hostTagValue.getValue();
@@ -61,7 +62,7 @@ public class DecoderTest {
         assertEquals(9, hostAsBytes.length);
         assertArrayEquals("localhost".getBytes(StandardCharsets.UTF_8), hostAsBytes);
 
-        Event.TagValue timestampTagValue = tagValues.get("timestamp");
+        Variant timestampTagValue = tagValues.get("timestamp");
         assertNotNull(timestampTagValue);
         assertEquals(Type.LONG, timestampTagValue.getType());
         Object timestamp = timestampTagValue.getValue();

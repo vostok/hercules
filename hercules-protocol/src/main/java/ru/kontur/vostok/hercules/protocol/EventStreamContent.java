@@ -4,9 +4,9 @@ public class EventStreamContent {
 
     private final StreamReadState state;
     private final int eventCount;
-    private final String[] events; // !!!! FIXME: для более просто й    разработки временно используем строки
+    private final Event[] events;
 
-    public EventStreamContent(StreamReadState state, String[] events) {
+    public EventStreamContent(StreamReadState state, Event[] events) {
         this.state = state;
         this.eventCount = events.length;
         this.events = events;
@@ -20,7 +20,7 @@ public class EventStreamContent {
         return eventCount;
     }
 
-    public String[] getEvents() {
+    public Event[] getEvents() {
         return events;
     }
 }

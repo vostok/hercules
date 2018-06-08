@@ -9,9 +9,9 @@ public class Event {
     private final byte[] bytes;
     private final int version;
     private final long timestamp;
-    private final Map<String, TagValue> tags;
+    private final Map<String, Variant> tags;
 
-    public Event(byte[] bytes, int version, long timestamp, Map<String, TagValue> tags) {
+    public Event(byte[] bytes, int version, long timestamp, Map<String, Variant> tags) {
         this.bytes = bytes;
         this.version = version;
         this.timestamp = timestamp;
@@ -30,25 +30,7 @@ public class Event {
         return timestamp;
     }
 
-    public Map<String, TagValue> getTags() {
+    public Map<String, Variant> getTags() {
         return tags;
-    }
-
-    public static class TagValue {
-        private final Type type;
-        private final Object value;
-
-        public TagValue(Type type, Object value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        public Type getType() {
-            return type;
-        }
-
-        public Object getValue() {
-            return value;
-        }
     }
 }
