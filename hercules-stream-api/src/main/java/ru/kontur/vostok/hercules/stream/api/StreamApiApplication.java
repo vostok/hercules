@@ -8,13 +8,14 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 
 public class StreamApiApplication {
 
     private static HttpServer server;
-    private static ReadStreamHandler readStreamHandler;
     private static CuratorClient curatorClient;
+    private static StreamReader streamReader;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -24,16 +25,14 @@ public class StreamApiApplication {
 
             Properties httpServerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
             Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
+            Properties consumerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("consumer.properties", "consumer.properties"));
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
-            readStreamHandler = new ReadStreamHandler(new StreamReader(null, null, new StreamRepository(curatorClient)));
+            streamReader = new StreamReader(consumerProperties, null, new StreamRepository(curatorClient));
 
-            StreamRepository streamRepository = new StreamRepository(curatorClient);
-            AuthManager authManager = new AuthManager();
-
-            server = new HttpServer(httpServerProperties, authManager, readStreamHandler, streamRepository);
+            server = new HttpServer(httpServerProperties, new AuthManager(), new ReadStreamHandler(streamReader));
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -54,16 +53,24 @@ public class StreamApiApplication {
                 server.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            e.printStackTrace(); //TODO: Process error
         }
-
         try {
             if (curatorClient != null) {
                 curatorClient.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            e.printStackTrace(); //TODO: Process error
         }
+        try {
+            if (streamReader != null) {
+                streamReader.stop(5_000, TimeUnit.MILLISECONDS);
+            }
+        }
+        catch (Throwable e) {
+            e.printStackTrace(); //TODO: Process error
+        }
+
         System.out.println("Finished Stream API shutdown for " + (System.currentTimeMillis() - start) + " millis");
     }
 }

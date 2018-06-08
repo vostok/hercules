@@ -19,12 +19,10 @@ import java.util.stream.Collectors;
 
 public class StreamReader {
 
-//    private final KafkaConsumer<Void, byte[]> consumer;
     private final Partitioner partitioner;
     private final StreamRepository streamRepository;
 
     public StreamReader(Properties properties, Partitioner partitioner, StreamRepository streamRepository) {
-  //      this.consumer = new KafkaConsumer<Void, byte[]>(properties);
         this.partitioner = partitioner;
         this.streamRepository = streamRepository;
     }

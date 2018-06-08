@@ -14,7 +14,7 @@ public class HttpServer {
 
     private final Undertow undertow;
 
-    public HttpServer(Properties properties, AuthManager authManager, ReadStreamHandler readStreamHandler, StreamRepository streamRepository) {
+    public HttpServer(Properties properties, AuthManager authManager, ReadStreamHandler readStreamHandler) {
         String host = properties.getProperty("host", "0.0.0.0");
         int port = PropertiesUtil.get(properties, "port", 6306);
 
