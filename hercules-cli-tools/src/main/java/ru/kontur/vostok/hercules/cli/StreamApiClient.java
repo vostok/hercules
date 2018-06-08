@@ -18,32 +18,11 @@ import java.util.stream.Collectors;
 
 public class StreamApiClient {
 
-    private static final String HOST = "http://localhost:6306/";
+    private static final String HOST = "http://localhost:6307/";
 
     public static void main(String[] args) throws Exception {
 
-        List<Thread> ts = new ArrayList<>();
-        for (int i = 0; i < 100; ++i) {
-            Thread t = new Thread(() -> {
-                try {
-                    while (true) {
-                        getStreamContent("stream-api-test", 10);
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            ts.add(t);
-        }
-        ts.forEach(Thread::start);
-        ts.forEach(t -> {
-            try {
-                t.join();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
+        getStreamContent("gateway-test", 10);
 
         Unirest.shutdown();
     }
@@ -52,8 +31,6 @@ public class StreamApiClient {
 
         Encoder encoder = new Encoder();
         StreamReadStateWriter.write(encoder, new StreamReadState(new ShardReadState[]{
-                new ShardReadState(0, 1),
-                new ShardReadState(1, 0)
         }));
 
         HttpResponse<InputStream> response = Unirest.post(HOST + "/stream/read")
@@ -85,7 +62,7 @@ public class StreamApiClient {
     }
 
     private static String formatEvent(Event event) {
-        String tags = event.getTags().entrySet().stream().map(e -> e.getKey() + "=" + e.getValue().getValue()).collect(Collectors.joining(","));
+        String tags = event.getTags().entrySet().stream().map(e -> e.getKey() + "=" + String.valueOf(e.getValue().getValue())).collect(Collectors.joining(","));
         return String.format("[%d] (v. %d) %s", event.getTimestamp(), event.getVersion(), tags);
     }
 }

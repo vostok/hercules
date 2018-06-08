@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import ru.kontur.vostok.hercules.kafka.util.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -46,7 +47,7 @@ public class StreamReader {
         props.put("enable.auto.commit", "false");
         props.put("max.poll.records", take);
         props.put("key.deserializer", VoidDeserializer.class.getName());
-        props.put("value.deserializer", StringDeserializer.class.getName());
+        props.put("value.deserializer", EventDeserializer.class.getName());
 
         try {
             KafkaConsumer<Void, Event> consumer = new KafkaConsumer<>(props);

@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.partitioner;
 
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.Variant;
 
 /**
  * @author Gregory Koshelev
@@ -15,7 +16,7 @@ public class NaiveHasher implements Hasher {
     public int hash(Event event, String[] tags) {
         int hash = 0;
         for (String tag : tags) {
-            Event.TagValue tagValue = event.getTags().get(tag);
+            Variant tagValue = event.getTags().get(tag);
             hash = 31 * hash + ((tagValue != null) ? hash(tagValue.getType(), tagValue.getValue()) : 0);
         }
         return 0;

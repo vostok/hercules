@@ -4,6 +4,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,6 +13,10 @@ import java.util.Set;
  */
 public class EventDeserializer implements Deserializer<Event> {
     private final Set<String> tags;
+
+    public EventDeserializer() {
+        this.tags = Collections.emptySet();
+    }
 
     public EventDeserializer(Set<String> tags) {
         this.tags = tags;
