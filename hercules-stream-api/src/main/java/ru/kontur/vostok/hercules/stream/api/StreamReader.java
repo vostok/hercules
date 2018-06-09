@@ -4,15 +4,13 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.EventStreamContent;
-import ru.kontur.vostok.hercules.protocol.ShardReadState;
-import ru.kontur.vostok.hercules.protocol.StreamReadState;
+import ru.kontur.vostok.hercules.protocol.*;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.throwables.ThrowableUtil;
 
@@ -39,7 +37,7 @@ public class StreamReader {
         this.pollTimeout = PropertiesUtil.get(properties, "poll.timeout", 1000);
     }
 
-    public EventStreamContent getStreamContent(String streamName, StreamReadState readState, int k, int n, int take) {
+    public ByteStreamContent getStreamContent(String streamName, StreamReadState readState, int k, int n, int take) {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", servers);
@@ -47,10 +45,10 @@ public class StreamReader {
         props.put("enable.auto.commit", "false");
         props.put("max.poll.records", take);
         props.put("key.deserializer", VoidDeserializer.class.getName());
-        props.put("value.deserializer", EventDeserializer.class.getName());
+        props.put("value.deserializer", ByteArrayDeserializer.class.getName());
 
         try {
-            KafkaConsumer<Void, Event> consumer = new KafkaConsumer<>(props);
+            KafkaConsumer<Void, byte[]> consumer = new KafkaConsumer<>(props);
             activeConsumers.putIfAbsent(consumer, DUMMY);
 
             try {
@@ -70,17 +68,17 @@ public class StreamReader {
                     consumer.seek(partition, offsets.get(partition.partition()));
                 }
 
-                ConsumerRecords<Void, Event> poll = consumer.poll(pollTimeout);
+                ConsumerRecords<Void, byte[]> poll = consumer.poll(pollTimeout);
 
-                List<Event> result = new ArrayList<>(poll.count());
-                for (ConsumerRecord<Void, Event> record : poll) {
+                List<byte[]> result = new ArrayList<>(poll.count());
+                for (ConsumerRecord<Void, byte[]> record : poll) {
                     result.add(record.value());
                     offsets.put(record.partition(), record.offset() + 1);
                 }
 
-                return new EventStreamContent(
+                return new ByteStreamContent(
                         stateFromMap(offsets),
-                        result.toArray(new Event[]{})
+                        result.toArray(new byte[][]{})
                 );
             } finally {
                 consumer.close();

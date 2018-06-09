@@ -2,16 +2,14 @@ package ru.kontur.vostok.hercules.cli;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
-import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.EventStreamContent;
-import ru.kontur.vostok.hercules.protocol.ShardReadState;
-import ru.kontur.vostok.hercules.protocol.StreamReadState;
+import ru.kontur.vostok.hercules.protocol.*;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventStreamContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -62,7 +60,19 @@ public class StreamApiClient {
     }
 
     private static String formatEvent(Event event) {
-        String tags = event.getTags().entrySet().stream().map(e -> e.getKey() + "=" + String.valueOf(e.getValue().getValue())).collect(Collectors.joining(","));
-        return String.format("[%d] (v. %d) %s", event.getTimestamp(), event.getVersion(), tags);
+        String tags = event.getTags().entrySet().stream()
+                .map(e -> e.getKey() + "=" + formatVariant(e.getValue()))
+                .collect(Collectors.joining(","));
+        return String.format("(v. %d) [%d] %s", event.getVersion(), event.getTimestamp(), tags);
+    }
+
+    private static String formatVariant(Variant variant) {
+        switch (variant.getType()) {
+            case TEXT:
+            case STRING:
+                return new String((byte[]) variant.getValue(), StandardCharsets.UTF_8);
+            default:
+                return String.valueOf(variant.getValue());
+        }
     }
 }

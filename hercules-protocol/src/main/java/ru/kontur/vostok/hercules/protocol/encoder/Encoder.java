@@ -240,6 +240,14 @@ public class Encoder {
         }
     }
 
+    public void writeRawBites(byte[] bytes) {
+        try {
+            stream.write(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public byte[] getBytes() {
         // TODO: Copy of byte array created here.
         return stream.toByteArray();
