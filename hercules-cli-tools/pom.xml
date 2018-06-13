@@ -14,13 +14,13 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.mashape.unirest</groupId>
-            <artifactId>unirest-java</artifactId>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-protocol</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-protocol</artifactId>
+            <groupId>com.mashape.unirest</groupId>
+            <artifactId>unirest-java</artifactId>
         </dependency>
 
     </dependencies>
