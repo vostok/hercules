@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.util.throwables;
+package ru.kontur.vostok.hercules.util.throwable;
 
 import java.util.concurrent.Callable;
 

@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.protocol.*;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.throwables.ThrowableUtil;
+import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
 import java.net.InetAddress;
 import java.util.*;
