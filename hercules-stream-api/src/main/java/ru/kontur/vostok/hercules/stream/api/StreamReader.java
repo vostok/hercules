@@ -37,6 +37,7 @@ public class StreamReader {
         this.pollTimeout = PropertiesUtil.get(properties, "poll.timeout", 1000);
     }
 
+    // TODO: Probably we can use output streams to reduce memory consumption
     public ByteStreamContent getStreamContent(String streamName, StreamReadState readState, int k, int n, int take) {
 
         Properties props = new Properties();
