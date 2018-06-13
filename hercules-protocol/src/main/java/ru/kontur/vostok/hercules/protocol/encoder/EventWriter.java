@@ -5,6 +5,6 @@ import ru.kontur.vostok.hercules.protocol.Event;
 public class EventWriter {
 
     public static void write(Encoder encoder, Event event) {
-        encoder.writeRawBites(event.getBytes());
+        encoder.writeRawBytes(event.getBytes());
     }
 }

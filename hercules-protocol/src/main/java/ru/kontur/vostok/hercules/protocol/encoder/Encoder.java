@@ -240,7 +240,7 @@ public class Encoder {
         }
     }
 
-    public void writeRawBites(byte[] bytes) {
+    public void writeRawBytes(byte[] bytes) {
         try {
             stream.write(bytes);
         } catch (IOException e) {

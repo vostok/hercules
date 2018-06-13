@@ -9,7 +9,7 @@ public class ByteStreamContentWriter {
         StreamReadStateWriter.write(encoder, byteStreamContent.getState());
         encoder.writeInteger(byteStreamContent.getEventCount());
         for (byte[] record : byteStreamContent.getEvents()) {
-            encoder.writeRawBites(record);
+            encoder.writeRawBytes(record);
         }
     }
 }
