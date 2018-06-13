@@ -12,14 +12,16 @@
     <artifactId>hercules-cli-tools</artifactId>
 
     <dependencies>
+
         <dependency>
             <groupId>com.mashape.unirest</groupId>
             <artifactId>unirest-java</artifactId>
         </dependency>
+
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-protocol</artifactId>
         </dependency>
-    </dependencies>
 
+    </dependencies>
 </project>
