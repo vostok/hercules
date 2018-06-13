@@ -8,6 +8,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.*;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
@@ -54,7 +55,7 @@ public class StreamReader {
                 Stream stream = streamRepository.read(streamName)
                         .orElseThrow(() -> new IllegalArgumentException(String.format("Stream '%s' not found", streamName)));
 
-                Collection<TopicPartition> partitions = Arrays.stream(stream.partitionsForLogicalSharding(k, n))
+                Collection<TopicPartition> partitions = Arrays.stream(LogicalPartitioner.getPartitionsForLogicalSharding(stream, k, n))
                         .mapToObj(partition -> new TopicPartition(stream.getName(), partition))
                         .collect(Collectors.toList());
 
