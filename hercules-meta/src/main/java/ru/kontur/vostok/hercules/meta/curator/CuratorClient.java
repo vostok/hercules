@@ -4,6 +4,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.data.Stat;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Optional;
@@ -29,6 +30,10 @@ public class CuratorClient {
 
     public Optional<byte[]> read(String path) throws Exception {
         try {
+            Stat stat = curatorFramework.checkExists().forPath(path);
+            if (stat == null) {
+                return Optional.empty();
+            }
             byte[] bytes = curatorFramework.getData().forPath(path);
             return bytes != null ? Optional.of(bytes) : Optional.empty();
         } catch (KeeperException.NoNodeException ex) {

@@ -1,11 +1,13 @@
 package ru.kontur.vostok.hercules.meta.stream;
 
+import ru.kontur.vostok.hercules.meta.filter.Filter;
+
 /**
  * @author Gregory Koshelev
  */
 public class DerivedStream extends Stream {
     private String[] streams;
-    private String[] filters;//TODO: Replace with prepared filters
+    private Filter[] filters;
 
     public String[] getStreams() {
         return streams;
@@ -15,11 +17,11 @@ public class DerivedStream extends Stream {
         this.streams = streams;
     }
 
-    public String[] getFilters() {
+    public Filter[] getFilters() {
         return filters;
     }
 
-    public void setFilters(String[] filters) {
+    public void setFilters(Filter[] filters) {
         this.filters = filters;
     }
 }
