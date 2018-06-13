@@ -7,18 +7,26 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventStreamContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
+import ru.kontur.vostok.hercules.util.args.ArgsParser;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class StreamApiClient {
 
-    private static final String HOST = "http://localhost:6307/";
+    private static String server;
 
     public static void main(String[] args) throws Exception {
+        Map<String, String> parameters = ArgsParser.parse(args);
+        Properties properties = PropertiesUtil.readProperties(parameters.getOrDefault("stream-api-client.properties", "stream-api-client.properties"));
+
+        server = "http://" + properties.getProperty("server");
 
         getStreamContent("gateway-test", 10);
 
@@ -31,7 +39,7 @@ public class StreamApiClient {
         StreamReadStateWriter.write(encoder, new StreamReadState(new ShardReadState[]{
         }));
 
-        HttpResponse<InputStream> response = Unirest.post(HOST + "/stream/read")
+        HttpResponse<InputStream> response = Unirest.post(server + "/stream/read")
                 .queryString("stream", streamName)
                 .queryString("take", take)
                 .queryString("k", 0)
