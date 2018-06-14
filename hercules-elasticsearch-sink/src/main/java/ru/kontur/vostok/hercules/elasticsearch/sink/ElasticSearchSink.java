@@ -19,7 +19,6 @@ public class ElasticSearchSink {
 
     public ElasticSearchSink(Properties properties) {
         ElasticSearchEventSender eventSender = new ElasticSearchEventSender();
-        BulkProcessor<Event> bulkProcessor = new BulkProcessor<>(eventSender::send, 2);
 
         Serde<Void> keySerde = new VoidSerde();
 
@@ -29,16 +28,7 @@ public class ElasticSearchSink {
 
         StreamsBuilder streamsBuilder = new StreamsBuilder();
         streamsBuilder.<Void, Event>stream("test-elastic-sink", Consumed.with(keySerde, valueSerde))
-                .foreach((key, value) -> {
-                    try {
-                        System.out.println("TS: " + value.getTimestamp());
-                        bulkProcessor.add(value);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-
-
+                .process(() -> new BulkProcessor<>(eventSender::send, 2));
 
         this.kafkaStreams = new KafkaStreams(streamsBuilder.build(), properties);
     }

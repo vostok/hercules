@@ -3,8 +3,12 @@ package ru.kontur.vostok.hercules.elasticsearch.sink;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
+import ru.kontur.vostok.hercules.util.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,7 +20,9 @@ public class EventToElasticJsonConverterTest {
         EventBuilder event = new EventBuilder();
 
         event.setVersion(1);
-        event.setTimestamp(1528955984659L);
+        Instant instant = LocalDateTime.of(2018, 6, 14, 12, 15, 0).toInstant(ZoneOffset.UTC).plusNanos(123456789);
+
+        event.setTimestamp(instant.getEpochSecond() * TimeUtil.NANOS_IN_SECOND + instant.getNano());
 
         event.setTag("Byte sample", Variant.ofByte((byte) 127));
         event.setTag("Short sample", Variant.ofShort((short) 10_000));
@@ -35,7 +41,7 @@ public class EventToElasticJsonConverterTest {
 
         assertEquals(
                 "{" +
-                        "\"@timestamp\":1528955984659," +
+                        "\"@timestamp\":\"2018-06-14T12:15:00.123456789Z\"," +
                         "\"Byte sample\":127," +
                         "\"Short sample\":10000," +
                         "\"Int sample\":123456789," +

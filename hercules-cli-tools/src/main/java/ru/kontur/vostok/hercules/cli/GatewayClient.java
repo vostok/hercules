@@ -26,7 +26,7 @@ public class GatewayClient {
 
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
-        eventBuilder.setTimestamp(System.currentTimeMillis());
+        eventBuilder.setTimestamp(System.nanoTime());
         eventBuilder.setTag("sample-tag", Variant.ofString("sample value"));
         eventBuilder.setTag("sample-long", Variant.ofLong(123L));
         eventBuilder.setTag("sample-flag", Variant.ofFlag(true));

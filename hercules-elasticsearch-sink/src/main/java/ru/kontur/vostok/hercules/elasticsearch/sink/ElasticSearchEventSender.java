@@ -26,7 +26,7 @@ public class ElasticSearchEventSender implements AutoCloseable {
         ).build();
     }
 
-    public void send(Collection<Event> events) {
+    public void send(Collection<BulkProcessor.Entry<Void, Event>> events) {
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream(2048); // FIXME: choose appropriate size
         writeEventRecords(stream, events);
@@ -49,11 +49,11 @@ public class ElasticSearchEventSender implements AutoCloseable {
         restClient.close();
     }
 
-    private void writeEventRecords(OutputStream stream, Collection<Event> events) {
-        events.forEach(event -> {
+    private void writeEventRecords(OutputStream stream, Collection<BulkProcessor.Entry<Void, Event>> events) {
+        events.forEach(entry -> {
             writeEmptyIndex(stream);
             writeNewLine(stream);
-            EventToElasticJsonConverter.formatEvent(stream, event);
+            EventToElasticJsonConverter.formatEvent(stream, entry.getValue());
             writeNewLine(stream);
         });
     }
