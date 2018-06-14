@@ -30,8 +30,11 @@ public class GatewayClient {
         eventBuilder.setTimestamp(System.currentTimeMillis());
         eventBuilder.setTag("sample-tag", new Variant(Type.STRING, "sample value"));
         eventBuilder.setTag("sample-long", new Variant(Type.LONG, 123L));
+        eventBuilder.setTag("sample-flag", new Variant(Type.FLAG, true));
+        eventBuilder.setTag("sample-float", new Variant(Type.FLOAT, 0.123456789f));
+        eventBuilder.setTag("sample-double", new Variant(Type.DOUBLE, 0.123456789));
 
-        sendSingleEvent("gateway-test", eventBuilder.build());
+        sendSingleEvent("test-elastic-sink", eventBuilder.build());
 
         Unirest.shutdown();
     }

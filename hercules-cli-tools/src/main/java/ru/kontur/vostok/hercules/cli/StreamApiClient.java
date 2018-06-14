@@ -28,7 +28,7 @@ public class StreamApiClient {
 
         server = "http://" + properties.getProperty("server");
 
-        getStreamContent("gateway-test", 10);
+        getStreamContent("test-elastic-sink", 10);
 
         Unirest.shutdown();
     }

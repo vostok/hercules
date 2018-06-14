@@ -15,7 +15,7 @@ public class EventDeserializer implements Deserializer<Event> {
     private final Set<String> tags;
 
     public EventDeserializer() {
-        this.tags = Collections.emptySet();
+        this.tags = null;
     }
 
     public EventDeserializer(Set<String> tags) {
