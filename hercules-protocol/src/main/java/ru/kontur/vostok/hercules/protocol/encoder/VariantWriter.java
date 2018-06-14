@@ -20,8 +20,8 @@ public class VariantWriter {
             case FLAG: encoder.writeFlag((boolean) value); break;
             case FLOAT: encoder.writeFloat((float) value); break;
             case DOUBLE: encoder.writeDouble((double) value); break;
-            case STRING: encoder.writeString((String) value); break;
-            case TEXT: encoder.writeText((String) value); break;
+            case STRING: encoder.writeBytesAsString((byte[]) value); break;
+            case TEXT: encoder.writeBytesAsText((byte[]) value); break;
 
             case RESERVED: throw typeNotSupported(type);
             default: throw typeNotSupported(type);

@@ -11,6 +11,7 @@
 
     <artifactId>hercules-elasticsearch-sink</artifactId>
     <dependencies>
+
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-meta</artifactId>
@@ -29,7 +30,11 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-kafka-util</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+
     </dependencies>
-
-
 </project>

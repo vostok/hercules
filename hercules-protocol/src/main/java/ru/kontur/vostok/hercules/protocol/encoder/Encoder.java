@@ -77,8 +77,12 @@ public class Encoder {
     }
 
     public void writeString(String s) {
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        writeBytesAsString(bytes);
+    }
+
+    public void writeBytesAsString(byte[] bytes) {
         try {
-            byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             writeVectorLength(bytes.length, "String bytes length must be lesser than 256");
             stream.write(bytes);
         } catch (IOException e) {
@@ -87,8 +91,12 @@ public class Encoder {
     }
 
     public void writeText(String s) {
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        writeBytesAsText(bytes);
+    }
+
+    public void writeBytesAsText(byte[] bytes) {
         try {
-            byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             writeArrayLength(bytes.length);
             stream.write(bytes);
         } catch (IOException e) {

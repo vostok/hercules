@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.cli;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
@@ -28,11 +27,11 @@ public class GatewayClient {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
         eventBuilder.setTimestamp(System.currentTimeMillis());
-        eventBuilder.setTag("sample-tag", new Variant(Type.STRING, "sample value"));
-        eventBuilder.setTag("sample-long", new Variant(Type.LONG, 123L));
-        eventBuilder.setTag("sample-flag", new Variant(Type.FLAG, true));
-        eventBuilder.setTag("sample-float", new Variant(Type.FLOAT, 0.123456789f));
-        eventBuilder.setTag("sample-double", new Variant(Type.DOUBLE, 0.123456789));
+        eventBuilder.setTag("sample-tag", Variant.ofString("sample value"));
+        eventBuilder.setTag("sample-long", Variant.ofLong(123L));
+        eventBuilder.setTag("sample-flag", Variant.ofFlag(true));
+        eventBuilder.setTag("sample-float", Variant.ofFloat(0.123456789f));
+        eventBuilder.setTag("sample-double", Variant.ofDouble(0.123456789));
 
         sendSingleEvent("test-elastic-sink", eventBuilder.build());
 

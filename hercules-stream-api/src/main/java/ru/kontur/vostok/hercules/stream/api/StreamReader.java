@@ -111,7 +111,7 @@ public class StreamReader {
     }
 
     private static String generateUniqueName() {
-        return ThrowableUtil.wrapException(() -> InetAddress.getLocalHost().getHostName() + ":" +
+        return ThrowableUtil.toUnchecked(() -> InetAddress.getLocalHost().getHostName() + ":" +
                 Thread.currentThread().getName() + ":" + System.currentTimeMillis()
         );
     }
