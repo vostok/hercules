@@ -5,6 +5,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkProcessor;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.io.ByteArrayOutputStream;

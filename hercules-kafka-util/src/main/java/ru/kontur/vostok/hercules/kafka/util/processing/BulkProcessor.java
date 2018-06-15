@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.elasticsearch.sink;
+package ru.kontur.vostok.hercules.kafka.util.processing;
 
 import org.apache.kafka.streams.processor.AbstractProcessor;
 import org.apache.kafka.streams.processor.Cancellable;
