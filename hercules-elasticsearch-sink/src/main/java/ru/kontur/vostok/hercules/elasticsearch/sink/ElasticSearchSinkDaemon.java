@@ -40,7 +40,7 @@ public class ElasticSearchSinkDaemon {
 
         //TODO: Validate sinkProperties
         try {
-            elasticSearchSink = new ElasticSearchSink(stream.get(), streamProperties, elasticsearchProperties);
+            elasticSearchSink = new ElasticSearchSink(stream.get(), streamProperties, new ElasticSearchEventSender(elasticsearchProperties));
             elasticSearchSink.start();
         } catch (Throwable e) {
             e.printStackTrace();

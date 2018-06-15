@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.cli;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
-import com.sun.rowset.internal.WebRowSetXmlReader;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;

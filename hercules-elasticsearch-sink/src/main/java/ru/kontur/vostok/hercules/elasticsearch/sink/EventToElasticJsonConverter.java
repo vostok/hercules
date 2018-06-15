@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.util.TimeUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
