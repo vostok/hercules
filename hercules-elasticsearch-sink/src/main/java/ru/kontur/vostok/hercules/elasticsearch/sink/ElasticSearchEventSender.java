@@ -22,10 +22,12 @@ public class ElasticSearchEventSender implements AutoCloseable {
     private static final byte[] EMPTY_INDEX = "{\"index\":{}}".getBytes(StandardCharsets.UTF_8);
 
     private final RestClient restClient;
+    private final String indexName;
 
     public ElasticSearchEventSender(Properties elasticsearchProperties) {
         HttpHost[] hosts = parseHosts(elasticsearchProperties.getProperty("server"));
         this.restClient = RestClient.builder(hosts).build();
+        this.indexName = elasticsearchProperties.getProperty("index.name");
     }
 
     public void send(Collection<BulkProcessor.Entry<Void, Event>> events) {
@@ -38,7 +40,7 @@ public class ElasticSearchEventSender implements AutoCloseable {
 
         Response response = toUnchecked(() -> restClient.performRequest(
                 "POST",
-                "/test-elastic-sink/_doc/_bulk",
+                "/" + indexName + "/_doc/_bulk",
                 Collections.emptyMap(),
                 new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
 

@@ -9,6 +9,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidSerde;
+import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.util.Properties;
@@ -18,7 +19,7 @@ public class ElasticSearchSink {
 
     private final KafkaStreams kafkaStreams;
 
-    public ElasticSearchSink(Properties streamsProperties, Properties elasticsearchProperties) {
+    public ElasticSearchSink(Stream stream, Properties streamsProperties, Properties elasticsearchProperties) {
         ElasticSearchEventSender eventSender = new ElasticSearchEventSender(elasticsearchProperties);
 
         Serde<Void> keySerde = new VoidSerde();
@@ -28,7 +29,7 @@ public class ElasticSearchSink {
         Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
 
         StreamsBuilder streamsBuilder = new StreamsBuilder();
-        streamsBuilder.<Void, Event>stream("test-elastic-sink", Consumed.with(keySerde, valueSerde))
+        streamsBuilder.<Void, Event>stream(stream.getName(), Consumed.with(keySerde, valueSerde))
                 .process(() -> new BulkProcessor<>(eventSender::send, 100_000, 1000));
 
         this.kafkaStreams = new KafkaStreams(streamsBuilder.build(), streamsProperties);
