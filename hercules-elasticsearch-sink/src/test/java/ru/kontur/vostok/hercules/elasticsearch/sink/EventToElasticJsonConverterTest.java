@@ -34,10 +34,7 @@ public class EventToElasticJsonConverterTest {
         event.setTag("Flag sample false", Variant.ofFlag(false));
         event.setTag("String sample", Variant.ofString("Test string with json inside {\"a\": {\"b\": [123, true, \"str\"]}}"));
         event.setTag("Text sample", Variant.ofText("Test string with json inside {\"a\": {\"b\": [123, true, \"str\"]}}"));
-
-
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        EventToElasticJsonConverter.formatEvent(stream, event.build());
+        event.setTag("Array sample", Variant.ofIntegerArray(new int[]{1, 2, 3}));
 
         assertEquals(
                 "{" +
@@ -51,10 +48,115 @@ public class EventToElasticJsonConverterTest {
                         "\"Flag sample\":true," +
                         "\"Flag sample false\":false," +
                         "\"String sample\":\"Test string with json inside {\\\"a\\\": {\\\"b\\\": [123, true, \\\"str\\\"]}}\"," +
-                        "\"Text sample\":\"Test string with json inside {\\\"a\\\": {\\\"b\\\": [123, true, \\\"str\\\"]}}\"" +
+                        "\"Text sample\":\"Test string with json inside {\\\"a\\\": {\\\"b\\\": [123, true, \\\"str\\\"]}}\"," +
+                        "\"Array sample\":[1,2,3]" +
                         "}",
-                stream.toString()
-        );
+                builderToJson(event)
 
+        );
+    }
+
+    @Test
+    public void shouldConvertEventWithByteVariant() {
+        assertVariantConverted("123", Variant.ofByte((byte) 123));
+    }
+
+    @Test
+    public void shouldConvertEventWithShortVariant() {
+        assertVariantConverted("12345", Variant.ofShort((short) 12_345));
+    }
+
+    @Test
+    public void shouldConvertEventWithIntegerVariant() {
+        assertVariantConverted("123456789", Variant.ofInteger(123_456_789));
+    }
+
+    @Test
+    public void shouldConvertEventWithLongVariant() {
+        assertVariantConverted("123456789", Variant.ofLong(123_456_789L));
+    }
+
+    @Test
+    public void shouldConvertEventWithFloatVariant() {
+        assertVariantConverted("0.123456", Variant.ofFloat(0.123456f));
+    }
+
+    @Test
+    public void shouldConvertEventWithDoubleVariant() {
+        assertVariantConverted("0.123456789", Variant.ofDouble(0.123456789));
+    }
+
+    @Test
+    public void shouldConvertEventWithFlagVariant() {
+        assertVariantConverted("true", Variant.ofFlag(true));
+        assertVariantConverted("false", Variant.ofFlag(false));
+    }
+
+    @Test
+    public void shouldConvertEventWithStringVariant() {
+        assertVariantConverted("\"Яюё\"", Variant.ofString("Яюё"));
+    }
+
+    @Test
+    public void shouldConvertEventWithTextVariant() {
+        assertVariantConverted("\"Яюё\"", Variant.ofText("Яюё"));
+    }
+
+    @Test
+    public void shouldConvertEventWithByteArrayVariant() {
+        assertVariantConverted("[1,2,3]", Variant.ofByteArray(new byte[]{1, 2, 3}));
+    }
+
+    @Test
+    public void shouldConvertEventWithShortArrayVariant() {
+        assertVariantConverted("[1,2,3]", Variant.ofShortArray(new short[]{1, 2, 3}));
+    }
+
+    @Test
+    public void shouldConvertEventWithIntegerArrayVariant() {
+        assertVariantConverted("[1,2,3]", Variant.ofIntegerArray(new int[]{1, 2, 3}));
+    }
+
+    @Test
+    public void shouldConvertEventWithLongArrayVariant() {
+        assertVariantConverted("[1,2,3]", Variant.ofLongArray(new long[]{1, 2, 3}));
+    }
+
+    @Test
+    public void shouldConvertEventWithFloatArrayVariant() {
+        assertVariantConverted("[1.23,2.34]", Variant.ofFloatArray(new float[]{1.23f, 2.34f}));
+    }
+
+    @Test
+    public void shouldConvertEventWithDoubleArrayVariant() {
+        assertVariantConverted("[1.23,2.34]", Variant.ofDoubleArray(new double[]{1.23, 2.34}));
+    }
+
+    @Test
+    public void shouldConvertEventWithFlagArrayVariant() {
+        assertVariantConverted("[true,false]", Variant.ofFlagArray(new boolean[]{true, false}));
+    }
+
+    @Test
+    public void shouldConvertEventWithStringArrayVariant() {
+        assertVariantConverted("[\"Абв\",\"Ежз\"]", Variant.ofStringArray(new String[]{"Абв", "Ежз"}));
+    }
+
+    @Test
+    public void shouldConvertEventWithTextArrayVariant() {
+        assertVariantConverted("[\"Абв\",\"Ежз\"]", Variant.ofTextArray(new String[]{"Абв", "Ежз"}));
+    }
+
+    private void assertVariantConverted(String convertedVariant, Variant variant) {
+        EventBuilder builder = new EventBuilder();
+        builder.setTag("v", variant);
+
+        assertEquals("{\"@timestamp\":\"1970-01-01T00:00:00Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
+    }
+
+    private static String builderToJson(EventBuilder builder) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        EventToElasticJsonConverter.formatEvent(stream, builder.build());
+        return stream.toString();
     }
 }

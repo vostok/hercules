@@ -47,13 +47,6 @@ public class EventToElasticJsonConverter {
 
     private static void writeVariantField(JsonGenerator generator, Variant variant) throws IOException {
         switch (variant.getType()) {
-            case TEXT:
-            case STRING:
-                generator.writeString(new String((byte[]) variant.getValue(), StandardCharsets.UTF_8));
-                break;
-            case FLAG:
-                generator.writeBoolean((boolean) variant.getValue());
-                break;
             case BYTE:
                 generator.writeNumber((byte) variant.getValue());
                 break;
@@ -72,6 +65,80 @@ public class EventToElasticJsonConverter {
             case DOUBLE:
                 generator.writeNumber((double) variant.getValue());
                 break;
+            case FLAG:
+                generator.writeBoolean((boolean) variant.getValue());
+                break;
+            case TEXT:
+            case STRING:
+                generator.writeString(new String((byte[]) variant.getValue(), StandardCharsets.UTF_8));
+                break;
+            case BYTE_VECTOR:
+            case BYTE_ARRAY:
+                generator.writeStartArray();
+                for(byte b : (byte[]) variant.getValue()) {
+                    generator.writeNumber(b);
+                }
+                generator.writeEndArray();
+                break;
+            case SHORT_VECTOR:
+            case SHORT_ARRAY:
+                generator.writeStartArray();
+                for (short s : (short[]) variant.getValue()) {
+                    generator.writeNumber(s);
+                }
+                generator.writeEndArray();
+                break;
+            case INTEGER_VECTOR:
+            case INTEGER_ARRAY:
+                generator.writeStartArray();
+                for (int i : (int[]) variant.getValue()) {
+                    generator.writeNumber(i);
+                }
+                generator.writeEndArray();
+                break;
+            case LONG_VECTOR:
+            case LONG_ARRAY:
+                generator.writeStartArray();
+                for (long l : (long[]) variant.getValue()) {
+                    generator.writeNumber(l);
+                }
+                generator.writeEndArray();
+                break;
+            case FLOAT_VECTOR:
+            case FLOAT_ARRAY:
+                generator.writeStartArray();
+                for (float f : (float[]) variant.getValue()) {
+                    generator.writeNumber(f);
+                }
+                generator.writeEndArray();
+                break;
+            case DOUBLE_VECTOR:
+            case DOUBLE_ARRAY:
+                generator.writeStartArray();
+                for (double d : (double[]) variant.getValue()) {
+                    generator.writeNumber(d);
+                }
+                generator.writeEndArray();
+                break;
+            case FLAG_VECTOR:
+            case FLAG_ARRAY:
+                generator.writeStartArray();
+                for (boolean b : (boolean[]) variant.getValue()) {
+                    generator.writeBoolean(b);
+                }
+                generator.writeEndArray();
+                break;
+            case TEXT_VECTOR:
+            case TEXT_ARRAY:
+            case STRING_VECTOR:
+            case STRING_ARRAY:
+                generator.writeStartArray();
+                for (byte[] bytes : (byte[][]) variant.getValue()) {
+                    generator.writeString(new String(bytes, StandardCharsets.UTF_8));
+                }
+                generator.writeEndArray();
+                break;
+            case RESERVED:
             default:
                 throw new RuntimeException("Not implemented logic");
         }
