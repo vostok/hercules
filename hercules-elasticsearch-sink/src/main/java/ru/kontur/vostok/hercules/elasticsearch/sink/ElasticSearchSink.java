@@ -18,8 +18,8 @@ public class ElasticSearchSink {
 
     private final KafkaStreams kafkaStreams;
 
-    public ElasticSearchSink(Properties properties) {
-        ElasticSearchEventSender eventSender = new ElasticSearchEventSender();
+    public ElasticSearchSink(Properties streamsProperties, Properties elasticsearchProperties) {
+        ElasticSearchEventSender eventSender = new ElasticSearchEventSender(elasticsearchProperties);
 
         Serde<Void> keySerde = new VoidSerde();
 
@@ -31,7 +31,7 @@ public class ElasticSearchSink {
         streamsBuilder.<Void, Event>stream("test-elastic-sink", Consumed.with(keySerde, valueSerde))
                 .process(() -> new BulkProcessor<>(eventSender::send, 100_000, 1000));
 
-        this.kafkaStreams = new KafkaStreams(streamsBuilder.build(), properties);
+        this.kafkaStreams = new KafkaStreams(streamsBuilder.build(), streamsProperties);
     }
 
     public void start() {

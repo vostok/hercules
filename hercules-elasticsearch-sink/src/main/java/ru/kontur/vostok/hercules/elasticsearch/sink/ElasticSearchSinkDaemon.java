@@ -1,19 +1,14 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
-import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
-import ru.kontur.vostok.hercules.meta.stream.Stream;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 public class ElasticSearchSinkDaemon {
-    private static final Object lock = new Object();
 
     private static CuratorClient curatorClient;
     private static ElasticSearchSink elasticSearchSink;
@@ -24,11 +19,11 @@ public class ElasticSearchSinkDaemon {
         Map<String, String> parameters = ArgsParser.parse(args);
 
         Properties streamProperties = PropertiesUtil.readProperties(parameters.getOrDefault("stream.properties", "stream.properties"));
+        Properties elasticsearchProperties = PropertiesUtil.readProperties(parameters.getOrDefault("elasticsearch.properties", "elasticsearch.properties"));
 
         //TODO: Validate sinkProperties
-
         try {
-            elasticSearchSink = new ElasticSearchSink(streamProperties);
+            elasticSearchSink = new ElasticSearchSink(streamProperties, elasticsearchProperties);
             elasticSearchSink.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -38,12 +33,12 @@ public class ElasticSearchSinkDaemon {
 
         Runtime.getRuntime().addShutdownHook(new Thread(ElasticSearchSinkDaemon::shutdown));
 
-        System.out.println("Stream Sink Daemon started for " + (System.currentTimeMillis() - start) + " millis");
+        System.out.println("Elasticsearch Sink Daemon started for " + (System.currentTimeMillis() - start) + " millis");
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        System.out.println("Prepare Stream Sink Daemon to be shutdown");
+        System.out.println("Prepare Elasticsearch Sink Daemon to be shutdown");
 
         try {
             if (elasticSearchSink != null) {

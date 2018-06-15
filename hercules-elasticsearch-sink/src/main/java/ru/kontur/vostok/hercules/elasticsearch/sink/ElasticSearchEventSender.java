@@ -12,21 +12,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 public class ElasticSearchEventSender implements AutoCloseable {
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
-
     private static final byte[] EMPTY_INDEX = "{\"index\":{}}".getBytes(StandardCharsets.UTF_8);
 
     private final RestClient restClient;
 
-    public ElasticSearchEventSender() {
-        this.restClient = RestClient.builder(
-                new HttpHost("localhost", 9200, "http")
-        ).build();
+    public ElasticSearchEventSender(Properties elasticsearchProperties) {
+        HttpHost[] hosts = parseHosts(elasticsearchProperties.getProperty("server"));
+        this.restClient = RestClient.builder(hosts).build();
     }
 
     public void send(Collection<BulkProcessor.Entry<Void, Event>> events) {
@@ -70,5 +69,11 @@ public class ElasticSearchEventSender implements AutoCloseable {
 
     private static void writeNewLine(OutputStream stream) {
         toUnchecked(() -> stream.write('\n'));
+    }
+
+    private static HttpHost[] parseHosts(String server) {
+        return Arrays.stream(server.split(","))
+                .map(HttpHost::create)
+                .toArray(HttpHost[]::new);
     }
 }
