@@ -27,6 +27,9 @@ public class ElasticSearchEventSender implements AutoCloseable {
     }
 
     public void send(Collection<BulkProcessor.Entry<Void, Event>> events) {
+        if (events.size() == 0) {
+            return;
+        }
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream(2048); // FIXME: choose appropriate size
         writeEventRecords(stream, events);

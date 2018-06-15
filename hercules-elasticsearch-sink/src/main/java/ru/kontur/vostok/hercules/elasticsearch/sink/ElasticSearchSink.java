@@ -28,7 +28,7 @@ public class ElasticSearchSink {
 
         StreamsBuilder streamsBuilder = new StreamsBuilder();
         streamsBuilder.<Void, Event>stream("test-elastic-sink", Consumed.with(keySerde, valueSerde))
-                .process(() -> new BulkProcessor<>(eventSender::send, 2));
+                .process(() -> new BulkProcessor<>(eventSender::send, 100_000, 1000));
 
         this.kafkaStreams = new KafkaStreams(streamsBuilder.build(), properties);
     }
