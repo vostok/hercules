@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
+import ru.kontur.vostok.hercules.protocol.VectorConstants;
 import ru.kontur.vostok.hercules.protocol.decoder.SizeOf;
 
 import java.io.ByteArrayOutputStream;
@@ -83,7 +84,7 @@ public class Encoder {
 
     public void writeBytesAsString(byte[] bytes) {
         try {
-            writeVectorLength(bytes.length, "String bytes length must be lesser than 256");
+            writeVectorLength(bytes.length, VectorConstants.STRING_LENGTH_ERROR_MESSAGE);
             stream.write(bytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -227,10 +228,24 @@ public class Encoder {
         }
     }
 
+    public void writeBytesAsStringArray(byte[][] strings) {
+        writeArrayLength(strings.length);
+        for (byte[] string : strings) {
+            writeBytesAsString(string);
+        }
+    }
+
     public void writeStringVector(String[] vector) {
         writeVectorLength(vector.length);
         for (String s : vector) {
             writeString(s);
+        }
+    }
+
+    public void writeBytesAsStringVector(byte[][] strings) {
+        writeVectorLength(strings.length);
+        for (byte[] string : strings) {
+            writeBytesAsString(string);
         }
     }
 
@@ -241,10 +256,24 @@ public class Encoder {
         }
     }
 
+    public void writeBytesAsTextArray(byte[][] texts) {
+        writeArrayLength(texts.length);
+        for (byte[] text : texts) {
+            writeBytesAsText(text);
+        }
+    }
+
     public void writeTextVector(String[] vector) {
         writeVectorLength(vector.length);
         for (String s : vector) {
             writeText(s);
+        }
+    }
+
+    public void writeBytesAsTextVector(byte[][] texts) {
+        writeVectorLength(texts.length);
+        for (byte[] text : texts) {
+            writeBytesAsText(text);
         }
     }
 
@@ -266,7 +295,7 @@ public class Encoder {
     }
 
     private void writeVectorLength(int length, String errorMessage) {
-        if (length < 256) {
+        if (length < VectorConstants.VECTOR_MAX_LENGTH) {
             writeUnsignedByte(length);
         } else {
             throw new IllegalArgumentException(errorMessage);
@@ -274,6 +303,6 @@ public class Encoder {
     }
 
     private void writeVectorLength(int length) {
-        writeVectorLength(length, "Vector length must be lesser than 256 items");
+        writeVectorLength(length, VectorConstants.VECTOR_LENGTH_ERROR_MESSAGE);
     }
 }

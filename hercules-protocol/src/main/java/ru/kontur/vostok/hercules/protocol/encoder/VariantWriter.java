@@ -23,9 +23,28 @@ public class VariantWriter {
             case STRING: encoder.writeBytesAsString((byte[]) value); break;
             case TEXT: encoder.writeBytesAsText((byte[]) value); break;
 
+            case BYTE_VECTOR: encoder.writeByteVector((byte[]) value); break;
+            case SHORT_VECTOR: encoder.writeShortVector((short[]) value); break;
+            case INTEGER_VECTOR: encoder.writeIntegerVector((int[]) value); break;
+            case LONG_VECTOR: encoder.writeLongVector((long[]) value); break;
+            case FLOAT_VECTOR: encoder.writeFloatVector((float[]) value); break;
+            case DOUBLE_VECTOR: encoder.writeDoubleVector((double[]) value); break;
+            case FLAG_VECTOR: encoder.writeFlagVector((boolean[]) value); break;
+            case STRING_VECTOR: encoder.writeBytesAsStringVector((byte[][]) value); break;
+            case TEXT_VECTOR: encoder.writeBytesAsTextVector((byte[][]) value); break;
+
+            case BYTE_ARRAY: encoder.writeByteArray((byte[]) value); break;
+            case SHORT_ARRAY: encoder.writeShortArray((short[]) value); break;
+            case INTEGER_ARRAY: encoder.writeIntegerArray((int[]) value); break;
+            case LONG_ARRAY: encoder.writeLongArray((long[]) value); break;
+            case FLOAT_ARRAY: encoder.writeFloatArray((float[]) value); break;
+            case DOUBLE_ARRAY: encoder.writeDoubleArray((double[]) value); break;
+            case FLAG_ARRAY: encoder.writeFlagArray((boolean[]) value); break;
+            case STRING_ARRAY: encoder.writeBytesAsStringArray((byte[][]) value); break;
+            case TEXT_ARRAY: encoder.writeBytesAsTextArray((byte[][]) value); break;
+
             case RESERVED: throw typeNotSupported(type);
             default: throw typeNotSupported(type);
-            // TODO: Make the rest of table and unit tests
         }
     }
 
