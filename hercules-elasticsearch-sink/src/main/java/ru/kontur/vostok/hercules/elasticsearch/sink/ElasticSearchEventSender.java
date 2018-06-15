@@ -16,7 +16,9 @@ import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked
 
 public class ElasticSearchEventSender implements AutoCloseable {
 
-    private static final String EMPTY_INDEX = "{\"index\":{}}";
+    private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
+
+    private static final byte[] EMPTY_INDEX = "{\"index\":{}}".getBytes(StandardCharsets.UTF_8);
 
     private final RestClient restClient;
 
@@ -31,7 +33,7 @@ public class ElasticSearchEventSender implements AutoCloseable {
             return;
         }
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(2048); // FIXME: choose appropriate size
+        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
         writeEventRecords(stream, events);
 
         Response response = toUnchecked(() -> restClient.performRequest(
@@ -62,7 +64,7 @@ public class ElasticSearchEventSender implements AutoCloseable {
     }
 
     private static void writeEmptyIndex(OutputStream stream) {
-        toUnchecked(() -> stream.write(EMPTY_INDEX.getBytes(StandardCharsets.UTF_8)));
+        toUnchecked(() -> stream.write(EMPTY_INDEX));
     }
 
     private static void writeNewLine(OutputStream stream) {
