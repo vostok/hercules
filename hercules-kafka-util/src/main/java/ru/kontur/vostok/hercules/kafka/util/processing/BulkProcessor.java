@@ -85,4 +85,10 @@ public class BulkProcessor<K, V> extends AbstractProcessor<K, V> {
             }
         }
     }
+
+    @Override
+    public void close() {
+        super.close();
+        cancelProcessing();
+    }
 }
