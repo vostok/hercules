@@ -44,10 +44,10 @@ public class ElasticSearchEventSender implements AutoCloseable {
                 new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
 
         ));
-        // FIXME тут все непросто, ошибки каждой записи надо обрабатывать отдельно
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new RuntimeException("Bad response");
         }
+        BulkResponseHandler.process(response.getEntity());
     }
 
     @Override

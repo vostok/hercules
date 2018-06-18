@@ -29,7 +29,8 @@ public class GatewayClient {
             sendEvents("test-elastic-sink", generateEvents(10000));
         }*/
 
-        sendSingleEvent("test-elastic-sink", generateEvent());
+        //sendSingleEvent("test-elastic-sink", generateEvent());
+        sendEvents("test-elastic-sink", generateEvents(10));
 
         Unirest.shutdown();
     }

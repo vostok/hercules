@@ -295,7 +295,7 @@ public class Encoder {
     }
 
     private void writeVectorLength(int length, String errorMessage) {
-        if (length < VectorConstants.VECTOR_MAX_LENGTH) {
+        if (length < VectorConstants.VECTOR_LENGTH_EXCEEDED) {
             writeUnsignedByte(length);
         } else {
             throw new IllegalArgumentException(errorMessage);

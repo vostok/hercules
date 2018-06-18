@@ -168,13 +168,13 @@ public class Variant {
     }
 
     private static void checkVectorLength(int length) {
-        if (VectorConstants.VECTOR_MAX_LENGTH <= length) {
+        if (VectorConstants.VECTOR_LENGTH_EXCEEDED <= length) {
             throw new IllegalArgumentException(VectorConstants.VECTOR_LENGTH_ERROR_MESSAGE);
         }
     }
 
     private static void checkStringBytesLength(byte[] bytes) {
-        if (VectorConstants.VECTOR_MAX_LENGTH <= bytes.length) {
+        if (VectorConstants.VECTOR_LENGTH_EXCEEDED <= bytes.length) {
             throw new IllegalArgumentException(VectorConstants.STRING_LENGTH_ERROR_MESSAGE);
         }
     }
