@@ -2,15 +2,13 @@ package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpEntity;
-import ru.kontur.vostok.hercules.util.io.StreamUtil;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -47,6 +45,7 @@ public class BulkResponseHandler {
             if (Objects.nonNull(nestedError)) {
                 processError(nestedError, id);
             } else {
+                // TODO: Format log when logging will be added
                 String type = Optional.ofNullable(error.get("type")).map(JsonNode::asText).orElse("");
                 String reason = Optional.ofNullable(error.get("reason")).map(JsonNode::asText).orElse("");
                 System.out.println(String.format("Bulk processing error: id=%s, type=%s, reason=%s", id, type, reason).replaceAll("[\\r\\n]+", ""));

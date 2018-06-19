@@ -21,13 +21,19 @@ public class ElasticSearchSink {
 
     private static final String ID_PREFIX = "hercules.elasticsearch-sink.stream.";
 
+    public static final String PUNCTUATION_INTERVAL = "punctuation.interval";
+    public static final int PUNCTUATION_INTERVAL_DEFAULT_VALUE = 1_000;
+    
+    public static final String BATCH_SIZE = "batch.size";
+    public static final int BATCH_SIZE_DEFAULT_VALUE = 100_000;
+
     private final KafkaStreams kafkaStreams;
 
     public ElasticSearchSink(Stream stream, Properties streamsProperties, ElasticSearchEventSender eventSender) {
         streamsProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, ID_PREFIX + stream.getName());
 
-        int punctuationInterval = PropertiesUtil.get(streamsProperties, "punctuation.interval", 1_000);
-        int batchZie = PropertiesUtil.get(streamsProperties, "batch.size", 100_000);
+        int punctuationInterval = PropertiesUtil.get(streamsProperties, PUNCTUATION_INTERVAL, PUNCTUATION_INTERVAL_DEFAULT_VALUE);
+        int batchZie = PropertiesUtil.get(streamsProperties, BATCH_SIZE, BATCH_SIZE_DEFAULT_VALUE);
 
         Serde<Void> keySerde = new VoidSerde();
 
