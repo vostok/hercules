@@ -6,11 +6,13 @@ import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.util.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 import static org.junit.Assert.assertEquals;
+import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 public class EventToElasticJsonConverterTest {
 
@@ -157,6 +159,6 @@ public class EventToElasticJsonConverterTest {
     private static String builderToJson(EventBuilder builder) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         EventToElasticJsonConverter.formatEvent(stream, builder.build());
-        return stream.toString();
+        return toUnchecked(() -> stream.toString(StandardCharsets.UTF_8.name()));
     }
 }
