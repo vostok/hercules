@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Map;
 
 import static ru.kontur.vostok.hercules.util.TimeUtil.NANOS_IN_MILLIS;
@@ -19,10 +21,50 @@ import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked
 
 public class EventToElasticJsonConverter {
 
+    @FunctionalInterface
+    private interface VariantValueToJsonWriter {
+        void write(JsonGenerator generator, Object value) throws IOException;
+    }
+
     private static final String TIMESTAMP_FIELD = "@timestamp";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME.withZone(ZoneOffset.UTC);
 
     private static final JsonFactory FACTORY = new JsonFactory();
+
+    private static final VariantValueToJsonWriter[] toJsonWriters = new VariantValueToJsonWriter[256];
+    static {
+        Arrays.setAll(toJsonWriters, idx -> (g, v) -> {throw new IllegalArgumentException("Not implemented for index " + idx);});
+
+        toJsonWriters[Type.BYTE.value] = EventToElasticJsonConverter::writeByte;
+        toJsonWriters[Type.SHORT.value] = EventToElasticJsonConverter::writeShort;
+        toJsonWriters[Type.INTEGER.value] = EventToElasticJsonConverter::writeInteger;
+        toJsonWriters[Type.LONG.value] = EventToElasticJsonConverter::writeLong;
+        toJsonWriters[Type.FLAG.value] = EventToElasticJsonConverter::writeFlag;
+        toJsonWriters[Type.FLOAT.value] = EventToElasticJsonConverter::writeFloat;
+        toJsonWriters[Type.DOUBLE.value] = EventToElasticJsonConverter::writeDouble;
+        toJsonWriters[Type.STRING.value] = EventToElasticJsonConverter::writeStringOrText;
+        toJsonWriters[Type.TEXT.value] = EventToElasticJsonConverter::writeStringOrText;
+
+        toJsonWriters[Type.BYTE_VECTOR.value] = EventToElasticJsonConverter::writeByteArrayOrVector;
+        toJsonWriters[Type.SHORT_VECTOR.value] = EventToElasticJsonConverter::writeShortArrayOrVector;
+        toJsonWriters[Type.INTEGER_VECTOR.value] = EventToElasticJsonConverter::writeIntegerArrayOrVector;
+        toJsonWriters[Type.LONG_VECTOR.value] = EventToElasticJsonConverter::writeLongArrayOrVector;
+        toJsonWriters[Type.FLOAT_VECTOR.value] = EventToElasticJsonConverter::writeFloatArrayOrVector;
+        toJsonWriters[Type.DOUBLE_VECTOR.value] = EventToElasticJsonConverter::writeDoubleArrayOrVector;
+        toJsonWriters[Type.FLAG_VECTOR.value] = EventToElasticJsonConverter::writeFlagArrayOrVector;
+        toJsonWriters[Type.STRING_VECTOR.value] = EventToElasticJsonConverter::writeStringOrTextArrayOrVector;
+        toJsonWriters[Type.TEXT_VECTOR.value] = EventToElasticJsonConverter::writeStringOrTextArrayOrVector;
+
+        toJsonWriters[Type.BYTE_ARRAY.value] = EventToElasticJsonConverter::writeByteArrayOrVector;
+        toJsonWriters[Type.SHORT_ARRAY.value] = EventToElasticJsonConverter::writeShortArrayOrVector;
+        toJsonWriters[Type.INTEGER_ARRAY.value] = EventToElasticJsonConverter::writeIntegerArrayOrVector;
+        toJsonWriters[Type.LONG_ARRAY.value] = EventToElasticJsonConverter::writeLongArrayOrVector;
+        toJsonWriters[Type.FLOAT_ARRAY.value] = EventToElasticJsonConverter::writeFloatArrayOrVector;
+        toJsonWriters[Type.DOUBLE_ARRAY.value] = EventToElasticJsonConverter::writeDoubleArrayOrVector;
+        toJsonWriters[Type.FLAG_ARRAY.value] = EventToElasticJsonConverter::writeFlagArrayOrVector;
+        toJsonWriters[Type.STRING_ARRAY.value] = EventToElasticJsonConverter::writeStringOrTextArrayOrVector;
+        toJsonWriters[Type.TEXT_ARRAY.value] = EventToElasticJsonConverter::writeStringOrTextArrayOrVector;
+    }
 
 
     public static void formatEvent(OutputStream stream, Event event) {
@@ -45,102 +87,103 @@ public class EventToElasticJsonConverter {
     }
 
     private static void writeVariantField(JsonGenerator generator, Variant variant) throws IOException {
-        switch (variant.getType()) {
-            case BYTE:
-                generator.writeNumber((byte) variant.getValue());
-                break;
-            case SHORT:
-                generator.writeNumber((short) variant.getValue());
-                break;
-            case INTEGER:
-                generator.writeNumber((int) variant.getValue());
-                break;
-            case LONG:
-                generator.writeNumber((long) variant.getValue());
-                break;
-            case FLOAT:
-                generator.writeNumber((float) variant.getValue());
-                break;
-            case DOUBLE:
-                generator.writeNumber((double) variant.getValue());
-                break;
-            case FLAG:
-                generator.writeBoolean((boolean) variant.getValue());
-                break;
-            case TEXT:
-            case STRING:
-                generator.writeString(new String((byte[]) variant.getValue(), StandardCharsets.UTF_8));
-                break;
-            case BYTE_VECTOR:
-            case BYTE_ARRAY:
-                generator.writeStartArray();
-                for(byte b : (byte[]) variant.getValue()) {
-                    generator.writeNumber(b);
-                }
-                generator.writeEndArray();
-                break;
-            case SHORT_VECTOR:
-            case SHORT_ARRAY:
-                generator.writeStartArray();
-                for (short s : (short[]) variant.getValue()) {
-                    generator.writeNumber(s);
-                }
-                generator.writeEndArray();
-                break;
-            case INTEGER_VECTOR:
-            case INTEGER_ARRAY:
-                generator.writeStartArray();
-                for (int i : (int[]) variant.getValue()) {
-                    generator.writeNumber(i);
-                }
-                generator.writeEndArray();
-                break;
-            case LONG_VECTOR:
-            case LONG_ARRAY:
-                generator.writeStartArray();
-                for (long l : (long[]) variant.getValue()) {
-                    generator.writeNumber(l);
-                }
-                generator.writeEndArray();
-                break;
-            case FLOAT_VECTOR:
-            case FLOAT_ARRAY:
-                generator.writeStartArray();
-                for (float f : (float[]) variant.getValue()) {
-                    generator.writeNumber(f);
-                }
-                generator.writeEndArray();
-                break;
-            case DOUBLE_VECTOR:
-            case DOUBLE_ARRAY:
-                generator.writeStartArray();
-                for (double d : (double[]) variant.getValue()) {
-                    generator.writeNumber(d);
-                }
-                generator.writeEndArray();
-                break;
-            case FLAG_VECTOR:
-            case FLAG_ARRAY:
-                generator.writeStartArray();
-                for (boolean b : (boolean[]) variant.getValue()) {
-                    generator.writeBoolean(b);
-                }
-                generator.writeEndArray();
-                break;
-            case TEXT_VECTOR:
-            case TEXT_ARRAY:
-            case STRING_VECTOR:
-            case STRING_ARRAY:
-                generator.writeStartArray();
-                for (byte[] bytes : (byte[][]) variant.getValue()) {
-                    generator.writeString(new String(bytes, StandardCharsets.UTF_8));
-                }
-                generator.writeEndArray();
-                break;
-            case RESERVED:
-            default:
-                throw new RuntimeException("Not implemented logic");
+        toJsonWriters[variant.getType().value].write(generator, variant.getValue());
+    }
+
+    private static void writeByte(JsonGenerator generator, Object value) throws IOException {
+        generator.writeNumber((byte) value);
+    }
+
+    private static void writeShort(JsonGenerator generator, Object value) throws IOException {
+        generator.writeNumber((short) value);
+    }
+
+    private static void writeInteger(JsonGenerator generator, Object value) throws IOException {
+        generator.writeNumber((int) value);
+    }
+
+    private static void writeLong(JsonGenerator generator, Object value) throws IOException {
+        generator.writeNumber((long) value);
+    }
+
+    private static void writeFloat(JsonGenerator generator, Object value) throws IOException {
+        generator.writeNumber((float) value);
+    }
+
+    private static void writeDouble(JsonGenerator generator, Object value) throws IOException {
+        generator.writeNumber((double) value);
+    }
+
+    private static void writeFlag(JsonGenerator generator, Object value) throws IOException {
+        generator.writeBoolean((boolean) value);
+    }
+
+    private static void writeStringOrText(JsonGenerator generator, Object value) throws IOException {
+        generator.writeString(new String((byte[]) value, StandardCharsets.UTF_8));
+    }
+
+    private static void writeByteArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (byte b : (byte[]) value) {
+            generator.writeNumber(b);
         }
+        generator.writeEndArray();
+    }
+
+    private static void writeShortArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (short s : (short[]) value) {
+            generator.writeNumber(s);
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeIntegerArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (int i : (int[]) value) {
+            generator.writeNumber(i);
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeLongArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (long l : (long[]) value) {
+            generator.writeNumber(l);
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeFloatArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (float f : (float[]) value) {
+            generator.writeNumber(f);
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeDoubleArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (double d : (double[]) value) {
+            generator.writeNumber(d);
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeFlagArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (boolean b : (boolean[]) value) {
+            generator.writeBoolean(b);
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeStringOrTextArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (byte[] bytes : (byte[][]) value) {
+            generator.writeString(new String(bytes, StandardCharsets.UTF_8));
+        }
+        generator.writeEndArray();
     }
 
     private static Instant fromNanoseconds(long nanoseconds) {
