@@ -60,7 +60,7 @@ public class StreamSink {
         Serde<Void> keySerde = new VoidSerde();
 
         EventSerializer serializer = new EventSerializer();
-        EventDeserializer deserializer = new EventDeserializer(tags);
+        EventDeserializer deserializer = EventDeserializer.parseTags(tags);
         Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
 
         EventStreamPartitioner partitioner = new EventStreamPartitioner(new HashPartitioner(new NaiveHasher()), derived.getShardingKey(), derived.getPartitions());
