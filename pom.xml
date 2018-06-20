@@ -40,6 +40,7 @@
         <module>hercules-stream-api</module>
         <module>hercules-cli-tools</module>
         <module>hercules-elasticsearch-sink</module>
+        <module>hercules-timeline-api</module>
     </modules>
 
     <dependencyManagement>
