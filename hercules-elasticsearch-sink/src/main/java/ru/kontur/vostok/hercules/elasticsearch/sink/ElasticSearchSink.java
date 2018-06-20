@@ -23,7 +23,7 @@ public class ElasticSearchSink {
 
     public static final String PUNCTUATION_INTERVAL = "punctuation.interval";
     public static final int PUNCTUATION_INTERVAL_DEFAULT_VALUE = 1_000;
-    
+
     public static final String BATCH_SIZE = "batch.size";
     public static final int BATCH_SIZE_DEFAULT_VALUE = 100_000;
 
@@ -38,7 +38,7 @@ public class ElasticSearchSink {
         Serde<Void> keySerde = new VoidSerde();
 
         EventSerializer serializer = new EventSerializer();
-        EventDeserializer deserializer = new EventDeserializer();
+        EventDeserializer deserializer = EventDeserializer.parseAllTags();
         Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
 
         StreamsBuilder streamsBuilder = new StreamsBuilder();
