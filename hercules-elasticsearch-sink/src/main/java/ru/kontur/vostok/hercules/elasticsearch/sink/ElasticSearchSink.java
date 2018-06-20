@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ElasticSearchSink {
 
-    private static final String ID_PREFIX = "hercules.elasticsearch-sink.stream.";
+    private static final String ID_PREFIX = "hercules.sink.elasticsearch.";
 
     public static final String PUNCTUATION_INTERVAL = "punctuation.interval";
     public static final int PUNCTUATION_INTERVAL_DEFAULT_VALUE = 1_000;
