@@ -7,7 +7,7 @@ import static org.junit.Assert.assertEquals;
 
 public class HerculesProtocolAssert {
 
-    public static int assertShardReadStateEquals(ShardReadState expected, ShardReadState actual) {
+    public static int assertShardReadStateEquals(StreamShardReadState expected, StreamShardReadState actual) {
         assertEquals(expected.getPartition(), actual.getPartition());
         assertEquals(expected.getOffset(), actual.getOffset());
         return 0;

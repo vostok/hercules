@@ -1,10 +1,11 @@
 package ru.kontur.vostok.hercules.protocol;
 
-public class ShardReadState {
+public class StreamShardReadState {
+
     private final int partition;
     private final long offset;
 
-    public ShardReadState(int partition, long offset) {
+    public StreamShardReadState(int partition, long offset) {
         this.partition = partition;
         this.offset = offset;
     }

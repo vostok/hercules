@@ -12,8 +12,6 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -36,7 +34,7 @@ public class StreamApiClient {
     private static void getStreamContent(String streamName, int take) throws Exception {
 
         Encoder encoder = new Encoder();
-        StreamReadStateWriter.write(encoder, new StreamReadState(new ShardReadState[]{
+        StreamReadStateWriter.write(encoder, new StreamReadState(new StreamShardReadState[]{
         }));
 
         HttpResponse<InputStream> response = Unirest.post(server + "/stream/read")
@@ -58,7 +56,7 @@ public class StreamApiClient {
         StreamReadState readState = eventStreamContent.getState();
 
         System.out.println(String.format("Shard count: %d", readState.getShardCount()));
-        for (ShardReadState shardReadState : readState.getShardStates()) {
+        for (StreamShardReadState shardReadState : readState.getShardStates()) {
             System.out.println(String.format("> Partition %d, offset %d", shardReadState.getPartition(), shardReadState.getOffset()));
         }
         System.out.println("Content:");

@@ -10,9 +10,9 @@ public class StreamReadStateWriteReadTest {
 
     @Test
     public void shouldWriteReadStreamReadState() {
-        StreamReadState streamReadState = new StreamReadState(new ShardReadState[]{
-                new ShardReadState(0, 1024),
-                new ShardReadState(2, 2028)
+        StreamReadState streamReadState = new StreamReadState(new StreamShardReadState[]{
+                new StreamShardReadState(0, 1024),
+                new StreamShardReadState(2, 2028)
         });
 
         Encoder encoder = new Encoder();
