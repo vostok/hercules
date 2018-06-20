@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -14,11 +15,7 @@ import java.util.Set;
 public class EventDeserializer implements Deserializer<Event> {
     private final Set<String> tags;
 
-    public EventDeserializer() {
-        this.tags = Collections.emptySet();
-    }
-
-    public EventDeserializer(Set<String> tags) {
+    private EventDeserializer(Set<String> tags) {
         this.tags = tags;
     }
 
@@ -35,5 +32,18 @@ public class EventDeserializer implements Deserializer<Event> {
     @Override
     public void close() {
 
+    }
+
+    public static EventDeserializer parseNoTags() {
+        return new EventDeserializer(Collections.emptySet());
+    }
+
+    public static EventDeserializer parseAllTags() {
+        return new EventDeserializer(null);
+    }
+
+    public static EventDeserializer parseTags(Set<String> tags) {
+        Objects.requireNonNull(tags);
+        return new EventDeserializer(tags);
     }
 }

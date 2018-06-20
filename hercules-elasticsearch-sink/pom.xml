@@ -9,19 +9,32 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hercules-protocol</artifactId>
-    <name>Hercules Binary Protocol</name>
-
+    <artifactId>hercules-elasticsearch-sink</artifactId>
     <dependencies>
+
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-util</artifactId>
+            <artifactId>hercules-meta</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-kafka-util</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-streams</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-client</artifactId>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
+
     </dependencies>
 </project>

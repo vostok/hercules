@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.protocol;
 
 
-import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
@@ -115,22 +114,22 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeText() {
         Encoder encoder = new Encoder();
-        encoder.writeText(multiply("Very very long text", 100));
+        encoder.writeText(TestUtil.multiply("Very very long text", 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
-        assertEquals(multiply("Very very long text", 100), decoder.readText());
+        assertEquals(TestUtil.multiply("Very very long text", 100), decoder.readText());
     }
 
     @Test
     public void shouldEncodeDecodeByteArray() {
         Encoder encoder = new Encoder();
-        encoder.writeByteArray(multiply(new byte[]{(byte) 1, (byte) 2, (byte) 3}, 100));
+        encoder.writeByteArray(TestUtil.multiply(new byte[]{(byte) 1, (byte) 2, (byte) 3}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                multiply(new byte[]{(byte) 1, (byte) 2, (byte) 3}, 100),
+                TestUtil.multiply(new byte[]{(byte) 1, (byte) 2, (byte) 3}, 100),
                 decoder.readByteArray()
         );
     }
@@ -148,12 +147,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeUnsignedByteArray() {
         Encoder encoder = new Encoder();
-        encoder.writeUnsignedByteArray(multiply(new int[]{0, 100, 200}, 100));
+        encoder.writeUnsignedByteArray(TestUtil.multiply(new int[]{0, 100, 200}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                multiply(new int[]{0, 100, 200}, 100),
+                TestUtil.multiply(new int[]{0, 100, 200}, 100),
                 decoder.readUnsignedByteArray()
         );
     }
@@ -171,12 +170,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeShortArray() {
         Encoder encoder = new Encoder();
-        encoder.writeShortArray(multiply(new short[]{100, 10_000, 20_000}, 100));
+        encoder.writeShortArray(TestUtil.multiply(new short[]{100, 10_000, 20_000}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                multiply(new short[]{100, 10_000, 20_000}, 100),
+                TestUtil.multiply(new short[]{100, 10_000, 20_000}, 100),
                 decoder.readShortArray()
         );
     }
@@ -194,12 +193,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeIntegerArray() {
         Encoder encoder = new Encoder();
-        encoder.writeIntegerArray(multiply(new int[]{1_000, 10_000, 100_000}, 100));
+        encoder.writeIntegerArray(TestUtil.multiply(new int[]{1_000, 10_000, 100_000}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                multiply(new int[]{1_000, 10_000, 100_000}, 100),
+                TestUtil.multiply(new int[]{1_000, 10_000, 100_000}, 100),
                 decoder.readIntegerArray()
         );
     }
@@ -217,12 +216,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeLongArray() {
         Encoder encoder = new Encoder();
-        encoder.writeLongArray(multiply(new long[]{1_000, 10_000, 100_000}, 100));
+        encoder.writeLongArray(TestUtil.multiply(new long[]{1_000, 10_000, 100_000}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                multiply(new long[]{1_000, 10_000, 100_000}, 100),
+                TestUtil.multiply(new long[]{1_000, 10_000, 100_000}, 100),
                 decoder.readLongArray()
         );
     }
@@ -240,12 +239,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeFlagArray() {
         Encoder encoder = new Encoder();
-        encoder.writeFlagArray(multiply(new boolean[]{true, true, false}, 100));
+        encoder.writeFlagArray(TestUtil.multiply(new boolean[]{true, true, false}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                multiply(new boolean[]{true, true, false}, 100),
+                TestUtil.multiply(new boolean[]{true, true, false}, 100),
                 decoder.readFlagArray()
         );
     }
@@ -263,12 +262,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeFloatArray() {
         Encoder encoder = new Encoder();
-        encoder.writeFloatArray(multiply(new float[]{1.23f, 4.56f, 7.89f}, 100));
+        encoder.writeFloatArray(TestUtil.multiply(new float[]{1.23f, 4.56f, 7.89f}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                multiply(new float[]{1.23f, 4.56f, 7.89f}, 100),
+                TestUtil.multiply(new float[]{1.23f, 4.56f, 7.89f}, 100),
                 decoder.readFloatArray(),
                 0
         );
@@ -287,12 +286,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeDoubleArray() {
         Encoder encoder = new Encoder();
-        encoder.writeDoubleArray(multiply(new double[]{1.23, 4.56, 7.89}, 100));
+        encoder.writeDoubleArray(TestUtil.multiply(new double[]{1.23, 4.56, 7.89}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                multiply(new double[]{1.23, 4.56, 7.89}, 100),
+                TestUtil.multiply(new double[]{1.23, 4.56, 7.89}, 100),
                 decoder.readDoubleArray(),
                 0
         );
@@ -311,12 +310,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeStringArray() {
         Encoder encoder = new Encoder();
-        encoder.writeStringArray(multiply(new String[]{"a", "b", "c"}, 100));
+        encoder.writeStringArray(TestUtil.multiply(new String[]{"a", "b", "c"}, 100));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                Arrays.stream(multiply(new String[]{"a", "b", "c"}, 100)).map(String::getBytes).toArray(),
+                Arrays.stream(TestUtil.multiply(new String[]{"a", "b", "c"}, 100)).map(String::getBytes).toArray(),
                 decoder.readStringArrayAsBytes()
         );
     }
@@ -337,12 +336,12 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeTextArray() {
         Encoder encoder = new Encoder();
-        encoder.writeTextArray(multiply(new String[]{multiply("abc", 100)}, 300));
+        encoder.writeTextArray(TestUtil.multiply(new String[]{TestUtil.multiply("abc", 100)}, 300));
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                Arrays.stream(multiply(new String[]{multiply("abc", 100)}, 300)).map(String::getBytes).toArray(),
+                Arrays.stream(TestUtil.multiply(new String[]{TestUtil.multiply("abc", 100)}, 300)).map(String::getBytes).toArray(),
                 decoder.readTextArrayAsBytes()
         );
     }
@@ -350,85 +349,14 @@ public class EncoderDecoderTest {
     @Test
     public void shouldEncodeDecodeTextVector() {
         Encoder encoder = new Encoder();
-        encoder.writeTextVector(new String[]{multiply("abc", 100)});
+        encoder.writeTextVector(new String[]{TestUtil.multiply("abc", 100)});
 
         Decoder decoder = new Decoder(encoder.getBytes());
 
         assertArrayEquals(
-                Arrays.stream(new String[]{multiply("abc", 100)}).map(String::getBytes).toArray(),
+                Arrays.stream(new String[]{TestUtil.multiply("abc", 100)}).map(String::getBytes).toArray(),
                 decoder.readTextVectorAsBytes()
         );
     }
 
-    private static String multiply(String s, int count) {
-        StringBuilder res = new StringBuilder(s.length() * count);
-        for (int i = 0; i < count; ++i) {
-            res.append(s);
-        }
-        return res.toString();
-    }
-
-    private static byte[] multiply(byte[] array, int count) {
-        byte[] result = new byte[array.length * count];
-        for (int i = 0; i < result.length; i += array.length) {
-            System.arraycopy(array, 0, result, i, array.length);
-        }
-        return result;
-    }
-
-    private static int[] multiply(int[] array, int count) {
-        int[] result = new int[array.length * count];
-        for (int i = 0; i < result.length; i += array.length) {
-            System.arraycopy(array, 0, result, i, array.length);
-        }
-        return result;
-    }
-
-    private static short[] multiply(short[] array, int count) {
-        short[] result = new short[array.length * count];
-        for (int i = 0; i < result.length; i += array.length) {
-            System.arraycopy(array, 0, result, i, array.length);
-        }
-        return result;
-    }
-
-    private static long[] multiply(long[] array, int count) {
-        long[] result = new long[array.length * count];
-        for (int i = 0; i < result.length; i += array.length) {
-            System.arraycopy(array, 0, result, i, array.length);
-        }
-        return result;
-    }
-
-    private static boolean[] multiply(boolean[] array, int count) {
-        boolean[] result = new boolean[array.length * count];
-        for (int i = 0; i < result.length; i += array.length) {
-            System.arraycopy(array, 0, result, i, array.length);
-        }
-        return result;
-    }
-
-    private static float[] multiply(float[] array, int count) {
-        float[] result = new float[array.length * count];
-        for (int i = 0; i < result.length; i += array.length) {
-            System.arraycopy(array, 0, result, i, array.length);
-        }
-        return result;
-    }
-
-    private static double[] multiply(double[] array, int count) {
-        double[] result = new double[array.length * count];
-        for (int i = 0; i < result.length; i += array.length) {
-            System.arraycopy(array, 0, result, i, array.length);
-        }
-        return result;
-    }
-
-    private static String[] multiply(String[] array, int count) {
-        String[] result = new String[array.length * count];
-        for (int i = 0; i < result.length; i += array.length) {
-            System.arraycopy(array, 0, result, i, array.length);
-        }
-        return result;
-    }
 }
