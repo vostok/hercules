@@ -21,6 +21,6 @@ public class ShardReadStateWriteReadTest {
         Decoder decoder = new Decoder(encoder.getBytes());
         StreamShardReadState result = StreamShardReadStateReader.read(decoder);
 
-        HerculesProtocolAssert.assertShardReadStateEquals(shardReadState, result);
+        HerculesProtocolAssert.assertEquals(shardReadState, result);
     }
 }
