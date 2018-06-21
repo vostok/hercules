@@ -12,7 +12,7 @@ public class HttpServer {
 
     private final Undertow undertow;
 
-    public HttpServer(Properties properties, AuthManager authManager) {
+    public HttpServer(Properties properties, AuthManager authManager, ReadTimelineHandler readTimelineHandler) {
         String host = properties.getProperty("host", "0.0.0.0");
         int port = PropertiesUtil.get(properties, "port", PropertiesUtil.get(properties, "server.port", 80));
 
@@ -20,7 +20,8 @@ public class HttpServer {
                 .get("/ping", exchange -> {
                     exchange.setStatusCode(200);
                     exchange.endExchange();
-                });
+                })
+                .post("/timeline/read", readTimelineHandler);
 
         undertow = Undertow
                 .builder()

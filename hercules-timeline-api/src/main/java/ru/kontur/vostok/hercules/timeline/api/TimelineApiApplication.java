@@ -19,7 +19,7 @@ public class TimelineApiApplication {
 
             Properties httpServerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
 
-            server = new HttpServer(httpServerProperties, new AuthManager());
+            server = new HttpServer(httpServerProperties, new AuthManager(), new ReadTimelineHandler());
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
