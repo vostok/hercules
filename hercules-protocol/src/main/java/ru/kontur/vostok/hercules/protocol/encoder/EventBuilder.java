@@ -9,6 +9,8 @@ import java.util.Map;
 
 public class EventBuilder {
 
+    private static final VariantWriter VARIANT_WRITER = new VariantWriter();
+
     private long timestamp;
     private int version;
     private Map<String, Variant> tags = new LinkedHashMap<>();
@@ -34,7 +36,7 @@ public class EventBuilder {
 
         for (Map.Entry<String, Variant> e : tags.entrySet()) {
             encoder.writeString(e.getKey());
-            VariantWriter.write(encoder, e.getValue());
+            VARIANT_WRITER.write(encoder, e.getValue());
         }
 
         return new Event(encoder.getBytes(), version, timestamp, tags);

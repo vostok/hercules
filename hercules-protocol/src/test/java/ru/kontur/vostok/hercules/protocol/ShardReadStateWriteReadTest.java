@@ -13,14 +13,9 @@ public class ShardReadStateWriteReadTest {
 
     @Test
     public void shouldReadWriteShardReadState() {
-        StreamShardReadState shardReadState = new StreamShardReadState(1, 1024);
-
-        Encoder encoder = new Encoder();
-        StreamShardReadStateWriter.write(encoder, shardReadState);
-
-        Decoder decoder = new Decoder(encoder.getBytes());
-        StreamShardReadState result = StreamShardReadStateReader.read(decoder);
-
-        HerculesProtocolAssert.assertEquals(shardReadState, result);
+        WriteReadPipe
+                .init(new StreamShardReadStateWriter(), new StreamShardReadStateReader())
+                .process(new StreamShardReadState(1, 1024))
+                .assertEquals(HerculesProtocolAssert::assertEquals);
     }
 }

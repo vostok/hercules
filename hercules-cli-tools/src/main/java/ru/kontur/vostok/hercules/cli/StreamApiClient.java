@@ -18,6 +18,9 @@ import java.util.stream.Collectors;
 
 public class StreamApiClient {
 
+    private static final StreamReadStateWriter STREAM_READ_STATE_WRITER = new StreamReadStateWriter();
+    private static final EventStreamContentReader EVENT_STREAM_CONTENT_READER = new EventStreamContentReader();
+
     private static String server;
 
     public static void main(String[] args) throws Exception {
@@ -34,7 +37,7 @@ public class StreamApiClient {
     private static void getStreamContent(String streamName, int take) throws Exception {
 
         Encoder encoder = new Encoder();
-        StreamReadStateWriter.write(encoder, new StreamReadState(new StreamShardReadState[]{
+        STREAM_READ_STATE_WRITER.write(encoder, new StreamReadState(new StreamShardReadState[]{
         }));
 
         HttpResponse<InputStream> response = Unirest.post(server + "/stream/read")
@@ -52,7 +55,7 @@ public class StreamApiClient {
         byte[] buffer = new byte[response.getBody().available()];
         response.getBody().read(buffer);
 
-        EventStreamContent eventStreamContent = EventStreamContentReader.read(new Decoder(buffer));
+        EventStreamContent eventStreamContent = EVENT_STREAM_CONTENT_READER.read(new Decoder(buffer));
         StreamReadState readState = eventStreamContent.getState();
 
         System.out.println(String.format("Shard count: %d", readState.getShardCount()));

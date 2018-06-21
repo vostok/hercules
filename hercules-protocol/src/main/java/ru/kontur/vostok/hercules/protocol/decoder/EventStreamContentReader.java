@@ -4,10 +4,13 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 
-public class EventStreamContentReader {
+public class EventStreamContentReader implements Reader<EventStreamContent> {
 
-    public static EventStreamContent read(Decoder decoder) {
-        StreamReadState readState = StreamReadStateReader.read(decoder);
+    private static final StreamReadStateReader STREAM_READ_STATE_READER = new StreamReadStateReader();
+
+    @Override
+    public EventStreamContent read(Decoder decoder) {
+        StreamReadState readState = STREAM_READ_STATE_READER.read(decoder);
         int count = decoder.readInteger();
         EventReader eventReader = EventReader.batchReaderWithCount(decoder, count);
         Event[] records = new Event[count];

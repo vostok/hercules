@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.protocol;
 
 import org.junit.Assert;
+import ru.kontur.vostok.hercules.protocol.encoder.VariantWriter;
 
+import java.util.Arrays;
 import java.util.function.BiConsumer;
 
 public class HerculesProtocolAssert {
@@ -23,7 +25,7 @@ public class HerculesProtocolAssert {
         Assert.assertEquals(expected.getOffset(), actual.getOffset());
     }
 
-    public static void assertStreamReadStateEquals(StreamReadState expected, StreamReadState actual) {
+    public static void assertEquals(StreamReadState expected, StreamReadState actual) {
         Assert.assertEquals(expected.getShardCount(), actual.getShardCount());
         HerculesProtocolAssert.assertArrayEquals(
                 expected.getShardStates(),
@@ -45,5 +47,38 @@ public class HerculesProtocolAssert {
 
     public static void assertEquals(TimelineReadState expected, TimelineReadState actual) {
         assertArrayEquals(expected.getShards(), actual.getShards(), HerculesProtocolAssert::assertEquals);
+    }
+
+    private static final BiConsumer<Variant, Variant>[] asserters = new BiConsumer[256];
+    static {
+        Arrays.setAll(asserters, idx -> (expected, actual) -> Assert.assertEquals(expected.getValue(), actual.getValue()));
+
+        asserters[Type.STRING.value] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
+        asserters[Type.TEXT.value] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
+
+        asserters[Type.BYTE_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
+        asserters[Type.SHORT_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((short[]) expected.getValue(), (short[]) actual.getValue());
+        asserters[Type.INTEGER_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((int[]) expected.getValue(), (int[]) actual.getValue());
+        asserters[Type.LONG_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((long[]) expected.getValue(), (long[]) actual.getValue());
+        asserters[Type.FLAG_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((boolean[]) expected.getValue(), (boolean[]) actual.getValue());
+        asserters[Type.FLOAT_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((float[]) expected.getValue(), (float[]) actual.getValue(), 0);
+        asserters[Type.DOUBLE_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((double[]) expected.getValue(), (double[]) actual.getValue(), 0);
+        asserters[Type.STRING_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
+        asserters[Type.TEXT_VECTOR.value] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
+
+        asserters[Type.BYTE_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
+        asserters[Type.SHORT_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((short[]) expected.getValue(), (short[]) actual.getValue());
+        asserters[Type.INTEGER_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((int[]) expected.getValue(), (int[]) actual.getValue());
+        asserters[Type.LONG_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((long[]) expected.getValue(), (long[]) actual.getValue());
+        asserters[Type.FLAG_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((boolean[]) expected.getValue(), (boolean[]) actual.getValue());
+        asserters[Type.FLOAT_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((float[]) expected.getValue(), (float[]) actual.getValue(), 0);
+        asserters[Type.DOUBLE_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((double[]) expected.getValue(), (double[]) actual.getValue(), 0);
+        asserters[Type.STRING_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
+        asserters[Type.TEXT_ARRAY.value] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
+    }
+
+    public static void assertEquals(Variant expected, Variant actual) {
+        Assert.assertEquals(expected.getType(), actual.getType());
+        asserters[expected.getType().value].accept(expected, actual);
     }
 }
