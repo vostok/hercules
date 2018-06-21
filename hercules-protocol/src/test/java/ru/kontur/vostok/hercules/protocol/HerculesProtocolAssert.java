@@ -4,6 +4,8 @@ import org.junit.Assert;
 import ru.kontur.vostok.hercules.protocol.encoder.VariantWriter;
 
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 public class HerculesProtocolAssert {
@@ -47,6 +49,21 @@ public class HerculesProtocolAssert {
 
     public static void assertEquals(TimelineReadState expected, TimelineReadState actual) {
         assertArrayEquals(expected.getShards(), actual.getShards(), HerculesProtocolAssert::assertEquals);
+    }
+
+    public static void assertEquals(Event expected, Event actual) {
+        Assert.assertEquals(expected.getVersion(), actual.getVersion());
+        Assert.assertEquals(expected.getTimestamp(), actual.getTimestamp());
+
+        Map.Entry[] expectedEntries = expected.getTags().entrySet().stream().sorted(Map.Entry.comparingByKey()).toArray(Map.Entry[]::new);
+        Map.Entry[] actualEntries = actual.getTags().entrySet().stream().sorted(Map.Entry.comparingByKey()).toArray(Map.Entry[]::new);
+
+        assertArrayEquals(expectedEntries, actualEntries, (ex, ac) -> {
+            Assert.assertEquals(ex.getKey(), ac.getKey());
+            assertEquals((Variant) ex.getValue(), (Variant) ac.getValue());
+        });
+
+        Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
     }
 
     private static final BiConsumer<Variant, Variant>[] asserters = new BiConsumer[256];

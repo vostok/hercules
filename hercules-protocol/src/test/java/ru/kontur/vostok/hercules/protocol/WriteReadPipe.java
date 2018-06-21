@@ -19,6 +19,14 @@ public class WriteReadPipe<T> {
             this.processed = processed;
         }
 
+        public T getOriginal() {
+            return original;
+        }
+
+        public T getProcessed() {
+            return processed;
+        }
+
         public void assertEquals(BiConsumer<T, T> asserter) {
             asserter.accept(original, processed);
         }
