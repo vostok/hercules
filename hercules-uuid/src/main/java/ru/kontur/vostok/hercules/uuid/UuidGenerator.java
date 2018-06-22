@@ -1,0 +1,142 @@
+package ru.kontur.vostok.hercules.uuid;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * UuidGenerator produces custom 128-bits UUID.                                                                     <br>
+ * <br>
+ * Generated UUIDs do not compatible with RFC4122 since                                                             <br>
+ * there is no corresponding VERSION or VARIANT parts of standardized UUID.                                         <br>
+ * <br>
+ * UUIDs have the following format:                                                                                 <br>
+ * UUID (128 bit) := mostSigBits | leastSigBits                                                                     <br>
+ * mostSigBits (64 bit) := timestamp | seed                                                                         <br>
+ * leastSigBits (64 bit) := type | marker | addr | pid                                                              <br>
+ * timestamp (56 bit) : 100ns-ticks from UNIX Epoch (1 January 1970 00:00:00.000 UTC)                               <br>
+ * seed (8 bit) : random generated seed                                                                             <br>
+ * type (4 bit) : set type of UUID to be client-side (is equal to 9) or server-side (is equal to 8)                 <br>
+ * marker (12 bit) : most significant bits of SHA-512 hash value of key which usually is apiKey                     <br>
+ * addr (32 bit) : lowest IPv4 address (except 127.0.0.1), otherwise TODO use IPv6 instead                          <br>
+ * pid (16 bit) : least significant bits of process id.                                                             <br>
+ * @author Gregory Koshelev
+ */
+public class UuidGenerator {
+    private static final int SIZEOF_TIMESTAMP = 56;
+    private static final int SIZEOF_SEED = 8;
+    private static final int SIZEOF_TYPE = 4;
+    private static final int SIZEOF_MARKER = 12;
+    private static final int SIZEOF_ADDR = 32;
+    private static final int SIZEOF_PID = 16;
+
+    private static final int OFFSET_TIMESTAMP = 8;
+    private static final int OFFSET_SEED = 0;
+    private static final int OFFSET_TYPE = 60;
+    private static final int OFFSET_MARKER = 48;
+    private static final int OFFSET_ADDR = 16;
+    private static final int OFFSET_PID = 0;
+
+    private static final long seed = new Random(System.currentTimeMillis()).nextLong() & 0x00000000000000FFL;
+    private static final AtomicLong lastTimestamp = new AtomicLong(0L);
+
+    private final long leastSigBits;
+
+    private UuidGenerator(String key, boolean internal) {
+        leastSigBits = makeLeastSigBits(key, internal ? 0b1000L : 0b1001L);
+    }
+
+    public static UuidGenerator getInstance(String key) {
+        return new UuidGenerator(key, false);
+    }
+
+    public static UuidGenerator getInternalInstance(String key) {
+        return new UuidGenerator(key, true);
+    }
+
+    public UUID next() {
+        long mostSigBits = (nextTimestamp() << OFFSET_TIMESTAMP) | seed;
+        return new UUID(mostSigBits, leastSigBits);
+    }
+
+    private long makeLeastSigBits(String key, long type) {
+        return (type << OFFSET_TYPE) | (marker(key) << OFFSET_MARKER) | (addr() << OFFSET_ADDR) | (pid() & 0x000000000000FFFFL);
+    }
+
+    private static long nextTimestamp() {
+        while (true) {
+            long nowMillis = System.currentTimeMillis();
+            long nowTimestamp = unixTimeToTimestamp(nowMillis);
+            //long highTimestamp = unixTimeToTimestamp(nowMillis + 1);
+            long lastTimestamp = UuidGenerator.lastTimestamp.get();
+            if (nowTimestamp > lastTimestamp) {
+                if (UuidGenerator.lastTimestamp.compareAndSet(lastTimestamp, nowTimestamp)) {
+                    return nowTimestamp;
+                }
+            } else {
+                return UuidGenerator.lastTimestamp.incrementAndGet();
+            }
+        }
+    }
+
+    private static long unixTimeToTimestamp(long millis) {
+        return millis * 10000;
+    }
+
+    private static long timestampToUnixTime(long timestamp) {
+        return timestamp / 10000;
+    }
+
+    private static long pid() {
+        String jvmName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+        String pidString = jvmName.substring(0, jvmName.indexOf('@'));
+        return Long.valueOf(pidString);
+    }
+
+    private static long addr() {//TODO: Find lowest IPv4 addr except 127.0.0.1; Otherwise use hash of lowest IPv6 addr; Also, it's possible to compute hash of all available addresses;
+        try {
+            InetAddress addr = InetAddress.getLocalHost();
+            byte[] bytes = addr.getAddress();
+            if (bytes.length == 4) {
+                return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
+            }
+            return 0L;//TODO: IPv6 addresses also are possible.
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            return 0L;
+        }
+    }
+
+    private static long marker(String key) {
+        if (key == null) {
+            return -1L;
+        }
+
+        return trim(hash(key.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private static byte[] hash(byte[] bytes) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            md.update(bytes);
+            return md.digest();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static long trim(byte[] bytes) {
+        if (bytes.length >= 2) {
+            return (bytes[0] << 4) | (bytes[1] & 0x0F);
+        }
+        if (bytes.length == 1) {
+            return bytes[0] << 4;
+        }
+        return 0L;
+    }
+}
