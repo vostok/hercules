@@ -8,6 +8,8 @@ import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.uuid.Marker;
+import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -19,13 +21,16 @@ import java.util.Set;
  */
 public abstract class GatewayHandler implements HttpHandler {
     private final AuthManager authManager;
-    protected final EventSender eventSender;
     private final StreamRepository streamRepository;
+
+    protected final EventSender eventSender;
+    protected final UuidGenerator uuidGenerator;
 
     protected GatewayHandler(AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
         this.authManager = authManager;
         this.eventSender = eventSender;
         this.streamRepository = streamRepository;
+        uuidGenerator = UuidGenerator.getInternalInstance();
     }
 
     @Override
@@ -39,7 +44,8 @@ public abstract class GatewayHandler implements HttpHandler {
         String stream = optionalStream.get();
         //TODO: stream name validation
 
-        if (!auth(exchange, stream)) {
+        Optional<String> apiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
+        if (!auth(exchange, apiKey, stream)) {
             return;
         }
 
@@ -70,24 +76,24 @@ public abstract class GatewayHandler implements HttpHandler {
         Set<String> tags = new HashSet<>(shardingKey.length);
         tags.addAll(Arrays.asList(shardingKey));
 
-        send(exchange, topic, tags, partitions, shardingKey);
+        Marker marker = Marker.forKey(apiKey.get());
+        send(exchange, marker, topic, tags, partitions, shardingKey);
     }
 
-    protected abstract void send(HttpServerExchange exchange, String topic, Set<String> tags, int partitions, String[] shardingKey);
+    protected abstract void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey);
 
     protected EventSender getEventSender() {
         return eventSender;
     }
 
-    private boolean auth(HttpServerExchange exchange, String stream) {
-        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!optionalApiKey.isPresent()) {
+    private boolean auth(HttpServerExchange exchange, Optional<String> apiKey, String stream) {
+        if (!apiKey.isPresent()) {
             exchange.setStatusCode(401);
             exchange.endExchange();
             return false;
         }
 
-        AuthResult authResult = authManager.authStream(optionalApiKey.get(), stream, Action.WRITE);
+        AuthResult authResult = authManager.authStream(apiKey.get(), stream, Action.WRITE);
 
         if (authResult.isSuccess()) {
             return true;
