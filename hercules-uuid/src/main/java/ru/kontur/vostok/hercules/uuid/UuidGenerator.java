@@ -2,9 +2,6 @@ package ru.kontur.vostok.hercules.uuid;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,25 +44,28 @@ public class UuidGenerator {
 
     private final long leastSigBits;
 
-    private UuidGenerator(String key, boolean internal) {
-        leastSigBits = makeLeastSigBits(key, internal ? 0b1000L : 0b1001L);
+    private UuidGenerator(Type type) {
+        leastSigBits = makeLeastSigBits(Marker.EMPTY.get(), type.get());
     }
 
-    public static UuidGenerator getInstance(String key) {
-        return new UuidGenerator(key, false);
+    public static UuidGenerator getClientInstance() {
+        return new UuidGenerator(Type.CLIENT);
     }
 
-    public static UuidGenerator getInternalInstance(String key) {
-        return new UuidGenerator(key, true);
+    public static UuidGenerator getInternalInstance() {
+        return new UuidGenerator(Type.INTERNAL);
     }
 
-    public UUID next() {
-        long mostSigBits = (nextTimestamp() << OFFSET_TIMESTAMP) | seed;
-        return new UUID(mostSigBits, leastSigBits);
+    public UUID next(Marker marker) {
+        return new UUID(makeMostSigBits(), leastSigBits | (marker.get() << OFFSET_MARKER));
     }
 
-    private long makeLeastSigBits(String key, long type) {
-        return (type << OFFSET_TYPE) | (marker(key) << OFFSET_MARKER) | (addr() << OFFSET_ADDR) | (pid() & 0x000000000000FFFFL);
+    private long makeMostSigBits() {
+        return (nextTimestamp() << OFFSET_TIMESTAMP) | seed;
+    }
+
+    private long makeLeastSigBits(long marker, long type) {
+        return (type << OFFSET_TYPE) | (marker << OFFSET_MARKER) | (addr() << OFFSET_ADDR) | (pid() & 0x000000000000FFFFL);
     }
 
     private static long nextTimestamp() {
@@ -110,33 +110,5 @@ public class UuidGenerator {
             e.printStackTrace();
             return 0L;
         }
-    }
-
-    private static long marker(String key) {
-        if (key == null) {
-            return -1L;
-        }
-
-        return trim(hash(key.getBytes(StandardCharsets.UTF_8)));
-    }
-
-    private static byte[] hash(byte[] bytes) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-512");
-            md.update(bytes);
-            return md.digest();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static long trim(byte[] bytes) {
-        if (bytes.length >= 2) {
-            return (bytes[0] << 4) | (bytes[1] & 0x0F);
-        }
-        if (bytes.length == 1) {
-            return bytes[0] << 4;
-        }
-        return 0L;
     }
 }

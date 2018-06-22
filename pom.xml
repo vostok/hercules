@@ -176,6 +176,11 @@
                 <artifactId>hercules-kafka-util</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
             </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-uuid</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
 
             <dependency>
                 <groupId>junit</groupId>
