@@ -24,6 +24,7 @@
         <jackson.version>2.9.5</jackson.version>
         <guava.version>20.0</guava.version>
         <unirest.version>1.4.9</unirest.version>
+        <elasticsearch.client.version>6.2.4</elasticsearch.client.version>
     </properties>
 
     <modules>
@@ -38,6 +39,7 @@
         <module>hercules-kafka-util</module>
         <module>hercules-stream-api</module>
         <module>hercules-cli-tools</module>
+        <module>hercules-elasticsearch-sink</module>
         <module>hercules-uuid</module>
     </modules>
 
@@ -135,6 +137,13 @@
                 <groupId>com.mashape.unirest</groupId>
                 <artifactId>unirest-java</artifactId>
                 <version>${unirest.version}</version>
+            </dependency>
+
+            <!-- Elasticsearch client -->
+            <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-client</artifactId>
+                <version>${elasticsearch.client.version}</version>
             </dependency>
 
             <dependency>

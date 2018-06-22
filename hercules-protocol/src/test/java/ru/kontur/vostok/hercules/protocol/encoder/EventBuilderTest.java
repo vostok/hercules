@@ -19,8 +19,8 @@ public class EventBuilderTest {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
         eventBuilder.setTimestamp(1527679920000000L);
-        eventBuilder.setTag("host", new Variant(Type.STRING, "localhost"));
-        eventBuilder.setTag("timestamp", new Variant(Type.LONG, 1527679920000000L));
+        eventBuilder.setTag("host", Variant.ofString("localhost"));
+        eventBuilder.setTag("timestamp", Variant.ofLong(1527679920000000L));
 
         Event event = eventBuilder.build();
 
