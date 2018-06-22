@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.meta.filter.Filter;
 public class Timeline {
     private String name;
     private int slices;
-    private String shardingKey;
+    private String[] shardingKey;
     private long ttl;
     private long timetrapSize;
     private String[] streams;
@@ -28,10 +28,10 @@ public class Timeline {
         this.slices = slices;
     }
 
-    public String getShardingKey() {
+    public String[] getShardingKey() {
         return shardingKey;
     }
-    public void setShardingKey(String shardingKey) {
+    public void setShardingKey(String[] shardingKey) {
         this.shardingKey = shardingKey;
     }
 

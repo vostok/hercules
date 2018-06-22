@@ -41,6 +41,7 @@
         <module>hercules-cli-tools</module>
         <module>hercules-elasticsearch-sink</module>
         <module>hercules-timeline-api</module>
+        <module>hercules-uuid</module>
     </modules>
 
     <dependencyManagement>
@@ -174,6 +175,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-kafka-util</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-uuid</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
             </dependency>
 
