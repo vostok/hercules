@@ -21,8 +21,7 @@ public class TimelineApiClient {
     private static final TimelineReadStateWriter TIMELINE_READ_STATE_WRITER = new TimelineReadStateWriter();
 
     private static final TimelineReadStateReader TIMELINE_READ_STATE_READER = new TimelineReadStateReader();
-    private static final ArrrayReader<Event> EVENT_ARRRAY_READER = new ArrrayReader<>(EventReader., Event.class);
-    //private static final EventStreamContentReader EVENT_STREAM_CONTENT_READER = new EventStreamContentReader();
+    private static final ArrrayReader<Event> EVENT_ARRRAY_READER = new ArrrayReader<>(EventReader2.readAllTags(), Event.class);
 
     private static String server;
 
@@ -48,7 +47,8 @@ public class TimelineApiClient {
     private static void getStreamContent(String streamName, int take) throws Exception {
 
         Encoder encoder = new Encoder();
-        STREAM_READ_STATE_WRITER.write(encoder, new StreamReadState(new StreamShardReadState[]{
+        TIMELINE_READ_STATE_WRITER.write(encoder, new TimelineReadState(new TimelineShardReadState[]{
+                new TimelineShardReadState(0, 0, new EventId(0, 0))
         }));
 
         HttpResponse<InputStream> response = Unirest.post(server + "/timeline/read")
@@ -67,16 +67,18 @@ public class TimelineApiClient {
 
         byte[] buffer = new byte[response.getBody().available()];
         response.getBody().read(buffer);
+        Decoder decoder = new Decoder(buffer);
 
-        EventStreamContent eventStreamContent = EVENT_STREAM_CONTENT_READER.read(new Decoder(buffer));
-        StreamReadState readState = eventStreamContent.getState();
+        TimelineReadState timelineReadState = TIMELINE_READ_STATE_READER.read(decoder);
+        Event[] events = EVENT_ARRRAY_READER.read(decoder);
 
-        System.out.println(String.format("Shard count: %d", readState.getShardCount()));
-        for (StreamShardReadState shardReadState : readState.getShardStates()) {
-            System.out.println(String.format("> Partition %d, offset %d", shardReadState.getPartition(), shardReadState.getOffset()));
+        System.out.println(String.format("Shard count: %d", timelineReadState.getShards().length));
+        for (TimelineShardReadState shardReadState: timelineReadState.getShards()) {
+            System.out.println(String.format("> Partition %d, timestamp %d", shardReadState.getShardId(), shardReadState.getEventTimestamp()));
+            System.out.println(String.format("> Event id: %d-%d", shardReadState.getEventId().getP1(), shardReadState.getEventId().getP2()));
         }
         System.out.println("Content:");
-        for (Event event : eventStreamContent.getEvents()) {
+        for (Event event : events) {
             System.out.println("> " + formatEvent(event));
         }
     }
