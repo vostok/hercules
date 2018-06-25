@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class TimelineApiClient {
@@ -31,7 +32,7 @@ public class TimelineApiClient {
 
         server = "http://" + properties.getProperty("server");
 
-        getStreamContent("balbal", 10);
+        getStreamContent("timeline", 20);
 
         Unirest.shutdown();
     }
@@ -44,24 +45,24 @@ public class TimelineApiClient {
         System.out.println(response.getStatusText());
     }
 
-    private static void getStreamContent(String streamName, int take) throws Exception {
+    private static void getStreamContent(String timelineName, int take) throws Exception {
 
         Encoder encoder = new Encoder();
         TIMELINE_READ_STATE_WRITER.write(encoder, new TimelineReadState(new TimelineShardReadState[]{
-                new TimelineShardReadState(0, 0, new EventId(0, 0))
         }));
 
         HttpResponse<InputStream> response = Unirest.post(server + "/timeline/read")
-                .queryString("stream", streamName)
+                .queryString("timeline", timelineName)
                 .queryString("take", take)
-                .queryString("k", 0)
-                .queryString("n", 1)
-                .queryString("from", 1000)
-                .queryString("to", 2000)
+                .queryString("k", 2)
+                .queryString("n", 3)
+                .queryString("from", 0)
+                .queryString("to", 120000)
                 .body(encoder.getBytes())
                 .asBinary();
 
         if (200 != response.getStatus()) {
+            System.out.println(response.getStatusText());
             throw new Exception("Server error!");
         }
 
@@ -75,7 +76,7 @@ public class TimelineApiClient {
         System.out.println(String.format("Shard count: %d", timelineReadState.getShards().length));
         for (TimelineShardReadState shardReadState: timelineReadState.getShards()) {
             System.out.println(String.format("> Partition %d, timestamp %d", shardReadState.getShardId(), shardReadState.getEventTimestamp()));
-            System.out.println(String.format("> Event id: %d-%d", shardReadState.getEventId().getP1(), shardReadState.getEventId().getP2()));
+            System.out.println(String.format("> Event id: %s", new UUID(shardReadState.getEventId().getP1(), shardReadState.getEventId().getP2())));
         }
         System.out.println("Content:");
         for (Event event : events) {

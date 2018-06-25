@@ -1,6 +1,8 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -10,6 +12,8 @@ import java.util.Properties;
 public class TimelineApiApplication {
 
     private static HttpServer server;
+    private static CuratorClient curatorClient;
+    private static TimelineReader timelineReader;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -18,8 +22,14 @@ public class TimelineApiApplication {
             Map<String, String> parameters = ArgsParser.parse(args);
 
             Properties httpServerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
+            Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
 
-            server = new HttpServer(httpServerProperties, new AuthManager(), new ReadTimelineHandler());
+            curatorClient = new CuratorClient(curatorProperties);
+            curatorClient.start();
+
+            timelineReader = new TimelineReader();
+
+            server = new HttpServer(httpServerProperties, new AuthManager(), new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader));
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -42,7 +52,20 @@ public class TimelineApiApplication {
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error
         }
-
+        try {
+            if (curatorClient != null) {
+                curatorClient.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace(); //TODO: Process error
+        }
+        try {
+            if (timelineReader != null) {
+                timelineReader.shutdown();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace(); //TODO: Process error
+        }
         System.out.println("Finished Stream API shutdown for " + (System.currentTimeMillis() - start) + " millis");
     }
 }
