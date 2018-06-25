@@ -23,11 +23,12 @@ public class TimelineApiApplication {
 
             Properties httpServerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
             Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
+            Properties cassandraProperties = PropertiesUtil.readProperties(parameters.getOrDefault("cassandra.properties", "cassandra.properties"));
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
-            timelineReader = new TimelineReader();
+            timelineReader = new TimelineReader(cassandraProperties);
 
             server = new HttpServer(httpServerProperties, new AuthManager(), new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader));
             server.start();

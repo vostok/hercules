@@ -11,7 +11,6 @@ import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader2;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,38 +27,112 @@ public class TimelineReader {
         }
     }
 
-    public static final String SELECT_EVENTS =
-            "select" +
-            "  slice," +
-            "  tt_offset," +
+    private static class Parameters {
+        final int slice;
+        final long ttOffset;
+
+        public Parameters(int slice, long ttOffset) {
+            this.slice = slice;
+            this.ttOffset = ttOffset;
+        }
+    }
+
+    private static class GridIterator implements Iterator<Parameters> {
+        int[] slices;
+        long[] ttOffsets;
+
+        int sliceCurrentIdx = 0;
+        int ttOffsetCurrentIdx = 0;
+
+        public GridIterator(int[] slices, long[] ttOffsets) {
+            this.slices = slices;
+            this.ttOffsets = ttOffsets;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return ttOffsetCurrentIdx < ttOffsets.length;
+        }
+
+        @Override
+        public Parameters next() {
+            if (ttOffsets.length <= ttOffsetCurrentIdx) {
+                throw new NoSuchElementException();
+            }
+            Parameters result = new Parameters(slices[sliceCurrentIdx], ttOffsets[ttOffsetCurrentIdx]);
+            ++sliceCurrentIdx;
+            if (sliceCurrentIdx == slices.length) {
+                ++ttOffsetCurrentIdx;
+                sliceCurrentIdx = 0;
+            }
+            return result;
+        }
+    }
+
+    private static class Grid implements Iterable<Parameters> {
+        int[] slices;
+        long[] ttOffsets;
+
+        public Grid(int[] slices, long[] ttOffsets) {
+            this.slices = slices;
+            this.ttOffsets = ttOffsets;
+        }
+
+        @Override
+        public Iterator<Parameters> iterator() {
+            return new GridIterator(slices, ttOffsets);
+        }
+    }
+
+    public static final String SELECT_EVENTS_BY_TIMESTAMP = "" +
+            "SELECT" +
             "  event_timestamp," +
             "  event_id," +
             "  payload" +
             " " +
-            "from" +
-            "  timelines.%s" + // table name
+            "FROM" +
+            "  timelines.%s" +
             " " +
-            "where" +
-            "  slice=%d and" + // partition
-            "  tt_offset in (%s) and" + // tt_offsets array
-            "  event_timestamp >= %d and" + // from
-            "  event_timestamp < %d and" + // to
-            "  event_id > %s" + // last red event id
+            "WHERE" +
+            "  slice = %d AND" +
+            "  tt_offset = %d AND" +
+            "  event_timestamp >= %d AND" +
+            "  event_timestamp < %d" +
             " " +
-            "order by " +
+            "ORDER BY " +
             "  event_timestamp," +
             "  event_id" +
             " " +
-            "limit %d " +  // take count
-            "allow filtering";
+            "LIMIT %d;";
+
+    public static final String SELECT_EVENTS_BY_EVENT_ID = "" +
+            "SELECT" +
+            "  event_timestamp," +
+            "  event_id," +
+            "  payload" +
+            " " +
+            "FROM" +
+            "  timelines.%s" +
+            " " +
+            "WHERE" +
+            "  slice = %d AND" +
+            "  tt_offset = %d AND" +
+            "  event_timestamp >= %d AND" +
+            "  event_id >= %s" +
+            " " +
+            "ORDER BY " +
+            "  event_timestamp," +
+            "  event_id" +
+            " " +
+            "LIMIT %d;";
 
     private static final EventReader2 EVENT_READER = EventReader2.readNoTags();
 
     private final Cluster cluster;
 
-    public TimelineReader() {
+    public TimelineReader(Properties properties) {
         cluster = Cluster.builder()
-                .addContactPoint("localhost")
+                .addContactPoint(properties.getProperty("contact.point"))
                 .withoutMetrics() // To avoid java.lang.ClassNotFoundException: com.codahale.metrics.JmxReporter
                 .build();
     }
@@ -81,47 +154,57 @@ public class TimelineReader {
         if (partitions.length == 0) {
             return new TimelineContent(readState, new Event[0]);
         }
-
-        String ttOffsets = Arrays.stream(getTimetrapOffsets(from, toInclusive, timeline.getTimetrapSize()))
-                .mapToObj(String::valueOf)
-                .collect(Collectors.joining(","));
+        long[] timetrapOffsets = getTimetrapOffsets(from, toInclusive, timeline.getTimetrapSize());
 
         List<Event> result = new LinkedList<>();
-
         Session session = cluster.connect();
+        for (Parameters params : new Grid(partitions, timetrapOffsets)) {
+            TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(params.slice, i -> new TimelineShardReadStateOffset(0, null));
 
-        for (int partition : partitions) {
-            TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(partition, i -> new TimelineShardReadStateOffset(0, getMinimalUuid()));
-
-            SimpleStatement statement = new SimpleStatement(String.format(
-                    SELECT_EVENTS,
-                    timeline.getName(),
-                    partition,
-                    ttOffsets,
-                    offset.eventTimestamp,
-                    to,
-                    offset.eventId.toString(),
-                    take
-            ));
+            SimpleStatement statement;
+            if (Objects.isNull(offset.eventId)) {
+                statement = new SimpleStatement(String.format(
+                        SELECT_EVENTS_BY_TIMESTAMP,
+                        timeline.getName(),
+                        params.slice,
+                        params.ttOffset,
+                        from,
+                        to,
+                        take
+                ));
+            }
+            else {
+                statement = new SimpleStatement(String.format(
+                        SELECT_EVENTS_BY_EVENT_ID,
+                        timeline.getName(),
+                        params.slice,
+                        params.ttOffset,
+                        offset.eventTimestamp,
+                        offset.eventId,
+                        take
+                ));
+            }
             statement.setFetchSize(Integer.MAX_VALUE);
 
             System.out.println(statement.toString());
 
             ResultSet rows = session.execute(statement);
+            for (Row row : rows) {
+                long eventTimestamp = row.getLong("event_timestamp");
+                if (to <= eventTimestamp) {
+                    break;
+                }
 
-            take -= rows.getAvailableWithoutFetching();
-
-            rows.forEach(row -> {
-                offset.eventTimestamp = row.getLong("event_timestamp");
+                offset.eventTimestamp = eventTimestamp;
                 offset.eventId = row.getUUID("event_id");
                 result.add(EVENT_READER.read(new Decoder(row.getBytes("payload").array())));
-            });
+                --take;
+            }
 
             if (take <= 0) {
                 break;
             }
         }
-
         return new TimelineContent(toState(offsetMap), result.toArray(new Event[0]));
     }
 
@@ -166,9 +249,5 @@ public class TimelineReader {
             currentTimetrap += timetrapSize;
         }
         return result;
-    }
-
-    private static UUID getMinimalUuid() {
-        return UUID.fromString("00000000-0000-1000-0000-000000000000");
     }
 }
