@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.protocol;
 
 public class EventId {
 
-    // FIXME: Give a normal names to parts of EventId
+    // TODO: Give a normal names to parts of EventId
     private final long p1;
     private final long p2;
 
