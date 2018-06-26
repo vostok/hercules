@@ -117,8 +117,8 @@ public class TimelineReader {
             "WHERE" +
             "  slice = %d AND" +
             "  tt_offset = %d AND" +
-            "  event_timestamp >= %d AND" +
-            "  event_id >= %s" +
+            "  (event_timestamp, event_id) > (%d, %s) AND" +
+            "  event_timestamp < %d" +
             " " +
             "ORDER BY " +
             "  event_timestamp," +
@@ -181,21 +181,17 @@ public class TimelineReader {
                         params.ttOffset,
                         offset.eventTimestamp,
                         offset.eventId,
+                        to,
                         take
                 ));
             }
             statement.setFetchSize(Integer.MAX_VALUE);
 
-            System.out.println(statement.toString());
+            System.out.println("Executing '" + statement.toString() + "'");
 
             ResultSet rows = session.execute(statement);
             for (Row row : rows) {
-                long eventTimestamp = row.getLong("event_timestamp");
-                if (to <= eventTimestamp) {
-                    break;
-                }
-
-                offset.eventTimestamp = eventTimestamp;
+                offset.eventTimestamp = row.getLong("event_timestamp");
                 offset.eventId = row.getUUID("event_id");
                 result.add(EVENT_READER.read(new Decoder(row.getBytes("payload").array())));
                 --take;

@@ -32,7 +32,7 @@ public class TimelineApiClient {
 
         server = "http://" + properties.getProperty("server");
 
-        getStreamContent("timeline", 20);
+        getStreamContent("timeline", 3);
 
         Unirest.shutdown();
     }
@@ -49,6 +49,8 @@ public class TimelineApiClient {
 
         Encoder encoder = new Encoder();
         TIMELINE_READ_STATE_WRITER.write(encoder, new TimelineReadState(new TimelineShardReadState[]{
+                new TimelineShardReadState(0, 1, fromString("2d1cb070-7617-11e8-adc0-fa7ae01bbebc")),
+                new TimelineShardReadState(1, 1, fromString("44517d82-7619-11e8-adc0-fa7ae01bbebc"))
         }));
 
         HttpResponse<InputStream> response = Unirest.post(server + "/timeline/read")
@@ -99,5 +101,10 @@ public class TimelineApiClient {
             default:
                 return String.valueOf(variant.getValue());
         }
+    }
+
+    private static EventId fromString(String s) {
+        UUID uuid = UUID.fromString(s);
+        return new EventId(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
     }
 }
