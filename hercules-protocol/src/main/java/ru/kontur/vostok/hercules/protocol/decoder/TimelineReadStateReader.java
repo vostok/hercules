@@ -5,8 +5,8 @@ import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 
 public class TimelineReadStateReader implements Reader<TimelineReadState> {
 
-    private static final ArrrayReader<TimelineShardReadState> ARRAY_READER =
-            new ArrrayReader<>(new TimelineShardReadStateReader(), TimelineShardReadState.class);
+    private static final ArrayReader<TimelineShardReadState> ARRAY_READER =
+            new ArrayReader<>(new TimelineShardReadStateReader(), TimelineShardReadState.class);
 
     @Override
     public TimelineReadState read(Decoder decoder) {

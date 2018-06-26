@@ -4,7 +4,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 
 public class TimelineShardReadStateWriter implements Writer<TimelineShardReadState> {
 
-    private static final EventIdWriter EVENT_ID_WRITER = new EventIdWriter();
+    private static final UUIDWriter EVENT_ID_WRITER = new UUIDWriter();
 
     @Override
     public void write(Encoder encoder, TimelineShardReadState value) {

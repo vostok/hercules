@@ -4,6 +4,7 @@ import org.junit.Assert;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 public class HerculesProtocolAssert {
@@ -34,15 +35,10 @@ public class HerculesProtocolAssert {
         );
     }
 
-    public static void assertEquals(EventId expected, EventId actual) {
-        Assert.assertEquals(expected.getP1(), actual.getP1());
-        Assert.assertEquals(expected.getP2(), actual.getP2());
-    }
-
     public static void assertEquals(TimelineShardReadState expected, TimelineShardReadState actual) {
         Assert.assertEquals(expected.getShardId(), actual.getShardId());
         Assert.assertEquals(expected.getEventTimestamp(), actual.getEventTimestamp());
-        assertEquals(expected.getEventId(), actual.getEventId());
+        Assert.assertEquals(expected.getEventId(), actual.getEventId());
     }
 
     public static void assertEquals(TimelineReadState expected, TimelineReadState actual) {

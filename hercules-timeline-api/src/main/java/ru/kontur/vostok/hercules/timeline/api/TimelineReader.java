@@ -4,13 +4,9 @@ import com.datastax.driver.core.*;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
-import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.EventId;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
-import ru.kontur.vostok.hercules.protocol.TimelineContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
-import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader2;
 
 import java.util.*;
@@ -215,7 +211,7 @@ public class TimelineReader {
                 TimelineShardReadState::getShardId,
                 shardState -> new TimelineShardReadStateOffset(
                         shardState.getEventTimestamp(),
-                        new UUID(shardState.getEventId().getP1(), shardState.getEventId().getP2())
+                        shardState.getEventId()
                 )
         ));
     }
@@ -225,10 +221,7 @@ public class TimelineReader {
                 .map(offsetEntry -> new TimelineShardReadState(
                         offsetEntry.getKey(),
                         offsetEntry.getValue().eventTimestamp,
-                        new EventId(
-                                offsetEntry.getValue().eventId.getMostSignificantBits(),
-                                offsetEntry.getValue().eventId.getLeastSignificantBits()
-                        )
+                        offsetEntry.getValue().eventId
                 ))
                 .toArray(TimelineShardReadState[]::new)
         );

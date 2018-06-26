@@ -8,6 +8,8 @@ import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
 
+import java.util.UUID;
+
 public class TimelineContentWriteReadTest {
 
     @Test
@@ -19,8 +21,8 @@ public class TimelineContentWriteReadTest {
 
         TimelineContent content = new TimelineContent(
                 new TimelineReadState(new TimelineShardReadState[]{
-                        new TimelineShardReadState(0, 123, new EventId(1, 2)),
-                        new TimelineShardReadState(1, 456, new EventId(3, 4))
+                        new TimelineShardReadState(0, 123, new UUID(1, 2)),
+                        new TimelineShardReadState(1, 456, new UUID(3, 4))
                 }),
                 new Event[]{
                         TestUtil.createEvent(),
@@ -35,8 +37,8 @@ public class TimelineContentWriteReadTest {
     public void shouldWriteReadTimelineByteContent() {
         TimelineByteContent byteContent = new TimelineByteContent(
                 new TimelineReadState(new TimelineShardReadState[]{
-                        new TimelineShardReadState(0, 123, new EventId(1, 2)),
-                        new TimelineShardReadState(1, 456, new EventId(3, 4))
+                        new TimelineShardReadState(0, 123, new UUID(1, 2)),
+                        new TimelineShardReadState(1, 456, new UUID(3, 4))
                 }),
                 new byte[][]{
                         TestUtil.createEvent().getBytes(),
@@ -51,8 +53,8 @@ public class TimelineContentWriteReadTest {
 
         TimelineContent expectedContent = new TimelineContent(
                 new TimelineReadState(new TimelineShardReadState[]{
-                        new TimelineShardReadState(0, 123, new EventId(1, 2)),
-                        new TimelineShardReadState(1, 456, new EventId(3, 4))
+                        new TimelineShardReadState(0, 123, new UUID(1, 2)),
+                        new TimelineShardReadState(1, 456, new UUID(3, 4))
                 }),
                 new Event[] {
                         TestUtil.createEvent(),

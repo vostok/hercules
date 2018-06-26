@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.protocol;
 
 import org.junit.Assert;
 import org.junit.Test;
-import ru.kontur.vostok.hercules.protocol.decoder.ArrrayReader;
+import ru.kontur.vostok.hercules.protocol.decoder.ArrayReader;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.encoder.ArrayWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
@@ -40,7 +40,7 @@ public class ArrayReadWriteTest {
     @Test
     public void shouldReadWriteArrayOfIntegers() {
         WriteReadPipe
-                .init(new ArrayWriter<>(Encoder::writeInteger), new ArrrayReader<>(Decoder::readInteger, Integer.class))
+                .init(new ArrayWriter<>(Encoder::writeInteger), new ArrayReader<>(Decoder::readInteger, Integer.class))
                 .process(new Integer[]{123, 456, 789})
                 .assertEquals(Assert::assertArrayEquals);
     }
@@ -51,12 +51,12 @@ public class ArrayReadWriteTest {
             encoder.writeInteger(demo.i);
             encoder.writeFlag(demo.f);
         });
-        ArrrayReader<Demo> demoArrrayReader = new ArrrayReader<>(
+        ArrayReader<Demo> demoArrayReader = new ArrayReader<>(
                 decoder -> new Demo(decoder.readInteger(), decoder.readFlag()),
                 Demo.class
         );
         WriteReadPipe
-                .init(demoArrayWriter, demoArrrayReader)
+                .init(demoArrayWriter, demoArrayReader)
                 .process(new Demo[]{new Demo(1, true), new Demo(2, false)})
                 .assertEquals(Assert::assertArrayEquals);
     }

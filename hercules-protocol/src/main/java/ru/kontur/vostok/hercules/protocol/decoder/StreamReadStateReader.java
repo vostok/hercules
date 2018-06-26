@@ -5,8 +5,8 @@ import ru.kontur.vostok.hercules.protocol.StreamReadState;
 
 public class StreamReadStateReader implements Reader<StreamReadState> {
 
-    private static final ArrrayReader<StreamShardReadState> ARRRAY_READER =
-            new ArrrayReader<>(new StreamShardReadStateReader(), StreamShardReadState.class);
+    private static final ArrayReader<StreamShardReadState> ARRRAY_READER =
+            new ArrayReader<>(new StreamShardReadStateReader(), StreamShardReadState.class);
 
     @Override
     public StreamReadState read(Decoder decoder) {

@@ -2,12 +2,12 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import java.lang.reflect.Array;
 
-public class ArrrayReader<T> implements Reader<T[]> {
+public class ArrayReader<T> implements Reader<T[]> {
 
     private final Reader<T> elementReader;
     private final Class<T> clazz;
 
-    public ArrrayReader(Reader<T> elementReader, Class<T> clazz) {
+    public ArrayReader(Reader<T> elementReader, Class<T> clazz) {
         this.elementReader = elementReader;
         this.clazz = clazz;
     }

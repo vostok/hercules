@@ -4,7 +4,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 
 public class TimelineShardReadStateReader implements Reader<TimelineShardReadState> {
 
-    private static final EventIdReader EVENT_ID_READER = new EventIdReader();
+    private static final UUIDReader EVENT_ID_READER = new UUIDReader();
 
     @Override
     public TimelineShardReadState read(Decoder decoder) {

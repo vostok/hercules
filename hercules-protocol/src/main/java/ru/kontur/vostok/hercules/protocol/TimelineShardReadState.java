@@ -1,12 +1,14 @@
 package ru.kontur.vostok.hercules.protocol;
 
+import java.util.UUID;
+
 public class TimelineShardReadState {
 
     private final int shardId;
     private final long eventTimestamp;
-    private final EventId eventId;
+    private final UUID eventId;
 
-    public TimelineShardReadState(int shardId, long eventTimestamp, EventId eventId) {
+    public TimelineShardReadState(int shardId, long eventTimestamp, UUID eventId) {
         this.shardId = shardId;
         this.eventTimestamp = eventTimestamp;
         this.eventId = eventId;
@@ -20,7 +22,7 @@ public class TimelineShardReadState {
         return eventTimestamp;
     }
 
-    public EventId getEventId() {
+    public UUID getEventId() {
         return eventId;
     }
 }
