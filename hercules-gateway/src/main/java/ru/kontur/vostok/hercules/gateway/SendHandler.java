@@ -2,9 +2,11 @@ package ru.kontur.vostok.hercules.gateway;
 
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
-import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
+import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
+import ru.kontur.vostok.hercules.protocol.decoder.ReaderIterator;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,11 +25,11 @@ public class SendHandler extends GatewayHandler {
         exchange.getRequestReceiver().receiveFullBytes(
                 (exch, bytes) -> {
                     exch.dispatch(() -> {
-                        EventReader reader = EventReader.batchReader(bytes, tags);
-                        AtomicInteger pendingEvents = new AtomicInteger(reader.count());
+                        ReaderIterator<Event> reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(tags));
+                        AtomicInteger pendingEvents = new AtomicInteger(reader.getTotal());
                         AtomicBoolean processed = new AtomicBoolean(false);
                         while (reader.hasNext()) {
-                            Event event = reader.read();
+                            Event event = reader.next();
                             eventSender.send(
                                     event,
                                     topic,

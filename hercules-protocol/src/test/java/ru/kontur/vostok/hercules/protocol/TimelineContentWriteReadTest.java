@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.protocol;
 
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
-import ru.kontur.vostok.hercules.protocol.decoder.EventReader2;
+import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
@@ -16,7 +16,7 @@ public class TimelineContentWriteReadTest {
     public void shouldWriteReadTimelineContent() {
         WriteReadPipe<TimelineContent> pipe = WriteReadPipe.init(
                 new TimelineContentWriter(),
-                new TimelineContentReader(EventReader2.readAllTags())
+                new TimelineContentReader(EventReader.readAllTags())
         );
 
         TimelineContent content = new TimelineContent(
@@ -49,7 +49,7 @@ public class TimelineContentWriteReadTest {
         new TimelineByteContentWriter().write(encoder, byteContent);
 
         Decoder decoder = new Decoder(encoder.getBytes());
-        TimelineContent processedContent = new TimelineContentReader(EventReader2.readAllTags()).read(decoder);
+        TimelineContent processedContent = new TimelineContentReader(EventReader.readAllTags()).read(decoder);
 
         TimelineContent expectedContent = new TimelineContent(
                 new TimelineReadState(new TimelineShardReadState[]{

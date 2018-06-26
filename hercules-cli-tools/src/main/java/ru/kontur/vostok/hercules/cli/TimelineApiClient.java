@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
-import ru.kontur.vostok.hercules.protocol.decoder.EventReader2;
+import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineReadStateWriter;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class TimelineApiClient {
 
     private static final TimelineReadStateWriter stateWriter = new TimelineReadStateWriter();
-    private static final TimelineContentReader contentReader = new TimelineContentReader(EventReader2.readAllTags());
+    private static final TimelineContentReader contentReader = new TimelineContentReader(EventReader.readAllTags());
 
     private static String server;
 

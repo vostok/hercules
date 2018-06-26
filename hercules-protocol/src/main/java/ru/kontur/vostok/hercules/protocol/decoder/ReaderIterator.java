@@ -7,12 +7,14 @@ public class ReaderIterator<T> implements Iterator<T> {
 
     private final Decoder decoder;
     private final Reader<T> elementReader;
+    private final int total;
     private int remaining;
 
     public ReaderIterator(Decoder decoder, Reader<T> elementReader) {
         this.decoder = decoder;
         this.elementReader = elementReader;
-        this.remaining = decoder.readInteger();
+        this.total = decoder.readInteger();
+        this.remaining = total;
     }
 
     @Override
@@ -29,5 +31,9 @@ public class ReaderIterator<T> implements Iterator<T> {
         T result = elementReader.read(decoder);
         --remaining;
         return result;
+    }
+
+    public int getTotal() {
+        return total;
     }
 }

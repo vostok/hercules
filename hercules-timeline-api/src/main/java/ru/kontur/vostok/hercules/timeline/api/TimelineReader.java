@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
-import ru.kontur.vostok.hercules.protocol.decoder.EventReader2;
+import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -124,7 +124,7 @@ public class TimelineReader {
             " " +
             "LIMIT %d;";
 
-    private static final EventReader2 EVENT_READER = EventReader2.readNoTags();
+    private static final EventReader EVENT_READER = EventReader.readNoTags();
 
     private final Cluster cluster;
 

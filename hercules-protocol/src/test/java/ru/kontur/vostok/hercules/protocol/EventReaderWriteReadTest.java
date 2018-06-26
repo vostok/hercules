@@ -2,17 +2,17 @@ package ru.kontur.vostok.hercules.protocol;
 
 import org.junit.Assert;
 import org.junit.Test;
-import ru.kontur.vostok.hercules.protocol.decoder.EventReader2;
+import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 
 import java.util.Collections;
 
-public class EventReader2WriteReadTest {
+public class EventReaderWriteReadTest {
 
     @Test
     public void shouldWriteReadAllTags() {
-        WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader2.readAllTags());
+        WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readAllTags());
 
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
@@ -25,7 +25,7 @@ public class EventReader2WriteReadTest {
 
     @Test
     public void shouldWriteReadNoTags() {
-        WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader2.readNoTags());
+        WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readNoTags());
 
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
@@ -49,7 +49,7 @@ public class EventReader2WriteReadTest {
 
     @Test
     public void shouldWriteReadOneTag() {
-        WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader2.readTags(Collections.singleton("string-tag")));
+        WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readTags(Collections.singleton("string-tag")));
 
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
