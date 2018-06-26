@@ -1,10 +1,8 @@
 package ru.kontur.vostok.hercules.protocol;
 
 import org.junit.Assert;
-import ru.kontur.vostok.hercules.protocol.encoder.VariantWriter;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -49,6 +47,11 @@ public class HerculesProtocolAssert {
 
     public static void assertEquals(TimelineReadState expected, TimelineReadState actual) {
         assertArrayEquals(expected.getShards(), actual.getShards(), HerculesProtocolAssert::assertEquals);
+    }
+
+    public static void assertEquals(TimelineContent expected, TimelineContent actual) {
+        assertEquals(expected.getReadState(), actual.getReadState());
+        assertArrayEquals(expected.getEvents(), actual.getEvents(), HerculesProtocolAssert::assertEquals);
     }
 
     public static void assertEquals(Event expected, Event actual) {

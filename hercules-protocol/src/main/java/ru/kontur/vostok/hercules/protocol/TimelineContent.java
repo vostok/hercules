@@ -1,7 +1,4 @@
-package ru.kontur.vostok.hercules.timeline.api;
-
-import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.TimelineReadState;
+package ru.kontur.vostok.hercules.protocol;
 
 public class TimelineContent {
 
