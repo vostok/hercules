@@ -31,6 +31,7 @@ public class ElasticSearchSink {
 
     public ElasticSearchSink(Stream stream, Properties streamsProperties, ElasticSearchEventSender eventSender) {
         streamsProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, ID_PREFIX + stream.getName());
+        streamsProperties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, Long.MAX_VALUE); // Disable auto commit
 
         int punctuationInterval = PropertiesUtil.get(streamsProperties, PUNCTUATION_INTERVAL, PUNCTUATION_INTERVAL_DEFAULT_VALUE);
         int batchZie = PropertiesUtil.get(streamsProperties, BATCH_SIZE, BATCH_SIZE_DEFAULT_VALUE);
