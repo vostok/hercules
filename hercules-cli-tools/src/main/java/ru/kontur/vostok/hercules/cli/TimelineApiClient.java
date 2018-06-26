@@ -2,10 +2,16 @@ package ru.kontur.vostok.hercules.cli;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
-import ru.kontur.vostok.hercules.protocol.*;
-import ru.kontur.vostok.hercules.protocol.decoder.*;
+import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.EventId;
+import ru.kontur.vostok.hercules.protocol.TimelineReadState;
+import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
+import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.decoder.ArrrayReader;
+import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
+import ru.kontur.vostok.hercules.protocol.decoder.EventReader2;
+import ru.kontur.vostok.hercules.protocol.decoder.TimelineReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
-import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineReadStateWriter;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -76,7 +82,7 @@ public class TimelineApiClient {
         Event[] events = EVENT_ARRRAY_READER.read(decoder);
 
         System.out.println(String.format("Shard count: %d", timelineReadState.getShards().length));
-        for (TimelineShardReadState shardReadState: timelineReadState.getShards()) {
+        for (TimelineShardReadState shardReadState : timelineReadState.getShards()) {
             System.out.println(String.format("> Partition %d, timestamp %d", shardReadState.getShardId(), shardReadState.getEventTimestamp()));
             System.out.println(String.format("> Event id: %s", new UUID(shardReadState.getEventId().getP1(), shardReadState.getEventId().getP2())));
         }

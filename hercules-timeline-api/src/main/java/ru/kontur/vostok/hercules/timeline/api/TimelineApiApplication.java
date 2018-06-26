@@ -30,7 +30,11 @@ public class TimelineApiApplication {
 
             timelineReader = new TimelineReader(cassandraProperties);
 
-            server = new HttpServer(httpServerProperties, new AuthManager(), new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader));
+            server = new HttpServer(
+                    httpServerProperties,
+                    new AuthManager(),
+                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader)
+            );
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -40,7 +44,7 @@ public class TimelineApiApplication {
 
         Runtime.getRuntime().addShutdownHook(new Thread(TimelineApiApplication::shutdown));
 
-        System.out.println("Stream API started for " + (System.currentTimeMillis() - start) + " millis" );
+        System.out.println("Stream API started for " + (System.currentTimeMillis() - start) + " millis");
     }
 
     private static void shutdown() {

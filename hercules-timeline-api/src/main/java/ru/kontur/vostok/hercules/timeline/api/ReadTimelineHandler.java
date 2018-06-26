@@ -2,10 +2,8 @@ package ru.kontur.vostok.hercules.timeline.api;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.Headers;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
@@ -66,8 +64,7 @@ public class ReadTimelineHandler implements HttpHandler {
                 } catch (Exception e) {
                     e.printStackTrace();
                     exchange.setStatusCode(500);
-                }
-                finally {
+                } finally {
                     exchange.endExchange();
                 }
             });
