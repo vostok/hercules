@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventId;
+import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
@@ -138,7 +139,7 @@ public class TimelineReader {
                 .build();
     }
 
-    public TimelineContent readTimeline(
+    public TimelineByteContent readTimeline(
             Timeline timeline,
             TimelineReadState readState,
             int k,
@@ -153,11 +154,11 @@ public class TimelineReader {
 
         int[] partitions = LogicalPartitioner.getPartitionsForLogicalSharding(timeline, k, n);
         if (partitions.length == 0) {
-            return new TimelineContent(readState, new Event[0]);
+            return new TimelineByteContent(readState, new byte[][]{});
         }
         long[] timetrapOffsets = getTimetrapOffsets(from, toInclusive, timeline.getTimetrapSize());
 
-        List<Event> result = new LinkedList<>();
+        List<byte[]> result = new LinkedList<>();
         Session session = cluster.connect();
         for (Parameters params : new Grid(partitions, timetrapOffsets)) {
             TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(params.slice, i -> new TimelineShardReadStateOffset(0, null));
@@ -194,7 +195,7 @@ public class TimelineReader {
             for (Row row : rows) {
                 offset.eventTimestamp = row.getLong("event_timestamp");
                 offset.eventId = row.getUUID("event_id");
-                result.add(EVENT_READER.read(new Decoder(row.getBytes("payload").array())));
+                result.add(row.getBytes("payload").array());
                 --take;
             }
 
@@ -202,7 +203,7 @@ public class TimelineReader {
                 break;
             }
         }
-        return new TimelineContent(toState(offsetMap), result.toArray(new Event[0]));
+        return new TimelineByteContent(toState(offsetMap), result.toArray(new byte[0][]));
     }
 
     public void shutdown() {

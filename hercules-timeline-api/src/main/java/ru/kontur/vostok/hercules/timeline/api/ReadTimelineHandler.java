@@ -4,15 +4,12 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.TimelineContent;
+import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineReadStateReader;
-import ru.kontur.vostok.hercules.protocol.encoder.ArrayWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
-import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
-import ru.kontur.vostok.hercules.protocol.encoder.TimelineReadStateWriter;
+import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 
 import java.nio.ByteBuffer;
 import java.util.Deque;
@@ -22,9 +19,8 @@ import java.util.Optional;
 public class ReadTimelineHandler implements HttpHandler {
 
     private static final TimelineReadStateReader TIMELINE_READ_STATE_READER = new TimelineReadStateReader();
-    private static final TimelineReadStateWriter TIMELINE_READ_STATE_WRITER = new TimelineReadStateWriter();
 
-    private static final ArrayWriter<Event> EVENT_ARRAY_WRITER = new ArrayWriter<>(new EventWriter());
+    private static final TimelineByteContentWriter TIMELINE_BYTE_CONTENT_WRITER = new TimelineByteContentWriter();
 
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
@@ -55,11 +51,10 @@ public class ReadTimelineHandler implements HttpHandler {
 
                     TimelineReadState readState = TIMELINE_READ_STATE_READER.read(new Decoder(message));
 
-                    TimelineContent timelineContent = timelineReader.readTimeline(timeline.get(), readState, k, n, take, from, to);
+                    TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, k, n, take, from, to);
 
                     Encoder encoder = new Encoder();
-                    TIMELINE_READ_STATE_WRITER.write(encoder, timelineContent.getReadState());
-                    EVENT_ARRAY_WRITER.write(encoder, timelineContent.getEvents());
+                    TIMELINE_BYTE_CONTENT_WRITER.write(encoder, byteContent);
 
                     exchange.getResponseSender().send(ByteBuffer.wrap(encoder.getBytes()));
                 } catch (Exception e) {
