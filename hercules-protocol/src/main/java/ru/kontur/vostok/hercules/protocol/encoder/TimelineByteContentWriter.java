@@ -4,12 +4,12 @@ import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 
 public class TimelineByteContentWriter implements Writer<TimelineByteContent> {
 
-    private static final TimelineReadStateWriter STATE_WRITER = new TimelineReadStateWriter();
-    private static final ArrayWriter<byte[]> ARRAY_WRITER = new ArrayWriter<>(Encoder::writeRawBytes);
+    private static final TimelineReadStateWriter stateWriter = new TimelineReadStateWriter();
+    private static final ArrayWriter<byte[]> arrayWriter = new ArrayWriter<>(Encoder::writeRawBytes);
 
     @Override
     public void write(Encoder encoder, TimelineByteContent value) {
-        STATE_WRITER.write(encoder, value.getReadState());
-        ARRAY_WRITER.write(encoder, value.getRawEvents());
+        stateWriter.write(encoder, value.getReadState());
+        arrayWriter.write(encoder, value.getRawEvents());
     }
 }

@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class EventBuilder {
 
-    private static final VariantWriter VARIANT_WRITER = new VariantWriter();
+    private static final VariantWriter variantWriter = new VariantWriter();
 
     private long timestamp;
     private int version;
@@ -35,7 +35,7 @@ public class EventBuilder {
 
         for (Map.Entry<String, Variant> e : tags.entrySet()) {
             encoder.writeString(e.getKey());
-            VARIANT_WRITER.write(encoder, e.getValue());
+            variantWriter.write(encoder, e.getValue());
         }
 
         return new Event(encoder.getBytes(), version, timestamp, tags);

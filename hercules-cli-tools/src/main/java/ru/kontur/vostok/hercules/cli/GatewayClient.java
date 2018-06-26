@@ -16,7 +16,7 @@ import java.util.Properties;
 
 public class GatewayClient {
 
-    private static final EventWriter EVENT_WRITER = new EventWriter();
+    private static final EventWriter eventWriter = new EventWriter();
 
     private static String server;
 
@@ -42,7 +42,7 @@ public class GatewayClient {
 
         Encoder encoder = new Encoder();
         encoder.writeInteger(1); // count
-        EVENT_WRITER.write(encoder, event);
+        eventWriter.write(encoder, event);
 
         HttpResponse<String> response = Unirest.post(server + "/stream/send")
                 .queryString("stream", streamName)
@@ -57,7 +57,7 @@ public class GatewayClient {
         Encoder encoder = new Encoder();
         encoder.writeInteger(events.length);
         for (Event event : events) {
-            EVENT_WRITER.write(encoder, event);
+            eventWriter.write(encoder, event);
         }
 
         HttpResponse<String> response = Unirest.post(server + "/stream/send")

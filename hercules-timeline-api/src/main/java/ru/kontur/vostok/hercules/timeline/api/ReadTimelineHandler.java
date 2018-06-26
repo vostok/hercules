@@ -18,9 +18,8 @@ import java.util.Optional;
 
 public class ReadTimelineHandler implements HttpHandler {
 
-    private static final TimelineReadStateReader TIMELINE_READ_STATE_READER = new TimelineReadStateReader();
-
-    private static final TimelineByteContentWriter TIMELINE_BYTE_CONTENT_WRITER = new TimelineByteContentWriter();
+    private static final TimelineReadStateReader stateReader = new TimelineReadStateReader();
+    private static final TimelineByteContentWriter contentWriter = new TimelineByteContentWriter();
 
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
@@ -49,12 +48,12 @@ public class ReadTimelineHandler implements HttpHandler {
                         return;
                     }
 
-                    TimelineReadState readState = TIMELINE_READ_STATE_READER.read(new Decoder(message));
+                    TimelineReadState readState = stateReader.read(new Decoder(message));
 
                     TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, k, n, take, from, to);
 
                     Encoder encoder = new Encoder();
-                    TIMELINE_BYTE_CONTENT_WRITER.write(encoder, byteContent);
+                    contentWriter.write(encoder, byteContent);
 
                     exchange.getResponseSender().send(ByteBuffer.wrap(encoder.getBytes()));
                 } catch (Exception e) {

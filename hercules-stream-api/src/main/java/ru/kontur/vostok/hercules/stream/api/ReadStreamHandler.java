@@ -15,8 +15,8 @@ import java.util.Map;
 
 public class ReadStreamHandler implements HttpHandler {
 
-    private static final StreamReadStateReader STREAM_READ_STATE_READER = new StreamReadStateReader();
-    private static final ByteStreamContentWriter BYTE_STREAM_CONTENT_WRITER = new ByteStreamContentWriter();
+    private static final StreamReadStateReader stateReader = new StreamReadStateReader();
+    private static final ByteStreamContentWriter contentWriter = new ByteStreamContentWriter();
 
     private static final String OCTET_STREAM = "application/octet-stream";
 
@@ -40,7 +40,7 @@ public class ReadStreamHandler implements HttpHandler {
 
                     ByteStreamContent streamContent = streamReader.getStreamContent(
                             streamName,
-                            STREAM_READ_STATE_READER.read(new Decoder(message)),
+                            stateReader.read(new Decoder(message)),
                             k,
                             n,
                             take
@@ -49,7 +49,7 @@ public class ReadStreamHandler implements HttpHandler {
                     exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, OCTET_STREAM);
 
                     Encoder encoder = new Encoder();
-                    BYTE_STREAM_CONTENT_WRITER.write(encoder, streamContent);
+                    contentWriter.write(encoder, streamContent);
                     exchange.getResponseSender().send(ByteBuffer.wrap(encoder.getBytes()));
                 } catch (Exception e) {
                     e.printStackTrace();

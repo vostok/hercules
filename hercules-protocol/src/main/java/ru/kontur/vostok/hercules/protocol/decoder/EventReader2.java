@@ -7,7 +7,7 @@ import java.util.*;
 
 public class EventReader2 implements Reader<Event> {
 
-    private static final VariantReader VARIANT_READER = new VariantReader();
+    private static final VariantReader variantReader = new VariantReader();
 
     private final Set<String> tags;
 
@@ -27,10 +27,10 @@ public class EventReader2 implements Reader<Event> {
         for (int i = 0; i < tagsCount; i++) {
             String tagKey = decoder.readString();
             if (tags == null || tags.contains(tagKey)) {
-                Variant tagValue = VARIANT_READER.read(decoder);
+                Variant tagValue = variantReader.read(decoder);
                 tagValues.put(tagKey, tagValue);
             } else {
-                VARIANT_READER.skip(decoder);
+                variantReader.skip(decoder);
             }
         }
 

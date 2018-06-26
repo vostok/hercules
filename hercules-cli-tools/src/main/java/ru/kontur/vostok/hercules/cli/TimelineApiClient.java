@@ -3,13 +3,13 @@ package ru.kontur.vostok.hercules.cli;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TimelineContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.decoder.ArrayReader;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader2;
-import ru.kontur.vostok.hercules.protocol.decoder.TimelineReadStateReader;
+import ru.kontur.vostok.hercules.protocol.decoder.TimelineContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineReadStateWriter;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
@@ -24,10 +24,8 @@ import java.util.stream.Collectors;
 
 public class TimelineApiClient {
 
-    private static final TimelineReadStateWriter TIMELINE_READ_STATE_WRITER = new TimelineReadStateWriter();
-
-    private static final TimelineReadStateReader TIMELINE_READ_STATE_READER = new TimelineReadStateReader();
-    private static final ArrayReader<Event> EVENT_ARRRAY_READER = new ArrayReader<>(EventReader2.readAllTags(), Event.class);
+    private static final TimelineReadStateWriter stateWriter = new TimelineReadStateWriter();
+    private static final TimelineContentReader contentReader = new TimelineContentReader(EventReader2.readAllTags());
 
     private static String server;
 
@@ -53,7 +51,7 @@ public class TimelineApiClient {
     private static void getStreamContent(String timelineName, int take) throws Exception {
 
         Encoder encoder = new Encoder();
-        TIMELINE_READ_STATE_WRITER.write(encoder, new TimelineReadState(new TimelineShardReadState[]{
+        stateWriter.write(encoder, new TimelineReadState(new TimelineShardReadState[]{
                 new TimelineShardReadState(0, 1, UUID.fromString("2d1cb070-7617-11e8-adc0-fa7ae01bbebc")),
                 new TimelineShardReadState(1, 1, UUID.fromString("44517d82-7619-11e8-adc0-fa7ae01bbebc"))
         }));
@@ -77,16 +75,15 @@ public class TimelineApiClient {
         response.getBody().read(buffer);
         Decoder decoder = new Decoder(buffer);
 
-        TimelineReadState timelineReadState = TIMELINE_READ_STATE_READER.read(decoder);
-        Event[] events = EVENT_ARRRAY_READER.read(decoder);
+        TimelineContent content = contentReader.read(decoder);
 
-        System.out.println(String.format("Shard count: %d", timelineReadState.getShards().length));
-        for (TimelineShardReadState shardReadState : timelineReadState.getShards()) {
+        System.out.println(String.format("Shard count: %d", content.getReadState().getShards().length));
+        for (TimelineShardReadState shardReadState : content.getReadState().getShards()) {
             System.out.println(String.format("> Partition %d, timestamp %d", shardReadState.getShardId(), shardReadState.getEventTimestamp()));
             System.out.println(String.format("> Event id: %s", shardReadState.getEventId()));
         }
         System.out.println("Content:");
-        for (Event event : events) {
+        for (Event event : content.getEvents()) {
             System.out.println("> " + formatEvent(event));
         }
     }
