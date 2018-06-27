@@ -35,6 +35,9 @@ public class BulkProcessor<K, V> extends AbstractProcessor<K, V> {
     private final int punctuationInterval;
     private final LinkedBlockingQueue<Entry<K, V>> queue;
     private final Consumer<Collection<Entry<K, V>>> bulkProcessor;
+
+    // Cancellation doesn't work. Probably because of https://issues.apache.org/jira/browse/KAFKA-6748
+    // TODO: check that cancellation works correctly after kafka 1.1.1 release
     private final AtomicReference<Cancellable> scheduled = new AtomicReference<>(null);
 
     public BulkProcessor(Consumer<Collection<Entry<K, V>>> bulkProcessor, int batchSize, int punctuationInterval) {
