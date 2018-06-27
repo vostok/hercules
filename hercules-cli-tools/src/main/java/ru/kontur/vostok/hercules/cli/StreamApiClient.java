@@ -2,7 +2,11 @@ package ru.kontur.vostok.hercules.cli;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
-import ru.kontur.vostok.hercules.protocol.*;
+import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.EventStreamContent;
+import ru.kontur.vostok.hercules.protocol.StreamReadState;
+import ru.kontur.vostok.hercules.protocol.StreamShardReadState;
+import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventStreamContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
@@ -12,13 +16,14 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class StreamApiClient {
+
+    private static final StreamReadStateWriter stateWriter = new StreamReadStateWriter();
+    private static final EventStreamContentReader contentReader = new EventStreamContentReader();
 
     private static String server;
 
@@ -36,7 +41,7 @@ public class StreamApiClient {
     private static void getStreamContent(String streamName, int take) throws Exception {
 
         Encoder encoder = new Encoder();
-        StreamReadStateWriter.write(encoder, new StreamReadState(new ShardReadState[]{
+        stateWriter.write(encoder, new StreamReadState(new StreamShardReadState[]{
         }));
 
         HttpResponse<InputStream> response = Unirest.post(server + "/stream/read")
@@ -54,11 +59,11 @@ public class StreamApiClient {
         byte[] buffer = new byte[response.getBody().available()];
         response.getBody().read(buffer);
 
-        EventStreamContent eventStreamContent = EventStreamContentReader.read(new Decoder(buffer));
+        EventStreamContent eventStreamContent = contentReader.read(new Decoder(buffer));
         StreamReadState readState = eventStreamContent.getState();
 
         System.out.println(String.format("Shard count: %d", readState.getShardCount()));
-        for (ShardReadState shardReadState : readState.getShardStates()) {
+        for (StreamShardReadState shardReadState : readState.getShardStates()) {
             System.out.println(String.format("> Partition %d, offset %d", shardReadState.getPartition(), shardReadState.getOffset()));
         }
         System.out.println("Content:");

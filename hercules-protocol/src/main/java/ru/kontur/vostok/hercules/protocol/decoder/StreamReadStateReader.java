@@ -1,16 +1,15 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
-import ru.kontur.vostok.hercules.protocol.ShardReadState;
+import ru.kontur.vostok.hercules.protocol.StreamShardReadState;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 
-public class StreamReadStateReader {
+public class StreamReadStateReader implements Reader<StreamReadState> {
 
-    public static StreamReadState read(Decoder decoder) {
-        int count = decoder.readInteger();
-        ShardReadState[] states = new ShardReadState[count];
-        for (int i = 0; i < count; ++i) {
-            states[i] = ShardReadStateReader.read(decoder);
-        }
-        return new StreamReadState(states);
+    private static final ArrayReader<StreamShardReadState> arrayReader =
+            new ArrayReader<>(new StreamShardReadStateReader(), StreamShardReadState.class);
+
+    @Override
+    public StreamReadState read(Decoder decoder) {
+        return new StreamReadState(arrayReader.read(decoder));
     }
 }

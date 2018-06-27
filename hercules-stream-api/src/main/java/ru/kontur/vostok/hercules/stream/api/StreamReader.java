@@ -98,15 +98,15 @@ public class StreamReader {
 
     private static Map<Integer, Long> stateToMap(StreamReadState state) {
         return Arrays.stream(state.getShardStates())
-                .collect(Collectors.toMap(ShardReadState::getPartition, ShardReadState::getOffset));
+                .collect(Collectors.toMap(StreamShardReadState::getPartition, StreamShardReadState::getOffset));
     }
 
     private static StreamReadState stateFromMap(Map<Integer, Long> map) {
         return new StreamReadState(
                 map.entrySet().stream()
-                        .map(e -> new ShardReadState(e.getKey(), e.getValue()))
+                        .map(e -> new StreamShardReadState(e.getKey(), e.getValue()))
                         .collect(Collectors.toList())
-                        .toArray(new ShardReadState[]{})
+                        .toArray(new StreamShardReadState[]{})
         );
     }
 

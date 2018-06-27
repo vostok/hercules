@@ -3,11 +3,12 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
-import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class EventBuilder {
+
+    private static final VariantWriter variantWriter = new VariantWriter();
 
     private long timestamp;
     private int version;
@@ -34,7 +35,7 @@ public class EventBuilder {
 
         for (Map.Entry<String, Variant> e : tags.entrySet()) {
             encoder.writeString(e.getKey());
-            VariantWriter.write(encoder, e.getValue());
+            variantWriter.write(encoder, e.getValue());
         }
 
         return new Event(encoder.getBytes(), version, timestamp, tags);

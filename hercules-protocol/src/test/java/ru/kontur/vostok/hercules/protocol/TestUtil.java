@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.protocol;
 
+import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
+
 import java.nio.charset.StandardCharsets;
 
 public final class TestUtil {
@@ -82,6 +84,15 @@ public final class TestUtil {
             result[i] = strings[i].getBytes(StandardCharsets.UTF_8);
         }
         return result;
+    }
+
+    static Event createEvent() {
+        EventBuilder builder = new EventBuilder();
+        builder.setVersion(1);
+        builder.setTimestamp(123_456_789L);
+        builder.setTag("string", Variant.ofString("Abc ЕЁЮ"));
+        builder.setTag("int", Variant.ofInteger(123));
+        return builder.build();
     }
 
     private TestUtil() {

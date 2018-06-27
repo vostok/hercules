@@ -10,10 +10,13 @@ import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import javax.xml.bind.DatatypeConverter;
 import java.util.Map;
 import java.util.Properties;
 
 public class GatewayClient {
+
+    private static final EventWriter eventWriter = new EventWriter();
 
     private static String server;
 
@@ -39,7 +42,7 @@ public class GatewayClient {
 
         Encoder encoder = new Encoder();
         encoder.writeInteger(1); // count
-        EventWriter.write(encoder, event);
+        eventWriter.write(encoder, event);
 
         HttpResponse<String> response = Unirest.post(server + "/stream/send")
                 .queryString("stream", streamName)
@@ -54,7 +57,7 @@ public class GatewayClient {
         Encoder encoder = new Encoder();
         encoder.writeInteger(events.length);
         for (Event event : events) {
-            EventWriter.write(encoder, event);
+            eventWriter.write(encoder, event);
         }
 
         HttpResponse<String> response = Unirest.post(server + "/stream/send")
@@ -84,6 +87,9 @@ public class GatewayClient {
         eventBuilder.setTag("sample-float", Variant.ofFloat(0.123456789f));
         eventBuilder.setTag("sample-double", Variant.ofDouble(0.123456789));
 
-        return eventBuilder.build();
+        Event result = eventBuilder.build();
+
+        System.out.println("Event created: 0x" + DatatypeConverter.printHexBinary(result.getBytes()));
+        return result;
     }
 }

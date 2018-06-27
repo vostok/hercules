@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.kafka.util.serialization;
 
 import org.apache.kafka.common.serialization.Deserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 
 import java.util.Collections;
@@ -26,7 +27,8 @@ public class EventDeserializer implements Deserializer<Event> {
 
     @Override
     public Event deserialize(String topic, byte[] data) {
-        return EventReader.singleReader(data, tags).read();
+        EventReader reader = EventReader.readTags(tags);
+        return reader.read(new Decoder(data));
     }
 
     @Override

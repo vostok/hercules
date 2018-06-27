@@ -35,11 +35,11 @@ public class DecoderTest {
         Set<String> tags = new HashSet<>();
         tags.addAll(Arrays.asList("host", "timestamp"));
 
-        EventReader reader = EventReader.batchReader(data, tags);
-        assertEquals(1, reader.count());
+        ReaderIterator<Event> reader = new ReaderIterator<>(new Decoder(data), EventReader.readTags(tags));
+        assertEquals(1, reader.getTotal());
         assertTrue(reader.hasNext());
 
-        Event event = reader.read();
+        Event event = reader.next();
         assertNotNull(event);
         assertFalse(reader.hasNext());
 

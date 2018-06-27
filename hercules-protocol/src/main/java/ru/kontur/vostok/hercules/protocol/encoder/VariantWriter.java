@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.Arrays;
 
-public class VariantWriter {
+public class VariantWriter implements Writer<Variant> {
     
     @FunctionalInterface
     private interface VariantValueWriter {
@@ -47,7 +47,8 @@ public class VariantWriter {
         writers[Type.TEXT_ARRAY.value] = VariantWriter::writeTextArray;
     }
 
-    public static void write(Encoder encoder, Variant variant) {
+    @Override
+    public void write(Encoder encoder, Variant variant) {
         encoder.writeByte(variant.getType().value);
         writers[variant.getType().value].write(encoder, variant.getValue());
     }

@@ -4,13 +4,13 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 
-public class EventStreamContentWriter {
+public class EventStreamContentWriter implements Writer<EventStreamContent> {
 
-    public static void write(Encoder encoder, EventStreamContent content) {
-        StreamReadStateWriter.write(encoder, content.getState());
-        encoder.writeInteger(content.getEventCount());
-        for (Event record : content.getEvents()) {
-            EventWriter.write(encoder, record);
-        }
+    private static final StreamReadStateWriter stateWriter = new StreamReadStateWriter();
+    private static final ArrayWriter<Event> arrayWriter = new ArrayWriter<>(new EventWriter());
+
+    public void write(Encoder encoder, EventStreamContent content) {
+        stateWriter.write(encoder, content.getState());
+        arrayWriter.write(encoder, content.getEvents());
     }
 }
