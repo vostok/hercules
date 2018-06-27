@@ -6,6 +6,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerializer;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Map;
 import java.util.Properties;
@@ -36,7 +37,7 @@ public class EventSender {
                 new ProducerRecord<>(
                         topic,
                         partition,
-                        event.getTimestamp(),
+                        TimeUtil.gregorianTicksToUnixTime(event.getTimestamp()),
                         eventId,
                         event.getBytes()
                 );

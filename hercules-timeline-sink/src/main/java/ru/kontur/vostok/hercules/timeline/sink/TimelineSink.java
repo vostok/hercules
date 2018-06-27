@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.stream.sink;
+package ru.kontur.vostok.hercules.timeline.sink;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.streams.Consumed;
@@ -7,16 +7,17 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Predicate;
-import org.apache.kafka.streams.kstream.Produced;
+import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.cassandra.util.Slicer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
-import ru.kontur.vostok.hercules.kafka.util.serialization.EventStreamPartitioner;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
-import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
+import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
+import ru.kontur.vostok.hercules.partitioner.RandomPartitioner;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
@@ -32,20 +33,19 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public class StreamSink {
+public class TimelineSink {
     private final KafkaStreams kafkaStreams;
 
-    public StreamSink(Properties properties, DerivedStream derived) {
-        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, StreamUtil.streamToApplicationId(derived));
-        StreamsConfig config = new StreamsConfig(properties);
+    public TimelineSink(Properties properties, Timeline timeline, CassandraConnector cassandraConnector) {
+        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, TimelineUtil.timelineToApplicationId(timeline));
 
-        List<String> topics = Arrays.asList(derived.getStreams());
-        Set<String> tags = new HashSet<>(derived.getFilters().length + derived.getShardingKey().length);
-        final Filter[] filters = derived.getFilters();
+        List<String> topics = Arrays.asList(timeline.getStreams());
+        Set<String> tags = new HashSet<>(timeline.getFilters().length + timeline.getShardingKey().length);
+        final Filter[] filters = timeline.getFilters();
         for (Filter filter : filters) {
             tags.add(filter.getTag());
         }
-        tags.addAll(Arrays.asList(derived.getShardingKey()));
+        tags.addAll(Arrays.asList(timeline.getShardingKey()));
 
         Predicate<UUID, Event> predicate = (k, v) -> {
             Map<String, Variant> map = v.getTags();
@@ -58,19 +58,24 @@ public class StreamSink {
             return true;
         };
 
+        Slicer slicer =
+                new Slicer(
+                        new HashPartitioner(new NaiveHasher()),
+                        new RandomPartitioner(),
+                        timeline.getShardingKey(),
+                        timeline.getSlices());
+
         Serde<UUID> keySerde = new UuidSerde();
 
         EventSerializer serializer = new EventSerializer();
         EventDeserializer deserializer = EventDeserializer.parseTags(tags);
         Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
 
-        EventStreamPartitioner partitioner = new EventStreamPartitioner(new HashPartitioner(new NaiveHasher()), derived.getShardingKey(), derived.getPartitions());
-
         StreamsBuilder builder = new StreamsBuilder();
         KStream<UUID, Event> kStream = builder.stream(topics, Consumed.with(keySerde, valueSerde));
-        kStream.filter(predicate).to(derived.getName(), Produced.with(keySerde, valueSerde, partitioner));
+        kStream.filter(predicate).process(() -> new SyncTimelineProcessor(cassandraConnector, timeline, slicer));
 
-        kafkaStreams = new KafkaStreams(builder.build(), config);
+        kafkaStreams = new KafkaStreams(builder.build(), properties);
     }
 
     public void start() {

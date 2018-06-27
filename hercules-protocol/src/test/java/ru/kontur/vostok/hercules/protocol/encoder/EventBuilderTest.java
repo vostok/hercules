@@ -5,6 +5,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.net.URL;
 import java.nio.file.Files;
@@ -18,7 +19,7 @@ public class EventBuilderTest {
     public void shouldBuildCorrectEvent() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
-        eventBuilder.setTimestamp(1527679920000000L);
+        eventBuilder.setTimestamp(TimeUtil.unixTimeToGregorianTicks(1527679920000L));
         eventBuilder.setTag("host", Variant.ofString("localhost"));
         eventBuilder.setTag("timestamp", Variant.ofLong(1527679920000000L));
 

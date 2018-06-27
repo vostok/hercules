@@ -16,6 +16,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-util</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-partitioner</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
