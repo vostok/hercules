@@ -4,6 +4,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.encoder.ArrayWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,10 +16,11 @@ public class ReaderIteratorTest {
     public void shouldReadWriteIntegerArray() {
         ArrayWriter<Integer> writer = new ArrayWriter<>(Encoder::writeInteger);
 
-        Encoder encoder = new Encoder();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
         writer.write(encoder, new Integer[]{1, 2, 3});
 
-        Decoder decoder = new Decoder(encoder.getBytes());
+        Decoder decoder = new Decoder(stream.toByteArray());
         ReaderIterator<Integer> reader = new ReaderIterator<>(decoder, Decoder::readInteger);
 
         List<Integer> result = new ArrayList<>();

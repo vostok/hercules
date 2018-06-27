@@ -1,25 +1,24 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
 import ru.kontur.vostok.hercules.protocol.VectorConstants;
-import ru.kontur.vostok.hercules.protocol.decoder.SizeOf;
 
-import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 
 public class Encoder {
 
-    private final ByteArrayOutputStream stream;
+    private final DataOutputStream stream;
 
-    public Encoder() {
-        this.stream = new ByteArrayOutputStream();
+    public Encoder(OutputStream stream) {
+        this.stream = new DataOutputStream(stream);
     }
 
     public void writeByte(byte b) {
         try {
-            stream.write(ByteBuffer.allocate(SizeOf.BYTE).put(b).array());
+            stream.writeByte(b);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -27,7 +26,7 @@ public class Encoder {
 
     public void writeUnsignedByte(int b) {
         try {
-            stream.write(ByteBuffer.allocate(SizeOf.BYTE).put((byte) b).array());
+            stream.write((byte) b);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -35,7 +34,7 @@ public class Encoder {
 
     public void writeShort(short s) {
         try {
-            stream.write(ByteBuffer.allocate(SizeOf.SHORT).putShort(s).array());
+            stream.writeShort(s);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -43,7 +42,7 @@ public class Encoder {
 
     public void writeInteger(int i) {
         try {
-            stream.write(ByteBuffer.allocate(SizeOf.INTEGER).putInt(i).array());
+            stream.writeInt(i);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -51,7 +50,7 @@ public class Encoder {
 
     public void writeLong(long l) {
         try {
-            stream.write(ByteBuffer.allocate(SizeOf.LONG).putLong(l).array());
+            stream.writeLong(l);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -59,7 +58,7 @@ public class Encoder {
 
     public void writeFloat(float f) {
         try {
-            stream.write(ByteBuffer.allocate(SizeOf.FLOAT).putFloat(f).array());
+            stream.writeFloat(f);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -67,7 +66,7 @@ public class Encoder {
 
     public void writeDouble(double d) {
         try {
-            stream.write(ByteBuffer.allocate(SizeOf.DOUBLE).putDouble(d).array());
+            stream.writeDouble(d);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -283,11 +282,6 @@ public class Encoder {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public byte[] getBytes() {
-        // TODO: Copy of byte array created here.
-        return stream.toByteArray();
     }
 
     private void writeArrayLength(int length) {

@@ -14,6 +14,7 @@ import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -40,7 +41,8 @@ public class StreamApiClient {
 
     private static void getStreamContent(String streamName, int take) throws Exception {
 
-        Encoder encoder = new Encoder();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
         stateWriter.write(encoder, new StreamReadState(new StreamShardReadState[]{
         }));
 
@@ -49,7 +51,7 @@ public class StreamApiClient {
                 .queryString("take", take)
                 .queryString("k", 0)
                 .queryString("n", 1)
-                .body(encoder.getBytes())
+                .body(stream.toByteArray())
                 .asBinary();
 
         if (200 != response.getStatus()) {
