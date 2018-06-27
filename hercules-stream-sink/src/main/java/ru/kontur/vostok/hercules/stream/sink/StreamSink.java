@@ -12,6 +12,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventStreamPartitioner;
+import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidSerde;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,7 +48,7 @@ public class StreamSink {
         }
         tags.addAll(Arrays.asList(derived.getShardingKey()));
 
-        Predicate<Void, Event> predicate = (k, v) -> {
+        Predicate<UUID, Event> predicate = (k, v) -> {
             Map<String, Variant> map = v.getTags();
             for (Filter filter : filters) {
                 Variant value = map.get(filter.getTag());
@@ -57,7 +59,7 @@ public class StreamSink {
             return true;
         };
 
-        Serde<Void> keySerde = new VoidSerde();
+        Serde<UUID> keySerde = new UuidSerde();
 
         EventSerializer serializer = new EventSerializer();
         EventDeserializer deserializer = EventDeserializer.parseTags(tags);
@@ -66,7 +68,7 @@ public class StreamSink {
         EventStreamPartitioner partitioner = new EventStreamPartitioner(new HashPartitioner(new NaiveHasher()), derived.getShardingKey(), derived.getPartitions());
 
         StreamsBuilder builder = new StreamsBuilder();
-        KStream<Void, Event> kStream = builder.stream(topics, Consumed.with(keySerde, valueSerde));
+        KStream<UUID, Event> kStream = builder.stream(topics, Consumed.with(keySerde, valueSerde));
         kStream.filter(predicate).to(derived.getName(), Produced.with(keySerde, valueSerde, partitioner));
 
         kafkaStreams = new KafkaStreams(builder.build(), config);

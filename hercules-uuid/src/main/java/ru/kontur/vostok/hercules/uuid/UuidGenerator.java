@@ -72,14 +72,18 @@ public class UuidGenerator {
         while (true) {
             long nowMillis = System.currentTimeMillis();
             long nowTimestamp = unixTimeToTimestamp(nowMillis);
-            //long highTimestamp = unixTimeToTimestamp(nowMillis + 1);
+            long highTimestamp = unixTimeToTimestamp(nowMillis + 1);
             long lastTimestamp = UuidGenerator.lastTimestamp.get();
             if (nowTimestamp > lastTimestamp) {
                 if (UuidGenerator.lastTimestamp.compareAndSet(lastTimestamp, nowTimestamp)) {
                     return nowTimestamp;
                 }
+                // Someone else jumped to another millisecond: go to next spin
             } else {
-                return UuidGenerator.lastTimestamp.incrementAndGet();
+                if (highTimestamp > lastTimestamp) {
+                    return UuidGenerator.lastTimestamp.incrementAndGet();
+                }
+                // Run far ahead to next millisecond: go to next spin
             }
         }
     }

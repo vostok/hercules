@@ -4,10 +4,12 @@ import org.apache.kafka.streams.processor.StreamPartitioner;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;
 import ru.kontur.vostok.hercules.protocol.Event;
 
+import java.util.UUID;
+
 /**
  * @author Gregory Koshelev
  */
-public class EventStreamPartitioner implements StreamPartitioner<Void, Event> {
+public class EventStreamPartitioner implements StreamPartitioner<UUID, Event> {
     private final Partitioner partitioner;
     private final String[] shardingKey;
     private final int partitions;
@@ -19,7 +21,7 @@ public class EventStreamPartitioner implements StreamPartitioner<Void, Event> {
     }
 
     @Override
-    public Integer partition(Void key, Event value, int numPartitions) {
+    public Integer partition(UUID key, Event value, int numPartitions) {
         return (shardingKey != null && shardingKey.length > 0) ? partitioner.partition(value, shardingKey, partitions) : null;
     }
 }
