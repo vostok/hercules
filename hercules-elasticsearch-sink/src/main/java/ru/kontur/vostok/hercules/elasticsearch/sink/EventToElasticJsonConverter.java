@@ -6,17 +6,16 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 
-import static ru.kontur.vostok.hercules.util.TimeUtil.NANOS_IN_MILLIS;
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 public class EventToElasticJsonConverter {
@@ -71,7 +70,7 @@ public class EventToElasticJsonConverter {
         toUnchecked(() -> {
             try (JsonGenerator generator = FACTORY.createGenerator(stream, JsonEncoding.UTF8)) {
                 generator.writeStartObject();
-                generator.writeStringField(TIMESTAMP_FIELD, FORMATTER.format(fromNanoseconds(event.getTimestamp())));
+                generator.writeStringField(TIMESTAMP_FIELD, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
                 for (Map.Entry<String, Variant> tag : event.getTags().entrySet()) {
                     if (TIMESTAMP_FIELD.equals(tag.getKey())) {
@@ -184,12 +183,5 @@ public class EventToElasticJsonConverter {
             generator.writeString(new String(bytes, StandardCharsets.UTF_8));
         }
         generator.writeEndArray();
-    }
-
-    private static Instant fromNanoseconds(long nanoseconds) {
-        long millis = nanoseconds / NANOS_IN_MILLIS;
-        long nanos = nanoseconds % NANOS_IN_MILLIS;
-
-        return Instant.ofEpochMilli(millis).plusNanos(nanos);
     }
 }

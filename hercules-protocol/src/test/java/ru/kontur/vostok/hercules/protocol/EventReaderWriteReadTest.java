@@ -5,8 +5,11 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
+import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.Collections;
+import java.util.UUID;
 
 public class EventReaderWriteReadTest {
 
@@ -14,9 +17,10 @@ public class EventReaderWriteReadTest {
     public void shouldWriteReadAllTags() {
         WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readAllTags());
 
+        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
-        builder.setTimestamp(123_456_789L);
+        builder.setEventId(eventId);
         builder.setTag("string-tag", Variant.ofString("Abc ЕЁЮ"));
         builder.setTag("flag-array-tag", Variant.ofFlagArray(new boolean[]{true, true, false}));
 
@@ -27,9 +31,10 @@ public class EventReaderWriteReadTest {
     public void shouldWriteReadNoTags() {
         WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readNoTags());
 
+        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
-        builder.setTimestamp(123_456_789L);
+        builder.setEventId(eventId);
 
         builder.setTag("string-tag", Variant.ofString("Abc ЕЁЮ"));
         builder.setTag("flag-array-tag", Variant.ofFlagArray(new boolean[]{true, true, false}));
@@ -40,7 +45,7 @@ public class EventReaderWriteReadTest {
         Event original = capture.getOriginal();
 
         Assert.assertEquals(original.getVersion(), processed.getVersion());
-        Assert.assertEquals(original.getTimestamp(), processed.getTimestamp());
+        Assert.assertEquals(original.getId(), processed.getId());
 
         Assert.assertEquals(0, processed.getTags().size());
 
@@ -51,9 +56,10 @@ public class EventReaderWriteReadTest {
     public void shouldWriteReadOneTag() {
         WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readTags(Collections.singleton("string-tag")));
 
+        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
-        builder.setTimestamp(123_456_789L);
+        builder.setEventId(eventId);
 
         builder.setTag("string-tag", Variant.ofString("Abc ЕЁЮ"));
         builder.setTag("flag-array-tag", Variant.ofFlagArray(new boolean[]{true, true, false}));
@@ -64,7 +70,7 @@ public class EventReaderWriteReadTest {
         Event original = capture.getOriginal();
 
         Assert.assertEquals(original.getVersion(), processed.getVersion());
-        Assert.assertEquals(original.getTimestamp(), processed.getTimestamp());
+        Assert.assertEquals(original.getId(), processed.getId());
 
         Assert.assertEquals(1, processed.getTags().size());
         HerculesProtocolAssert.assertEquals(Variant.ofString("Abc ЕЁЮ"), processed.getTags().get("string-tag"));

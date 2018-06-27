@@ -44,7 +44,7 @@ public class DecoderTest {
         assertFalse(reader.hasNext());
 
         assertEquals(1, event.getVersion());
-        assertEquals(137469727200000000L, event.getTimestamp());
+        assertEquals(137469727200000000L, event.getId().timestamp());
 
         Map<String, Variant> tagValues = event.getTags();
         assertNotNull(tagValues);
@@ -73,10 +73,10 @@ public class DecoderTest {
 
         byte[] bytes = event.getBytes();
         assertNotNull(bytes);
-        assertEquals(46, bytes.length);
+        assertEquals(54, bytes.length);
         assertArrayEquals(new byte[]{
                 0x01,/* Version */
-                0x01, (byte) 0xE8, 0x63, (byte) 0xFD, 0x11, 0x20, 0x38, 0x00,/* Timestamp 137469727200000000L is 2018-05-30T11:32:00.000Z in 100ns ticks from Gregorian Epoch */
+                0x11, 0x20, 0x38, 0x00, 0x63, (byte) 0xFD, 0x11, (byte) 0xE8, (byte) 0x83, (byte) 0xE2, 0x3A, 0x58, 0x7D, (byte) 0x90, 0x20, 0x00,// UUID for Timestamp 137469727200000000L is 2018-05-30T11:32:00.000Z in 100ns ticks from Gregorian Epoch
                 0x00, 0x02,/* Tags count */
                 0x04, 0x68, 0x6F, 0x73, 0x74,/* Tag name 'host' */
                 0x08, 0x09, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x68, 0x6F, 0x73, 0x74,/* Tag value 'localhost' of type String*/
