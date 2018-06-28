@@ -29,7 +29,7 @@ public class SyncTimelineProcessor extends AbstractProcessor<UUID, Event> {
         session = connector.session();
 
         PreparedStatement prepared =
-                session.prepare("INSERT INTO " + TimelineUtil.timelineToTableName(timeline) + " (slice_id, tt_offset, event_timestamp, event_id, payload) VALUES (?, ?, ?, ?, ?)");
+                session.prepare("INSERT INTO " + TimelineUtil.timelineToTableName(timeline) + " (slice_id, tt_offset, event_id, payload) VALUES (?, ?, ?, ?)");
         prepared.setConsistencyLevel(ConsistencyLevel.QUORUM);
         this.prepared = prepared;
 
@@ -43,7 +43,7 @@ public class SyncTimelineProcessor extends AbstractProcessor<UUID, Event> {
         long timestamp = TimeUtil.gregorianTicksToUnixTime(value.getId().timestamp());
         long ttOffset = TimeTrapUtil.toTimeTrapOffset(timeline.getTimetrapSize(), timestamp);
         byte[] payload = value.getBytes();
-        BoundStatement statement = prepared.bind(slice, ttOffset, timestamp, key, ByteBuffer.wrap(payload));
+        BoundStatement statement = prepared.bind(slice, ttOffset, key, ByteBuffer.wrap(payload));
         try {
             ResultSet result = session.execute(statement);
         } catch (Exception e) {
