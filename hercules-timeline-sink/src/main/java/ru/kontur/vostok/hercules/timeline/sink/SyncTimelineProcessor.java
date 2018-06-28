@@ -8,6 +8,7 @@ import com.datastax.driver.core.Session;
 import org.apache.kafka.streams.processor.AbstractProcessor;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.cassandra.util.Slicer;
+import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;

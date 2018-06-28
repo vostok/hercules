@@ -79,7 +79,7 @@ public class TimelineApiClient {
 
         System.out.println(String.format("Shard count: %d", content.getReadState().getShards().length));
         for (TimelineShardReadState shardReadState : content.getReadState().getShards()) {
-            System.out.println(String.format("> Partition %d, timestamp %d", shardReadState.getShardId(), shardReadState.getEventTimestamp()));
+            System.out.println(String.format("> Partition %d, tt_offset %d", shardReadState.getShardId(), shardReadState.getTtOffset()));
             System.out.println(String.format("> Event id: %s", shardReadState.getEventId()));
         }
         System.out.println("Content:");

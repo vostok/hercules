@@ -9,7 +9,7 @@ public class TimelineShardReadStateWriter implements Writer<TimelineShardReadSta
     @Override
     public void write(Encoder encoder, TimelineShardReadState value) {
         encoder.writeInteger(value.getShardId());
-        encoder.writeLong(value.getEventTimestamp());
+        encoder.writeLong(value.getTtOffset());
         uuidWriter.write(encoder, value.getEventId());
     }
 }

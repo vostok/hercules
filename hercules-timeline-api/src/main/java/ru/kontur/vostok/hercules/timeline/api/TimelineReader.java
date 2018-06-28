@@ -1,8 +1,8 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
 import com.datastax.driver.core.*;
+import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
@@ -20,11 +20,11 @@ public class TimelineReader {
      * Utility class to store shard read offset
      */
     private static class TimelineShardReadStateOffset {
-        long eventTimestamp;
+        long ttOffset;
         UUID eventId;
 
-        public TimelineShardReadStateOffset(long eventTimestamp, UUID eventId) {
-            this.eventTimestamp = eventTimestamp;
+        public TimelineShardReadStateOffset(long ttOffset, UUID eventId) {
+            this.ttOffset = ttOffset;
             this.eventId = eventId;
         }
     }
@@ -95,48 +95,24 @@ public class TimelineReader {
         }
     }
 
-    private static final String EVENT_TIMESTAMP = "event_timestamp";
     private static final String EVENT_ID = "event_id";
     private static final String PAYLOAD = "payload";
 
-    private static final String SELECT_EVENTS_BY_TIMESTAMP = "" +
+    private static final String SELECT_EVENTS = "" +
             "SELECT" +
-            "  event_timestamp," +
             "  event_id," +
             "  payload" +
             " " +
             "FROM" +
-            "  timelines.%s" +
+            "  timeline.%s" +
             " " +
             "WHERE" +
             "  slice = %d AND" +
             "  tt_offset = %d AND" +
-            "  event_timestamp >= %d AND" +
-            "  event_timestamp < %d" +
+            "  event_id > %s AND" + // Lower bound
+            "  event_id < %s" + // Upper bound
             " " +
             "ORDER BY " +
-            "  event_timestamp," +
-            "  event_id" +
-            " " +
-            "LIMIT %d;";
-
-    private static final String SELECT_EVENTS_BY_EVENT_ID = "" +
-            "SELECT" +
-            "  event_timestamp," +
-            "  event_id," +
-            "  payload" +
-            " " +
-            "FROM" +
-            "  timelines.%s" +
-            " " +
-            "WHERE" +
-            "  slice = %d AND" +
-            "  tt_offset = %d AND" +
-            "  (event_timestamp, event_id) > (%d, %s) AND" +
-            "  event_timestamp < %d" +
-            " " +
-            "ORDER BY " +
-            "  event_timestamp," +
             "  event_id" +
             " " +
             "LIMIT %d;";
@@ -174,20 +150,29 @@ public class TimelineReader {
     ) {
         long toInclusive = to - 1;
 
-        Map<Integer, TimelineShardReadStateOffset> offsetMap = toMap(readState);
-
         int[] partitions = LogicalPartitioner.getPartitionsForLogicalSharding(timeline, k, n);
         if (partitions.length == 0) {
             return new TimelineByteContent(readState, new byte[][]{});
         }
-        long[] timetrapOffsets = getTimetrapOffsets(from, toInclusive, timeline.getTimetrapSize());
+        long[] timetrapOffsets = TimeTrapUtil.getTimetrapOffsets(from, toInclusive, timeline.getTimetrapSize());
+
+        Map<Integer, TimelineShardReadStateOffset> offsetMap = toMap(readState);
 
         List<byte[]> result = new LinkedList<>();
         try (Session session = cluster.connect()) {
             for (Parameters params : new Grid(partitions, timetrapOffsets)) {
-                TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(params.slice, i -> getEmptyReadStateOffset());
+                TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(
+                        params.slice,
+                        i -> getEmptyReadStateOffset(params.ttOffset)
+                );
+                if (params.ttOffset < offset.ttOffset) {
+                    continue; // Skip already red timetrap offsets
+                } else if (offset.ttOffset < params.ttOffset ) {
+                    offsetMap.put(params.slice, getEmptyReadStateOffset(params.ttOffset));
+                    offset = offsetMap.get(params.slice);
+                }
 
-                SimpleStatement statement = generateStatement(timeline, params, offset, from, to, take);
+                SimpleStatement statement = generateStatement(timeline, params, offset, take);
                 statement.setFetchSize(Integer.MAX_VALUE); // fetch size defined by 'take' parameter
 
                 // TODO: Change to logging
@@ -195,7 +180,6 @@ public class TimelineReader {
 
                 ResultSet rows = session.execute(statement);
                 for (Row row : rows) {
-                    offset.eventTimestamp = row.getLong(EVENT_TIMESTAMP);
                     offset.eventId = row.getUUID(EVENT_ID);
                     result.add(row.getBytes(PAYLOAD).array());
                     --take;
@@ -213,36 +197,24 @@ public class TimelineReader {
         cluster.close();
     }
 
-    private TimelineShardReadStateOffset getEmptyReadStateOffset() {
-        return new TimelineShardReadStateOffset(0, null);
+    private static TimelineShardReadStateOffset getEmptyReadStateOffset(long ttOffset) {
+        return new TimelineShardReadStateOffset(ttOffset, getMinUuid(ttOffset));
     }
 
-    private static SimpleStatement generateStatement(Timeline timeline, Parameters params, TimelineShardReadStateOffset offset, long from, long to, int take) {
-        SimpleStatement statement;
-        if (Objects.isNull(offset.eventId)) {
-            statement = new SimpleStatement(String.format(
-                    SELECT_EVENTS_BY_TIMESTAMP,
-                    timeline.getName(),
-                    params.slice,
-                    params.ttOffset,
-                    from,
-                    to,
-                    take
-            ));
-        }
-        else {
-            statement = new SimpleStatement(String.format(
-                    SELECT_EVENTS_BY_EVENT_ID,
-                    timeline.getName(),
-                    params.slice,
-                    params.ttOffset,
-                    offset.eventTimestamp,
-                    offset.eventId,
-                    to,
-                    take
-            ));
-        }
-        return statement;
+    private static UUID getMinUuid(long timestamp) {
+        return new UUID(123, 456); // FIXME: make it real
+    }
+
+    private static SimpleStatement generateStatement(Timeline timeline, Parameters params, TimelineShardReadStateOffset offset, int take) {
+        return new SimpleStatement(String.format(
+                SELECT_EVENTS,
+                timeline.getName(),
+                params.slice,
+                params.ttOffset,
+                offset.eventId.toString(),
+                getMinUuid(params.ttOffset + timeline.getTimetrapSize()),
+                take
+        ));
     }
 
     private static Map<Integer, TimelineShardReadStateOffset> toMap(TimelineReadState readState) {
@@ -251,7 +223,7 @@ public class TimelineReader {
                 .collect(Collectors.toMap(
                         TimelineShardReadState::getShardId,
                         shardState -> new TimelineShardReadStateOffset(
-                                shardState.getEventTimestamp(),
+                                shardState.getTtOffset(),
                                 shardState.getEventId()
                         )
                 ));
@@ -261,25 +233,11 @@ public class TimelineReader {
         return new TimelineReadState(offsetMap.entrySet().stream()
                 .map(offsetEntry -> new TimelineShardReadState(
                         offsetEntry.getKey(),
-                        offsetEntry.getValue().eventTimestamp,
+                        offsetEntry.getValue().ttOffset,
                         offsetEntry.getValue().eventId
                 ))
                 .toArray(TimelineShardReadState[]::new)
         );
     }
 
-    private static long[] getTimetrapOffsets(long from, long to, long timetrapSize) {
-        long fromTimetrap = TimelineUtil.calculateTimetrapOffset(from, timetrapSize);
-        long toTimetrapExclusive = TimelineUtil.calculateNextTimetrapOffset(to, timetrapSize);
-
-        int size = (int)((toTimetrapExclusive - fromTimetrap) / timetrapSize);
-
-        long[] result = new long[size];
-        long currentTimetrap = fromTimetrap;
-        for (int i = 0; i < size; ++i) {
-            result[i] = currentTimetrap;
-            currentTimetrap += timetrapSize;
-        }
-        return result;
-    }
 }
