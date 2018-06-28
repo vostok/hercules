@@ -40,8 +40,7 @@ public class SyncTimelineProcessor extends AbstractProcessor<UUID, Event> {
     @Override
     public void process(UUID key, Event value) {
         int slice = slicer.slice(value);
-        long timestamp = value.getId().timestamp();
-        long ttOffset = TimeTrapUtil.toTimeTrapOffset(timeline.getTimetrapSize(), timestamp);
+        long ttOffset = TimeTrapUtil.toTimeTrapOffset(timeline.getTimetrapSize(), value.getId().timestamp());
         byte[] payload = value.getBytes();
         BoundStatement statement = prepared.bind(slice, ttOffset, key, ByteBuffer.wrap(payload));
         try {
