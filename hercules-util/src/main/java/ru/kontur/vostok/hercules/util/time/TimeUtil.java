@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.util.time;
 
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -76,5 +77,19 @@ public class TimeUtil {
      */
     public static long unixTimeToGregorianTicks(long timestamp) {
         return unixToGregorianTicks(millisToTicks(timestamp));
+    }
+
+
+    /**
+     * Convert Unix ticks (Unix timestamp in 100ns ticks) to Instant
+     * @param ticks is 100ns ticks from Unix Epoch
+     * @return Instant
+     */
+    public static Instant unixTicksToInstant(long ticks) {
+        return Instant.ofEpochSecond(ticks / 10_000_000, (ticks % 10_000_000) * 100);
+    }
+
+    public static Instant gregorianTicksToInstant(long ticks) {
+        return unixTicksToInstant(gregorianToUnixTicks(ticks));
     }
 }

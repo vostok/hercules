@@ -1,8 +1,11 @@
 package ru.kontur.vostok.hercules.protocol;
 
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
+import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 public final class TestUtil {
 
@@ -87,9 +90,10 @@ public final class TestUtil {
     }
 
     static Event createEvent() {
+        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
-        builder.setTimestamp(123_456_789L);
+        builder.setEventId(eventId);
         builder.setTag("string", Variant.ofString("Abc ЕЁЮ"));
         builder.setTag("int", Variant.ofInteger(123));
         return builder.build();

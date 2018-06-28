@@ -4,6 +4,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
+import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.Collections;
 
@@ -47,7 +48,7 @@ public class EventDeserializerTest {
         EventBuilder builder = new EventBuilder();
 
         builder.setVersion(1);
-        builder.setTimestamp(0);
+        builder.setEventId(UuidGenerator.getClientInstance().next());
 
         builder.setTag("string-tag", Variant.ofString("tag content"));
         builder.setTag("int-tag", Variant.ofInteger(123));

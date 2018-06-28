@@ -37,7 +37,7 @@ public class EventSender {
                 new ProducerRecord<>(
                         topic,
                         partition,
-                        TimeUtil.gregorianTicksToUnixTime(event.getTimestamp()),
+                        TimeUtil.gregorianTicksToUnixTime(event.getId().timestamp()),
                         eventId,
                         event.getBytes()
                 );
