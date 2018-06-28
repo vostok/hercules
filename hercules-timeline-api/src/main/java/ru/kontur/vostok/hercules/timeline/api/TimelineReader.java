@@ -3,10 +3,13 @@ package ru.kontur.vostok.hercules.timeline.api;
 import com.datastax.driver.core.*;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
+import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
+import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -198,11 +201,8 @@ public class TimelineReader {
     }
 
     private static TimelineShardReadStateOffset getEmptyReadStateOffset(long ttOffset) {
-        return new TimelineShardReadStateOffset(ttOffset, getMinUuid(ttOffset));
-    }
-
-    private static UUID getMinUuid(long timestamp) {
-        return new UUID(123, 456); // FIXME: make it real
+        long ticks = TimeUtil.unixTimeToGregorianTicks(ttOffset);
+        return new TimelineShardReadStateOffset(ttOffset, UuidGenerator.min(ticks));
     }
 
     private static SimpleStatement generateStatement(Timeline timeline, Parameters params, TimelineShardReadStateOffset offset, int take) {
@@ -212,7 +212,7 @@ public class TimelineReader {
                 params.slice,
                 params.ttOffset,
                 offset.eventId.toString(),
-                getMinUuid(params.ttOffset + timeline.getTimetrapSize()),
+                UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
                 take
         ));
     }
