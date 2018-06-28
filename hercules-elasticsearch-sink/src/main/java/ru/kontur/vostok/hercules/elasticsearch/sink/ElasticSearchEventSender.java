@@ -28,7 +28,7 @@ public class ElasticSearchEventSender implements AutoCloseable {
         this.indexName = elasticsearchProperties.getProperty("index.name");
     }
 
-    public void send(Collection<BulkProcessor.Entry<Void, Event>> events) {
+    public void send(Collection<BulkProcessor.Entry<UUID, Event>> events) {
         if (events.size() == 0) {
             return;
         }
@@ -54,9 +54,9 @@ public class ElasticSearchEventSender implements AutoCloseable {
         restClient.close();
     }
 
-    private void writeEventRecords(OutputStream stream, Collection<BulkProcessor.Entry<Void, Event>> events) {
+    private void writeEventRecords(OutputStream stream, Collection<BulkProcessor.Entry<UUID, Event>> events) {
         events.forEach(entry -> {
-            writeIndex(stream, entry.getValue().getId());
+            writeIndex(stream, entry.getKey());
             writeNewLine(stream);
             EventToElasticJsonConverter.formatEvent(stream, entry.getValue());
             writeNewLine(stream);
