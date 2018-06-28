@@ -18,7 +18,6 @@ import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked
 public class ElasticSearchEventSender implements AutoCloseable {
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
-    private static final byte[] EMPTY_INDEX = "{\"index\":{}}".getBytes(StandardCharsets.UTF_8);
 
     private final RestClient restClient;
     private final String indexName;
@@ -57,15 +56,22 @@ public class ElasticSearchEventSender implements AutoCloseable {
 
     private void writeEventRecords(OutputStream stream, Collection<BulkProcessor.Entry<Void, Event>> events) {
         events.forEach(entry -> {
-            writeEmptyIndex(stream);
+            writeIndex(stream, entry.getValue().getId());
             writeNewLine(stream);
             EventToElasticJsonConverter.formatEvent(stream, entry.getValue());
             writeNewLine(stream);
         });
     }
 
-    private static void writeEmptyIndex(OutputStream stream) {
-        toUnchecked(() -> stream.write(EMPTY_INDEX));
+    private static final byte[] START_BYTES = "{\"index\":{\"_id\":\"".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] END_BYTES = "\"}}".getBytes(StandardCharsets.UTF_8);
+
+    private static void writeIndex(OutputStream stream, UUID eventId) {
+        toUnchecked(() -> {
+            stream.write(START_BYTES);
+            stream.write(eventId.toString().getBytes(StandardCharsets.UTF_8));
+            stream.write(END_BYTES);
+        });
     }
 
     private static void writeNewLine(OutputStream stream) {
