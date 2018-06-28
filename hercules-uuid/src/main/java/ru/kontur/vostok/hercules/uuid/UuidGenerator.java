@@ -49,6 +49,15 @@ public class UuidGenerator {
         return new UuidGenerator(Type.INTERNAL);
     }
 
+    /**
+     * Get min UUID with ticks specified
+     * @param ticks is 100ns ticks from Gregorian Epoch
+     * @return min UUID
+     */
+    public static UUID min(long ticks) {
+        return new UUID(makeMostSigBits(ticks), 0x8000000000000000L);
+    }
+
     public UUID next() {
         return new UUID(makeMostSigBits(nextTimestamp()), makeLeastSigBits(type));
     }
