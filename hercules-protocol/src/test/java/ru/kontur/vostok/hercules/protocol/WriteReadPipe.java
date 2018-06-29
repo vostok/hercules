@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.Reader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.Writer;
 
+import java.io.ByteArrayOutputStream;
 import java.util.function.BiConsumer;
 
 public class WriteReadPipe<T> {
@@ -41,10 +42,11 @@ public class WriteReadPipe<T> {
     }
 
     public ProcessedCapture<T> process(T original) {
-        Encoder encoder = new Encoder();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
         writer.write(encoder, original);
 
-        Decoder decoder = new Decoder(encoder.getBytes());
+        Decoder decoder = new Decoder(stream.toByteArray());
         T processed = reader.read(decoder);
 
         return new ProcessedCapture<>(original, processed);

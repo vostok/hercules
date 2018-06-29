@@ -9,6 +9,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.Map;
@@ -48,9 +49,10 @@ public class ReadStreamHandler implements HttpHandler {
 
                     exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, OCTET_STREAM);
 
-                    Encoder encoder = new Encoder();
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    Encoder encoder = new Encoder(stream);
                     contentWriter.write(encoder, streamContent);
-                    exchange.getResponseSender().send(ByteBuffer.wrap(encoder.getBytes()));
+                    exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
                 } catch (Exception e) {
                     e.printStackTrace();
                     exchange.setStatusCode(500);

@@ -15,6 +15,7 @@ import ru.kontur.vostok.hercules.protocol.encoder.TimelineReadStateWriter;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -50,7 +51,8 @@ public class TimelineApiClient {
 
     private static void getStreamContent(String timelineName, int take) throws Exception {
 
-        Encoder encoder = new Encoder();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
         stateWriter.write(encoder, new TimelineReadState(new TimelineShardReadState[]{
                 new TimelineShardReadState(0, 1, UUID.fromString("2d1cb070-7617-11e8-adc0-fa7ae01bbebc")),
                 new TimelineShardReadState(1, 1, UUID.fromString("44517d82-7619-11e8-adc0-fa7ae01bbebc"))
@@ -63,7 +65,7 @@ public class TimelineApiClient {
                 .queryString("n", 1)
                 .queryString("from", 0)
                 .queryString("to", 120000)
-                .body(encoder.getBytes())
+                .body(stream.toByteArray())
                 .asBinary();
 
         if (200 != response.getStatus()) {

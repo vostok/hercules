@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
 
+import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 
 public class TimelineContentWriteReadTest {
@@ -45,10 +46,11 @@ public class TimelineContentWriteReadTest {
                         TestUtil.createEvent().getBytes()
                 });
 
-        Encoder encoder = new Encoder();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
         new TimelineByteContentWriter().write(encoder, byteContent);
 
-        Decoder decoder = new Decoder(encoder.getBytes());
+        Decoder decoder = new Decoder(stream.toByteArray());
         TimelineContent processedContent = new TimelineContentReader(EventReader.readAllTags()).read(decoder);
 
         TimelineContent expectedContent = new TimelineContent(
