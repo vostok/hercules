@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.TimelineReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.Map;
@@ -52,10 +53,11 @@ public class ReadTimelineHandler implements HttpHandler {
 
                     TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, k, n, take, from, to);
 
-                    Encoder encoder = new Encoder();
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    Encoder encoder = new Encoder(stream);
                     contentWriter.write(encoder, byteContent);
 
-                    exchange.getResponseSender().send(ByteBuffer.wrap(encoder.getBytes()));
+                    exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
                 } catch (Exception e) {
                     e.printStackTrace();
                     exchange.setStatusCode(500);

@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
+import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -28,7 +29,8 @@ public class EventBuilder {
     }
 
     public Event build() {
-        Encoder encoder = new Encoder();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
 
         encoder.writeUnsignedByte(version);
         encoder.writeUuid(eventId);
@@ -39,6 +41,6 @@ public class EventBuilder {
             variantWriter.write(encoder, e.getValue());
         }
 
-        return new Event(encoder.getBytes(), version, eventId, tags);
+        return new Event(stream.toByteArray(), version, eventId, tags);
     }
 }

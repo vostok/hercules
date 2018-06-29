@@ -12,6 +12,7 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import javax.xml.bind.DatatypeConverter;
+import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.Properties;
 
@@ -41,21 +42,24 @@ public class GatewayClient {
 
     private static void sendSingleEvent(String streamName, Event event) throws Exception {
 
-        Encoder encoder = new Encoder();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
         encoder.writeInteger(1); // count
         eventWriter.write(encoder, event);
 
         HttpResponse<String> response = Unirest.post(server + "/stream/send")
                 .queryString("stream", streamName)
                 .header("apiKey", "test")
-                .body(encoder.getBytes())
+                .body(stream.toByteArray())
                 .asString();
 
         System.out.println(response.getStatusText());
     }
 
     private static void sendEvents(String streamName, Event[] events) throws Exception {
-        Encoder encoder = new Encoder();
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
         encoder.writeInteger(events.length);
         for (Event event : events) {
             eventWriter.write(encoder, event);
@@ -64,7 +68,7 @@ public class GatewayClient {
         HttpResponse<String> response = Unirest.post(server + "/stream/send")
                 .queryString("stream", streamName)
                 .header("apiKey", "test")
-                .body(encoder.getBytes())
+                .body(stream.toByteArray())
                 .asString();
 
         System.out.println(response.getStatusText());
