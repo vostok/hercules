@@ -120,7 +120,24 @@ public class TimelineReader {
             " " +
             "LIMIT %d;";
 
-    private static final String CONTACT_POINT_PROPERTY = "contact.point";
+    private static final String SELECT_EVENTS_START_READING_SLICE = "" +
+            "SELECT" +
+            "  event_id," +
+            "  payload" +
+            " " +
+            "FROM" +
+            "  %s" +
+            " " +
+            "WHERE" +
+            "  slice = %d AND" +
+            "  tt_offset = %d AND" +
+            "  event_id > %s AND" + // Lower bound
+            "  event_id < %s" + // Upper bound
+            " " +
+            "ORDER BY " +
+            "  event_id" +
+            " " +
+            "LIMIT %d;";
 
     private final Session session;
 
