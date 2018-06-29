@@ -9,6 +9,7 @@ import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayOutputStream;
@@ -84,7 +85,7 @@ public class GatewayClient {
     private static Event generateEvent() {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
-        eventBuilder.setTimestamp(System.nanoTime());
+        eventBuilder.setEventId(UuidGenerator.getClientInstance().next());
         eventBuilder.setTag("sample-tag", Variant.ofString("sample value"));
         eventBuilder.setTag("sample-long", Variant.ofLong(123L));
         eventBuilder.setTag("sample-flag", Variant.ofFlag(true));

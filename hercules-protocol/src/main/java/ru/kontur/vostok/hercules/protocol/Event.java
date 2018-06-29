@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author Gregory Koshelev
@@ -8,13 +9,13 @@ import java.util.Map;
 public class Event {
     private final byte[] bytes;
     private final int version;
-    private final long timestamp;
+    private final UUID id;
     private final Map<String, Variant> tags;
 
-    public Event(byte[] bytes, int version, long timestamp, Map<String, Variant> tags) {
+    public Event(byte[] bytes, int version, UUID id, Map<String, Variant> tags) {
         this.bytes = bytes;
         this.version = version;
-        this.timestamp = timestamp;
+        this.id = id;
         this.tags = tags;
     }
 
@@ -26,8 +27,8 @@ public class Event {
         return version;
     }
 
-    public long getTimestamp() {
-        return timestamp;
+    public UUID getId() {
+        return id;
     }
 
     public Map<String, Variant> getTags() {

@@ -94,7 +94,7 @@ public class TimelineApiClient {
         String tags = event.getTags().entrySet().stream()
                 .map(e -> e.getKey() + "=" + formatVariant(e.getValue()))
                 .collect(Collectors.joining(","));
-        return String.format("(v. %d) [%d] %s", event.getVersion(), event.getTimestamp(), tags);
+        return String.format("(v. %d) [%s] %s", event.getVersion(), event.getId().toString(), tags);
     }
 
     private static String formatVariant(Variant variant) {

@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.protocol.Type;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * @author Gregory Koshelev
@@ -120,6 +121,10 @@ public class Decoder {
         byte[] bytes = new byte[length];
         buffer.get(bytes);
         return bytes;
+    }
+
+    public UUID readUuid() {
+        return new UUID(buffer.getLong(), buffer.getLong());
     }
 
     public byte[] readByteArray() {

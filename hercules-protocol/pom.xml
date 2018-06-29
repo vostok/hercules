@@ -17,6 +17,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-util</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-uuid</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>

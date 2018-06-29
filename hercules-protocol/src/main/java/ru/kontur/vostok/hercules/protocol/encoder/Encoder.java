@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 
 public class Encoder {
@@ -99,6 +100,15 @@ public class Encoder {
         try {
             writeArrayLength(bytes.length);
             stream.write(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void writeUuid(UUID uuid) {
+        try {
+            stream.writeLong(uuid.getMostSignificantBits());
+            stream.writeLong(uuid.getLeastSignificantBits());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

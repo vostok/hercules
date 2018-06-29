@@ -6,17 +6,18 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class EventBuilder {
 
     private static final VariantWriter variantWriter = new VariantWriter();
 
-    private long timestamp;
+    private UUID eventId;
     private int version;
     private Map<String, Variant> tags = new LinkedHashMap<>();
 
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
+    public void setEventId(UUID eventId) {
+        this.eventId = eventId;
     }
 
     public void setVersion(int version) {
@@ -32,7 +33,7 @@ public class EventBuilder {
         Encoder encoder = new Encoder(stream);
 
         encoder.writeUnsignedByte(version);
-        encoder.writeLong(timestamp);
+        encoder.writeUuid(eventId);
         encoder.writeShort((short) tags.size());
 
         for (Map.Entry<String, Variant> e : tags.entrySet()) {
@@ -40,6 +41,6 @@ public class EventBuilder {
             variantWriter.write(encoder, e.getValue());
         }
 
-        return new Event(stream.toByteArray(), version, timestamp, tags);
+        return new Event(stream.toByteArray(), version, eventId, tags);
     }
 }

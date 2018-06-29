@@ -3,13 +3,10 @@ package ru.kontur.vostok.hercules.elasticsearch.sink;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
-import ru.kontur.vostok.hercules.util.TimeUtil;
+import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 import static org.junit.Assert.assertEquals;
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
@@ -22,9 +19,7 @@ public class EventToElasticJsonConverterTest {
         EventBuilder event = new EventBuilder();
 
         event.setVersion(1);
-        Instant instant = LocalDateTime.of(2018, 6, 14, 12, 15, 0).toInstant(ZoneOffset.UTC).plusNanos(123456789);
-
-        event.setTimestamp(instant.getEpochSecond() * TimeUtil.NANOS_IN_SECOND + instant.getNano());
+        event.setEventId(UuidGenerator.getClientInstance().withTicks(137469727200000001L));
 
         event.setTag("Byte sample", Variant.ofByte((byte) 127));
         event.setTag("Short sample", Variant.ofShort((short) 10_000));
@@ -40,7 +35,7 @@ public class EventToElasticJsonConverterTest {
 
         assertEquals(
                 "{" +
-                        "\"@timestamp\":\"2018-06-14T12:15:00.123456789Z\"," +
+                        "\"@timestamp\":\"2018-05-30T11:32:00.0000001Z\"," +
                         "\"Byte sample\":127," +
                         "\"Short sample\":10000," +
                         "\"Int sample\":123456789," +
@@ -151,9 +146,10 @@ public class EventToElasticJsonConverterTest {
 
     private void assertVariantConverted(String convertedVariant, Variant variant) {
         EventBuilder builder = new EventBuilder();
+        builder.setEventId(UuidGenerator.getClientInstance().withTicks(0));
         builder.setTag("v", variant);
 
-        assertEquals("{\"@timestamp\":\"1970-01-01T00:00:00Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
+        assertEquals("{\"@timestamp\":\"1582-10-15T00:00:00Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
     }
 
     private static String builderToJson(EventBuilder builder) {

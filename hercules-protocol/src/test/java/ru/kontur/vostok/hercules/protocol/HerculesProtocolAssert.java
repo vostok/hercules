@@ -4,7 +4,6 @@ import org.junit.Assert;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.BiConsumer;
 
 public class HerculesProtocolAssert {
@@ -52,7 +51,7 @@ public class HerculesProtocolAssert {
 
     public static void assertEquals(Event expected, Event actual) {
         Assert.assertEquals(expected.getVersion(), actual.getVersion());
-        Assert.assertEquals(expected.getTimestamp(), actual.getTimestamp());
+        Assert.assertEquals(expected.getId(), actual.getId());
 
         Map.Entry[] expectedEntries = expected.getTags().entrySet().stream().sorted(Map.Entry.comparingByKey()).toArray(Map.Entry[]::new);
         Map.Entry[] actualEntries = actual.getTags().entrySet().stream().sorted(Map.Entry.comparingByKey()).toArray(Map.Entry[]::new);

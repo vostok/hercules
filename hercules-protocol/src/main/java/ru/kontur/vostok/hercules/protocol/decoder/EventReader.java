@@ -20,7 +20,7 @@ public class EventReader implements Reader<Event> {
         int from = decoder.position();
 
         int version = decoder.readUnsignedByte();
-        long timestamp = decoder.readLong();
+        UUID eventId = decoder.readUuid();
         short tagsCount = decoder.readShort();
 
         Map<String, Variant> tagValues = tags != null ? new HashMap<>(tags.size()) : new HashMap<>();
@@ -37,7 +37,7 @@ public class EventReader implements Reader<Event> {
         int to = decoder.position();
         byte[] bytes = decoder.subarray(from, to);
 
-        return new Event(bytes, version, timestamp, tagValues);
+        return new Event(bytes, version, eventId, tagValues);
     }
 
     public static EventReader readNoTags() {

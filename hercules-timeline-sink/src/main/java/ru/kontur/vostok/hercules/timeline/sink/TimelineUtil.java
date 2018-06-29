@@ -11,6 +11,6 @@ public class TimelineUtil {
     }
 
     public static String timelineToTableName(Timeline timeline) {
-        return "timeline." + timeline.getName();
+        return timeline.getName();
     }
 }

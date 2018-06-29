@@ -30,7 +30,7 @@ public class SendAsyncHandler extends GatewayHandler {
                             Event event = reader.next();
                             eventSender.send(
                                     event,
-                                    uuidGenerator.next(marker),
+                                    event.getId(),
                                     topic,
                                     partitions,
                                     shardingKey,
