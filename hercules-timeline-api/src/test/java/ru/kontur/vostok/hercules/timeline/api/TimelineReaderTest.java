@@ -6,22 +6,19 @@ import com.datastax.driver.core.SimpleStatement;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
-import org.mockito.internal.matchers.CompareEqual;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,6 +44,8 @@ public class TimelineReaderTest {
             return "Expression matches \"" + regexp + "\"";
         }
     }
+
+    private static final String UUID_REGEXP = "[0-9a-zA-Z]{8}\\-[0-9a-zA-Z]{4}\\-[0-9a-zA-Z]{4}\\-[0-9a-zA-Z]{4}\\-[0-9a-zA-Z]{12}";
 
     private static final Timeline TIMELINE = new Timeline();
     static {
@@ -90,6 +89,42 @@ public class TimelineReaderTest {
 
         verify(session).execute(argThat(cql(".+ slice = 0 .+")));
         verify(session).execute(argThat(cql(".+ slice = 1 .+")));
+    }
+
+    @Test
+    public void shouldIncludeMinimalEventIdInRequestIfNoPartitionReadStatePassed() {
+        timelineReader.readTimeline(
+                TIMELINE,
+                new TimelineReadState(new TimelineShardReadState[]{}),
+                0,
+                1,
+                1,
+                0,
+                1_000
+        );
+
+        verify(session).execute(argThat(cql(
+                ".+  event_id >= " + UUID_REGEXP + " AND  event_id < " + UUID_REGEXP + " .+"
+        )));
+    }
+
+    @Test
+    public void shouldNotIncludeMinimalEventIdInRequestIfPartitionReadStatePassed() {
+        timelineReader.readTimeline(
+                TIMELINE,
+                new TimelineReadState(new TimelineShardReadState[]{
+                        new TimelineShardReadState(0, 0, UUID.fromString("13814000-1dd2-11b2-8000-000000000000"))
+                }),
+                0,
+                1,
+                1,
+                0,
+                1_000
+        );
+
+        verify(session).execute(argThat(cql(
+                ".+  event_id > " + UUID_REGEXP + " AND  event_id < " + UUID_REGEXP + " .+"
+        )));
     }
 
     public static <T> void mockIterable(Iterable<T> iterable, T... values) {

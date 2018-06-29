@@ -98,6 +98,11 @@ public class TimelineReader {
         }
     }
 
+    private static final UUID NIL = new UUID(0, 0);
+    private static boolean isNil(UUID uuid) {
+        return NIL.equals(uuid);
+    }
+
     private static final String EVENT_ID = "event_id";
     private static final String PAYLOAD = "payload";
 
@@ -131,7 +136,7 @@ public class TimelineReader {
             "WHERE" +
             "  slice = %d AND" +
             "  tt_offset = %d AND" +
-            "  event_id > %s AND" + // Lower bound
+            "  event_id >= %s AND" + // Lower bound
             "  event_id < %s" + // Upper bound
             " " +
             "ORDER BY " +
@@ -201,6 +206,10 @@ public class TimelineReader {
                 result.add(row.getBytes(PAYLOAD).array());
                 --take;
             }
+            // If no rows were fetched increment tt_offset to mark partition (slice, offset_id) as red
+            if (isNil(offset.eventId)) {
+                offset.ttOffset += timeline.getTimetrapSize();
+            }
 
             if (take <= 0) {
                 break;
@@ -215,25 +224,35 @@ public class TimelineReader {
     }
 
     private static TimelineShardReadStateOffset getEmptyReadStateOffset(long ttOffset) {
-        long ticks = TimeUtil.unixTimeToGregorianTicks(ttOffset);
-        return new TimelineShardReadStateOffset(ttOffset, UuidGenerator.min(ticks));
+        return new TimelineShardReadStateOffset(ttOffset, NIL);
     }
 
     private static SimpleStatement generateStatement(Timeline timeline, Parameters params, TimelineShardReadStateOffset offset, int take) {
-        return new SimpleStatement(String.format(
-                SELECT_EVENTS,
-                timeline.getName(),
-                params.slice,
-                params.ttOffset,
-                offset.eventId.toString(),
-                UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
-                take
-        ));
+        if (!isNil(offset.eventId)) {
+            return new SimpleStatement(String.format(
+                    SELECT_EVENTS,
+                    timeline.getName(),
+                    params.slice,
+                    params.ttOffset,
+                    offset.eventId.toString(),
+                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    take
+            ));
+        } else {
+            return new SimpleStatement(String.format(
+                    SELECT_EVENTS_START_READING_SLICE,
+                    timeline.getName(),
+                    params.slice,
+                    params.ttOffset,
+                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset)),
+                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    take
+            ));
+        }
     }
 
     private static Map<Integer, TimelineShardReadStateOffset> toMap(TimelineReadState readState) {
         return Arrays.stream(readState.getShards())
-                .filter(shardState -> Objects.nonNull(shardState.getEventId())) // Shard states without event id wasn't processed
                 .collect(Collectors.toMap(
                         TimelineShardReadState::getShardId,
                         shardState -> new TimelineShardReadStateOffset(
