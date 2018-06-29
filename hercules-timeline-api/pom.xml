@@ -23,6 +23,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-partitioner</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-cassandra-util</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.undertow</groupId>

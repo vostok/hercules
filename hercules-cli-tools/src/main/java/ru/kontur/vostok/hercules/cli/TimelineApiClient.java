@@ -52,8 +52,6 @@ public class TimelineApiClient {
 
         Encoder encoder = new Encoder();
         stateWriter.write(encoder, new TimelineReadState(new TimelineShardReadState[]{
-                new TimelineShardReadState(0, 1, UUID.fromString("2d1cb070-7617-11e8-adc0-fa7ae01bbebc")),
-                new TimelineShardReadState(1, 1, UUID.fromString("44517d82-7619-11e8-adc0-fa7ae01bbebc"))
         }));
 
         HttpResponse<InputStream> response = Unirest.post(server + "/timeline/read")
@@ -61,8 +59,8 @@ public class TimelineApiClient {
                 .queryString("take", take)
                 .queryString("k", 0)
                 .queryString("n", 1)
-                .queryString("from", 0)
-                .queryString("to", 120000)
+                .queryString("from", 1530184600000L)
+                .queryString("to", 1530184800000L)
                 .body(encoder.getBytes())
                 .asBinary();
 

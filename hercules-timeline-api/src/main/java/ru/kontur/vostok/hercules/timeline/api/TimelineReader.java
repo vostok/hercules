@@ -1,9 +1,9 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
 import com.datastax.driver.core.*;
+import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
@@ -107,7 +107,7 @@ public class TimelineReader {
             "  payload" +
             " " +
             "FROM" +
-            "  timeline.%s" +
+            "  %s" +
             " " +
             "WHERE" +
             "  slice = %d AND" +
@@ -122,13 +122,10 @@ public class TimelineReader {
 
     private static final String CONTACT_POINT_PROPERTY = "contact.point";
 
-    private final Cluster cluster;
+    private final Session session;
 
-    public TimelineReader(Properties properties) {
-        cluster = Cluster.builder()
-                .addContactPoint(properties.getProperty(CONTACT_POINT_PROPERTY))
-                .withoutMetrics() // To avoid java.lang.ClassNotFoundException: com.codahale.metrics.JmxReporter
-                .build();
+    public TimelineReader(CassandraConnector connector) {
+        this.session = connector.session();
     }
 
     /**
@@ -162,42 +159,42 @@ public class TimelineReader {
         Map<Integer, TimelineShardReadStateOffset> offsetMap = toMap(readState);
 
         List<byte[]> result = new LinkedList<>();
-        try (Session session = cluster.connect()) {
-            for (Parameters params : new Grid(partitions, timetrapOffsets)) {
-                TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(
-                        params.slice,
-                        i -> getEmptyReadStateOffset(params.ttOffset)
-                );
-                if (params.ttOffset < offset.ttOffset) {
-                    continue; // Skip already red timetrap offsets
-                } else if (offset.ttOffset < params.ttOffset ) {
-                    offsetMap.put(params.slice, getEmptyReadStateOffset(params.ttOffset));
-                    offset = offsetMap.get(params.slice);
-                }
 
-                SimpleStatement statement = generateStatement(timeline, params, offset, take);
-                statement.setFetchSize(Integer.MAX_VALUE); // fetch size defined by 'take' parameter
+        for (Parameters params : new Grid(partitions, timetrapOffsets)) {
+            TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(
+                    params.slice,
+                    i -> getEmptyReadStateOffset(params.ttOffset)
+            );
+            if (params.ttOffset < offset.ttOffset) {
+                continue; // Skip already red timetrap offsets
+            } else if (offset.ttOffset < params.ttOffset ) {
+                offsetMap.put(params.slice, getEmptyReadStateOffset(params.ttOffset));
+                offset = offsetMap.get(params.slice);
+            }
 
-                // TODO: Change to logging
-                System.out.println("Executing '" + statement.toString() + "'");
+            SimpleStatement statement = generateStatement(timeline, params, offset, take);
+            statement.setFetchSize(Integer.MAX_VALUE); // fetch size defined by 'take' parameter
 
-                ResultSet rows = session.execute(statement);
-                for (Row row : rows) {
-                    offset.eventId = row.getUUID(EVENT_ID);
-                    result.add(row.getBytes(PAYLOAD).array());
-                    --take;
-                }
+            // TODO: Change to logging
+            System.out.println("Executing '" + statement.toString() + "'");
 
-                if (take <= 0) {
-                    break;
-                }
+            ResultSet rows = session.execute(statement);
+            for (Row row : rows) {
+                offset.eventId = row.getUUID(EVENT_ID);
+                result.add(row.getBytes(PAYLOAD).array());
+                --take;
+            }
+
+            if (take <= 0) {
+                break;
             }
         }
+
         return new TimelineByteContent(toState(offsetMap), result.toArray(new byte[0][]));
     }
 
     public void shutdown() {
-        cluster.close();
+        session.close();
     }
 
     private static TimelineShardReadStateOffset getEmptyReadStateOffset(long ttOffset) {
