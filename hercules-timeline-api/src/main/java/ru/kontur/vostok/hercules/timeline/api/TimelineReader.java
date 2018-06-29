@@ -1,12 +1,15 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
 import com.datastax.driver.core.*;
+import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
+import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,11 +23,11 @@ public class TimelineReader {
      * Utility class to store shard read offset
      */
     private static class TimelineShardReadStateOffset {
-        long eventTimestamp;
+        long ttOffset;
         UUID eventId;
 
-        public TimelineShardReadStateOffset(long eventTimestamp, UUID eventId) {
-            this.eventTimestamp = eventTimestamp;
+        public TimelineShardReadStateOffset(long ttOffset, UUID eventId) {
+            this.ttOffset = ttOffset;
             this.eventId = eventId;
         }
     }
@@ -95,61 +98,56 @@ public class TimelineReader {
         }
     }
 
-    private static final String EVENT_TIMESTAMP = "event_timestamp";
+    private static final UUID NIL = new UUID(0, 0);
+    private static boolean isNil(UUID uuid) {
+        return NIL.equals(uuid);
+    }
+
     private static final String EVENT_ID = "event_id";
     private static final String PAYLOAD = "payload";
 
-    private static final String SELECT_EVENTS_BY_TIMESTAMP = "" +
+    private static final String SELECT_EVENTS = "" +
             "SELECT" +
-            "  event_timestamp," +
             "  event_id," +
             "  payload" +
             " " +
             "FROM" +
-            "  timelines.%s" +
+            "  %s" +
             " " +
             "WHERE" +
             "  slice = %d AND" +
             "  tt_offset = %d AND" +
-            "  event_timestamp >= %d AND" +
-            "  event_timestamp < %d" +
+            "  event_id > %s AND" + // Lower bound
+            "  event_id < %s" + // Upper bound
             " " +
             "ORDER BY " +
-            "  event_timestamp," +
             "  event_id" +
             " " +
             "LIMIT %d;";
 
-    private static final String SELECT_EVENTS_BY_EVENT_ID = "" +
+    private static final String SELECT_EVENTS_START_READING_SLICE = "" +
             "SELECT" +
-            "  event_timestamp," +
             "  event_id," +
             "  payload" +
             " " +
             "FROM" +
-            "  timelines.%s" +
+            "  %s" +
             " " +
             "WHERE" +
             "  slice = %d AND" +
             "  tt_offset = %d AND" +
-            "  (event_timestamp, event_id) > (%d, %s) AND" +
-            "  event_timestamp < %d" +
+            "  event_id >= %s AND" + // Lower bound
+            "  event_id < %s" + // Upper bound
             " " +
             "ORDER BY " +
-            "  event_timestamp," +
             "  event_id" +
             " " +
             "LIMIT %d;";
 
-    private static final String CONTACT_POINT_PROPERTY = "contact.point";
+    private final Session session;
 
-    private final Cluster cluster;
-
-    public TimelineReader(Properties properties) {
-        cluster = Cluster.builder()
-                .addContactPoint(properties.getProperty(CONTACT_POINT_PROPERTY))
-                .withoutMetrics() // To avoid java.lang.ClassNotFoundException: com.codahale.metrics.JmxReporter
-                .build();
+    public TimelineReader(CassandraConnector connector) {
+        this.session = connector.session();
     }
 
     /**
@@ -174,84 +172,91 @@ public class TimelineReader {
     ) {
         long toInclusive = to - 1;
 
-        Map<Integer, TimelineShardReadStateOffset> offsetMap = toMap(readState);
-
         int[] partitions = LogicalPartitioner.getPartitionsForLogicalSharding(timeline, k, n);
         if (partitions.length == 0) {
             return new TimelineByteContent(readState, new byte[][]{});
         }
-        long[] timetrapOffsets = getTimetrapOffsets(from, toInclusive, timeline.getTimetrapSize());
+        long[] timetrapOffsets = TimeTrapUtil.getTimetrapOffsets(from, toInclusive, timeline.getTimetrapSize());
+
+        Map<Integer, TimelineShardReadStateOffset> offsetMap = toMap(readState);
 
         List<byte[]> result = new LinkedList<>();
-        try (Session session = cluster.connect()) {
-            for (Parameters params : new Grid(partitions, timetrapOffsets)) {
-                TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(params.slice, i -> getEmptyReadStateOffset());
 
-                SimpleStatement statement = generateStatement(timeline, params, offset, from, to, take);
-                statement.setFetchSize(Integer.MAX_VALUE); // fetch size defined by 'take' parameter
+        for (Parameters params : new Grid(partitions, timetrapOffsets)) {
+            TimelineShardReadStateOffset offset = offsetMap.computeIfAbsent(
+                    params.slice,
+                    i -> getEmptyReadStateOffset(params.ttOffset)
+            );
+            if (params.ttOffset < offset.ttOffset) {
+                continue; // Skip already red timetrap offsets
+            } else if (offset.ttOffset < params.ttOffset ) {
+                offsetMap.put(params.slice, getEmptyReadStateOffset(params.ttOffset));
+                offset = offsetMap.get(params.slice);
+            }
 
-                // TODO: Change to logging
-                System.out.println("Executing '" + statement.toString() + "'");
+            SimpleStatement statement = generateStatement(timeline, params, offset, take);
+            statement.setFetchSize(Integer.MAX_VALUE); // fetch size defined by 'take' parameter
 
-                ResultSet rows = session.execute(statement);
-                for (Row row : rows) {
-                    offset.eventTimestamp = row.getLong(EVENT_TIMESTAMP);
-                    offset.eventId = row.getUUID(EVENT_ID);
-                    result.add(row.getBytes(PAYLOAD).array());
-                    --take;
-                }
+            // TODO: Change to logging
+            System.out.println("Executing '" + statement.toString() + "'");
 
-                if (take <= 0) {
-                    break;
-                }
+            ResultSet rows = session.execute(statement);
+            for (Row row : rows) {
+                offset.eventId = row.getUUID(EVENT_ID);
+                result.add(row.getBytes(PAYLOAD).array());
+                --take;
+            }
+            // If no rows were fetched increment tt_offset to mark partition (slice, offset_id) as red
+            if (isNil(offset.eventId)) {
+                offset.ttOffset += timeline.getTimetrapSize();
+            }
+
+            if (take <= 0) {
+                break;
             }
         }
+
         return new TimelineByteContent(toState(offsetMap), result.toArray(new byte[0][]));
     }
 
     public void shutdown() {
-        cluster.close();
+        session.close();
     }
 
-    private TimelineShardReadStateOffset getEmptyReadStateOffset() {
-        return new TimelineShardReadStateOffset(0, null);
+    private static TimelineShardReadStateOffset getEmptyReadStateOffset(long ttOffset) {
+        return new TimelineShardReadStateOffset(ttOffset, NIL);
     }
 
-    private static SimpleStatement generateStatement(Timeline timeline, Parameters params, TimelineShardReadStateOffset offset, long from, long to, int take) {
-        SimpleStatement statement;
-        if (Objects.isNull(offset.eventId)) {
-            statement = new SimpleStatement(String.format(
-                    SELECT_EVENTS_BY_TIMESTAMP,
+    private static SimpleStatement generateStatement(Timeline timeline, Parameters params, TimelineShardReadStateOffset offset, int take) {
+        if (!isNil(offset.eventId)) {
+            return new SimpleStatement(String.format(
+                    SELECT_EVENTS,
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    from,
-                    to,
+                    offset.eventId.toString(),
+                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
-        }
-        else {
-            statement = new SimpleStatement(String.format(
-                    SELECT_EVENTS_BY_EVENT_ID,
+        } else {
+            return new SimpleStatement(String.format(
+                    SELECT_EVENTS_START_READING_SLICE,
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    offset.eventTimestamp,
-                    offset.eventId,
-                    to,
+                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset)),
+                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         }
-        return statement;
     }
 
     private static Map<Integer, TimelineShardReadStateOffset> toMap(TimelineReadState readState) {
         return Arrays.stream(readState.getShards())
-                .filter(shardState -> Objects.nonNull(shardState.getEventId())) // Shard states without event id wasn't processed
                 .collect(Collectors.toMap(
                         TimelineShardReadState::getShardId,
                         shardState -> new TimelineShardReadStateOffset(
-                                shardState.getEventTimestamp(),
+                                shardState.getTtOffset(),
                                 shardState.getEventId()
                         )
                 ));
@@ -261,25 +266,11 @@ public class TimelineReader {
         return new TimelineReadState(offsetMap.entrySet().stream()
                 .map(offsetEntry -> new TimelineShardReadState(
                         offsetEntry.getKey(),
-                        offsetEntry.getValue().eventTimestamp,
+                        offsetEntry.getValue().ttOffset,
                         offsetEntry.getValue().eventId
                 ))
                 .toArray(TimelineShardReadState[]::new)
         );
     }
 
-    private static long[] getTimetrapOffsets(long from, long to, long timetrapSize) {
-        long fromTimetrap = TimelineUtil.calculateTimetrapOffset(from, timetrapSize);
-        long toTimetrapExclusive = TimelineUtil.calculateNextTimetrapOffset(to, timetrapSize);
-
-        int size = (int)((toTimetrapExclusive - fromTimetrap) / timetrapSize);
-
-        long[] result = new long[size];
-        long currentTimetrap = fromTimetrap;
-        for (int i = 0; i < size; ++i) {
-            result[i] = currentTimetrap;
-            currentTimetrap += timetrapSize;
-        }
-        return result;
-    }
 }

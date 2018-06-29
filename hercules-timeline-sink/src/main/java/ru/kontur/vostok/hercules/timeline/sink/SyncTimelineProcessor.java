@@ -8,6 +8,7 @@ import com.datastax.driver.core.Session;
 import org.apache.kafka.streams.processor.AbstractProcessor;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.cassandra.util.Slicer;
+import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -28,7 +29,7 @@ public class SyncTimelineProcessor extends AbstractProcessor<UUID, Event> {
         session = connector.session();
 
         PreparedStatement prepared =
-                session.prepare("INSERT INTO " + TimelineUtil.timelineToTableName(timeline) + " (slice_id, tt_offset, event_id, payload) VALUES (?, ?, ?, ?)");
+                session.prepare("INSERT INTO " + TimelineUtil.timelineToTableName(timeline) + " (slice, tt_offset, event_id, payload) VALUES (?, ?, ?, ?)");
         prepared.setConsistencyLevel(ConsistencyLevel.QUORUM);
         this.prepared = prepared;
 
@@ -39,8 +40,7 @@ public class SyncTimelineProcessor extends AbstractProcessor<UUID, Event> {
     @Override
     public void process(UUID key, Event value) {
         int slice = slicer.slice(value);
-        long timestamp = TimeUtil.gregorianTicksToUnixTime(value.getId().timestamp());
-        long ttOffset = TimeTrapUtil.toTimeTrapOffset(timeline.getTimetrapSize(), timestamp);
+        long ttOffset = TimeTrapUtil.toTimeTrapOffset(timeline.getTimetrapSize(), value.getId().timestamp());
         byte[] payload = value.getBytes();
         BoundStatement statement = prepared.bind(slice, ttOffset, key, ByteBuffer.wrap(payload));
         try {

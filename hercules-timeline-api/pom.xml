@@ -23,6 +23,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-partitioner</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-cassandra-util</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.undertow</groupId>
@@ -32,6 +36,17 @@
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

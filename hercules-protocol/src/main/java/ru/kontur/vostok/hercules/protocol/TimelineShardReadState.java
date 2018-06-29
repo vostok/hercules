@@ -5,12 +5,12 @@ import java.util.UUID;
 public class TimelineShardReadState {
 
     private final int shardId;
-    private final long eventTimestamp;
+    private final long ttOffset;
     private final UUID eventId;
 
-    public TimelineShardReadState(int shardId, long eventTimestamp, UUID eventId) {
+    public TimelineShardReadState(int shardId, long ttOffset, UUID eventId) {
         this.shardId = shardId;
-        this.eventTimestamp = eventTimestamp;
+        this.ttOffset = ttOffset;
         this.eventId = eventId;
     }
 
@@ -18,8 +18,8 @@ public class TimelineShardReadState {
         return shardId;
     }
 
-    public long getEventTimestamp() {
-        return eventTimestamp;
+    public long getTtOffset() {
+        return ttOffset;
     }
 
     public UUID getEventId() {

@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
@@ -14,6 +15,7 @@ public class TimelineApiApplication {
     private static HttpServer server;
     private static CuratorClient curatorClient;
     private static TimelineReader timelineReader;
+    private static CassandraConnector cassandraConnector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -28,7 +30,10 @@ public class TimelineApiApplication {
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
-            timelineReader = new TimelineReader(cassandraProperties);
+            cassandraConnector = new CassandraConnector(cassandraProperties);
+            cassandraConnector.connect();
+
+            timelineReader = new TimelineReader(cassandraConnector);
 
             server = new HttpServer(
                     httpServerProperties,
@@ -60,6 +65,13 @@ public class TimelineApiApplication {
         try {
             if (curatorClient != null) {
                 curatorClient.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace(); //TODO: Process error
+        }
+        try {
+            if (cassandraConnector != null) {
+                cassandraConnector.close();
             }
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error

@@ -36,7 +36,7 @@ public class HerculesProtocolAssert {
 
     public static void assertEquals(TimelineShardReadState expected, TimelineShardReadState actual) {
         Assert.assertEquals(expected.getShardId(), actual.getShardId());
-        Assert.assertEquals(expected.getEventTimestamp(), actual.getEventTimestamp());
+        Assert.assertEquals(expected.getTtOffset(), actual.getTtOffset());
         Assert.assertEquals(expected.getEventId(), actual.getEventId());
     }
 

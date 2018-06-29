@@ -9,12 +9,13 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BulkProcessor;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
-import ru.kontur.vostok.hercules.kafka.util.serialization.VoidSerde;
+import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class ElasticSearchSink {
@@ -36,14 +37,14 @@ public class ElasticSearchSink {
         int punctuationInterval = PropertiesUtil.get(streamsProperties, PUNCTUATION_INTERVAL, PUNCTUATION_INTERVAL_DEFAULT_VALUE);
         int batchZie = PropertiesUtil.get(streamsProperties, BATCH_SIZE, BATCH_SIZE_DEFAULT_VALUE);
 
-        Serde<Void> keySerde = new VoidSerde();
+        Serde<UUID> keySerde = new UuidSerde();
 
         EventSerializer serializer = new EventSerializer();
         EventDeserializer deserializer = EventDeserializer.parseAllTags();
         Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
 
         StreamsBuilder streamsBuilder = new StreamsBuilder();
-        streamsBuilder.<Void, Event>stream(stream.getName(), Consumed.with(keySerde, valueSerde))
+        streamsBuilder.<UUID, Event>stream(stream.getName(), Consumed.with(keySerde, valueSerde))
                 .process(() -> new BulkProcessor<>(eventSender::send, batchZie, punctuationInterval));
 
         this.kafkaStreams = new KafkaStreams(streamsBuilder.build(), streamsProperties);
