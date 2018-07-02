@@ -43,6 +43,7 @@
         <module>hercules-timeline-api</module>
         <module>hercules-uuid</module>
         <module>hercules-cassandra-util</module>
+        <module>hercules-management-api</module>
     </modules>
 
     <dependencyManagement>
