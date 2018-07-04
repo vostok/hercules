@@ -44,6 +44,7 @@
         <module>hercules-uuid</module>
         <module>hercules-cassandra-util</module>
         <module>hercules-management-api</module>
+        <module>hercules-sentry-sink</module>
     </modules>
 
     <dependencyManagement>
@@ -147,6 +148,13 @@
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-client</artifactId>
                 <version>${elasticsearch.client.version}</version>
+            </dependency>
+
+            <!-- Sentry client -->
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry</artifactId>
+                <version>1.7.5</version>
             </dependency>
 
             <dependency>

@@ -99,6 +99,19 @@ public class GatewayClient {
             eventBuilder.setTag("index", Variant.ofString("tstidx1"));
         }
 
+
+        eventBuilder.setTag("message", Variant.ofString("Try to use project name"));
+        eventBuilder.setTag("environment", Variant.ofString("production"));
+        eventBuilder.setTag("release", Variant.ofString("123.456"));
+
+        Exception tums = new Exception("Tums");
+        Exception tudums = new Exception("Tudums", tums);
+        StackTraceElement[] stackTrace = tudums.getStackTrace();
+        for (StackTraceElement stackTraceElement : stackTrace) {
+            System.out.println(stackTraceElement);
+        }
+
+
         Event result = eventBuilder.build();
 
         System.out.println("Event created: 0x" + DatatypeConverter.printHexBinary(result.getBytes()));
