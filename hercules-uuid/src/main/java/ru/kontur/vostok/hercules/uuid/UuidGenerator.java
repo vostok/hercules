@@ -31,22 +31,26 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Gregory Koshelev
  */
 public class UuidGenerator {
-    private final Type type;
 
     private static final AtomicLong lastTicks = new AtomicLong(0L);
-    private static SecureRandom random = new SecureRandom();
+    private static final SecureRandom random = new SecureRandom();
     private static final long variantRnd = makeVariantRnd();
+
+    private static final UuidGenerator CLIENT_GENERATOR_INSTANCE = new UuidGenerator(Type.CLIENT);
+    private static final UuidGenerator INTERNAL_GENERATOR_INSTANCE = new UuidGenerator(Type.INTERNAL);
+
+    private final Type type;
 
     private UuidGenerator(Type type) {
         this.type = type;
     }
 
     public static UuidGenerator getClientInstance() {
-        return new UuidGenerator(Type.CLIENT);
+        return CLIENT_GENERATOR_INSTANCE;
     }
 
     public static UuidGenerator getInternalInstance() {
-        return new UuidGenerator(Type.INTERNAL);
+        return INTERNAL_GENERATOR_INSTANCE;
     }
 
     /**

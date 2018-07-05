@@ -77,12 +77,12 @@ public class GatewayClient {
     private static Event[] generateEvents(int count) {
         Event[] events = new Event[count];
         for (int i = 0; i < count; ++i) {
-            events[i] = generateEvent();
+            events[i] = generateEvent(i);
         }
         return events;
     }
 
-    private static Event generateEvent() {
+    private static Event generateEvent(int i) {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
         eventBuilder.setEventId(UuidGenerator.getClientInstance().next());
@@ -91,6 +91,13 @@ public class GatewayClient {
         eventBuilder.setTag("sample-flag", Variant.ofFlag(true));
         eventBuilder.setTag("sample-float", Variant.ofFloat(0.123456789f));
         eventBuilder.setTag("sample-double", Variant.ofDouble(0.123456789));
+        eventBuilder.setTag("project", Variant.ofString("awesome-project"));
+        eventBuilder.setTag("env", Variant.ofString("production"));
+        if (0 == i % 2) {
+            eventBuilder.setTag("index", Variant.ofString("tstidx0"));
+        } else {
+            eventBuilder.setTag("index", Variant.ofString("tstidx1"));
+        }
 
         Event result = eventBuilder.build();
 

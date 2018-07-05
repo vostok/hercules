@@ -7,10 +7,13 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkProcessor;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.util.TagExtractor;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
@@ -36,17 +39,19 @@ public class ElasticSearchEventSender implements AutoCloseable {
         ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
         writeEventRecords(stream, events);
 
-        Response response = toUnchecked(() -> restClient.performRequest(
-                "POST",
-                "/" + indexName + "/_doc/_bulk",
-                Collections.emptyMap(),
-                new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
+        if (0 < stream.size()) {
+            Response response = toUnchecked(() -> restClient.performRequest(
+                    "POST",
+                    "/" + indexName + "/_doc/_bulk",
+                    Collections.emptyMap(),
+                    new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
 
-        ));
-        if (response.getStatusLine().getStatusCode() != 200) {
-            throw new RuntimeException("Bad response");
+            ));
+            if (response.getStatusLine().getStatusCode() != 200) {
+                throw new RuntimeException("Bad response");
+            }
+            BulkResponseHandler.process(response.getEntity());
         }
-        BulkResponseHandler.process(response.getEntity());
     }
 
     @Override
@@ -55,27 +60,24 @@ public class ElasticSearchEventSender implements AutoCloseable {
     }
 
     private void writeEventRecords(OutputStream stream, Collection<BulkProcessor.Entry<UUID, Event>> events) {
-        events.forEach(entry -> {
-            writeIndex(stream, entry.getKey());
-            writeNewLine(stream);
-            EventToElasticJsonConverter.formatEvent(stream, entry.getValue());
-            writeNewLine(stream);
-        });
-    }
-
-    private static final byte[] START_BYTES = "{\"index\":{\"_id\":\"".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] END_BYTES = "\"}}".getBytes(StandardCharsets.UTF_8);
-
-    private static void writeIndex(OutputStream stream, UUID eventId) {
         toUnchecked(() -> {
-            stream.write(START_BYTES);
-            stream.write(eventId.toString().getBytes(StandardCharsets.UTF_8));
-            stream.write(END_BYTES);
+            for (BulkProcessor.Entry<UUID, Event> entry : events) {
+                boolean result = IndexToElasticJsonWriter.writeIndex(stream, entry.getValue());
+                if (result) {
+                    writeNewLine(stream);
+                    EventToElasticJsonWriter.writeEvent(stream, entry.getValue());
+                    writeNewLine(stream);
+                }
+                else {
+                    // TODO: Add logging
+                    System.out.println(String.format("Cannot process event '%s' because of missing index data", entry.getValue().getId()));
+                }
+            }
         });
     }
 
-    private static void writeNewLine(OutputStream stream) {
-        toUnchecked(() -> stream.write('\n'));
+    private static void writeNewLine(OutputStream stream) throws IOException {
+        stream.write('\n');
     }
 
     private static HttpHost[] parseHosts(String server) {
