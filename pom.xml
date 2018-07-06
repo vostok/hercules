@@ -45,6 +45,7 @@
         <module>hercules-cassandra-util</module>
         <module>hercules-management-api</module>
         <module>hercules-sentry-sink</module>
+        <module>hercules-graphite-sink</module>
     </modules>
 
     <dependencyManagement>
