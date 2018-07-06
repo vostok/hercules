@@ -11,10 +11,10 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.Assert.assertEquals;
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-public class EventToElasticJsonConverterTest {
+public class EventToElasticJsonWriterTest {
 
     @Test
-    public void shouldConvertEventToJson() {
+    public void shouldConvertEventToJson() throws Exception {
 
         EventBuilder event = new EventBuilder();
 
@@ -54,97 +54,97 @@ public class EventToElasticJsonConverterTest {
     }
 
     @Test
-    public void shouldConvertEventWithByteVariant() {
+    public void shouldConvertEventWithByteVariant() throws Exception {
         assertVariantConverted("123", Variant.ofByte((byte) 123));
     }
 
     @Test
-    public void shouldConvertEventWithShortVariant() {
+    public void shouldConvertEventWithShortVariant() throws Exception {
         assertVariantConverted("12345", Variant.ofShort((short) 12_345));
     }
 
     @Test
-    public void shouldConvertEventWithIntegerVariant() {
+    public void shouldConvertEventWithIntegerVariant() throws Exception {
         assertVariantConverted("123456789", Variant.ofInteger(123_456_789));
     }
 
     @Test
-    public void shouldConvertEventWithLongVariant() {
+    public void shouldConvertEventWithLongVariant() throws Exception {
         assertVariantConverted("123456789", Variant.ofLong(123_456_789L));
     }
 
     @Test
-    public void shouldConvertEventWithFloatVariant() {
+    public void shouldConvertEventWithFloatVariant() throws Exception {
         assertVariantConverted("0.123456", Variant.ofFloat(0.123456f));
     }
 
     @Test
-    public void shouldConvertEventWithDoubleVariant() {
+    public void shouldConvertEventWithDoubleVariant() throws Exception {
         assertVariantConverted("0.123456789", Variant.ofDouble(0.123456789));
     }
 
     @Test
-    public void shouldConvertEventWithFlagVariant() {
+    public void shouldConvertEventWithFlagVariant() throws Exception {
         assertVariantConverted("true", Variant.ofFlag(true));
         assertVariantConverted("false", Variant.ofFlag(false));
     }
 
     @Test
-    public void shouldConvertEventWithStringVariant() {
+    public void shouldConvertEventWithStringVariant() throws Exception {
         assertVariantConverted("\"Яюё\"", Variant.ofString("Яюё"));
     }
 
     @Test
-    public void shouldConvertEventWithTextVariant() {
+    public void shouldConvertEventWithTextVariant() throws Exception {
         assertVariantConverted("\"Яюё\"", Variant.ofText("Яюё"));
     }
 
     @Test
-    public void shouldConvertEventWithByteArrayVariant() {
+    public void shouldConvertEventWithByteArrayVariant() throws Exception {
         assertVariantConverted("[1,2,3]", Variant.ofByteArray(new byte[]{1, 2, 3}));
     }
 
     @Test
-    public void shouldConvertEventWithShortArrayVariant() {
+    public void shouldConvertEventWithShortArrayVariant() throws Exception {
         assertVariantConverted("[1,2,3]", Variant.ofShortArray(new short[]{1, 2, 3}));
     }
 
     @Test
-    public void shouldConvertEventWithIntegerArrayVariant() {
+    public void shouldConvertEventWithIntegerArrayVariant() throws Exception {
         assertVariantConverted("[1,2,3]", Variant.ofIntegerArray(new int[]{1, 2, 3}));
     }
 
     @Test
-    public void shouldConvertEventWithLongArrayVariant() {
+    public void shouldConvertEventWithLongArrayVariant() throws Exception {
         assertVariantConverted("[1,2,3]", Variant.ofLongArray(new long[]{1, 2, 3}));
     }
 
     @Test
-    public void shouldConvertEventWithFloatArrayVariant() {
+    public void shouldConvertEventWithFloatArrayVariant() throws Exception {
         assertVariantConverted("[1.23,2.34]", Variant.ofFloatArray(new float[]{1.23f, 2.34f}));
     }
 
     @Test
-    public void shouldConvertEventWithDoubleArrayVariant() {
+    public void shouldConvertEventWithDoubleArrayVariant() throws Exception {
         assertVariantConverted("[1.23,2.34]", Variant.ofDoubleArray(new double[]{1.23, 2.34}));
     }
 
     @Test
-    public void shouldConvertEventWithFlagArrayVariant() {
+    public void shouldConvertEventWithFlagArrayVariant() throws Exception {
         assertVariantConverted("[true,false]", Variant.ofFlagArray(new boolean[]{true, false}));
     }
 
     @Test
-    public void shouldConvertEventWithStringArrayVariant() {
+    public void shouldConvertEventWithStringArrayVariant() throws Exception {
         assertVariantConverted("[\"Абв\",\"Ежз\"]", Variant.ofStringArray(new String[]{"Абв", "Ежз"}));
     }
 
     @Test
-    public void shouldConvertEventWithTextArrayVariant() {
+    public void shouldConvertEventWithTextArrayVariant() throws Exception {
         assertVariantConverted("[\"Абв\",\"Ежз\"]", Variant.ofTextArray(new String[]{"Абв", "Ежз"}));
     }
 
-    private void assertVariantConverted(String convertedVariant, Variant variant) {
+    private void assertVariantConverted(String convertedVariant, Variant variant) throws Exception {
         EventBuilder builder = new EventBuilder();
         builder.setEventId(UuidGenerator.getClientInstance().withTicks(0));
         builder.setTag("v", variant);
@@ -152,9 +152,9 @@ public class EventToElasticJsonConverterTest {
         assertEquals("{\"@timestamp\":\"1582-10-15T00:00:00Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
     }
 
-    private static String builderToJson(EventBuilder builder) {
+    private static String builderToJson(EventBuilder builder) throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        EventToElasticJsonConverter.formatEvent(stream, builder.build());
+        EventToElasticJsonWriter.writeEvent(stream, builder.build());
         return toUnchecked(() -> stream.toString(StandardCharsets.UTF_8.name()));
     }
 }
