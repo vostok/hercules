@@ -35,12 +35,9 @@ public final class IndexToElasticJsonWriter {
             Optional<String> project = TagExtractor.extractString(event, PROJECT_TAG);
             Optional<String> env = TagExtractor.extractString(event, ENVIRONMENT_TAG);
             if (project.isPresent() && env.isPresent()) {
-                indexName = String.format(
-                        "%s-%s-%s",
-                        project.get(),
-                        env.get(),
-                        DATE_FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp()))
-                );
+                indexName = project.get() + "-" +
+                        env.get() + "-" +
+                        DATE_FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp()));
             } else {
                 return false;
             }
