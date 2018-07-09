@@ -15,10 +15,13 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 
 public class GatewayClient {
 
     private static final EventWriter eventWriter = new EventWriter();
+
+    private static final Random RANDOM = new Random();
 
     private static String server;
 
@@ -86,31 +89,20 @@ public class GatewayClient {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
         eventBuilder.setEventId(UuidGenerator.getClientInstance().next());
-        eventBuilder.setTag("sample-tag", Variant.ofString("sample value"));
-        eventBuilder.setTag("sample-long", Variant.ofLong(123L));
-        eventBuilder.setTag("sample-flag", Variant.ofFlag(true));
-        eventBuilder.setTag("sample-float", Variant.ofFloat(0.123456789f));
-        eventBuilder.setTag("sample-double", Variant.ofDouble(0.123456789));
-        eventBuilder.setTag("project", Variant.ofString("awesome-project"));
-        eventBuilder.setTag("env", Variant.ofString("production"));
-        if (0 == i % 2) {
-            eventBuilder.setTag("index", Variant.ofString("tstidx0"));
-        } else {
-            eventBuilder.setTag("index", Variant.ofString("tstidx1"));
-        }
-
 
         eventBuilder.setTag("message", Variant.ofString("Try to use project name"));
         eventBuilder.setTag("environment", Variant.ofString("production"));
         eventBuilder.setTag("release", Variant.ofString("123.456"));
 
-        Exception tums = new Exception("Tums");
-        Exception tudums = new Exception("Tudums", tums);
-        StackTraceElement[] stackTrace = tudums.getStackTrace();
-        for (StackTraceElement stackTraceElement : stackTrace) {
-            System.out.println(stackTraceElement);
-        }
+        eventBuilder.setTag("metric-name", Variant.ofString("test.gateway.client"));
+        eventBuilder.setTag("metric-value", Variant.ofDouble(RANDOM.nextInt(100)));
 
+        try {
+            Thread.sleep(5_000);
+        }
+        catch (Exception e) {
+            // omit
+        }
 
         Event result = eventBuilder.build();
 

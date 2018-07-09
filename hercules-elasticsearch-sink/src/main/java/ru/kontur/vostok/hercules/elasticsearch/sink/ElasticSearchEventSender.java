@@ -5,7 +5,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkProcessor;
+import ru.kontur.vostok.hercules.kafka.util.processing.Entry;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.TagExtractor;
 
@@ -31,7 +31,7 @@ public class ElasticSearchEventSender implements AutoCloseable {
         this.indexName = elasticsearchProperties.getProperty("index.name");
     }
 
-    public void send(Collection<BulkProcessor.Entry<UUID, Event>> events) {
+    public void send(Collection<Entry<UUID, Event>> events) {
         if (events.size() == 0) {
             return;
         }
@@ -59,9 +59,10 @@ public class ElasticSearchEventSender implements AutoCloseable {
         restClient.close();
     }
 
-    private void writeEventRecords(OutputStream stream, Collection<BulkProcessor.Entry<UUID, Event>> events) {
+
+    private void writeEventRecords(OutputStream stream, Collection<Entry<UUID, Event>> events) {
         toUnchecked(() -> {
-            for (BulkProcessor.Entry<UUID, Event> entry : events) {
+            for (Entry<UUID, Event> entry : events) {
                 boolean result = IndexToElasticJsonWriter.writeIndex(stream, entry.getValue());
                 if (result) {
                     writeNewLine(stream);

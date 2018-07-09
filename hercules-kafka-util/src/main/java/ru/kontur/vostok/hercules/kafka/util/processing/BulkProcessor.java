@@ -14,24 +14,6 @@ import java.util.function.Consumer;
 
 public class BulkProcessor<K, V> extends AbstractProcessor<K, V> {
 
-    public static class Entry<K, V> {
-        private final K key;
-        private final V value;
-
-        public Entry(K key, V value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        public K getKey() {
-            return key;
-        }
-
-        public V getValue() {
-            return value;
-        }
-    }
-
     private final int punctuationInterval;
     private final LinkedBlockingQueue<Entry<K, V>> queue;
     private final Consumer<Collection<Entry<K, V>>> bulkProcessor;

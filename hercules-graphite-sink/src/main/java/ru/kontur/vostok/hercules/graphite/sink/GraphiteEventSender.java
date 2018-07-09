@@ -3,7 +3,8 @@ package ru.kontur.vostok.hercules.graphite.sink;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteClient;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetric;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricStorage;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkProcessor;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkEventSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.Entry;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -14,13 +15,36 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 
-public class GraphiteEventSender implements AutoCloseable {
+public class GraphiteEventSender implements BulkEventSender {
 
     private final GraphiteClient client;
 
     public GraphiteEventSender(Properties graphiteProperties) {
         String[] server = graphiteProperties.getProperty("server").split(":", 2);
         this.client = new GraphiteClient(server[0], Integer.valueOf(server[1]));
+    }
+
+    public void send(Collection<Entry<UUID, Event>> events) {
+        if (events.size() == 0) {
+            return;
+        }
+
+        GraphiteMetricStorage storage = new GraphiteMetricStorage();
+
+        for (Entry<UUID, Event> entry : events) {
+            Optional<String> name = extractMetricName(entry.getValue());
+            Optional<GraphiteMetric> value = extractMetricValue(entry.getValue());
+            if (name.isPresent() && value.isPresent()) {
+                storage.add(name.get(), value.get());
+            }
+        }
+
+        client.send(storage);
+    }
+
+    @Override
+    public void close() throws Exception {
+        /* Do nothing */
     }
 
     private static Optional<String> extractMetricName(Event event) {
@@ -35,28 +59,5 @@ public class GraphiteEventSender implements AutoCloseable {
         return Optional.ofNullable(event.getTags().get("metric-value"))
                 .map(Variant::getValue)
                 .map(o -> new GraphiteMetric(timestamp, (Double) o));
-    }
-
-    public void send(Collection<BulkProcessor.Entry<UUID, Event>> events) {
-        if (events.size() == 0) {
-            return;
-        }
-
-        GraphiteMetricStorage storage = new GraphiteMetricStorage();
-
-        for (BulkProcessor.Entry<UUID, Event> entry : events) {
-            Optional<String> name = extractMetricName(entry.getValue());
-            Optional<GraphiteMetric> value = extractMetricValue(entry.getValue());
-            if (name.isPresent() && value.isPresent()) {
-                storage.add(name.get(), value.get());
-            }
-        }
-
-        client.send(storage);
-    }
-
-    @Override
-    public void close() throws Exception {
-
     }
 }
