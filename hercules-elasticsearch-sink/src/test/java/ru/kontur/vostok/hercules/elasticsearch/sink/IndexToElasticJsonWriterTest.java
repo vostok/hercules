@@ -24,7 +24,7 @@ public class IndexToElasticJsonWriterTest {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         IndexToElasticJsonWriter.writeIndex(stream, event);
 
-        assertEquals("{\"index\":{\"_index\":\"just-some-index-value-1582.10.15\",\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"}}", stream.toString());
+        assertEquals("{\"index\":{\"_index\":\"just-some-index-value\",\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"}}", stream.toString());
     }
 
     @Test

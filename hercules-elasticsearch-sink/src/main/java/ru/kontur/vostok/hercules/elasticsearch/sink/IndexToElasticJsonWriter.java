@@ -30,22 +30,21 @@ public final class IndexToElasticJsonWriter {
         String indexName;
         Optional<String> index = TagExtractor.extractString(event, INDEX_TAG);
         if (index.isPresent()) {
-            indexName = index.get() + "-";
+            indexName = index.get();
         } else {
             Optional<String> project = TagExtractor.extractString(event, PROJECT_TAG);
             Optional<String> env = TagExtractor.extractString(event, ENVIRONMENT_TAG);
             if (project.isPresent() && env.isPresent()) {
-                indexName = project.get() + "-" + env.get() + "-";
+                indexName = project.get() + "-" +
+                        env.get() + "-" +
+                        DATE_FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp()));
             } else {
                 return false;
             }
         }
 
-        String date = DATE_FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp()));
-
         stream.write(START_BYTES);
         stream.write(indexName.getBytes(StandardCharsets.UTF_8));
-        stream.write(date.getBytes(StandardCharsets.UTF_8));
         stream.write(MIDDLE_BYTES);
         stream.write(event.getId().toString().getBytes(StandardCharsets.UTF_8));
         stream.write(END_BYTES);
