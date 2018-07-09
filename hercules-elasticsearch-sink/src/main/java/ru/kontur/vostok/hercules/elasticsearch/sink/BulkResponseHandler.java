@@ -14,7 +14,7 @@ import java.util.Optional;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-public class BulkResponseHandler {
+public final class BulkResponseHandler {
 
     private final static JsonFactory FACTORY = new JsonFactory();
 
@@ -51,5 +51,8 @@ public class BulkResponseHandler {
                 System.out.println(String.format("Bulk processing error: id=%s, type=%s, reason=%s", id, type, reason).replaceAll("[\\r\\n]+", ""));
             }
         }
+    }
+
+    private BulkResponseHandler() {
     }
 }

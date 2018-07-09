@@ -18,7 +18,7 @@ import java.util.Map;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-public class EventToElasticJsonWriter {
+public final class EventToElasticJsonWriter {
 
     @FunctionalInterface
     private interface VariantValueToJsonWriter {
@@ -181,5 +181,8 @@ public class EventToElasticJsonWriter {
             generator.writeString(new String(bytes, StandardCharsets.UTF_8));
         }
         generator.writeEndArray();
+    }
+
+    private EventToElasticJsonWriter() {
     }
 }
