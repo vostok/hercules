@@ -94,11 +94,13 @@ public class GatewayClient {
         eventBuilder.setTag("environment", Variant.ofString("production"));
         eventBuilder.setTag("release", Variant.ofString("123.456"));
 
+        eventBuilder.setTag("index", Variant.ofString("tstidx"));
+
         eventBuilder.setTag("metric-name", Variant.ofString("test.gateway.client"));
         eventBuilder.setTag("metric-value", Variant.ofDouble(RANDOM.nextInt(100)));
 
         try {
-            Thread.sleep(5_000);
+            //Thread.sleep(5_000);
         }
         catch (Exception e) {
             // omit

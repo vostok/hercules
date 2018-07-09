@@ -5,6 +5,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkEventSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.Entry;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.TagExtractor;
@@ -18,7 +19,7 @@ import java.util.*;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-public class ElasticSearchEventSender implements AutoCloseable {
+public class ElasticSearchEventSender implements BulkEventSender {
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
