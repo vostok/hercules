@@ -17,7 +17,7 @@ import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked
 public abstract class AbstractBulkSinkDaemon {
 
     private CuratorClient curatorClient;
-    private CommonBulkEventSink graphiteSink;
+    private CommonBulkEventSink bulkEventSink;
     private BulkEventSender sender;
 
     public void run(String[] args) {
@@ -42,8 +42,8 @@ public abstract class AbstractBulkSinkDaemon {
         //TODO: Validate sinkProperties
         try {
             sender = createSender(parameters);
-            graphiteSink = new CommonBulkEventSink("graphite", stream.get(), streamProperties, sender::send);
-            graphiteSink.start();
+            bulkEventSink = new CommonBulkEventSink(getDaemonName(), stream.get(), streamProperties, sender::send);
+            bulkEventSink.start();
         } catch (Throwable e) {
             e.printStackTrace();
             shutdown();
@@ -64,8 +64,8 @@ public abstract class AbstractBulkSinkDaemon {
         System.out.println(String.format("Prepare %s sink daemon to be shutdown", getDaemonName()));
 
         try {
-            if (Objects.nonNull(graphiteSink)) {
-                graphiteSink.stop(5_000, TimeUnit.MILLISECONDS);
+            if (Objects.nonNull(bulkEventSink)) {
+                bulkEventSink.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error
