@@ -20,7 +20,7 @@ public class RuleRepository {
     }
 
     public void create(String rule) throws Exception {
-        curatorClient.create(zPrefix + "/" + rule);
+        curatorClient.createIfAbsent(zPrefix + "/" + rule);
     }
 
     public void delete(String rule) throws Exception {

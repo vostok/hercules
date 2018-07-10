@@ -6,6 +6,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.Action;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
@@ -47,7 +48,16 @@ public class CreateStreamHandler implements HttpHandler {
                 authManager.auth(apiKey, stream.getName(), Action.MANAGE);
                 //TODO: Auth sources if needed
 
-                repository.create(stream);
+                CreationResult creationResult = repository.create(stream);
+                if (!creationResult.isSuccess()) {
+                    if (creationResult.getStatus() == CreationResult.Status.ALREADY_EXIST) {
+                        ResponseUtil.conflict(exch);
+                    } else {
+                        ResponseUtil.internalServerError(exch);
+                    }
+                    return;
+                }
+
                 //TODO: create topic too
             } catch (IOException e) {
                 e.printStackTrace();

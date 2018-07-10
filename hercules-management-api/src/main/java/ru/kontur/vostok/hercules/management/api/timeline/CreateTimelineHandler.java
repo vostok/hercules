@@ -6,6 +6,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.Action;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
@@ -47,7 +48,16 @@ public class CreateTimelineHandler implements HttpHandler {
                 authManager.auth(apiKey, timeline.getName(), Action.MANAGE);
                 //TODO: Auth sources
 
-                repository.create(timeline);
+                CreationResult creationResult = repository.create(timeline);
+                if (!creationResult.isSuccess()) {
+                    if (creationResult.getStatus() == CreationResult.Status.ALREADY_EXIST) {
+                        ResponseUtil.conflict(exch);
+                    } else {
+                        ResponseUtil.internalServerError(exch);
+                    }
+                    return;
+                }
+
                 //TODO: create table too
             } catch (IOException e) {
                 e.printStackTrace();

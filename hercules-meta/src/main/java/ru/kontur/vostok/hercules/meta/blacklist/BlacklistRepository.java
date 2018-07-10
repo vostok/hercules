@@ -20,7 +20,7 @@ public class BlacklistRepository {
     }
 
     public void add(String key) throws Exception {
-        curatorClient.create(zPrefix + "/" + key);
+        curatorClient.createIfAbsent(zPrefix + "/" + key);
     }
 
     public void remove(String key) throws Exception {

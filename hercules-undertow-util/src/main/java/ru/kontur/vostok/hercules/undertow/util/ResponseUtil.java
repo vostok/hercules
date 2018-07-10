@@ -21,6 +21,16 @@ public class ResponseUtil {
         exchange.endExchange();
     }
 
+    public static void notFound(HttpServerExchange exchange) {
+        exchange.setStatusCode(404);
+        exchange.endExchange();
+    }
+
+    public static void conflict(HttpServerExchange exchange) {
+        exchange.setStatusCode(409);
+        exchange.endExchange();
+    }
+
     public static void internalServerError(HttpServerExchange exchange) {
         exchange.setStatusCode(500);
         exchange.endExchange();

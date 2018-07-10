@@ -47,7 +47,7 @@ public class CuratorClient {
         return children;
     }
 
-    public void create(String path) throws Exception {
+    public void createIfAbsent(String path) throws Exception {
         try {
             curatorFramework.create().forPath(path);
         } catch (KeeperException.NodeExistsException ex) {
@@ -55,15 +55,27 @@ public class CuratorClient {
         }
     }
 
-    public void create(String path, byte[] data) throws Exception {
-        curatorFramework.create().forPath(path, data);
+    public CreationResult create(String path, byte[] data) throws Exception {
+        try {
+            curatorFramework.create().forPath(path, data);
+            return CreationResult.ok();
+        } catch (KeeperException.NodeExistsException ex) {
+            return CreationResult.alreadyExist();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return CreationResult.unknown();
+        }
     }
 
-    public void delete(String path) throws Exception {
+    public DeletionResult delete(String path) throws Exception {
         try {
             curatorFramework.delete().forPath(path);
+            return DeletionResult.ok();
         } catch (KeeperException.NoNodeException ex) {
-            return;//TODO: node does not exist
+            return DeletionResult.notExist();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return DeletionResult.unknown();
         }
     }
 

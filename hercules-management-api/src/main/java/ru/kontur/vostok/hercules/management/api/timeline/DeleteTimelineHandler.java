@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.management.api.timeline;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
@@ -38,7 +39,20 @@ public class DeleteTimelineHandler implements HttpHandler {
 
         //TODO: auth
 
-        repository.delete(timeline);
+        DeletionResult deletionResult = repository.delete(timeline);
+        if (!deletionResult.isSuccess()) {
+            switch (deletionResult.getStatus()) {
+                case NOT_EXIST:
+                    ResponseUtil.notFound(exchange);
+                    return;
+                case UNKNOWN:
+                    ResponseUtil.internalServerError(exchange);
+                    return;
+            }
+        }
+
         //TODO: delete table too
+
+        ResponseUtil.ok(exchange);
     }
 }

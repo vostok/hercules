@@ -3,7 +3,9 @@ package ru.kontur.vostok.hercules.meta.timeline;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,16 +31,16 @@ public class TimelineRepository {
         return jsonBytes.isPresent() ? Optional.of(deserializer.readValue(jsonBytes.get())) : Optional.empty();
     }
 
-    public void create(Timeline timeline) throws Exception {
-        curatorClient.create(zPrefix + '/' + timeline.getName(), serializer.writeValueAsBytes(timeline));
+    public CreationResult create(Timeline timeline) throws Exception {
+        return curatorClient.create(zPrefix + '/' + timeline.getName(), serializer.writeValueAsBytes(timeline));
     }
 
     public List<String> list() throws Exception {
         return curatorClient.children(zPrefix);
     }
 
-    public void delete(String name) throws Exception {
-        curatorClient.delete(zPrefix + '/' + name);
+    public DeletionResult delete(String name) throws Exception {
+        return curatorClient.delete(zPrefix + '/' + name);
     }
 
     private static String zPrefix = "/hercules/timeline";
