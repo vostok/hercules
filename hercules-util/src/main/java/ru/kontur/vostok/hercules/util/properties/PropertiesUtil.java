@@ -3,7 +3,10 @@ package ru.kontur.vostok.hercules.util.properties;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author Gregory Koshelev
@@ -15,6 +18,14 @@ public class PropertiesUtil {
             return defaultValue;
         }
         return Integer.parseInt(stringValue);
+    }
+
+    public static Set<String> toSet(Properties properties, String name) {
+        String value = properties.getProperty(name, "");
+        String[] split = value.split(",");
+        Set<String> set = new HashSet<String>(split.length);
+        set.addAll(Arrays.asList(split));
+        return set;
     }
 
     public static Properties readProperties(String path) {

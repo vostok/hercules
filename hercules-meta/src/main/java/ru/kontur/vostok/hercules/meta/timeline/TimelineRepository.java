@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -24,9 +25,21 @@ public class TimelineRepository {
     }
 
     public Optional<Timeline> read(String name) throws Exception {
-        Optional<byte[]> jsonBytes = curatorClient.read(zPrefix + name);
+        Optional<byte[]> jsonBytes = curatorClient.read(zPrefix + '/' + name);
         return jsonBytes.isPresent() ? Optional.of(deserializer.readValue(jsonBytes.get())) : Optional.empty();
     }
 
-    private static String zPrefix = "/hercules/timeline/";
+    public void create(Timeline timeline) throws Exception {
+        curatorClient.create(zPrefix + '/' + timeline.getName(), serializer.writeValueAsBytes(timeline));
+    }
+
+    public List<String> list() throws Exception {
+        return curatorClient.children(zPrefix);
+    }
+
+    public void delete(String name) throws Exception {
+        curatorClient.delete(zPrefix + '/' + name);
+    }
+
+    private static String zPrefix = "/hercules/timeline";
 }

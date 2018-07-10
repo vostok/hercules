@@ -7,6 +7,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -38,6 +39,31 @@ public class CuratorClient {
             return bytes != null ? Optional.of(bytes) : Optional.empty();
         } catch (KeeperException.NoNodeException ex) {
             return Optional.empty();
+        }
+    }
+
+    public List<String> children(String path) throws Exception {
+        List<String> children = curatorFramework.getChildren().forPath(path);
+        return children;
+    }
+
+    public void create(String path) throws Exception {
+        try {
+            curatorFramework.create().forPath(path);
+        } catch (KeeperException.NodeExistsException ex) {
+            return;//TODO: node already exists
+        }
+    }
+
+    public void create(String path, byte[] data) throws Exception {
+        curatorFramework.create().forPath(path, data);
+    }
+
+    public void delete(String path) throws Exception {
+        try {
+            curatorFramework.delete().forPath(path);
+        } catch (KeeperException.NoNodeException ex) {
+            return;//TODO: node does not exist
         }
     }
 
