@@ -48,10 +48,12 @@ public class EventSender {
                 }
                 return;
             }
+
             if (errorCallback != null) {
                 errorCallback.call();
             }
-            //TODO: process exception
+
+            exception.printStackTrace();//TODO: process exception
         });
     }
 
