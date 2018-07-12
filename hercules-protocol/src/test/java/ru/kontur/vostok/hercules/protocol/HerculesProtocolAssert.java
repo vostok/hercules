@@ -96,4 +96,10 @@ public class HerculesProtocolAssert {
         Assert.assertEquals(expected.getType(), actual.getType());
         asserters[expected.getType().value].accept(expected, actual);
     }
+
+    public static void assertEquals(Container expected, Container actual) {
+        for (Map.Entry<String, Variant> entry : expected) {
+            HerculesProtocolAssert.assertEquals(entry.getValue(), actual.get(entry.getKey()));
+        }
+    }
 }

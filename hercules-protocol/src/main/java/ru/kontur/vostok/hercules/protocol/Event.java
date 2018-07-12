@@ -10,9 +10,9 @@ public class Event {
     private final byte[] bytes;
     private final int version;
     private final UUID id;
-    private final Map<String, Variant> tags;
+    private final Container tags;
 
-    public Event(byte[] bytes, int version, UUID id, Map<String, Variant> tags) {
+    public Event(byte[] bytes, int version, UUID id, Container tags) {
         this.bytes = bytes;
         this.version = version;
         this.id = id;
@@ -32,6 +32,6 @@ public class Event {
     }
 
     public Map<String, Variant> getTags() {
-        return tags;
+        return tags.getFields();
     }
 }

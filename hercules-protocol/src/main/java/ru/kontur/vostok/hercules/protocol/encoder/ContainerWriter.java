@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.VectorConstants;
 
 import java.util.Map;
 
@@ -12,11 +11,11 @@ public class ContainerWriter implements Writer<Container> {
 
     @Override
     public void write(Encoder encoder, Container value) {
-        if (VectorConstants.VECTOR_LENGTH_EXCEEDED <= value.size() ) {
-            throw new RuntimeException(VectorConstants.VECTOR_LENGTH_ERROR_MESSAGE);
+        if (Short.MAX_VALUE < value.size()) {
+            throw new RuntimeException("Only " + Short.MAX_VALUE + " fields are supported");
         }
 
-        encoder.writeByte((byte) value.size());
+        encoder.writeShort((short) value.size());
         for (Map.Entry<String, Variant> entry : value) {
             encoder.writeString(entry.getKey());
             variantWriter.write(encoder, entry.getValue());

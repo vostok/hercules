@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
@@ -10,7 +11,7 @@ import java.util.UUID;
 
 public class EventBuilder {
 
-    private static final VariantWriter variantWriter = new VariantWriter();
+    private static final ContainerWriter containerWriter = new ContainerWriter();
 
     private UUID eventId;
     private int version;
@@ -34,13 +35,10 @@ public class EventBuilder {
 
         encoder.writeUnsignedByte(version);
         encoder.writeUuid(eventId);
-        encoder.writeShort((short) tags.size());
 
-        for (Map.Entry<String, Variant> e : tags.entrySet()) {
-            encoder.writeString(e.getKey());
-            variantWriter.write(encoder, e.getValue());
-        }
+        Container container = new Container(tags);
+        containerWriter.write(encoder, container);
 
-        return new Event(stream.toByteArray(), version, eventId, tags);
+        return new Event(stream.toByteArray(), version, eventId, container);
     }
 }

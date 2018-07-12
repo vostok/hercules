@@ -4,14 +4,13 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.ContainerReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ContainerWriter;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ContainerWriteReadTest {
 
-    private final WriteReadPipe<Container> pipe = WriteReadPipe.init(new ContainerWriter(), new ContainerReader());
-
-
+    private final WriteReadPipe<Container> pipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readAllFields());
 
     @Test
     public void shouldReadWriteContainer() throws Exception {
@@ -20,29 +19,36 @@ public class ContainerWriteReadTest {
         variantMap.put("text-sample", Variant.ofText("Abc еёю"));
 
         Container container = new Container(variantMap);
-        pipe.process(container)
-                .assertEquals((exp, act) -> {
-                    for (Map.Entry<String, Variant> entry : exp) {
-                        HerculesProtocolAssert.assertEquals(entry.getValue(), act.get(entry.getKey()));
-                    }
-                });
+        pipe.process(container).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
-    public void shouldReadWrite255Variants() throws Exception {
+    public void shouldReadWriteMaxCountOfVariants() throws Exception {
         Map<String, Variant> variantMap = new HashMap<>();
 
-        for (int i = 0; i < VectorConstants.VECTOR_LENGTH_EXCEEDED - 1; ++i) {
+        for (int i = 0; i < Short.MAX_VALUE; ++i) {
             variantMap.put(String.valueOf(i), Variant.ofInteger(i));
         }
 
 
         Container container = new Container(variantMap);
-        pipe.process(container)
-                .assertEquals((exp, act) -> {
-                    for (Map.Entry<String, Variant> entry : exp) {
-                        HerculesProtocolAssert.assertEquals(entry.getValue(), act.get(entry.getKey()));
-                    }
-                });
+        pipe.process(container).assertEquals(HerculesProtocolAssert::assertEquals);
+    }
+
+    @Test
+    public void shouldSkipUnmarkedFields() throws Exception {
+        Map<String, Variant> full = new HashMap<>();
+        full.put("keep", Variant.ofInteger(1));
+        full.put("skip", Variant.ofInteger(2));
+        Container fullContainer = new Container(full);
+
+        Map<String, Variant> filtered = new HashMap<>();
+        filtered.put("keep", Variant.ofInteger(1));
+        Container filteredContainer = new Container(filtered);
+
+        WriteReadPipe<Container> filterPipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readFields(Collections.singleton("keep")));
+        Container processed = filterPipe.process(fullContainer).getProcessed();
+
+        HerculesProtocolAssert.assertEquals(filteredContainer, processed);
     }
 }
