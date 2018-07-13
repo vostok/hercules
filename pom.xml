@@ -25,6 +25,9 @@
         <guava.version>20.0</guava.version>
         <unirest.version>1.4.9</unirest.version>
         <elasticsearch.client.version>6.2.4</elasticsearch.client.version>
+        <httpclient.verstion>4.5.3</httpclient.verstion>
+        <log4j.verstion>2.11.0</log4j.verstion>
+        <logback.version>1.2.3</logback.version>
     </properties>
 
     <modules>
@@ -45,10 +48,32 @@
         <module>hercules-cassandra-util</module>
         <module>hercules-management-api</module>
         <module>hercules-undertow-util</module>
+        <module>hercules-gateway-client</module>
+        <module>hercules-elastic-adapter</module>
+        <module>hercules-logger</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Logging libraries -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.verstion}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+
+            <!-- Apache Http client -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.verstion}</version>
+            </dependency>
+
             <!-- Apache Kafka client -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -193,6 +218,16 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-cassandra-util</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-gateway</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-gateway-client</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
             </dependency>
 
