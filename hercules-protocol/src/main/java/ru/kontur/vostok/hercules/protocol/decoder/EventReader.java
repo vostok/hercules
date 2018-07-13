@@ -1,18 +1,19 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.*;
 
 public class EventReader implements Reader<Event> {
 
-    private static final VariantReader variantReader = new VariantReader();
+    private static final UUIDReader uuidReader = new UUIDReader();
+    private static final ContainerReader containerSkipper = ContainerReader.readFields(Collections.emptySet());
 
-    private final Set<String> tags;
+    private final ContainerReader containerReader;
 
-    private EventReader(Set<String> tags) {
-        this.tags = tags;
+    public EventReader(ContainerReader containerReader) {
+        this.containerReader = containerReader;
     }
 
     @Override
@@ -20,35 +21,34 @@ public class EventReader implements Reader<Event> {
         int from = decoder.position();
 
         int version = decoder.readUnsignedByte();
-        UUID eventId = decoder.readUuid();
-        short tagsCount = decoder.readShort();
-
-        Map<String, Variant> tagValues = tags != null ? new HashMap<>(tags.size()) : new HashMap<>();
-        for (int i = 0; i < tagsCount; i++) {
-            String tagKey = decoder.readString();
-            if (tags == null || tags.contains(tagKey)) {
-                Variant tagValue = variantReader.read(decoder);
-                tagValues.put(tagKey, tagValue);
-            } else {
-                variantReader.skip(decoder);
-            }
-        }
+        UUID eventId = uuidReader.read(decoder);
+        Container container = processContainer(decoder);
 
         int to = decoder.position();
         byte[] bytes = decoder.subarray(from, to);
 
-        return new Event(bytes, version, eventId, tagValues);
+        return new Event(bytes, version, eventId, container);
+    }
+
+    private Container processContainer(Decoder decoder) {
+        if (Objects.nonNull(containerReader)) {
+            return containerReader.read(decoder);
+        }
+        else {
+            containerSkipper.skip(decoder);
+            return new Container(Collections.emptyMap());
+        }
     }
 
     public static EventReader readNoTags() {
-        return new EventReader(Collections.emptySet());
-    }
-
-    public static EventReader readAllTags() {
         return new EventReader(null);
     }
 
+    public static EventReader readAllTags() {
+        return new EventReader(ContainerReader.readAllFields());
+    }
+
     public static EventReader readTags(Set<String> tags) {
-        return new EventReader(tags);
+        return new EventReader(ContainerReader.readFields(tags));
     }
 }

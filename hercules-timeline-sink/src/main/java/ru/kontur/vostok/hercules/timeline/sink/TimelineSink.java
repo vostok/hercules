@@ -48,9 +48,8 @@ public class TimelineSink {
         tags.addAll(Arrays.asList(timeline.getShardingKey()));
 
         Predicate<UUID, Event> predicate = (k, v) -> {
-            Map<String, Variant> map = v.getTags();
             for (Filter filter : filters) {
-                Variant value = map.get(filter.getTag());
+                Variant value = v.getTag(filter.getTag());
                 if (value == null || !filter.getCondition().test(value)) {
                     return false;
                 }

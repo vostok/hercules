@@ -20,6 +20,10 @@ public class Variant {
         return value;
     }
 
+    public static Variant ofContainer(Container container) {
+        return new Variant(Type.CONTAINER, container);
+    }
+
     public static Variant ofByte(byte b) {
         return new Variant(Type.BYTE, b);
     }
