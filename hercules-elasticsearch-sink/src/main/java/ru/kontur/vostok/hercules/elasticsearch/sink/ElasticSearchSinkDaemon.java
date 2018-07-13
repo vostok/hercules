@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import ru.kontur.vostok.hercules.kafka.util.processing.AbstractBulkSinkDaemon;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkEventSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
@@ -14,7 +14,7 @@ public class ElasticSearchSinkDaemon extends AbstractBulkSinkDaemon {
     }
 
     @Override
-    protected BulkEventSender createSender(Map<String, String> parameters) {
+    protected BulkSender createSender(Map<String, String> parameters) {
         Properties elasticsearchProperties = PropertiesUtil.readProperties(parameters.getOrDefault("elasticsearch.properties", "elasticsearch.properties"));
 
         return new ElasticSearchEventSender(elasticsearchProperties);

@@ -18,7 +18,7 @@ public abstract class AbstractBulkSinkDaemon {
 
     private CuratorClient curatorClient;
     private CommonBulkEventSink bulkEventSink;
-    private BulkEventSender sender;
+    private BulkSender sender;
 
     public void run(String[] args) {
         long start = System.currentTimeMillis();
@@ -42,7 +42,7 @@ public abstract class AbstractBulkSinkDaemon {
         //TODO: Validate sinkProperties
         try {
             sender = createSender(parameters);
-            bulkEventSink = new CommonBulkEventSink(getDaemonName(), stream.get(), streamProperties, sender::send);
+            bulkEventSink = new CommonBulkEventSink(getDaemonName(), stream.get(), streamProperties, sender);
             bulkEventSink.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -55,7 +55,7 @@ public abstract class AbstractBulkSinkDaemon {
         System.out.println(String.format("%s sink daemon started for %d millis", getDaemonName(), System.currentTimeMillis() - start));
     }
 
-    protected abstract BulkEventSender createSender(Map<String, String> parameters);
+    protected abstract BulkSender createSender(Map<String, String> parameters);
 
     protected abstract String getDaemonName();
 

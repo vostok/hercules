@@ -5,21 +5,18 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkEventSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.Entry;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.util.TagExtractor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-public class ElasticSearchEventSender implements BulkEventSender {
+public class ElasticSearchEventSender implements BulkSender<UUID, Event> {
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 

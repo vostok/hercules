@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.graphite.sink;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteClient;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetric;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricStorage;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkEventSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.Entry;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 
-public class GraphiteEventSender implements BulkEventSender {
+public class GraphiteEventSender implements BulkSender<UUID, Event> {
 
     private final GraphiteClient client;
 
@@ -24,6 +24,7 @@ public class GraphiteEventSender implements BulkEventSender {
         this.client = new GraphiteClient(server[0], Integer.valueOf(server[1]));
     }
 
+    @Override
     public void send(Collection<Entry<UUID, Event>> events) {
         if (events.size() == 0) {
             return;

@@ -21,8 +21,8 @@ import java.util.function.Consumer;
 
 public class CommonBulkEventSink {
 
-    public static final String PUNCTUATION_INTERVAL = "punctuation.interval";
-    public static final String BATCH_SIZE = "batch.size";
+    private static final String PUNCTUATION_INTERVAL = "punctuation.interval";
+    private static final String BATCH_SIZE = "batch.size";
 
     private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
 
@@ -32,7 +32,7 @@ public class CommonBulkEventSink {
             String destinationName,
             Stream stream,
             Properties streamsProperties,
-            Consumer<Collection<Entry<UUID, Event>>> bulkConsumer
+            BulkSender<UUID, Event> bulkConsumer
     ) {
         streamsProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, String.format(ID_TEMPLATE, destinationName, stream.getName()));
         streamsProperties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, -1); // Disable auto commit
@@ -40,7 +40,7 @@ public class CommonBulkEventSink {
         int punctuationInterval = PropertiesUtil.getAs(streamsProperties, PUNCTUATION_INTERVAL, Integer.class)
                 .orElseThrow(PropertiesUtil.missingPropertyError(PUNCTUATION_INTERVAL));
 
-        int batchZie = PropertiesUtil.getAs(streamsProperties, BATCH_SIZE, Integer.class)
+        int batchSize = PropertiesUtil.getAs(streamsProperties, BATCH_SIZE, Integer.class)
                 .orElseThrow(PropertiesUtil.missingPropertyError(BATCH_SIZE));
 
 
@@ -53,7 +53,7 @@ public class CommonBulkEventSink {
         StreamsBuilder streamsBuilder = new StreamsBuilder();
         streamsBuilder
                 .stream(stream.getName(), Consumed.with(keySerde, valueSerde))
-                .process(() -> new BulkProcessor<>(bulkConsumer, batchZie, punctuationInterval));
+                .process(() -> new BulkProcessor<>(bulkConsumer, batchSize, punctuationInterval));
 
         this.kafkaStreams = new KafkaStreams(streamsBuilder.build(), streamsProperties);
     }
