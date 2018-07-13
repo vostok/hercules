@@ -21,53 +21,7 @@ public class Decoder {
         this.buffer = ByteBuffer.wrap(data);
     }
 
-    /**
-     * Read value of type specified.
-     * <p>
-     * Type.BYTE as java.lang.Byte                                              <br>
-     * Type.SHORT as java.lang.Short                                            <br>
-     * Type.INTEGER as java.lang.Integer                                        <br>
-     * Type.LONG as java.lang.Long                                              <br>
-     * Type.FLAG as java.lang.Boolean                                           <br>
-     * Type.FLOAT as java.lang.Float                                            <br>
-     * Type.DOUBLE as java.lang.Double                                          <br>
-     * Type.STRING as byte[] (array of UTF-8 bytes)                             <br>
-     * Type.TEXT as byte[] (array of UTF-8 bytes)                               <br>
-     * Type.BYTE_ARRAY as byte[]                                                <br>
-     * Type.SHORT_ARRAY as short[]                                              <br>
-     * Type.INTEGER_ARRAY as int[]                                              <br>
-     * Type.LONG_ARRAY as long[]                                                <br>
-     * Type.FLAG_ARRAY as boolean[]                                             <br>
-     * Type.FLOAT_ARRAY as float[]                                              <br>
-     * Type.DOUBLE_ARRAY as double[]                                            <br>
-     * Type.STRING_ARRAY as byte[][] (array of array of UTF-8 bytes)            <br>
-     * Type.TEXT_ARRAY as byte[] (array of array of UTF-8 bytes)                <br>
-     * Type.BYTE_VECTOR as byte[]                                               <br>
-     * Type.SHORT_VECTOR as short[]                                             <br>
-     * Type.INTEGER_VECTOR as int[]                                             <br>
-     * Type.LONG_VECTOR as long[]                                               <br>
-     * Type.FLAG_VECTOR as boolean[]                                            <br>
-     * Type.FLOAT_VECTOR as float[]                                             <br>
-     * Type.DOUBLE_VECTOR as double[]                                           <br>
-     * Type.STRING_VECTOR as byte[][] (array of array of UTF-8 bytes)           <br>
-     * Type.TEXT_VECTOR as byte[] (array of array of UTF-8 bytes)               <br>
-     * </p>
-     * @param type of value to be read which defines decoder as described above
-     * @return decoded value
-     */
-    public Object read(Type type) {
-        return decoders[type.value].apply(this);
-    }
-
-    public int skip(Type type) {
-        return skippers[type.value].applyAsInt(this);
-    }
-
     /* --- Read data types --- */
-
-    public Type readType() {
-        return Type.valueOf(buffer.get());
-    }
 
     public byte readByte() {
         return buffer.get();
@@ -123,10 +77,6 @@ public class Decoder {
         byte[] bytes = new byte[length];
         buffer.get(bytes);
         return bytes;
-    }
-
-    public UUID readUuid() {
-        return new UUID(buffer.getLong(), buffer.getLong());
     }
 
     public byte[] readByteArray() {
@@ -532,80 +482,5 @@ public class Decoder {
         return Arrays.copyOfRange(data, from, toExclusive);
     }
 
-    /**
-     * Type decoders
-     */
-    @SuppressWarnings("unchecked")
-    private final static Function<Decoder, Object>[] decoders = new Function[256];
-    static {
-        Arrays.setAll(decoders, idx -> decoder -> {throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));});
-        decoders[Type.BYTE.value] = Decoder::readByte;
-        decoders[Type.SHORT.value] = Decoder::readShort;
-        decoders[Type.INTEGER.value] = Decoder::readInteger;
-        decoders[Type.LONG.value] = Decoder::readLong;
-        decoders[Type.FLAG.value] = Decoder::readFlag;
-        decoders[Type.FLOAT.value] = Decoder::readFloat;
-        decoders[Type.DOUBLE.value] = Decoder::readDouble;
-        decoders[Type.STRING.value] = Decoder::readStringAsBytes;
-        decoders[Type.TEXT.value] = Decoder::readTextAsBytes;
 
-        decoders[Type.BYTE_VECTOR.value] = Decoder::readByteVector;
-        decoders[Type.SHORT_VECTOR.value] = Decoder::readShortVector;
-        decoders[Type.INTEGER_VECTOR.value] = Decoder::readIntegerVector;
-        decoders[Type.LONG_VECTOR.value] = Decoder::readLongVector;
-        decoders[Type.FLAG_VECTOR.value] = Decoder::readFlagVector;
-        decoders[Type.FLOAT_VECTOR.value] = Decoder::readFloatVector;
-        decoders[Type.DOUBLE_VECTOR.value] = Decoder::readDoubleVector;
-        decoders[Type.STRING_VECTOR.value] = Decoder::readStringVectorAsBytes;
-        decoders[Type.TEXT_VECTOR.value] = Decoder::readTextVectorAsBytes;
-
-        decoders[Type.BYTE_ARRAY.value] = Decoder::readByteArray;
-        decoders[Type.SHORT_ARRAY.value] = Decoder::readShortArray;
-        decoders[Type.INTEGER_ARRAY.value] = Decoder::readIntegerArray;
-        decoders[Type.LONG_ARRAY.value] = Decoder::readLongArray;
-        decoders[Type.FLAG_ARRAY.value] = Decoder::readFlagArray;
-        decoders[Type.FLOAT_ARRAY.value] = Decoder::readFloatArray;
-        decoders[Type.DOUBLE_ARRAY.value] = Decoder::readDoubleArray;
-        decoders[Type.STRING_ARRAY.value] = Decoder::readStringArrayAsBytes;
-        decoders[Type.TEXT_ARRAY.value] = Decoder::readTextArrayAsBytes;
-    }
-
-    /**
-     * Skip methods
-     */
-    @SuppressWarnings("unchecked")
-    private final static ToIntFunction<Decoder>[] skippers = new ToIntFunction[256];
-    static {
-        Arrays.setAll(skippers, idx -> decoder -> {throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));});
-
-        skippers[Type.BYTE.value] = Decoder::skipByte;
-        skippers[Type.SHORT.value] = Decoder::skipShort;
-        skippers[Type.INTEGER.value] = Decoder::skipInteger;
-        skippers[Type.LONG.value] = Decoder::skipLong;
-        skippers[Type.FLAG.value] = Decoder::skipFlag;
-        skippers[Type.FLOAT.value] = Decoder::skipFloat;
-        skippers[Type.DOUBLE.value] = Decoder::skipDouble;
-        skippers[Type.STRING.value] = Decoder::skipString;
-        skippers[Type.TEXT.value] = Decoder::skipText;
-
-        skippers[Type.BYTE_VECTOR.value] = Decoder::skipByteVector;
-        skippers[Type.SHORT_VECTOR.value] = Decoder::skipShortVector;
-        skippers[Type.INTEGER_VECTOR.value] = Decoder::skipIntegerVector;
-        skippers[Type.LONG_VECTOR.value] = Decoder::skipLongVector;
-        skippers[Type.FLAG_VECTOR.value] = Decoder::skipFlagVector;
-        skippers[Type.FLOAT_VECTOR.value] = Decoder::skipFloatVector;
-        skippers[Type.DOUBLE_VECTOR.value] = Decoder::skipDoubleVector;
-        skippers[Type.STRING_VECTOR.value] = Decoder::skipStringVector;
-        skippers[Type.TEXT_VECTOR.value] = Decoder::skipTextVector;
-
-        skippers[Type.BYTE_ARRAY.value] = Decoder::skipByteArray;
-        skippers[Type.SHORT_ARRAY.value] = Decoder::skipShortArray;
-        skippers[Type.INTEGER_ARRAY.value] = Decoder::skipIntegerArray;
-        skippers[Type.LONG_ARRAY.value] = Decoder::skipLongArray;
-        skippers[Type.FLAG_ARRAY.value] = Decoder::skipFlagArray;
-        skippers[Type.FLOAT_ARRAY.value] = Decoder::skipFloatArray;
-        skippers[Type.DOUBLE_ARRAY.value] = Decoder::skipDoubleArray;
-        skippers[Type.STRING_ARRAY.value] = Decoder::skipStringArray;
-        skippers[Type.TEXT_ARRAY.value] = Decoder::skipTextArray;
-    }
 }

@@ -11,7 +11,9 @@ public class VariantWriter implements Writer<Variant> {
     @SuppressWarnings("unchecked")
     private static final BiConsumer<Encoder, Object>[] writers = new BiConsumer[256];
     static {
-        Arrays.setAll(writers, idx -> (e, v) -> {throw new IllegalArgumentException("Unsupported type with code " + idx);});
+        Arrays.setAll(writers, idx -> (e, v) -> {
+            throw new IllegalArgumentException("Unsupported type with code " + idx);
+        });
         
         writers[Type.BYTE.value] = VariantWriter::writeByte;
         writers[Type.SHORT.value] = VariantWriter::writeShort;

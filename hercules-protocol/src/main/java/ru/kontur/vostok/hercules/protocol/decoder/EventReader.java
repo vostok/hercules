@@ -2,12 +2,12 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.*;
 
 public class EventReader implements Reader<Event> {
 
+    private static final UUIDReader uuidReader = new UUIDReader();
     private static final ContainerReader containerSkipper = ContainerReader.readFields(Collections.emptySet());
 
     private final ContainerReader containerReader;
@@ -21,7 +21,7 @@ public class EventReader implements Reader<Event> {
         int from = decoder.position();
 
         int version = decoder.readUnsignedByte();
-        UUID eventId = decoder.readUuid();
+        UUID eventId = uuidReader.read(decoder);
         Container container = processContainer(decoder);
 
         int to = decoder.position();
