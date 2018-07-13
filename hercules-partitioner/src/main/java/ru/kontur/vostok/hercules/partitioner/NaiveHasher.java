@@ -16,7 +16,7 @@ public class NaiveHasher implements Hasher {
     public int hash(Event event, String[] tags) {
         int hash = 0;
         for (String tag : tags) {
-            Variant tagValue = event.getTags().get(tag);
+            Variant tagValue = event.getTag(tag);
             hash = 31 * hash + ((tagValue != null) ? hash(tagValue.getType(), tagValue.getValue()) : 0);
         }
         return 0;

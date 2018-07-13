@@ -3,7 +3,9 @@ package ru.kontur.vostok.hercules.protocol;
 import org.junit.Assert;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 public class HerculesProtocolAssert {
@@ -53,13 +55,18 @@ public class HerculesProtocolAssert {
         Assert.assertEquals(expected.getVersion(), actual.getVersion());
         Assert.assertEquals(expected.getId(), actual.getId());
 
-        Map.Entry[] expectedEntries = expected.getTags().entrySet().stream().sorted(Map.Entry.comparingByKey()).toArray(Map.Entry[]::new);
-        Map.Entry[] actualEntries = actual.getTags().entrySet().stream().sorted(Map.Entry.comparingByKey()).toArray(Map.Entry[]::new);
-
-        assertArrayEquals(expectedEntries, actualEntries, (ex, ac) -> {
-            Assert.assertEquals(ex.getKey(), ac.getKey());
-            assertEquals((Variant) ex.getValue(), (Variant) ac.getValue());
-        });
+        Set<String> checked = new HashSet<>();
+        for (Map.Entry<String, Variant> entry : expected) {
+            String tagName = entry.getKey();
+            assertEquals(entry.getValue(), actual.getTag(tagName));
+            checked.add(tagName);
+        }
+        for (Map.Entry<String, Variant> entry : actual) {
+            String tagName = entry.getKey();
+            if (!checked.contains(tagName)) {
+                Assert.fail("Extra tag " + tagName);
+            }
+        }
 
         Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
     }

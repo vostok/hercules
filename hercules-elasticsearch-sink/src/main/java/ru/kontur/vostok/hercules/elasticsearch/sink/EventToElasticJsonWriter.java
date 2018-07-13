@@ -16,8 +16,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 
-import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
-
 public class EventToElasticJsonWriter {
 
     @FunctionalInterface
@@ -71,7 +69,7 @@ public class EventToElasticJsonWriter {
             generator.writeStartObject();
             generator.writeStringField(TIMESTAMP_FIELD, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
-            for (Map.Entry<String, Variant> tag : event.getTags().entrySet()) {
+            for (Map.Entry<String, Variant> tag : event) {
                 if (TIMESTAMP_FIELD.equals(tag.getKey())) {
                     continue;
                 }

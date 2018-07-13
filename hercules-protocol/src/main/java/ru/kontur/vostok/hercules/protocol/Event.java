@@ -1,12 +1,14 @@
 package ru.kontur.vostok.hercules.protocol;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * @author Gregory Koshelev
  */
-public class Event {
+public class Event implements Iterable<Map.Entry<String, Variant>> {
+
     private final byte[] bytes;
     private final int version;
     private final UUID id;
@@ -31,7 +33,16 @@ public class Event {
         return id;
     }
 
-    public Map<String, Variant> getTags() {
-        return tags.getFields();
+    public Variant getTag(String tagName) {
+        return tags.get(tagName);
+    }
+
+    public int getTagCount() {
+        return tags.size();
+    }
+
+    @Override
+    public Iterator<Map.Entry<String, Variant>> iterator() {
+        return tags.iterator();
     }
 }
