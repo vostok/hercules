@@ -9,7 +9,7 @@ import ru.kontur.vostok.hercules.protocol.Variant;
  */
 public class NaiveHasher implements Hasher {
     public static int hash(Type type, Object value) {
-        return functions[type.value].hash(value);
+        return functions[type.code].hash(value);
     }
 
     @Override

@@ -27,11 +27,11 @@ public class VariantReader implements Reader<Variant> {
     }
 
     private static Object readValue(Decoder decoder, Type type) {
-        return decoders[type.value].apply(decoder);
+        return decoders[type.code].apply(decoder);
     }
 
     private static int skipValue(Decoder decoder, Type type) {
-        return skippers[type.value].applyAsInt(decoder);
+        return skippers[type.code].applyAsInt(decoder);
     }
 
     /**
@@ -44,35 +44,35 @@ public class VariantReader implements Reader<Variant> {
             throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));
         });
 
-        decoders[Type.BYTE.value] = Decoder::readByte;
-        decoders[Type.SHORT.value] = Decoder::readShort;
-        decoders[Type.INTEGER.value] = Decoder::readInteger;
-        decoders[Type.LONG.value] = Decoder::readLong;
-        decoders[Type.FLAG.value] = Decoder::readFlag;
-        decoders[Type.FLOAT.value] = Decoder::readFloat;
-        decoders[Type.DOUBLE.value] = Decoder::readDouble;
-        decoders[Type.STRING.value] = Decoder::readStringAsBytes;
-        decoders[Type.TEXT.value] = Decoder::readTextAsBytes;
+        decoders[Type.BYTE.code] = Decoder::readByte;
+        decoders[Type.SHORT.code] = Decoder::readShort;
+        decoders[Type.INTEGER.code] = Decoder::readInteger;
+        decoders[Type.LONG.code] = Decoder::readLong;
+        decoders[Type.FLAG.code] = Decoder::readFlag;
+        decoders[Type.FLOAT.code] = Decoder::readFloat;
+        decoders[Type.DOUBLE.code] = Decoder::readDouble;
+        decoders[Type.STRING.code] = Decoder::readStringAsBytes;
+        decoders[Type.TEXT.code] = Decoder::readTextAsBytes;
 
-        decoders[Type.BYTE_VECTOR.value] = Decoder::readByteVector;
-        decoders[Type.SHORT_VECTOR.value] = Decoder::readShortVector;
-        decoders[Type.INTEGER_VECTOR.value] = Decoder::readIntegerVector;
-        decoders[Type.LONG_VECTOR.value] = Decoder::readLongVector;
-        decoders[Type.FLAG_VECTOR.value] = Decoder::readFlagVector;
-        decoders[Type.FLOAT_VECTOR.value] = Decoder::readFloatVector;
-        decoders[Type.DOUBLE_VECTOR.value] = Decoder::readDoubleVector;
-        decoders[Type.STRING_VECTOR.value] = Decoder::readStringVectorAsBytes;
-        decoders[Type.TEXT_VECTOR.value] = Decoder::readTextVectorAsBytes;
+        decoders[Type.BYTE_VECTOR.code] = Decoder::readByteVector;
+        decoders[Type.SHORT_VECTOR.code] = Decoder::readShortVector;
+        decoders[Type.INTEGER_VECTOR.code] = Decoder::readIntegerVector;
+        decoders[Type.LONG_VECTOR.code] = Decoder::readLongVector;
+        decoders[Type.FLAG_VECTOR.code] = Decoder::readFlagVector;
+        decoders[Type.FLOAT_VECTOR.code] = Decoder::readFloatVector;
+        decoders[Type.DOUBLE_VECTOR.code] = Decoder::readDoubleVector;
+        decoders[Type.STRING_VECTOR.code] = Decoder::readStringVectorAsBytes;
+        decoders[Type.TEXT_VECTOR.code] = Decoder::readTextVectorAsBytes;
 
-        decoders[Type.BYTE_ARRAY.value] = Decoder::readByteArray;
-        decoders[Type.SHORT_ARRAY.value] = Decoder::readShortArray;
-        decoders[Type.INTEGER_ARRAY.value] = Decoder::readIntegerArray;
-        decoders[Type.LONG_ARRAY.value] = Decoder::readLongArray;
-        decoders[Type.FLAG_ARRAY.value] = Decoder::readFlagArray;
-        decoders[Type.FLOAT_ARRAY.value] = Decoder::readFloatArray;
-        decoders[Type.DOUBLE_ARRAY.value] = Decoder::readDoubleArray;
-        decoders[Type.STRING_ARRAY.value] = Decoder::readStringArrayAsBytes;
-        decoders[Type.TEXT_ARRAY.value] = Decoder::readTextArrayAsBytes;
+        decoders[Type.BYTE_ARRAY.code] = Decoder::readByteArray;
+        decoders[Type.SHORT_ARRAY.code] = Decoder::readShortArray;
+        decoders[Type.INTEGER_ARRAY.code] = Decoder::readIntegerArray;
+        decoders[Type.LONG_ARRAY.code] = Decoder::readLongArray;
+        decoders[Type.FLAG_ARRAY.code] = Decoder::readFlagArray;
+        decoders[Type.FLOAT_ARRAY.code] = Decoder::readFloatArray;
+        decoders[Type.DOUBLE_ARRAY.code] = Decoder::readDoubleArray;
+        decoders[Type.STRING_ARRAY.code] = Decoder::readStringArrayAsBytes;
+        decoders[Type.TEXT_ARRAY.code] = Decoder::readTextArrayAsBytes;
     }
 
     /**
@@ -85,34 +85,34 @@ public class VariantReader implements Reader<Variant> {
             throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));
         });
 
-        skippers[Type.BYTE.value] = Decoder::skipByte;
-        skippers[Type.SHORT.value] = Decoder::skipShort;
-        skippers[Type.INTEGER.value] = Decoder::skipInteger;
-        skippers[Type.LONG.value] = Decoder::skipLong;
-        skippers[Type.FLAG.value] = Decoder::skipFlag;
-        skippers[Type.FLOAT.value] = Decoder::skipFloat;
-        skippers[Type.DOUBLE.value] = Decoder::skipDouble;
-        skippers[Type.STRING.value] = Decoder::skipString;
-        skippers[Type.TEXT.value] = Decoder::skipText;
+        skippers[Type.BYTE.code] = Decoder::skipByte;
+        skippers[Type.SHORT.code] = Decoder::skipShort;
+        skippers[Type.INTEGER.code] = Decoder::skipInteger;
+        skippers[Type.LONG.code] = Decoder::skipLong;
+        skippers[Type.FLAG.code] = Decoder::skipFlag;
+        skippers[Type.FLOAT.code] = Decoder::skipFloat;
+        skippers[Type.DOUBLE.code] = Decoder::skipDouble;
+        skippers[Type.STRING.code] = Decoder::skipString;
+        skippers[Type.TEXT.code] = Decoder::skipText;
 
-        skippers[Type.BYTE_VECTOR.value] = Decoder::skipByteVector;
-        skippers[Type.SHORT_VECTOR.value] = Decoder::skipShortVector;
-        skippers[Type.INTEGER_VECTOR.value] = Decoder::skipIntegerVector;
-        skippers[Type.LONG_VECTOR.value] = Decoder::skipLongVector;
-        skippers[Type.FLAG_VECTOR.value] = Decoder::skipFlagVector;
-        skippers[Type.FLOAT_VECTOR.value] = Decoder::skipFloatVector;
-        skippers[Type.DOUBLE_VECTOR.value] = Decoder::skipDoubleVector;
-        skippers[Type.STRING_VECTOR.value] = Decoder::skipStringVector;
-        skippers[Type.TEXT_VECTOR.value] = Decoder::skipTextVector;
+        skippers[Type.BYTE_VECTOR.code] = Decoder::skipByteVector;
+        skippers[Type.SHORT_VECTOR.code] = Decoder::skipShortVector;
+        skippers[Type.INTEGER_VECTOR.code] = Decoder::skipIntegerVector;
+        skippers[Type.LONG_VECTOR.code] = Decoder::skipLongVector;
+        skippers[Type.FLAG_VECTOR.code] = Decoder::skipFlagVector;
+        skippers[Type.FLOAT_VECTOR.code] = Decoder::skipFloatVector;
+        skippers[Type.DOUBLE_VECTOR.code] = Decoder::skipDoubleVector;
+        skippers[Type.STRING_VECTOR.code] = Decoder::skipStringVector;
+        skippers[Type.TEXT_VECTOR.code] = Decoder::skipTextVector;
 
-        skippers[Type.BYTE_ARRAY.value] = Decoder::skipByteArray;
-        skippers[Type.SHORT_ARRAY.value] = Decoder::skipShortArray;
-        skippers[Type.INTEGER_ARRAY.value] = Decoder::skipIntegerArray;
-        skippers[Type.LONG_ARRAY.value] = Decoder::skipLongArray;
-        skippers[Type.FLAG_ARRAY.value] = Decoder::skipFlagArray;
-        skippers[Type.FLOAT_ARRAY.value] = Decoder::skipFloatArray;
-        skippers[Type.DOUBLE_ARRAY.value] = Decoder::skipDoubleArray;
-        skippers[Type.STRING_ARRAY.value] = Decoder::skipStringArray;
-        skippers[Type.TEXT_ARRAY.value] = Decoder::skipTextArray;
+        skippers[Type.BYTE_ARRAY.code] = Decoder::skipByteArray;
+        skippers[Type.SHORT_ARRAY.code] = Decoder::skipShortArray;
+        skippers[Type.INTEGER_ARRAY.code] = Decoder::skipIntegerArray;
+        skippers[Type.LONG_ARRAY.code] = Decoder::skipLongArray;
+        skippers[Type.FLAG_ARRAY.code] = Decoder::skipFlagArray;
+        skippers[Type.FLOAT_ARRAY.code] = Decoder::skipFloatArray;
+        skippers[Type.DOUBLE_ARRAY.code] = Decoder::skipDoubleArray;
+        skippers[Type.STRING_ARRAY.code] = Decoder::skipStringArray;
+        skippers[Type.TEXT_ARRAY.code] = Decoder::skipTextArray;
     }
 }
