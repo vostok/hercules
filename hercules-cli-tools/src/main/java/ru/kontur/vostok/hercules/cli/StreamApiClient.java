@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class StreamApiClient {
 
@@ -75,7 +76,7 @@ public class StreamApiClient {
     }
 
     private static String formatEvent(Event event) {
-        String tags = event.getTags().entrySet().stream()
+        String tags = StreamSupport.stream(event.spliterator(), false)
                 .map(e -> e.getKey() + "=" + formatVariant(e.getValue()))
                 .collect(Collectors.joining(","));
         return String.format("(v. %d) [%s] %s", event.getVersion(), event.getId().toString(), tags);

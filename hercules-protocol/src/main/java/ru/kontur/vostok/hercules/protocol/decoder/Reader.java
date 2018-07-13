@@ -4,7 +4,7 @@ public interface Reader<T> {
 
     T read(Decoder decoder);
 
-    default void skip(Decoder decoder) {
+    default int skip(Decoder decoder) {
         throw new UnsupportedOperationException();
     }
 }

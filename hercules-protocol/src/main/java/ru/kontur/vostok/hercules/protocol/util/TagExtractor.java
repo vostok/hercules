@@ -21,7 +21,7 @@ public final class TagExtractor {
         }
 
         return Optional.ofNullable(
-                extractRegardingType(event.getTags().get(tagName), Type.STRING, Type.TEXT)
+                extractRegardingType(event.getTag(tagName), Type.STRING, Type.TEXT)
         );
     }
 

@@ -20,7 +20,7 @@ public class EventDeserializerTest {
 
         Event deserialized = eventDeserializer.deserialize(TOPIC_STUB, createEvent().getBytes());
 
-        assertEquals(0, deserialized.getTags().size());
+        assertEquals(0, deserialized.getTagCount());
     }
 
     @Test
@@ -29,9 +29,9 @@ public class EventDeserializerTest {
 
         Event deserialized = eventDeserializer.deserialize(TOPIC_STUB, createEvent().getBytes());
 
-        assertEquals(2, deserialized.getTags().size());
-        assertArrayEquals("tag content".getBytes(), (byte[]) deserialized.getTags().get("string-tag").getValue());
-        assertEquals(123, (int) deserialized.getTags().get("int-tag").getValue());
+        assertEquals(2, deserialized.getTagCount());
+        assertArrayEquals("tag content".getBytes(), (byte[]) deserialized.getTag("string-tag").getValue());
+        assertEquals(123, (int) deserialized.getTag("int-tag").getValue());
     }
 
     @Test
@@ -40,8 +40,8 @@ public class EventDeserializerTest {
 
         Event deserialized = eventDeserializer.deserialize(TOPIC_STUB, createEvent().getBytes());
 
-        assertEquals(1, deserialized.getTags().size());
-        assertEquals(123, (int) deserialized.getTags().get("int-tag").getValue());
+        assertEquals(1, deserialized.getTagCount());
+        assertEquals(123, (int) deserialized.getTag("int-tag").getValue());
     }
 
     private static Event createEvent() {
