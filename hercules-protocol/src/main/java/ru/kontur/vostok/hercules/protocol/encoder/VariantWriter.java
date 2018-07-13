@@ -4,15 +4,12 @@ import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.Arrays;
+import java.util.function.BiConsumer;
 
 public class VariantWriter implements Writer<Variant> {
     
-    @FunctionalInterface
-    private interface VariantValueWriter {
-        void write(Encoder encoder, Object value);
-    }
-    
-    private static final VariantValueWriter[] writers = new VariantValueWriter[256];
+    @SuppressWarnings("unchecked")
+    private static final BiConsumer<Encoder, Object>[] writers = new BiConsumer[256];
     static {
         Arrays.setAll(writers, idx -> (e, v) -> {throw new IllegalArgumentException("Unsupported type with code " + idx);});
         
@@ -50,7 +47,7 @@ public class VariantWriter implements Writer<Variant> {
     @Override
     public void write(Encoder encoder, Variant variant) {
         encoder.writeByte(variant.getType().value);
-        writers[variant.getType().value].write(encoder, variant.getValue());
+        writers[variant.getType().value].accept(encoder, variant.getValue());
     }
 
     private static void writeByte(Encoder encoder, Object value) {
