@@ -2,12 +2,17 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public class VariantReader implements Reader<Variant> {
+
+    private interface ObjectReader extends Function<Decoder, Object> {}
+
+    private interface ObjectSkipper extends ToIntFunction<Decoder> {}
 
     public static final VariantReader INSTANCE = new VariantReader();
 
@@ -52,8 +57,7 @@ public class VariantReader implements Reader<Variant> {
     /**
      * Type decoders
      */
-    @SuppressWarnings("unchecked")
-    private final static Function<Decoder, Object>[] decoders = new Function[256];
+    private final static ObjectReader[] decoders = new ObjectReader[256];
     static {
         Arrays.setAll(decoders, idx -> decoder -> {
             throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));
@@ -94,8 +98,7 @@ public class VariantReader implements Reader<Variant> {
     /**
      * Skip methods
      */
-    @SuppressWarnings("unchecked")
-    private final static ToIntFunction<Decoder>[] skippers = new ToIntFunction[256];
+    private final static ObjectSkipper[] skippers = new ObjectSkipper[256];
     static {
         Arrays.setAll(skippers, idx -> decoder -> {
             throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));

@@ -6,15 +6,17 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
+import java.util.function.ToIntFunction;
 
 public class VariantWriter implements Writer<Variant> {
+
+    private interface ObjectWriter extends BiConsumer<Encoder, Object> {}
 
     public static final VariantWriter INSTANCE = new VariantWriter();
 
     public static final ContainerWriter containerWriter = ContainerWriter.INSTANCE;
     
-    @SuppressWarnings("unchecked")
-    private static final BiConsumer<Encoder, Object>[] writers = new BiConsumer[256];
+    private static final ObjectWriter[] writers = new ObjectWriter[256];
     static {
         Arrays.setAll(writers, idx -> (e, v) -> {
             throw new IllegalArgumentException("Unsupported type with code " + idx);
