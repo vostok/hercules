@@ -12,13 +12,13 @@ public class Event implements Iterable<Map.Entry<String, Variant>> {
     private final byte[] bytes;
     private final int version;
     private final UUID id;
-    private final Container tags;
+    private final Container payload;
 
-    public Event(byte[] bytes, int version, UUID id, Container tags) {
+    public Event(byte[] bytes, int version, UUID id, Container payload) {
         this.bytes = bytes;
         this.version = version;
         this.id = id;
-        this.tags = tags;
+        this.payload = payload;
     }
 
     public byte[] getBytes() {
@@ -34,15 +34,15 @@ public class Event implements Iterable<Map.Entry<String, Variant>> {
     }
 
     public Variant getTag(String tagName) {
-        return tags.get(tagName);
+        return payload.get(tagName);
     }
 
     public int getTagCount() {
-        return tags.size();
+        return payload.size();
     }
 
     @Override
     public Iterator<Map.Entry<String, Variant>> iterator() {
-        return tags.iterator();
+        return payload.iterator();
     }
 }
