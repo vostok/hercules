@@ -9,6 +9,10 @@ import java.util.function.ToIntFunction;
 
 public class VariantReader implements Reader<Variant> {
 
+    public static final VariantReader INSTANCE = new VariantReader();
+
+    private static final ContainerReader containerReader = ContainerReader.INSTANCE;
+
     @Override
     public Variant read(Decoder decoder) {
         Type type = readType(decoder);
@@ -17,9 +21,12 @@ public class VariantReader implements Reader<Variant> {
     }
 
     @Override
-    public void skip(Decoder decoder) {
+    public int skip(Decoder decoder) {
+        int skipped = 0;
         Type type = readType(decoder);
-        skipValue(decoder, type);
+        skipped += SizeOf.BYTE;
+        skipped += skipValue(decoder, type);
+        return skipped;
     }
 
     private static Type readType(Decoder decoder) {
@@ -34,6 +41,14 @@ public class VariantReader implements Reader<Variant> {
         return skippers[type.code].applyAsInt(decoder);
     }
 
+    private static Object readContainer(Decoder decoder) {
+        return containerReader.read(decoder);
+    }
+
+    private static int skipContainer(Decoder decoder) {
+        return containerReader.skip(decoder);
+    }
+
     /**
      * Type decoders
      */
@@ -44,6 +59,7 @@ public class VariantReader implements Reader<Variant> {
             throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));
         });
 
+        decoders[Type.CONTAINER.code] = VariantReader::readContainer ;
         decoders[Type.BYTE.code] = Decoder::readByte;
         decoders[Type.SHORT.code] = Decoder::readShort;
         decoders[Type.INTEGER.code] = Decoder::readInteger;
@@ -85,6 +101,7 @@ public class VariantReader implements Reader<Variant> {
             throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));
         });
 
+        skippers[Type.CONTAINER.code] = VariantReader::skipContainer;
         skippers[Type.BYTE.code] = Decoder::skipByte;
         skippers[Type.SHORT.code] = Decoder::skipShort;
         skippers[Type.INTEGER.code] = Decoder::skipInteger;

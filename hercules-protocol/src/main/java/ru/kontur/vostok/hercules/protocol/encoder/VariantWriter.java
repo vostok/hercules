@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
@@ -7,6 +8,10 @@ import java.util.Arrays;
 import java.util.function.BiConsumer;
 
 public class VariantWriter implements Writer<Variant> {
+
+    public static final VariantWriter INSTANCE = new VariantWriter();
+
+    public static final ContainerWriter containerWriter = ContainerWriter.INSTANCE;
     
     @SuppressWarnings("unchecked")
     private static final BiConsumer<Encoder, Object>[] writers = new BiConsumer[256];
@@ -14,7 +19,8 @@ public class VariantWriter implements Writer<Variant> {
         Arrays.setAll(writers, idx -> (e, v) -> {
             throw new IllegalArgumentException("Unsupported type with code " + idx);
         });
-        
+
+        writers[Type.CONTAINER.code] = VariantWriter::writeContainer;
         writers[Type.BYTE.code] = VariantWriter::writeByte;
         writers[Type.SHORT.code] = VariantWriter::writeShort;
         writers[Type.INTEGER.code] = VariantWriter::writeInteger;
@@ -50,6 +56,11 @@ public class VariantWriter implements Writer<Variant> {
     public void write(Encoder encoder, Variant variant) {
         encoder.writeByte(variant.getType().code);
         writers[variant.getType().code].accept(encoder, variant.getValue());
+    }
+
+    private static void writeContainer(Encoder encoder, Object value) {
+        Container container = (Container) value;
+        containerWriter.write(encoder, container);
     }
 
     private static void writeByte(Encoder encoder, Object value) {

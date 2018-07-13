@@ -68,6 +68,7 @@ public class HerculesProtocolAssert {
     static {
         Arrays.setAll(asserters, idx -> (expected, actual) -> Assert.assertEquals(expected.getValue(), actual.getValue()));
 
+        asserters[Type.CONTAINER.code] = (expected, actual) -> assertEquals((Container) expected.getValue(), (Container) actual.getValue());
         asserters[Type.STRING.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
         asserters[Type.TEXT.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
 

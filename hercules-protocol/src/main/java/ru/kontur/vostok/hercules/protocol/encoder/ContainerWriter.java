@@ -7,7 +7,9 @@ import java.util.Map;
 
 public class ContainerWriter implements Writer<Container> {
 
-    private static final VariantWriter variantWriter = new VariantWriter();
+    public static final ContainerWriter INSTANCE = new ContainerWriter();
+
+    private static final VariantWriter variantWriter = VariantWriter.INSTANCE;
 
     @Override
     public void write(Encoder encoder, Container value) {

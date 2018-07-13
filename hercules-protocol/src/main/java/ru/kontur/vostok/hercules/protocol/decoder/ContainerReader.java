@@ -10,7 +10,9 @@ import java.util.Set;
 
 public class ContainerReader implements Reader<Container> {
 
-    private static final VariantReader variantReader = new VariantReader();
+    public static final ContainerReader INSTANCE = readAllFields();
+
+    private static final VariantReader variantReader = VariantReader.INSTANCE;
 
     private final Set<String> fields;
 
@@ -36,12 +38,15 @@ public class ContainerReader implements Reader<Container> {
     }
 
     @Override
-    public void skip(Decoder decoder) {
+    public int skip(Decoder decoder) {
+        int skipped = 0;
         short length = decoder.readShort();
+        skipped += SizeOf.SHORT;
         while (0 <= --length) {
-            decoder.skipString();
-            variantReader.skip(decoder);
+            skipped += decoder.skipString();
+            skipped += variantReader.skip(decoder);
         }
+        return skipped;
     }
 
     public static ContainerReader readAllFields() {
