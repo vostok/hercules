@@ -40,6 +40,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-uuid</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-metrics</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.kafka</groupId>

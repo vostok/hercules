@@ -3,10 +3,12 @@ package ru.kontur.vostok.hercules.gateway;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.decoder.ReaderIterator;
+import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.uuid.Marker;
 
 import java.util.Set;
@@ -17,8 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Gregory Koshelev
  */
 public class SendHandler extends GatewayHandler {
-    public SendHandler(AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
-        super(authManager, eventSender, streamRepository);
+
+    public SendHandler(MetricsCollector metricsCollector, AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
+        super(metricsCollector, authManager, eventSender, streamRepository);
     }
 
     @Override
@@ -39,14 +42,13 @@ public class SendHandler extends GatewayHandler {
                                     shardingKey,
                                     () -> {
                                         if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
-                                            exch.setStatusCode(200);
-                                            exch.endExchange();
+                                            ResponseUtil.ok(exchange);
                                         }
+                                        sentEventsMeter.mark(1);
                                     },
                                     () -> {
                                         if (processed.compareAndSet(false, true)) {
-                                            exch.setStatusCode(422);
-                                            exch.endExchange();
+                                            ResponseUtil.unprocessableEntity(exchange);
                                         }
                                     });
                         }

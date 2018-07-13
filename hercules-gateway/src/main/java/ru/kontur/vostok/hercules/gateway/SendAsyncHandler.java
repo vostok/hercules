@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.gateway;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
@@ -16,8 +17,8 @@ import java.util.Set;
  * @author Gregory Koshelev
  */
 public class SendAsyncHandler extends GatewayHandler {
-    public SendAsyncHandler(AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
-        super(authManager, eventSender, streamRepository);
+    public SendAsyncHandler(MetricsCollector metricsCollector, AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
+        super(metricsCollector, authManager, eventSender, streamRepository);
     }
 
     @Override
@@ -34,7 +35,9 @@ public class SendAsyncHandler extends GatewayHandler {
                                     topic,
                                     partitions,
                                     shardingKey,
-                                    null,
+                                    () -> {
+                                        sentEventsMeter.mark(1);
+                                    },
                                     null
                             );
                         }

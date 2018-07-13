@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.gateway;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class GatewayApplication {
+    private static MetricsCollector metricsCollector;
     private static HttpServer server;
     private static EventSender eventSender;
     private static CuratorClient curatorClient;
@@ -29,6 +31,10 @@ public class GatewayApplication {
             Properties httpserverProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
             Properties producerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("producer.properties", "producer.properties"));
             Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
+            Properties metricsProperties = PropertiesUtil.readProperties(parameters.getOrDefault("metrics.properties", "metrics.properties"));
+
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
 
             eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()));
 
@@ -38,7 +44,7 @@ public class GatewayApplication {
             StreamRepository streamRepository = new StreamRepository(curatorClient);
             AuthManager authManager = new AuthManager();
 
-            server = new HttpServer(httpserverProperties, authManager, eventSender, streamRepository);
+            server = new HttpServer(metricsCollector, httpserverProperties, authManager, eventSender, streamRepository);
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -77,6 +83,15 @@ public class GatewayApplication {
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
         }
+
+        try {
+            if (metricsCollector != null) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();//TODO: Process error
+        }
+
         System.out.println("Finished Gateway shutdown for " + (System.currentTimeMillis() - start) + " millis");
     }
 }
