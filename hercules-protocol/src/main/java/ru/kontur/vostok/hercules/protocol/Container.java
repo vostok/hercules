@@ -24,8 +24,4 @@ public class Container implements Iterable<Map.Entry<String, Variant>> {
     public Iterator<Map.Entry<String, Variant>> iterator() {
         return fields.entrySet().iterator();
     }
-
-    public Map<String, Variant> getFields() {
-        return Collections.unmodifiableMap(fields);
-    }
 }
