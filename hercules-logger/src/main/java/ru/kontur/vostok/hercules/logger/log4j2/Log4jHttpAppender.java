@@ -9,7 +9,7 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
-import ru.kontur.vostok.hercules.logger.log4j2.util.EventUtil;
+import ru.kontur.vostok.hercules.logger.log4j2.util.Log4jToEventConverter;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -105,7 +105,7 @@ public class Log4jHttpAppender extends AbstractAppender {
     @Override
     public void append(LogEvent logEvent) {
         if (!threadSet.contains(Thread.currentThread())) {
-            publisher.publish(EventUtil.createEvent(logEvent));
+            publisher.publish(Log4jToEventConverter.createEvent(logEvent));
         }
     }
 

@@ -4,16 +4,15 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.elastic.adapter.util.ElasticAdapterUtil;
 import ru.kontur.vostok.hercules.gateway.client.util.EventWriterUtil;
+import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class ElasticAdapterHandler implements HttpHandler {
     private final Consumer<byte[]> sender;
@@ -40,17 +39,7 @@ public class ElasticAdapterHandler implements HttpHandler {
         }
 
         int contentLength = ExchangeUtil.extractContentLength(exchange);
-        if (contentLength < 0 || contentLength > (1 << 21)) {
-            exchange.setStatusCode(400);
-            exchange.endExchange();
-            return;
-        }
-
-        String JSONString = new BufferedReader(new InputStreamReader(exchange.getInputStream()))
-                .lines()
-                .collect(Collectors.joining());
-
-        if (JSONString == null || JSONString.isEmpty()) {
+        if (contentLength < 0 || CommonConstants.MAX_MESSAGE_SIZE < contentLength) {
             exchange.setStatusCode(400);
             exchange.endExchange();
             return;
@@ -58,8 +47,8 @@ public class ElasticAdapterHandler implements HttpHandler {
 
         //Extracting events and adding tag "index" to it
         String index = optionalIndex.get();
-        Event[] events = ElasticAdapterUtil.createEventStream(JSONString)
-                .map(event -> rebuildEvent(event, eventBuilder -> eventBuilder.setTag("index", Variant.ofString(index))))
+        Event[] events = ElasticAdapterUtil.createEventStream(exchange.getInputStream())
+                .map(event -> patchEvent(event, eventBuilder -> eventBuilder.setTag("index", Variant.ofString(index))))
                 .toArray(Event[]::new);
 
         byte[] body = EventWriterUtil.toBytes(contentLength, events);
@@ -67,11 +56,14 @@ public class ElasticAdapterHandler implements HttpHandler {
         sender.accept(body);
     }
 
-    private Event rebuildEvent(Event event, Consumer<EventBuilder> consumer) {
+    private Event patchEvent(Event event, Consumer<EventBuilder> consumer) {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setEventId(event.getId());
         eventBuilder.setVersion(event.getVersion());
-        event.getTags().forEach(eventBuilder::setTag);
+
+        for (Map.Entry<String, Variant> entry : event) {
+            eventBuilder.setTag(entry.getKey(), entry.getValue());
+        }
 
         consumer.accept(eventBuilder);
 

@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.logger.logback;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
-import ru.kontur.vostok.hercules.logger.logback.util.EventUtil;
+import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -53,7 +53,7 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
     @Override
     protected void append(ILoggingEvent event) {
         if (!threads.contains(Thread.currentThread())) {
-            publisher.publish(EventUtil.createEvent(event));
+            publisher.publish(LogbackToEventConverter.createEvent(event));
         }
     }
 

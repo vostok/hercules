@@ -14,7 +14,7 @@ public class ElasticAdapterApplication {
     //TODO: do trim operation
     public ElasticAdapterApplication(Properties properties) {
         if (!properties.containsKey("url") || !properties.containsKey("apiKey") || !properties.containsKey("stream")) {
-            throw new IllegalStateException();
+            throw new IllegalArgumentException("Properties contains not all required fields ('url', 'apiKey', 'stream')");
         }
 
         String url = properties.getProperty("url");

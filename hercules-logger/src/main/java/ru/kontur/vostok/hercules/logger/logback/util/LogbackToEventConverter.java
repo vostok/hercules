@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.Arrays;
 
-public class EventUtil {
+public class LogbackToEventConverter {
     private final static UuidGenerator GENERATOR = UuidGenerator.getClientInstance();
 
     public static Event createEvent(ILoggingEvent loggingEvent) {

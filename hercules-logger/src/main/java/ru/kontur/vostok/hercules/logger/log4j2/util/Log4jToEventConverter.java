@@ -7,10 +7,8 @@ import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.Arrays;
-import java.util.Optional;
-import java.util.function.IntFunction;
 
-public class EventUtil {
+public class Log4jToEventConverter {
     private final static UuidGenerator GENERATOR = UuidGenerator.getClientInstance();
 
     public static Event createEvent(LogEvent logEvent) {

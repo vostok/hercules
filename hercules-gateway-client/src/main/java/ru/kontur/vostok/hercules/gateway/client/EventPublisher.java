@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.gateway.client;
 
 import ru.kontur.vostok.hercules.gateway.client.util.EventWriterUtil;
+import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.util.ArrayList;
@@ -11,8 +12,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 public class EventPublisher {
-    private final static int MAX_BATCH_SIZE = 2 * 1024 * 1024;
-
     private final Object monitor = new Object();
     private final String stream;
     private final long periodMillis;
@@ -83,8 +82,8 @@ public class EventPublisher {
         executor.shutdown();
 
         if (timeoutMillis > 0) {
-            long timestamp = System.nanoTime();
-            while (timeoutMillis * 1_000_000 > System.nanoTime() - timestamp && process() > 0) {
+            long nanos = System.nanoTime();
+            while (TimeUnit.MILLISECONDS.toNanos(timeoutMillis) > System.nanoTime() - nanos && process() > 0) {
             }
         }
 
@@ -102,7 +101,7 @@ public class EventPublisher {
         Event[] eventsArray = new Event[actualBatchSize];
         eventsArray = events.toArray(eventsArray);
 
-        gatewayClient.sendAsync(this.stream, EventWriterUtil.toBytes(MAX_BATCH_SIZE, eventsArray));
+        gatewayClient.sendAsync(this.stream, EventWriterUtil.toBytes(CommonConstants.MAX_MESSAGE_SIZE, eventsArray));
 
         return actualBatchSize;
     }

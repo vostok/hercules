@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.util.io.StreamUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -70,21 +71,8 @@ public class ElasticAdapterUtil {
         return eventBuilder.build();
     }
 
-    public static Event createEvent(String JSONString) throws IOException {
-        Map<String, Object> jsonMap = OBJECT_MAPPER.readValue(JSONString,
-                new TypeReference<Map<String, Object>>() {
-                });
-
-        return createEvent(processMap(jsonMap));
-    }
-
-    public static Event[] createEvents(String JSONString) throws IOException {
-        return createEventStream(JSONString)
-                .toArray(Event[]::new);
-    }
-
-    public static Stream<Event> createEventStream(String JSONString) throws IOException {
-        JsonParser parser = JSON_FACTORY.createParser(JSONString);
+    public static <TInputStream extends InputStream> Stream<Event> createEventStream(TInputStream inputStream) throws IOException {
+        JsonParser parser = JSON_FACTORY.createParser(inputStream);
         Iterator<Map<String, Object>> iterator = OBJECT_MAPPER.readValues(parser, new TypeReference<Map<String, Object>>() {
         });
 
@@ -96,34 +84,38 @@ public class ElasticAdapterUtil {
     private static Map<String, Variant> processMap(Map<String, Object> map) {
         Map<String, Variant> result = new HashMap<>();
 
-        for (String key : map.keySet()) {
-            Object object = map.get(key);
-
-            if (map.get(key) instanceof ArrayList) {
-                ArrayList list = (ArrayList) object;
-
-                if (list.size() == 0) {
-                    result.put(key, Variant.ofStringArray(new String[0]));
-                } else {
-                    Class<?> aClass = list.get(0).getClass();
-
-                    if (!ARRAY_TYPE_MAPPER.containsKey(aClass)) {
-                        throw new IllegalStateException("Array Class " + aClass.getSimpleName() + " not found");
-                    }
-
-                    result.put(key, ARRAY_TYPE_MAPPER.get(aClass).apply(list.toArray()));
-                }
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            if (entry.getValue() instanceof ArrayList) {
+                result.put(entry.getKey(), processArray((ArrayList)entry.getValue()));
             } else {
-                Class<?> aClass = object.getClass();
-
-                if (!TYPE_MAPPER.containsKey(aClass)) {
-                    throw new IllegalStateException("Class " + aClass.getSimpleName() + " not found");
-                }
-
-                result.put(key, TYPE_MAPPER.get(aClass).apply(object));
+                result.put(entry.getKey(), processValue(entry.getValue()));
             }
         }
 
         return result;
+    }
+
+    private static Variant processArray(ArrayList list) {
+        if (list.size() == 0) {
+            return Variant.ofStringArray(new String[0]);
+        } else {
+            Class<?> aClass = list.get(0).getClass();
+
+            if (!ARRAY_TYPE_MAPPER.containsKey(aClass)) {
+                throw new IllegalStateException("Array Class " + aClass.getSimpleName() + " not found");
+            }
+
+            return ARRAY_TYPE_MAPPER.get(aClass).apply(list.toArray());
+        }
+    }
+
+    private static Variant processValue(Object object) {
+        Class<?> aClass = object.getClass();
+
+        if (!TYPE_MAPPER.containsKey(aClass)) {
+            throw new IllegalStateException("Class " + aClass.getSimpleName() + " not found");
+        }
+
+        return TYPE_MAPPER.get(aClass).apply(object);
     }
 }

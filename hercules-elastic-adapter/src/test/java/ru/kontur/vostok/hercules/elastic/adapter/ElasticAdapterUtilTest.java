@@ -5,100 +5,143 @@ import org.junit.Before;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.elastic.adapter.util.ElasticAdapterUtil;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.HerculesProtocolAssert;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class ElasticAdapterUtilTest {
     private final UuidGenerator generator = UuidGenerator.getClientInstance();
 
-    private String json =
-            "{ \"A\": \"A\"}" +
-                    "{ \"B\": 1}" +
-                    "{ \"C\": [1, 2, 3, 4]}" +
-                    "{ \"D\": [\"11\", \"22\", \"33\", \"44\"]}" +
-                    "{ \"E\": []}" +
-                    "{ \"F\": 1.25}" +
-                    "{ \"G\": [1.25, 2.34]}";
+    private String jsonStringVariant = "{ \"A\": \"A\"}";
+    private String jsonIntVariant = "{ \"B\": 1}";
+    private String jsonIntArrayVariant = "{ \"C\": [1, 2, 3, 4]}";
+    private String jsonStringArrayVariant = "{ \"D\": [\"11\", \"22\", \"33\", \"44\"]}";
+    private String jsonEmptyArrayVariant = "{ \"E\": []}";
+    private String jsonDoubleVariant = "{ \"F\": 1.25}";
+    private String jsonDoubleArrayVariant = "{ \"G\": [1.25, 2.34]}";
+    private String jsonEmptyVariant = "{}";
+    private String jsonComplexVariant = "{" +
+            "\"HA\": 1," +
+            "\"HB\": 1.25," +
+            "\"HC\": \"str\"," +
+            "\"HD\": [1, 2, 3, 4]" +
+            "}";
+    private String multiJson = jsonStringVariant +
+            jsonIntVariant +
+            jsonIntArrayVariant +
+            jsonStringArrayVariant +
+            jsonEmptyArrayVariant +
+            jsonDoubleVariant +
+            jsonDoubleArrayVariant +
+            jsonEmptyVariant +
+            jsonComplexVariant;
 
     private Event[] events;
-    private Map<String, Variant>[] maps;
     private int count;
 
     @Before
     public void setUp() {
-        count = 7;
-        maps = new HashMap[count];
+        count = 9;
         events = new Event[count];
 
-        maps[0] = new HashMap<>();
-        maps[0].put("A", Variant.ofString("A"));
+        events[0] = buildEvent(Collections.singletonMap("A", Variant.ofString("A")));
+        events[1] = buildEvent(Collections.singletonMap("B", Variant.ofInteger(1)));
+        events[2] = buildEvent(Collections.singletonMap("C", Variant.ofIntegerArray(new int[]{1, 2, 3, 4})));
+        events[3] = buildEvent(Collections.singletonMap("D", Variant.ofStringArray(new String[]{"11", "22", "33", "44"})));
+        events[4] = buildEvent(Collections.singletonMap("E", Variant.ofStringArray(new String[0])));
+        events[5] = buildEvent(Collections.singletonMap("F", Variant.ofDouble(1.25)));
+        events[6] = buildEvent(Collections.singletonMap("G", Variant.ofDoubleArray(new double[]{1.25, 2.34})));
+        events[7] = buildEvent(new HashMap<>());
 
-        maps[1] = new HashMap<>();
-        maps[1].put("B", Variant.ofInteger(1));
-
-        maps[2] = new HashMap<>();
-        maps[2].put("C", Variant.ofIntegerArray(new int[]{1, 2, 3, 4}));
-
-        maps[3] = new HashMap<>();
-        maps[3].put("D", Variant.ofStringArray(new String[]{"11", "22", "33", "44"}));
-
-        maps[4] = new HashMap<>();
-        maps[4].put("E", Variant.ofStringArray(new String[0]));
-
-        maps[5] = new HashMap<>();
-        maps[5].put("F", Variant.ofDouble(1.25));
-
-        maps[6] = new HashMap<>();
-        maps[6].put("G", Variant.ofDoubleArray(new double[]{1.25, 2.34}));
-
-        for (int i = 0; i < count; i++) {
-            events[i] = buildEvent(maps[i]);
-        }
-
+        Map<String, Variant> map = new HashMap<>();
+        map.put("HA", Variant.ofInteger(1));
+        map.put("HB", Variant.ofDouble(1.25));
+        map.put("HC", Variant.ofString("str"));
+        map.put("HD", Variant.ofIntegerArray(new int[] {1, 2, 3, 4}));
+        events[8] = buildEvent(map);
     }
 
 
     @Test
-    public void testLogic() throws IOException {
-        Event[] events = ElasticAdapterUtil.createEvents(json);
-        for (int index = 0; index < count; index++) {
-            Assert.assertTrue(eventsSame(this.events[index], events[index]));
+    public void ParseSimpleEvent_StringVariant() throws IOException {
+        shouldCreateCorrectEvents(jsonStringVariant, 0, 1);
+    }
+
+    @Test
+    public void ParseSimpleEvent_IntVariant() throws IOException {
+        shouldCreateCorrectEvents(jsonIntVariant, 1, 1);
+    }
+
+    @Test
+    public void ParseSimpleEvent_IntArrayVariant() throws IOException {
+        shouldCreateCorrectEvents(jsonIntArrayVariant, 2, 1);
+    }
+
+    @Test
+    public void ParseSimpleEvent_StringArrayVariant() throws IOException {
+        shouldCreateCorrectEvents(jsonStringArrayVariant, 3, 1);
+    }
+
+    @Test
+    public void ParseSimpleEvent_EmptyArrayVariant() throws IOException {
+        shouldCreateCorrectEvents(jsonEmptyArrayVariant, 4, 1);
+    }
+
+    @Test
+    public void ParseSimpleEvent_DoubleVariant() throws IOException {
+        shouldCreateCorrectEvents(jsonDoubleVariant, 5, 1);
+    }
+
+    @Test
+    public void ParseSimpleEvent_DoubleArrayVariant() throws IOException {
+        shouldCreateCorrectEvents(jsonDoubleArrayVariant, 6, 1);
+    }
+
+    @Test
+    public void ParseSimpleEvent_Empty() throws IOException {
+        shouldCreateCorrectEvents(jsonEmptyVariant, 7, 1);
+    }
+
+    @Test
+    public void ParseComplexEvent_ComplexVariant() throws IOException {
+        shouldCreateCorrectEvents(jsonComplexVariant, 8, 1);
+    }
+
+    @Test
+    public void ParseEvents_MultiJson() throws IOException {
+        shouldCreateCorrectEvents(multiJson, 0, count);
+    }
+
+    private void shouldCreateCorrectEvents(String json, int offset, int count) throws IOException {
+        Event[] events = ElasticAdapterUtil
+                .createEventStream(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)))
+                .toArray(Event[]::new);
+
+        Assert.assertEquals(count, events.length);
+
+        for (int index = 0; index < count; index++ ) {
+            eventsSame(this.events[index + offset], events[index]);
         }
+
     }
 
-    private boolean eventsSame(Event event_1, Event event_2) {
-        return event_1.getVersion() == event_1.getVersion() &&
-                mapEqual(event_1.getTags(), event_2.getTags());
-    }
+    private void eventsSame(Event event1, Event event2) {
+        Set<String> keys1 = new HashSet<>();
 
-    private boolean mapEqual(Map<String, Variant> map_1, Map<String, Variant> map_2) {
-        for (Map.Entry<String, Variant> entry : map_1.entrySet()) {
-            String key = entry.getKey();
-            Variant variant = entry.getValue();
+        event1.forEach(entry -> {
+            HerculesProtocolAssert.assertEquals(entry.getValue(), event2.getTag(entry.getKey()));
+            keys1.add(entry.getKey());
+        });
 
-            if (variant == null) {
-                if (!(map_2.get(key) == null && map_2.containsKey(key))) {
-                    return false;
-                }
-            } else {
-                if (!variantEqual(variant, map_2.get(key))) {
-                    return false;
-                }
-            }
-        }
+        event2.forEach(entry -> Assert.assertTrue(keys1.contains(entry.getKey())));
 
-        return true;
-    }
-
-    private boolean variantEqual(Variant variant_1, Variant variant_2) {
-        return variant_1.getType().value == variant_2.getType().value
-                && Objects.deepEquals(variant_1.getValue(), variant_2.getValue());
+        Assert.assertEquals(event1.getVersion(), event2.getVersion());
     }
 
     private Event buildEvent(Map<String, Variant> map) {
