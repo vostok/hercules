@@ -126,22 +126,9 @@ public class ElasticAdapterUtilTest {
         Assert.assertEquals(count, events.length);
 
         for (int index = 0; index < count; index++ ) {
-            eventsSame(this.events[index + offset], events[index]);
+            HerculesProtocolAssert.assertEquals(this.events[index + offset], events[index], false, false);
         }
 
-    }
-
-    private void eventsSame(Event event1, Event event2) {
-        Set<String> keys1 = new HashSet<>();
-
-        event1.forEach(entry -> {
-            HerculesProtocolAssert.assertEquals(entry.getValue(), event2.getTag(entry.getKey()));
-            keys1.add(entry.getKey());
-        });
-
-        event2.forEach(entry -> Assert.assertTrue(keys1.contains(entry.getKey())));
-
-        Assert.assertEquals(event1.getVersion(), event2.getVersion());
     }
 
     private Event buildEvent(Map<String, Variant> map) {

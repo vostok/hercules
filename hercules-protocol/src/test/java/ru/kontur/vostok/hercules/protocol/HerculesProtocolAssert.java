@@ -52,8 +52,15 @@ public class HerculesProtocolAssert {
     }
 
     public static void assertEquals(Event expected, Event actual) {
+        assertEquals(expected, actual, true, true);
+    }
+
+    public static void assertEquals(Event expected, Event actual, boolean checkId, boolean checkBytes) {
         Assert.assertEquals(expected.getVersion(), actual.getVersion());
-        Assert.assertEquals(expected.getId(), actual.getId());
+
+        if (checkId) {
+            Assert.assertEquals(expected.getId(), actual.getId());
+        }
 
         Set<String> checked = new HashSet<>();
         for (Map.Entry<String, Variant> entry : expected) {
@@ -68,7 +75,9 @@ public class HerculesProtocolAssert {
             }
         }
 
-        Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
+        if (checkBytes) {
+            Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
+        }
     }
 
     private static final BiConsumer<Variant, Variant>[] asserters = new BiConsumer[256];
