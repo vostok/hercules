@@ -23,7 +23,6 @@ public class LogbackToEventConverter {
 //        loggingEvent
 //                .getMDCPropertyMap()
 //                .forEach((key, value) -> eventBuilder.setTag(key, Variant.ofString(value)));
-
         if (loggingEvent.hasCallerData()) {
             eventBuilder.setTag(
                     "stacktrace",

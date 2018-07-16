@@ -8,10 +8,12 @@ import ru.kontur.vostok.hercules.gateway.client.GatewayClient;
 
 public class HttpServer {
     private final Undertow undertow;
+    private final GatewayClient client;
 
-    public HttpServer(String host, int port, String stream, GatewayClient gatewayClient) {
-        HttpHandler logHandler = new ElasticAdapterHandler(bytes -> gatewayClient.send(stream, bytes));
-        HttpHandler asyncLogHandler = new ElasticAdapterHandler(bytes -> gatewayClient.sendAsync(stream, bytes));
+    public HttpServer(String host, int port, String stream, String url) {
+        client = new GatewayClient();
+        HttpHandler logHandler = new ElasticAdapterHandler((apiKey, content) -> client.send(url, apiKey, stream, content));
+        HttpHandler asyncLogHandler = new ElasticAdapterHandler((apiKey, content) -> client.sendAsync(url, apiKey, stream, content));
 
         HttpHandler handler = Handlers.routing()
                 .post("/logs/{index}", logHandler)
@@ -30,5 +32,6 @@ public class HttpServer {
 
     public void stop() {
         undertow.stop();
+        client.close();
     }
 }

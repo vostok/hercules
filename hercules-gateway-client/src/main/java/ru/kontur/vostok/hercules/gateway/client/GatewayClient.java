@@ -22,22 +22,15 @@ public class GatewayClient implements Closeable {
 
 
     private final CloseableHttpClient client = build();
-    private final String url;
-    private final String apiKey;
 
-    public GatewayClient(String url, String apiKey) {
-        this.url = url;
-        this.apiKey = apiKey;
-    }
-
-    public void ping() {
+    public void ping(String url) {
         HttpGet httpGet = new HttpGet(url + PING);
 
         send(httpGet);
     }
 
-    public void sendAsync(String stream, final byte[] data) {
-        HttpPost httpPost = getRequest(SEND_ASYNC, stream, data);
+    public void sendAsync(String url, String apiKey, String stream, final byte[] data) {
+        HttpPost httpPost = getRequest(url, apiKey, SEND_ASYNC, stream, data);
 
         try {
             client.execute(httpPost);
@@ -46,8 +39,8 @@ public class GatewayClient implements Closeable {
         }
     }
 
-    public void send(final String stream, final byte[] data) {
-        HttpPost httpPost = getRequest(SEND_ACK, stream, data);
+    public void send(String url, String apiKey, String stream, final byte[] data) {
+        HttpPost httpPost = getRequest(url, apiKey, SEND_ACK, stream, data);
 
         send(httpPost);
     }
@@ -72,8 +65,8 @@ public class GatewayClient implements Closeable {
         }
     }
 
-    private HttpPost getRequest(String api, String stream, byte[] data) {
-        HttpPost httpPost = new HttpPost(url + api + "?stream=" + stream);
+    private HttpPost getRequest(String url, String apiKey, String cmd, String stream, byte[] data) {
+        HttpPost httpPost = new HttpPost(url + cmd + "?stream=" + stream);
 
         httpPost.addHeader("apiKey", apiKey);
 

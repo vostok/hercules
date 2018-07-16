@@ -15,10 +15,11 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ElasticAdapterHandler implements HttpHandler {
-    private final Consumer<byte[]> sender;
 
-    public ElasticAdapterHandler(Consumer<byte[]> sender) {
-        this.sender = sender;
+    private final ElasticAdapterFunction handler;
+
+    public ElasticAdapterHandler(ElasticAdapterFunction handler) {
+        this.handler = handler;
     }
 
     @Override
@@ -30,9 +31,9 @@ public class ElasticAdapterHandler implements HttpHandler {
             return;
         }
 
-        //auth manager is not set
-        Optional<String> auth = ExchangeUtil.extractHeaderValue(exchange, "Authorization");
-        if (!auth.isPresent()) {
+        //apiKey manager is not set
+        Optional<String> apiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
+        if (!apiKey.isPresent()) {
             exchange.setStatusCode(401);
             exchange.endExchange();
             return;
@@ -53,7 +54,7 @@ public class ElasticAdapterHandler implements HttpHandler {
 
         byte[] body = EventWriterUtil.toBytes(contentLength, events);
 
-        sender.accept(body);
+        handler.handle(apiKey.get(), body);
     }
 
     private Event patchEvent(Event event, Consumer<EventBuilder> consumer) {
@@ -68,5 +69,10 @@ public class ElasticAdapterHandler implements HttpHandler {
         consumer.accept(eventBuilder);
 
         return eventBuilder.build();
+    }
+
+    @FunctionalInterface
+    public interface ElasticAdapterFunction {
+        void handle(String apiKey, byte[] content);
     }
 }

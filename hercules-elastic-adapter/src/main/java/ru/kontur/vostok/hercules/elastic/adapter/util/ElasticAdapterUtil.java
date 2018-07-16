@@ -118,4 +118,8 @@ public class ElasticAdapterUtil {
 
         return TYPE_MAPPER.get(aClass).apply(object);
     }
+
+    private ElasticAdapterUtil() {
+
+    }
 }

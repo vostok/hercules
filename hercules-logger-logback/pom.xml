@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hercules-logger</artifactId>
+    <artifactId>hercules-logger-logback</artifactId>
 
     <dependencies>
         <dependency>
@@ -23,11 +23,6 @@
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-gateway-client</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
         </dependency>
 
         <dependency>

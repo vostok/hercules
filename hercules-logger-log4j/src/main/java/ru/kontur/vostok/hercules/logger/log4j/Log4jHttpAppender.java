@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.logger.log4j2;
+package ru.kontur.vostok.hercules.logger.log4j;
 
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
@@ -9,7 +9,7 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
-import ru.kontur.vostok.hercules.logger.log4j2.util.Log4jToEventConverter;
+import ru.kontur.vostok.hercules.logger.log4j.util.Log4jToEventConverter;
 
 import java.io.Serializable;
 import java.util.HashSet;

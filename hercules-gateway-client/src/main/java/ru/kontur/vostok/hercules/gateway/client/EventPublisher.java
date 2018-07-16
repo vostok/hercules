@@ -20,6 +20,8 @@ public class EventPublisher {
     private final ArrayBlockingQueue<Event> queue;
     private final boolean loseOnOverflow;
     private final GatewayClient gatewayClient;
+    private final String url;
+    private final String apiKey;
 
     public EventPublisher(String stream,
                           long periodMillis,
@@ -30,6 +32,8 @@ public class EventPublisher {
                           ThreadFactory threadFactory,
                           String url,
                           String apiKey) {
+        this.url = url;
+        this.apiKey = apiKey;
         this.stream = stream;
         this.periodMillis = periodMillis;
         this.batchSize = batchSize;
@@ -37,7 +41,7 @@ public class EventPublisher {
         this.loseOnOverflow = loseOnOverflow;
 
         this.queue = new ArrayBlockingQueue<>(capacity);
-        this.gatewayClient = new GatewayClient(url, apiKey);
+        this.gatewayClient = new GatewayClient();
     }
 
     public void start() {
@@ -101,7 +105,7 @@ public class EventPublisher {
         Event[] eventsArray = new Event[actualBatchSize];
         eventsArray = events.toArray(eventsArray);
 
-        gatewayClient.sendAsync(this.stream, EventWriterUtil.toBytes(CommonConstants.MAX_MESSAGE_SIZE, eventsArray));
+        gatewayClient.sendAsync(this.url, this.apiKey, this.stream, EventWriterUtil.toBytes(CommonConstants.MAX_MESSAGE_SIZE, eventsArray));
 
         return actualBatchSize;
     }

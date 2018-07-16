@@ -51,6 +51,8 @@
         <module>hercules-gateway-client</module>
         <module>hercules-elastic-adapter</module>
         <module>hercules-logger</module>
+        <module>hercules-logger-log4j</module>
+        <module>hercules-logger-logback</module>
     </modules>
 
     <dependencyManagement>

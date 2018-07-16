@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.elastic.adapter;
 
-import ru.kontur.vostok.hercules.gateway.client.GatewayClient;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -9,24 +8,20 @@ import java.util.Properties;
 
 public class ElasticAdapterApplication {
     private final HttpServer httpServer;
-    private final GatewayClient gatewayClient;
 
     //TODO: do trim operation
     public ElasticAdapterApplication(Properties properties) {
-        if (!properties.containsKey("url") || !properties.containsKey("apiKey") || !properties.containsKey("stream")) {
-            throw new IllegalArgumentException("Missing required property ('url', 'apiKey', 'stream')");
+        if (!properties.containsKey("url") || !properties.containsKey("stream")) {
+            throw new IllegalArgumentException("Missing required property ('url', 'stream')");
         }
 
         String url = properties.getProperty("url");
-        String apiKey = properties.getProperty("apiKey");
-
-        gatewayClient = new GatewayClient(url, apiKey);
 
         int port = PropertiesUtil.get(properties, "port", 6307);
         String host = properties.getProperty("host", "0.0.0.0");
         String stream = properties.getProperty("stream");
 
-        httpServer = new HttpServer(host, port, stream, gatewayClient);
+        httpServer = new HttpServer(host, port, stream, url);
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
     }
@@ -47,6 +42,5 @@ public class ElasticAdapterApplication {
 
     private void stop() {
         httpServer.stop();
-        gatewayClient.close();
     }
 }
