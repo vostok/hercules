@@ -27,7 +27,7 @@ public class ManagementApiClient {
 
 
         BaseStream stream = new BaseStream();
-        stream.setName("tstcl");
+        stream.setName("bulk-test");
         stream.setPartitions(1);
         stream.setShardingKey(new String[0]);
 

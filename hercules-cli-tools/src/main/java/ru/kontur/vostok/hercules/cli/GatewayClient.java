@@ -32,13 +32,7 @@ public class GatewayClient {
 
         server = "http://" + properties.getProperty("server");
 
-/*
-        for (int i = 0; i < 1000; ++i) {
-            sendEvents("test-elastic-sink", generateEvents(10000));
-        }*/
-
-        //sendSingleEvent("test-elastic-sink", generateEvent());
-        sendEvents("test-elastic-sink", generateEvents(10));
+        sendEvents("bulk-test", generateEvents(10));
 
         Unirest.shutdown();
     }

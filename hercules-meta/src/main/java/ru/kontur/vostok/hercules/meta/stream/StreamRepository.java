@@ -32,6 +32,7 @@ public class StreamRepository {
     }
 
     public CreationResult create(Stream stream) throws Exception {
+        curatorClient.ensurePathExists(zPrefix);
         return curatorClient.create(zPrefix + '/' + stream.getName(), serializer.writeValueAsBytes(stream));
     }
 
