@@ -17,6 +17,15 @@ public final class TestUtil {
         return res.toString();
     }
 
+    static Container[] multiply(Container[] array, int count) {
+        Container[] result = new Container[array.length * count];
+        for (int i = 0; i < result.length; i += array.length) {
+            System.arraycopy(array, 0, result, i, array.length);
+        }
+
+        return result;
+    }
+
     static byte[] multiply(byte[] array, int count) {
         byte[] result = new byte[array.length * count];
         for (int i = 0; i < result.length; i += array.length) {
