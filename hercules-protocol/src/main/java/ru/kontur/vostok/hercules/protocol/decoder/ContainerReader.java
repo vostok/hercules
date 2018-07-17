@@ -20,6 +20,14 @@ public class ContainerReader implements Reader<Container> {
         this.fields = fields;
     }
 
+    public static ContainerReader readAllFields() {
+        return new ContainerReader(null);
+    }
+
+    public static ContainerReader readFields(Set<String> fields) {
+        return new ContainerReader(fields);
+    }
+
     @Override
     public Container read(Decoder decoder) {
         short length = decoder.readShort();
@@ -29,8 +37,7 @@ public class ContainerReader implements Reader<Container> {
             if (Objects.isNull(fields) || fields.contains(fieldName)) {
                 Variant variant = variantReader.read(decoder);
                 variantMap.put(fieldName, variant);
-            }
-            else {
+            } else {
                 variantReader.skip(decoder);
             }
         }
@@ -47,13 +54,5 @@ public class ContainerReader implements Reader<Container> {
             skipped += variantReader.skip(decoder);
         }
         return skipped;
-    }
-
-    public static ContainerReader readAllFields() {
-        return new ContainerReader(null);
-    }
-
-    public static ContainerReader readFields(Set<String> fields) {
-        return new ContainerReader(fields);
     }
 }

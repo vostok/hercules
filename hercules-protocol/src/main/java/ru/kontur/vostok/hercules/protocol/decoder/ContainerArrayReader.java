@@ -4,6 +4,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 
 /**
  * Hercules Protocol Reader for reading array of containers
+ *
  * @author jdk
  */
 public class ContainerArrayReader implements Reader<Container[]> {
@@ -13,6 +14,7 @@ public class ContainerArrayReader implements Reader<Container[]> {
 
     /**
      * Read array of container  with decoder
+     *
      * @param decoder Decoder for read data and unpack with specific format
      * @return array of containers
      */
@@ -30,6 +32,7 @@ public class ContainerArrayReader implements Reader<Container[]> {
 
     /**
      * Skip array of container with decoder
+     *
      * @param decoder Decoder for read data and unpack with specific format
      * @return count of byte which must be skipped
      */

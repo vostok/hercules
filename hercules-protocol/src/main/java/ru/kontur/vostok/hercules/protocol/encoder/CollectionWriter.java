@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 
 /**
  * Hercules Protocol Writer for collection
+ *
  * @param <T> Type of collection for which defined Writer<T>
  * @author jdk
  */
@@ -14,15 +15,17 @@ public abstract class CollectionWriter<T> implements Writer<T[]> {
 
     /**
      * Write length of collection with encoder
+     *
      * @param encoder Encoder for write data
-     * @param length Length of data which must be written
+     * @param length  Length of data which must be written
      */
     abstract void writeLength(Encoder encoder, int length);
 
     /**
      * Write containers' collection with encoder
+     *
      * @param encoder Encoder for write data
-     * @param array Collection of containers which are must be written
+     * @param array   Collection of containers which are must be written
      */
     @Override
     public void write(Encoder encoder, T[] array) {

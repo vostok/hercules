@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 
 /**
  * Hercules Protocol Writer for array
+ *
  * @param <T> Type of collection for which defined Writer<T>
  * @author jdk
  */

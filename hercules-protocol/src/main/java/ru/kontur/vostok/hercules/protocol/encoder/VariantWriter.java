@@ -57,17 +57,6 @@ public class VariantWriter implements Writer<Variant> {
         writers[Type.TEXT_ARRAY.code] = VariantWriter::writeTextArray;
     }
 
-    /**
-     * Hercules Protocol Write variant with encoder
-     * @param encoder Encoder for write data
-     * @param variant Variant which must be written
-     */
-    @Override
-    public void write(Encoder encoder, Variant variant) {
-        encoder.writeByte(variant.getType().code);
-        writers[variant.getType().code].accept(encoder, variant.getValue());
-    }
-
     private static void writeContainer(Encoder encoder, Object value) {
         Container container = (Container) value;
         containerWriter.write(encoder, container);
@@ -191,6 +180,18 @@ public class VariantWriter implements Writer<Variant> {
 
     private static void writeTextArray(Encoder encoder, Object value) {
         encoder.writeBytesAsTextArray((byte[][]) value);
+    }
+
+    /**
+     * Hercules Protocol Write variant with encoder
+     *
+     * @param encoder Encoder for write data
+     * @param variant Variant which must be written
+     */
+    @Override
+    public void write(Encoder encoder, Variant variant) {
+        encoder.writeByte(variant.getType().code);
+        writers[variant.getType().code].accept(encoder, variant.getValue());
     }
 
     private interface ObjectWriter extends BiConsumer<Encoder, Object> {

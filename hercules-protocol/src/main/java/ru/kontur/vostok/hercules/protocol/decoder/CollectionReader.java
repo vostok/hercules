@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 
 /**
  * Hercules Protocol Reader for collection
+ *
  * @param <T> Type of collection for which defined Reader<T>
  */
 public abstract class CollectionReader<T> implements Reader<T[]> {
@@ -17,6 +18,7 @@ public abstract class CollectionReader<T> implements Reader<T[]> {
 
     /**
      * Read length of collection
+     *
      * @param decoder Decoder for read data
      * @return length of collection
      */
@@ -24,6 +26,7 @@ public abstract class CollectionReader<T> implements Reader<T[]> {
 
     /**
      * Read containers' collection with decoder
+     *
      * @param decoder Decoder for read data
      * @return collection of containers
      */
