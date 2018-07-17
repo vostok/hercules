@@ -6,17 +6,15 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
-import java.util.function.ToIntFunction;
 
 public class VariantWriter implements Writer<Variant> {
 
-    private interface ObjectWriter extends BiConsumer<Encoder, Object> {}
-
     public static final VariantWriter INSTANCE = new VariantWriter();
-
     public static final ContainerWriter containerWriter = ContainerWriter.INSTANCE;
-    
+    public static final ContainerArrayWriter containerArrayWriter = ContainerArrayWriter.INSTANCE;
+    public static final ContainerVectorWriter containerVectorWriter = ContainerVectorWriter.INSTANCE;
     private static final ObjectWriter[] writers = new ObjectWriter[256];
+
     static {
         Arrays.setAll(writers, idx -> (e, v) -> {
             throw new IllegalArgumentException("Unsupported type with code " + idx);
@@ -54,12 +52,6 @@ public class VariantWriter implements Writer<Variant> {
         writers[Type.DOUBLE_ARRAY.code] = VariantWriter::writeDoubleArray;
         writers[Type.STRING_ARRAY.code] = VariantWriter::writeStringArray;
         writers[Type.TEXT_ARRAY.code] = VariantWriter::writeTextArray;
-    }
-
-    @Override
-    public void write(Encoder encoder, Variant variant) {
-        encoder.writeByte(variant.getType().code);
-        writers[variant.getType().code].accept(encoder, variant.getValue());
     }
 
     private static void writeContainer(Encoder encoder, Object value) {
@@ -104,12 +96,9 @@ public class VariantWriter implements Writer<Variant> {
     }
 
     private static void writeContainerVector(Encoder encoder, Object value) {
-        Container[] containers = (Container[])value;
+        Container[] containers = (Container[]) value;
 
-        encoder.writeVectorLength(containers.length);
-        for (Container container: containers) {
-            containerWriter.write(encoder, container);
-        }
+        containerVectorWriter.write(encoder, containers);
     }
 
     private static void writeByteVector(Encoder encoder, Object value) {
@@ -149,12 +138,9 @@ public class VariantWriter implements Writer<Variant> {
     }
 
     private static void writeContainerArray(Encoder encoder, Object value) {
-        Container[] containers = (Container[])value;
+        Container[] containers = (Container[]) value;
 
-        encoder.writeArrayLength(containers.length);
-        for (Container container: containers) {
-            containerWriter.write(encoder, container);
-        }
+        containerArrayWriter.write(encoder, containers);
     }
 
     private static void writeByteArray(Encoder encoder, Object value) {
@@ -191,5 +177,14 @@ public class VariantWriter implements Writer<Variant> {
 
     private static void writeTextArray(Encoder encoder, Object value) {
         encoder.writeBytesAsTextArray((byte[][]) value);
+    }
+
+    @Override
+    public void write(Encoder encoder, Variant variant) {
+        encoder.writeByte(variant.getType().code);
+        writers[variant.getType().code].accept(encoder, variant.getValue());
+    }
+
+    private interface ObjectWriter extends BiConsumer<Encoder, Object> {
     }
 }
