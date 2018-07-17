@@ -46,6 +46,7 @@
         <module>hercules-management-api</module>
         <module>hercules-sentry-sink</module>
         <module>hercules-graphite-sink</module>
+        <module>hercules-undertow-util</module>
     </modules>
 
     <dependencyManagement>
@@ -161,6 +162,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-util</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-undertow-util</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
             </dependency>
             <dependency>

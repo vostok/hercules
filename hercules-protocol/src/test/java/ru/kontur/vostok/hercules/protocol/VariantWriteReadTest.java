@@ -7,6 +7,8 @@ import ru.kontur.vostok.hercules.protocol.decoder.VariantReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.VariantWriter;
 
+import java.util.Collections;
+
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -17,6 +19,15 @@ import static ru.kontur.vostok.hercules.protocol.TestUtil.toBytes;
 public class VariantWriteReadTest {
 
     private WriteReadPipe<Variant> pipe = WriteReadPipe.init(new VariantWriter(), new VariantReader());
+
+    @Test
+    public void shouldReadWriteContainer() throws Exception {
+        Variant variant = Variant.ofContainer(new Container(
+                Collections.singletonMap("value", Variant.ofInteger(123))
+        ));
+
+        pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
+    }
 
     @Test
     public void shouldWriteReadByte() {

@@ -10,8 +10,10 @@ public class StreamShardReadStateReader implements Reader<StreamShardReadState> 
     }
 
     @Override
-    public void skip(Decoder decoder) {
-        decoder.skipInteger();
-        decoder.skipLong();
+    public int skip(Decoder decoder) {
+        int skipped = 0;
+        skipped += decoder.skipInteger();
+        skipped += decoder.skipLong();
+        return skipped;
     }
 }

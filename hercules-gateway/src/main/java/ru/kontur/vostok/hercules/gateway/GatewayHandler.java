@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.uuid.Marker;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
@@ -93,7 +94,7 @@ public abstract class GatewayHandler implements HttpHandler {
             return false;
         }
 
-        AuthResult authResult = authManager.authStream(apiKey.get(), stream, Action.WRITE);
+        AuthResult authResult = authManager.auth(apiKey.get(), stream, Action.WRITE);
 
         if (authResult.isSuccess()) {
             return true;

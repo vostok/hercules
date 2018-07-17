@@ -9,6 +9,10 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author Gregory Koshelev
@@ -33,6 +37,14 @@ public class PropertiesUtil {
             return defaultValue;
         }
         return Integer.parseInt(stringValue);
+    }
+
+    public static Set<String> toSet(Properties properties, String name) {
+        String value = properties.getProperty(name, "");
+        String[] split = value.split(",");
+        Set<String> set = new HashSet<>(split.length);
+        set.addAll(Arrays.asList(split));
+        return set;
     }
 
     public static Properties readProperties(String path) {

@@ -7,6 +7,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -38,6 +39,43 @@ public class CuratorClient {
             return bytes != null ? Optional.of(bytes) : Optional.empty();
         } catch (KeeperException.NoNodeException ex) {
             return Optional.empty();
+        }
+    }
+
+    public List<String> children(String path) throws Exception {
+        List<String> children = curatorFramework.getChildren().forPath(path);
+        return children;
+    }
+
+    public void createIfAbsent(String path) throws Exception {
+        try {
+            curatorFramework.create().forPath(path);
+        } catch (KeeperException.NodeExistsException ex) {
+            return;//TODO: node already exists
+        }
+    }
+
+    public CreationResult create(String path, byte[] data) throws Exception {
+        try {
+            curatorFramework.create().forPath(path, data);
+            return CreationResult.ok();
+        } catch (KeeperException.NodeExistsException ex) {
+            return CreationResult.alreadyExist();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return CreationResult.unknown();
+        }
+    }
+
+    public DeletionResult delete(String path) throws Exception {
+        try {
+            curatorFramework.delete().forPath(path);
+            return DeletionResult.ok();
+        } catch (KeeperException.NoNodeException ex) {
+            return DeletionResult.notExist();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return DeletionResult.unknown();
         }
     }
 

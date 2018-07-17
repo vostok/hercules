@@ -28,7 +28,7 @@ public class SentryEventConverter {
         EventBuilder eventBuilder = new EventBuilder(event.getId());
         eventBuilder.withTimestamp(Date.from(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
-        for (Map.Entry<String, Variant> entry : event.getTags().entrySet()) {
+        for (Map.Entry<String, Variant> entry : event) {
             String key = entry.getKey();
             if ("message".equals(key)) {
                 get(entry.getValue()).ifPresent(eventBuilder::withMessage);

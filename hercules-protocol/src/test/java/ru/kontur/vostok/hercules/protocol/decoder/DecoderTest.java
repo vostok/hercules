@@ -14,7 +14,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -46,13 +45,11 @@ public class DecoderTest {
         assertEquals(1, event.getVersion());
         assertEquals(137469727200000000L, event.getId().timestamp());
 
-        Map<String, Variant> tagValues = event.getTags();
-        assertNotNull(tagValues);
-        assertEquals(2, tagValues.size());
-        assertTrue(tagValues.containsKey("host"));
-        assertTrue(tagValues.containsKey("timestamp"));
+        assertEquals(2, event.getTagCount());
+        assertNotNull(event.getTag("host"));
+        assertNotNull(event.getTag("timestamp"));
 
-        Variant hostTagValue = tagValues.get("host");
+        Variant hostTagValue = event.getTag("host");
         assertNotNull(hostTagValue);
         assertEquals(Type.STRING, hostTagValue.getType());
         Object host = hostTagValue.getValue();
@@ -62,7 +59,7 @@ public class DecoderTest {
         assertEquals(9, hostAsBytes.length);
         assertArrayEquals("localhost".getBytes(StandardCharsets.UTF_8), hostAsBytes);
 
-        Variant timestampTagValue = tagValues.get("timestamp");
+        Variant timestampTagValue = event.getTag("timestamp");
         assertNotNull(timestampTagValue);
         assertEquals(Type.LONG, timestampTagValue.getType());
         Object timestamp = timestampTagValue.getValue();

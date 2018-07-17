@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.gateway;
+package ru.kontur.vostok.hercules.undertow.util;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
