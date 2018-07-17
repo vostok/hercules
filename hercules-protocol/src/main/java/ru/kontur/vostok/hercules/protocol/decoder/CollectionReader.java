@@ -4,7 +4,7 @@ import java.lang.reflect.Array;
 
 /**
  * Hercules Protocol Reader for collection
- * @param <T> type of collection
+ * @param <T> Type of collection for which defined Reader<T>
  */
 public abstract class CollectionReader<T> implements Reader<T[]> {
     private final Reader<T> elementReader;

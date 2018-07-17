@@ -13,7 +13,7 @@ public class ContainerVectorReader implements Reader<Container[]> {
 
     /**
      * Read vector of container  with decoder
-     * @param decoder Decoder for read data
+     * @param decoder Decoder for read data and unpack with specific format
      * @return vector of containers
      */
     @Override
@@ -30,7 +30,7 @@ public class ContainerVectorReader implements Reader<Container[]> {
 
     /**
      * Skip array of container with decoder
-     * @param decoder Decoder for read data
+     * @param decoder Decoder for read data and unpack with specific format
      * @return count of byte which must be skipped
      */
     @Override

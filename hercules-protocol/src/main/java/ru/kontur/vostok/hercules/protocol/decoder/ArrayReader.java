@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 /**
  * Hercules Protocol Reader for array
- * @param <T> type of array
+ * @param <T> Type of collection for which defined Reader<T>
  * @author jdk
  */
 public class ArrayReader<T> extends CollectionReader<T> {

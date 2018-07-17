@@ -2,6 +2,11 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 
 import ru.kontur.vostok.hercules.protocol.VectorConstants;
 
+/**
+ * Hercules Protocol Writer for array
+ * @param <T> Type of collection for which defined Writer<T>
+ * @author jdk
+ */
 public class VectorWriter<T> extends CollectionWriter<T>{
     public VectorWriter(Writer<T> elementWriter) {
         super(elementWriter);

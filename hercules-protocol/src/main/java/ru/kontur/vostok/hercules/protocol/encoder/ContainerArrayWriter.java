@@ -13,7 +13,7 @@ public class ContainerArrayWriter implements Writer<Container[]> {
 
     /**
      * Write containers' array with encoder
-     * @param encoder Encoder for write data
+     * @param encoder Encoder for write data and pack with specific format
      * @param value Array of containers which are must be written
      */
     @Override

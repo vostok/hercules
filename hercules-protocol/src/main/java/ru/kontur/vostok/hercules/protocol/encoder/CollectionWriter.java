@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 
 /**
  * Hercules Protocol Writer for collection
- * @param <T> type of collection
+ * @param <T> Type of collection for which defined Writer<T>
  * @author jdk
  */
 public abstract class CollectionWriter<T> implements Writer<T[]> {

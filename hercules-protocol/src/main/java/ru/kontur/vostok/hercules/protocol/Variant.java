@@ -20,11 +20,6 @@ public class Variant {
         return value;
     }
 
-    /**
-     * Create variant of container
-     * @param container which must be wrapped
-     * @return specific variant
-     */
     public static Variant ofContainer(Container container) {
         return new Variant(Type.CONTAINER, container);
     }
@@ -125,12 +120,7 @@ public class Variant {
         }
         return new Variant(Type.TEXT_VECTOR, bytes);
     }
-
-    /**
-     * Create variant of containers
-     * @param containers which must be wrapped
-     * @return specific variant
-     */
+    
     public static Variant ofContainerVector(Container[] containers) {
         checkVectorLength(containers.length);
         return new Variant(Type.CONTAINER_VECTOR, containers);
