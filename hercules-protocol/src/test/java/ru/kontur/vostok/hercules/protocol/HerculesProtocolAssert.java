@@ -2,11 +2,11 @@ package ru.kontur.vostok.hercules.protocol;
 
 import org.junit.Assert;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class HerculesProtocolAssert {
 
@@ -92,19 +92,7 @@ public class HerculesProtocolAssert {
         Assert.assertEquals(expected.getVersion(), actual.getVersion());
         Assert.assertEquals(expected.getId(), actual.getId());
 
-        Set<String> checked = new HashSet<>();
-        for (Map.Entry<String, Variant> entry : expected) {
-            String tagName = entry.getKey();
-            assertEquals(entry.getValue(), actual.getTag(tagName));
-            checked.add(tagName);
-        }
-        for (Map.Entry<String, Variant> entry : actual) {
-            String tagName = entry.getKey();
-            if (!checked.contains(tagName)) {
-                Assert.fail("Extra tag " + tagName);
-            }
-        }
-
+        assertFieldsEquals(expected, actual);
         Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
     }
 
@@ -114,8 +102,31 @@ public class HerculesProtocolAssert {
     }
 
     public static void assertEquals(Container expected, Container actual) {
-        for (Map.Entry<String, Variant> entry : expected) {
-            HerculesProtocolAssert.assertEquals(entry.getValue(), actual.get(entry.getKey()));
+        assertFieldsEquals(expected, actual);
+    }
+
+    private static void assertFieldsEquals(Iterable<Map.Entry<String, Variant>> expected, Iterable<Map.Entry<String, Variant>> actual) {
+        Map<String, Variant> expectedMap = StreamSupport.stream(expected.spliterator(), false)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<String, Variant> actualMap = StreamSupport.stream(actual.spliterator(), false)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Set<String> checked = new HashSet<>();
+        for (Map.Entry<String, Variant> entry : expectedMap.entrySet()) {
+            String tagName = entry.getKey();
+            Variant value = actualMap.get(entry.getKey());
+            if (Objects.isNull(value)) {
+                Assert.fail("Missing field " + tagName);
+            }
+            assertEquals(entry.getValue(), value);
+            checked.add(tagName);
+        }
+        for (Map.Entry<String, Variant> entry : actual) {
+            String tagName = entry.getKey();
+            if (!checked.contains(tagName)) {
+                Assert.fail("Extra field " + tagName);
+            }
         }
     }
 }
