@@ -7,6 +7,9 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
 
+/**
+ * Hercules Protocol Writer for any variant data
+ */
 public class VariantWriter implements Writer<Variant> {
 
     public static final VariantWriter INSTANCE = new VariantWriter();
@@ -52,6 +55,17 @@ public class VariantWriter implements Writer<Variant> {
         writers[Type.DOUBLE_ARRAY.code] = VariantWriter::writeDoubleArray;
         writers[Type.STRING_ARRAY.code] = VariantWriter::writeStringArray;
         writers[Type.TEXT_ARRAY.code] = VariantWriter::writeTextArray;
+    }
+
+    /**
+     * Hercules Protocol Write variant with encoder
+     * @param encoder Encoder for write data
+     * @param variant Variant which must be written
+     */
+    @Override
+    public void write(Encoder encoder, Variant variant) {
+        encoder.writeByte(variant.getType().code);
+        writers[variant.getType().code].accept(encoder, variant.getValue());
     }
 
     private static void writeContainer(Encoder encoder, Object value) {
@@ -177,12 +191,6 @@ public class VariantWriter implements Writer<Variant> {
 
     private static void writeTextArray(Encoder encoder, Object value) {
         encoder.writeBytesAsTextArray((byte[][]) value);
-    }
-
-    @Override
-    public void write(Encoder encoder, Variant variant) {
-        encoder.writeByte(variant.getType().code);
-        writers[variant.getType().code].accept(encoder, variant.getValue());
     }
 
     private interface ObjectWriter extends BiConsumer<Encoder, Object> {

@@ -1,5 +1,10 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
+/**
+ * @author jdk
+ * Hercules Protocol Writer for array
+ * @param <T> Type of array
+ */
 public class ArrayWriter<T> extends CollectionWriter<T> {
     public ArrayWriter(Writer<T> elementWriter) {
         super(elementWriter);

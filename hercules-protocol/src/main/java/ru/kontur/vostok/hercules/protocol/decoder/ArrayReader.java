@@ -1,7 +1,10 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
-import java.lang.reflect.Array;
-
+/**
+ * Hercules Protocol Reader for array
+ * @param <T> type of array
+ * @author jdk
+ */
 public class ArrayReader<T> extends CollectionReader<T> {
 
     public ArrayReader(Reader<T> elementReader, Class<T> clazz) {

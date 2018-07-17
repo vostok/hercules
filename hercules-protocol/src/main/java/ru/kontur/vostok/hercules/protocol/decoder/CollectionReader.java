@@ -2,6 +2,10 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import java.lang.reflect.Array;
 
+/**
+ * Hercules Protocol Reader for collection
+ * @param <T> type of collection
+ */
 public abstract class CollectionReader<T> implements Reader<T[]> {
     private final Reader<T> elementReader;
     private final Class<T> clazz;
@@ -11,8 +15,18 @@ public abstract class CollectionReader<T> implements Reader<T[]> {
         this.clazz = clazz;
     }
 
+    /**
+     * Read length of collection
+     * @param decoder Decoder for read data
+     * @return length of collection
+     */
     protected abstract int readLength(Decoder decoder);
 
+    /**
+     * Read containers' collection with decoder
+     * @param decoder Decoder for read data
+     * @return collection of containers
+     */
     @Override
     public T[] read(Decoder decoder) {
         int count = readLength(decoder);

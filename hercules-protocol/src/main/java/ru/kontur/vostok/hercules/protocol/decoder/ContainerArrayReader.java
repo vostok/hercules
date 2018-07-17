@@ -2,11 +2,20 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 
+/**
+ * Hercules Protocol Reader for reading array of containers
+ * @author jdk
+ */
 public class ContainerArrayReader implements Reader<Container[]> {
     public static final ContainerArrayReader INSTANCE = new ContainerArrayReader();
 
     private static final ContainerReader containerReader = ContainerReader.INSTANCE;
 
+    /**
+     * Read array of container  with decoder
+     * @param decoder Decoder for read data
+     * @return array of containers
+     */
     @Override
     public Container[] read(Decoder decoder) {
         int length = decoder.readArrayLength();
@@ -19,6 +28,11 @@ public class ContainerArrayReader implements Reader<Container[]> {
         return containers;
     }
 
+    /**
+     * Skip array of container with decoder
+     * @param decoder Decoder for read data
+     * @return count of byte which must be skipped
+     */
     @Override
     public int skip(Decoder decoder) {
         int length = decoder.readArrayLength();
