@@ -1,18 +1,12 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
-public class ArrayWriter<T> implements Writer<T[]> {
-
-    private final Writer<T> elementWriter;
-
+public class ArrayWriter<T> extends CollectionWriter<T> {
     public ArrayWriter(Writer<T> elementWriter) {
-        this.elementWriter = elementWriter;
+        super(elementWriter);
     }
 
     @Override
-    public void write(Encoder encoder, T[] array) {
-        encoder.writeInteger(array.length);
-        for (T element : array) {
-            elementWriter.write(encoder, element);
-        }
+    protected void writeLength(Encoder encoder, int length) {
+        encoder.writeInteger(length);
     }
 }

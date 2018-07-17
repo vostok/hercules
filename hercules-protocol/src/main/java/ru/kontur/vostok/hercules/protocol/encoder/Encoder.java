@@ -294,11 +294,13 @@ public class Encoder {
         }
     }
 
-    private void writeArrayLength(int length) {
+    /* --- Utility methods --- */
+
+    public void writeArrayLength(int length) {
         writeInteger(length);
     }
 
-    private void writeVectorLength(int length, String errorMessage) {
+    public void writeVectorLength(int length, String errorMessage) {
         if (length < VectorConstants.VECTOR_LENGTH_EXCEEDED) {
             writeUnsignedByte(length);
         } else {
@@ -306,7 +308,7 @@ public class Encoder {
         }
     }
 
-    private void writeVectorLength(int length) {
+    public void writeVectorLength(int length) {
         writeVectorLength(length, VectorConstants.VECTOR_LENGTH_ERROR_MESSAGE);
     }
 }

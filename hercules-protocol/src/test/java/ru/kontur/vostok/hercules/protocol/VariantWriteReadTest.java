@@ -93,6 +93,17 @@ public class VariantWriteReadTest {
     }
 
     @Test
+    public void shouldWriteReadContainerVector() {
+        Variant variant = Variant.ofContainerArray(new Container[] {
+                new Container(Collections.singletonMap("first", Variant.ofInteger(1))),
+                new Container(Collections.singletonMap("second", Variant.ofString("second"))),
+                new Container(Collections.singletonMap("third", Variant.ofDoubleArray(new double[] {1.25, 1.3})))
+        });
+
+        pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
+    }
+
+    @Test
     public void shouldWriteReadByteVector() {
         Variant variant = Variant.ofByteVector(new byte[]{1, 2, 3});
 
@@ -152,6 +163,17 @@ public class VariantWriteReadTest {
     @Test
     public void shouldWriteReadTextVector() {
         Variant variant = Variant.ofTextVector(new String[]{"S", "F", multiply("ЁЙЯ", 100)});
+
+        pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
+    }
+
+    @Test
+    public void shouldWriteReadContainerArray() {
+        Variant variant = Variant.ofContainerArray(multiply(new Container[] {
+                new Container(Collections.singletonMap("first", Variant.ofInteger(1))),
+                new Container(Collections.singletonMap("second", Variant.ofString("second"))),
+                new Container(Collections.singletonMap("third", Variant.ofDoubleArray(new double[] {1.25, 1.3})))
+        }, 100));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }

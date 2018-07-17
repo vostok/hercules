@@ -33,6 +33,7 @@ public class VariantWriter implements Writer<Variant> {
         writers[Type.STRING.code] = VariantWriter::writeString;
         writers[Type.TEXT.code] = VariantWriter::writeText;
 
+        writers[Type.CONTAINER_VECTOR.code] = VariantWriter::writeContainerVector;
         writers[Type.BYTE_VECTOR.code] = VariantWriter::writeByteVector;
         writers[Type.SHORT_VECTOR.code] = VariantWriter::writeShortVector;
         writers[Type.INTEGER_VECTOR.code] = VariantWriter::writeIntegerVector;
@@ -43,6 +44,7 @@ public class VariantWriter implements Writer<Variant> {
         writers[Type.STRING_VECTOR.code] = VariantWriter::writeStringVector;
         writers[Type.TEXT_VECTOR.code] = VariantWriter::writeTextVector;
 
+        writers[Type.CONTAINER_ARRAY.code] = VariantWriter::writeContainerArray;
         writers[Type.BYTE_ARRAY.code] = VariantWriter::writeByteArray;
         writers[Type.SHORT_ARRAY.code] = VariantWriter::writeShortArray;
         writers[Type.INTEGER_ARRAY.code] = VariantWriter::writeIntegerArray;
@@ -101,6 +103,15 @@ public class VariantWriter implements Writer<Variant> {
         encoder.writeBytesAsText((byte[]) value);
     }
 
+    private static void writeContainerVector(Encoder encoder, Object value) {
+        Container[] containers = (Container[])value;
+
+        encoder.writeVectorLength(containers.length);
+        for (Container container: containers) {
+            containerWriter.write(encoder, container);
+        }
+    }
+
     private static void writeByteVector(Encoder encoder, Object value) {
         encoder.writeByteVector((byte[]) value);
     }
@@ -135,6 +146,15 @@ public class VariantWriter implements Writer<Variant> {
 
     private static void writeTextVector(Encoder encoder, Object value) {
         encoder.writeBytesAsTextVector((byte[][]) value);
+    }
+
+    private static void writeContainerArray(Encoder encoder, Object value) {
+        Container[] containers = (Container[])value;
+
+        encoder.writeArrayLength(containers.length);
+        for (Container container: containers) {
+            containerWriter.write(encoder, container);
+        }
     }
 
     private static void writeByteArray(Encoder encoder, Object value) {

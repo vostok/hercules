@@ -17,6 +17,8 @@ public class VariantReader implements Reader<Variant> {
     public static final VariantReader INSTANCE = new VariantReader();
 
     private static final ContainerReader containerReader = ContainerReader.INSTANCE;
+    private static final ContainerArrayReader containerArrayReader = ContainerArrayReader.INSTANCE;
+    private static final ContainerVectorReader containerVectorReader = ContainerVectorReader.INSTANCE;
 
     @Override
     public Variant read(Decoder decoder) {
@@ -50,8 +52,24 @@ public class VariantReader implements Reader<Variant> {
         return containerReader.read(decoder);
     }
 
+    private static Object readContainerArray(Decoder decoder) {
+        return containerArrayReader.read(decoder);
+    }
+
+    private static Object readContainerVector(Decoder decoder) {
+        return containerVectorReader.read(decoder);
+    }
+
     private static int skipContainer(Decoder decoder) {
         return containerReader.skip(decoder);
+    }
+
+    private static int skipContainerArray(Decoder decoder) {
+        return containerArrayReader.skip(decoder);
+    }
+
+    private static int skipContainerVector(Decoder decoder) {
+        return containerVectorReader.skip(decoder);
     }
 
     /**
@@ -74,6 +92,7 @@ public class VariantReader implements Reader<Variant> {
         decoders[Type.STRING.code] = Decoder::readStringAsBytes;
         decoders[Type.TEXT.code] = Decoder::readTextAsBytes;
 
+        decoders[Type.CONTAINER_VECTOR.code] = VariantReader::readContainerVector;
         decoders[Type.BYTE_VECTOR.code] = Decoder::readByteVector;
         decoders[Type.SHORT_VECTOR.code] = Decoder::readShortVector;
         decoders[Type.INTEGER_VECTOR.code] = Decoder::readIntegerVector;
@@ -84,6 +103,7 @@ public class VariantReader implements Reader<Variant> {
         decoders[Type.STRING_VECTOR.code] = Decoder::readStringVectorAsBytes;
         decoders[Type.TEXT_VECTOR.code] = Decoder::readTextVectorAsBytes;
 
+        decoders[Type.CONTAINER_ARRAY.code] = VariantReader::readContainerArray;
         decoders[Type.BYTE_ARRAY.code] = Decoder::readByteArray;
         decoders[Type.SHORT_ARRAY.code] = Decoder::readShortArray;
         decoders[Type.INTEGER_ARRAY.code] = Decoder::readIntegerArray;
@@ -115,6 +135,7 @@ public class VariantReader implements Reader<Variant> {
         skippers[Type.STRING.code] = Decoder::skipString;
         skippers[Type.TEXT.code] = Decoder::skipText;
 
+        skippers[Type.CONTAINER_VECTOR.code] = VariantReader::skipContainerVector;
         skippers[Type.BYTE_VECTOR.code] = Decoder::skipByteVector;
         skippers[Type.SHORT_VECTOR.code] = Decoder::skipShortVector;
         skippers[Type.INTEGER_VECTOR.code] = Decoder::skipIntegerVector;
@@ -125,6 +146,7 @@ public class VariantReader implements Reader<Variant> {
         skippers[Type.STRING_VECTOR.code] = Decoder::skipStringVector;
         skippers[Type.TEXT_VECTOR.code] = Decoder::skipTextVector;
 
+        skippers[Type.CONTAINER_ARRAY.code] = VariantReader::skipContainerArray;
         skippers[Type.BYTE_ARRAY.code] = Decoder::skipByteArray;
         skippers[Type.SHORT_ARRAY.code] = Decoder::skipShortArray;
         skippers[Type.INTEGER_ARRAY.code] = Decoder::skipIntegerArray;

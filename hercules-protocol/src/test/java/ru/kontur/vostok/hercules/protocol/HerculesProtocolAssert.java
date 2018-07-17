@@ -79,6 +79,10 @@ public class HerculesProtocolAssert {
         asserters[Type.STRING.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
         asserters[Type.TEXT.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
 
+        asserters[Type.CONTAINER_VECTOR.code] = (expected, actual) -> assertArrayEquals(
+                (Container[])expected.getValue(),
+                (Container[])actual.getValue(),
+                (entries, entries2) -> asserters[Type.CONTAINER.code].accept(Variant.ofContainer(entries), Variant.ofContainer(entries2)));
         asserters[Type.BYTE_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
         asserters[Type.SHORT_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((short[]) expected.getValue(), (short[]) actual.getValue());
         asserters[Type.INTEGER_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((int[]) expected.getValue(), (int[]) actual.getValue());
@@ -89,6 +93,10 @@ public class HerculesProtocolAssert {
         asserters[Type.STRING_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
         asserters[Type.TEXT_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
 
+        asserters[Type.CONTAINER_ARRAY.code] = (expected, actual) -> assertArrayEquals(
+                (Container[])expected.getValue(),
+                (Container[])actual.getValue(),
+                (entries, entries2) -> asserters[Type.CONTAINER.code].accept(Variant.ofContainer(entries), Variant.ofContainer(entries2)));
         asserters[Type.BYTE_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
         asserters[Type.SHORT_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((short[]) expected.getValue(), (short[]) actual.getValue());
         asserters[Type.INTEGER_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((int[]) expected.getValue(), (int[]) actual.getValue());
