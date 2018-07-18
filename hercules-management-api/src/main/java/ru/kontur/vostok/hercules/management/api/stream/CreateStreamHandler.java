@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import ru.kontur.vostok.hercules.auth.Action;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -45,7 +45,15 @@ public class CreateStreamHandler implements HttpHandler {
             try {
                 Stream stream = deserializer.readValue(bytes);
 
-                authManager.auth(apiKey, stream.getName(), Action.MANAGE);
+                AuthResult authResult = authManager.authManage(apiKey, stream.getName());
+                if (!authResult.isSuccess()) {
+                    if (authResult.isUnknown()) {
+                        ResponseUtil.unauthorized(exch);
+                        return;
+                    }
+                    ResponseUtil.forbidden(exch);
+                    return;
+                }
                 //TODO: Auth sources if needed
 
                 CreationResult creationResult = repository.create(stream);

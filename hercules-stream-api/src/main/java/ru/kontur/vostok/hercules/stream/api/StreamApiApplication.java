@@ -15,6 +15,7 @@ public class StreamApiApplication {
     private static HttpServer server;
     private static CuratorClient curatorClient;
     private static StreamReader streamReader;
+    private static AuthManager authManager;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -31,7 +32,9 @@ public class StreamApiApplication {
 
             streamReader = new StreamReader(consumerProperties, new StreamRepository(curatorClient));
 
-            server = new HttpServer(httpServerProperties, new AuthManager(), new ReadStreamHandler(streamReader));
+            authManager = new AuthManager(curatorClient);
+
+            server = new HttpServer(httpServerProperties, authManager, new ReadStreamHandler(streamReader));
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -61,6 +64,15 @@ public class StreamApiApplication {
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error
         }
+
+        try {
+            if (authManager != null) {
+                authManager.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
         try {
             if (streamReader != null) {
                 streamReader.stop();
