@@ -14,6 +14,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+/**
+ * Http Handler for handling requests which are sent to elastic adapter.
+ * Process logs. Convert json to Hercules protocol event format.
+ *
+ * @author Daniil Zhenikhov
+ */
 public class ElasticAdapterHandler implements HttpHandler {
 
     private final ElasticAdapterFunction handler;
@@ -71,8 +77,17 @@ public class ElasticAdapterHandler implements HttpHandler {
         return eventBuilder.build();
     }
 
+    /**
+     * Functional interface which process hercules protocol events which has got from body of request
+     */
     @FunctionalInterface
     public interface ElasticAdapterFunction {
+        /**
+         * Handle bytes of events
+         *
+         * @param apiKey extracted from query
+         * @param content bytes of events in hercules protocol format
+         */
         void handle(String apiKey, byte[] content);
     }
 }

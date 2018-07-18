@@ -69,52 +69,52 @@ public class ElasticAdapterUtilTest {
 
 
     @Test
-    public void ParseSimpleEvent_StringVariant() throws IOException {
+    public void shouldParseSimpleEventStringVariant() throws IOException {
         shouldCreateCorrectEvents(jsonStringVariant, 0, 1);
     }
 
     @Test
-    public void ParseSimpleEvent_IntVariant() throws IOException {
+    public void shouldParseSimpleEventIntVariant() throws IOException {
         shouldCreateCorrectEvents(jsonIntVariant, 1, 1);
     }
 
     @Test
-    public void ParseSimpleEvent_IntArrayVariant() throws IOException {
+    public void shouldParseSimpleEventIntArrayVariant() throws IOException {
         shouldCreateCorrectEvents(jsonIntArrayVariant, 2, 1);
     }
 
     @Test
-    public void ParseSimpleEvent_StringArrayVariant() throws IOException {
+    public void shouldParseSimpleEventStringArrayVariant() throws IOException {
         shouldCreateCorrectEvents(jsonStringArrayVariant, 3, 1);
     }
 
     @Test
-    public void ParseSimpleEvent_EmptyArrayVariant() throws IOException {
+    public void shouldParseSimpleEventEmptyArrayVariant() throws IOException {
         shouldCreateCorrectEvents(jsonEmptyArrayVariant, 4, 1);
     }
 
     @Test
-    public void ParseSimpleEvent_DoubleVariant() throws IOException {
+    public void shouldParseSimpleEventDoubleVariant() throws IOException {
         shouldCreateCorrectEvents(jsonDoubleVariant, 5, 1);
     }
 
     @Test
-    public void ParseSimpleEvent_DoubleArrayVariant() throws IOException {
+    public void shouldParseSimpleEventDoubleArrayVariant() throws IOException {
         shouldCreateCorrectEvents(jsonDoubleArrayVariant, 6, 1);
     }
 
     @Test
-    public void ParseSimpleEvent_Empty() throws IOException {
+    public void shouldParseSimpleEventEmptyVariant() throws IOException {
         shouldCreateCorrectEvents(jsonEmptyVariant, 7, 1);
     }
 
     @Test
-    public void ParseComplexEvent_ComplexVariant() throws IOException {
+    public void shouldParseComplexEventComplexVariant() throws IOException {
         shouldCreateCorrectEvents(jsonComplexVariant, 8, 1);
     }
 
     @Test
-    public void ParseEvents_MultiJson() throws IOException {
+    public void shouldParseEventsMultiJson() throws IOException {
         shouldCreateCorrectEvents(multiJson, 0, count);
     }
 

@@ -15,6 +15,11 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import java.io.Closeable;
 import java.io.IOException;
 
+/**
+ * Client for Hercules Gateway API}
+ *
+ * @author Daniil Zhenikhov
+ */
 public class GatewayClient implements Closeable {
     private final static String PING = "/ping";
     private final static String SEND_ACK = "/stream/send";
@@ -29,6 +34,14 @@ public class GatewayClient implements Closeable {
         send(httpGet);
     }
 
+    /**
+     * Request to {@link #SEND_ASYNC}
+     *
+     * @param url Where request should be sent
+     * @param apiKey key for sending
+     * @param stream topic in kafka
+     * @param data payload
+     */
     public void sendAsync(String url, String apiKey, String stream, final byte[] data) {
         HttpPost httpPost = getRequest(url, apiKey, SEND_ASYNC, stream, data);
 
@@ -39,6 +52,13 @@ public class GatewayClient implements Closeable {
         }
     }
 
+    /**
+     *
+     * @param url Where request should be sent
+     * @param apiKey key for sending
+     * @param stream topic in kafka
+     * @param data payload
+     */
     public void send(String url, String apiKey, String stream, final byte[] data) {
         HttpPost httpPost = getRequest(url, apiKey, SEND_ACK, stream, data);
 
@@ -53,6 +73,11 @@ public class GatewayClient implements Closeable {
         }
     }
 
+    /**
+     *  try execute query and print stack trace if exception has been thrown
+     *
+     * @param request The request should be sent
+     */
     private void send(HttpUriRequest request) {
         try {
             CloseableHttpResponse response = client.execute(request);
@@ -65,6 +90,16 @@ public class GatewayClient implements Closeable {
         }
     }
 
+    /**
+     * Form http post request
+     *
+     * @param url Where request should be sent
+     * @param apiKey key for sending
+     * @param cmd Command in Hercules Gateway
+     * @param stream topic in kafka
+     * @param data payload
+     * @return formatted http post request
+     */
     private HttpPost getRequest(String url, String apiKey, String cmd, String stream, byte[] data) {
         HttpPost httpPost = new HttpPost(url + cmd + "?stream=" + stream);
 
@@ -76,6 +111,11 @@ public class GatewayClient implements Closeable {
         return httpPost;
     }
 
+    /**
+     * Tuning of {@link CloseableHttpClient}
+     *
+     * @return Customized http client
+     */
     private CloseableHttpClient build() {
         RequestConfig requestConfig = RequestConfig
                 .custom()

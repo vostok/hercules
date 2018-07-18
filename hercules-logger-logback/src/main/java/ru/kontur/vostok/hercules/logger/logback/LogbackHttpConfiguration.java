@@ -1,5 +1,10 @@
 package ru.kontur.vostok.hercules.logger.logback;
 
+/**
+ * Configuration for {@link LogbackHttpAppender}
+ *
+ * @author Daniil Zhenikhov
+ */
 public class LogbackHttpConfiguration {
     private String url;
     private String apiKey;

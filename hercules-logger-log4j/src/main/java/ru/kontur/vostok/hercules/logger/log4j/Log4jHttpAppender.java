@@ -18,6 +18,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Appender for log4j logger
+ * @author Daniil Zhenikhov
+ */
 @Plugin(name = "Log4jHttpAppender", category = "Core", elementType = "appender", printObject = true)
 public class Log4jHttpAppender extends AbstractAppender {
     private EventPublisher publisher;

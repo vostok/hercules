@@ -6,6 +6,18 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * The point to launch the Elastic Adapter.
+ * Need .properties file to start application. Required fields are <code>url</code> and <code>stream</code>
+ *
+ * <code>url</code> - url where events are sent
+ * <code>stream</code> - topic in kafka where data is sent
+ *
+ *  Example of start:
+ *  <code>java -jar elastic-adapter.jar elastic.properties=elastic.properties</code>
+ *
+ * @author Daniil Zhenikhov
+ */
 public class ElasticAdapterApplication {
     private final HttpServer httpServer;
 

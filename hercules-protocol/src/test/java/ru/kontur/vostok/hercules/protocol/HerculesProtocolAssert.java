@@ -89,11 +89,19 @@ public class HerculesProtocolAssert {
     }
 
     public static void assertEquals(Event expected, Event actual) {
+        assertEquals(expected, actual, true, true);
+    }
+
+    public static void assertEquals(Event expected, Event actual, boolean checkId, boolean checkBytes) {
         Assert.assertEquals(expected.getVersion(), actual.getVersion());
-        Assert.assertEquals(expected.getId(), actual.getId());
+        if (checkId) {
+            Assert.assertEquals(expected.getId(), actual.getId());
+        }
 
         assertFieldsEquals(expected, actual);
-        Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
+        if (checkBytes) {
+            Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
+        }
     }
 
     public static void assertEquals(Variant expected, Variant actual) {

@@ -9,6 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * Appender for logback logger
+ *
+ * @author Daniil Zhenikhov
+ */
 public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private LogbackHttpConfiguration configuration;
     private Set<Thread> threads;

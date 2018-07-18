@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 /**
  * Hercules Protocol Reader for reading vector of containers
  *
- * @author jdk
+ * @author Daniil Zhenikhov
  */
 public class ContainerVectorReader implements Reader<Container[]> {
     public static final ContainerVectorReader INSTANCE = new ContainerVectorReader();

@@ -11,6 +11,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author Daniil Zhenikhov
+ */
 public class EventPublisher {
     private final Object monitor = new Object();
     private final String stream;
@@ -23,6 +26,17 @@ public class EventPublisher {
     private final String url;
     private final String apiKey;
 
+    /**
+     * @param stream topic in kafka
+     * @param periodMillis period for processing events by fixed rate scheduler. In millis
+     * @param batchSize size of events' batch
+     * @param threads count of worker-threads
+     * @param capacity initial capacity for events' queue
+     * @param loseOnOverflow flag is it possible to lose events when the queue is full
+     * @param threadFactory factory for worker-threads
+     * @param url url where events should be sent
+     * @param apiKey api key for sending events
+     */
     public EventPublisher(String stream,
                           long periodMillis,
                           int batchSize,
@@ -44,6 +58,9 @@ public class EventPublisher {
         this.gatewayClient = new GatewayClient();
     }
 
+    /**
+     * Start publisher and schedule {@link #process()} queue in fixed rate <code>periodMillis</code>
+     */
     public void start() {
         executor.scheduleAtFixedRate(
                 this::process,
@@ -53,6 +70,10 @@ public class EventPublisher {
         );
     }
 
+    /**
+     * Publish event and schedule {@link #process()} if queue has batch of events
+     * @param event event for publishing
+     */
     public void publish(Event event) {
         try {
             queue.add(event);
@@ -82,6 +103,11 @@ public class EventPublisher {
         }
     }
 
+    /**
+     * Stop executing of event publisher. Waits <code>timeoutMillis</code> milliseconds to send a portion of unhandled events
+     *
+     * @param timeoutMillis milliseconds for waiting before event publisher stop
+     */
     public void stop(long timeoutMillis) {
         executor.shutdown();
 
@@ -94,6 +120,11 @@ public class EventPublisher {
         gatewayClient.close();
     }
 
+    /**
+     * Forms a batch of events and sends them to the {@link #url}
+     *
+     * @return actual count of events which has been processed
+     */
     private int process() {
         List<Event> events = new ArrayList<>(batchSize);
         int actualBatchSize = queue.drainTo(events, batchSize);

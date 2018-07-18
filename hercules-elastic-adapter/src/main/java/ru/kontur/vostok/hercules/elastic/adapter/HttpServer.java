@@ -6,6 +6,9 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.BlockingHandler;
 import ru.kontur.vostok.hercules.gateway.client.GatewayClient;
 
+/**
+ * @author Daniil Zhenikhov
+ */
 public class HttpServer {
     private final Undertow undertow;
     private final GatewayClient client;
