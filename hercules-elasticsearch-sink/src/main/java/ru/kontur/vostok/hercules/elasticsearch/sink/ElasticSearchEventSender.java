@@ -6,7 +6,6 @@ import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
-import ru.kontur.vostok.hercules.kafka.util.processing.Entry;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.io.ByteArrayOutputStream;
@@ -16,7 +15,7 @@ import java.util.*;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-public class ElasticSearchEventSender implements BulkSender<UUID, Event> {
+public class ElasticSearchEventSender implements BulkSender<Event> {
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
@@ -29,7 +28,8 @@ public class ElasticSearchEventSender implements BulkSender<UUID, Event> {
         this.indexName = elasticsearchProperties.getProperty("index.name");
     }
 
-    public void send(Collection<Entry<UUID, Event>> events) {
+    @Override
+    public void accept(Collection<Event> events) {
         if (events.size() == 0) {
             return;
         }
@@ -58,18 +58,18 @@ public class ElasticSearchEventSender implements BulkSender<UUID, Event> {
     }
 
 
-    private void writeEventRecords(OutputStream stream, Collection<Entry<UUID, Event>> events) {
+    private void writeEventRecords(OutputStream stream, Collection<Event> events) {
         toUnchecked(() -> {
-            for (Entry<UUID, Event> entry : events) {
-                boolean result = IndexToElasticJsonWriter.writeIndex(stream, entry.getValue());
+            for (Event event : events) {
+                boolean result = IndexToElasticJsonWriter.writeIndex(stream, event);
                 if (result) {
                     writeNewLine(stream);
-                    EventToElasticJsonWriter.writeEvent(stream, entry.getValue());
+                    EventToElasticJsonWriter.writeEvent(stream, event);
                     writeNewLine(stream);
                 }
                 else {
                     // TODO: Add logging
-                    System.out.println(String.format("Cannot process event '%s' because of missing index data", entry.getValue().getId()));
+                    System.out.println(String.format("Cannot process event '%s' because of missing index data", event.getId()));
                 }
             }
         });

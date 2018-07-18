@@ -4,8 +4,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.function.Consumer;
 
-public interface BulkSender<K, V> extends AutoCloseable {
-
-    void send(Collection<Entry<K, V>> records);
+public interface BulkSender<Value> extends Consumer<Collection<Value>>, AutoCloseable {
 }

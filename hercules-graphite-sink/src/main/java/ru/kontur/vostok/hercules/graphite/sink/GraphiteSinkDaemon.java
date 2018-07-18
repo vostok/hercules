@@ -7,7 +7,6 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 
 public class GraphiteSinkDaemon extends AbstractBulkSinkDaemon {
 
@@ -16,7 +15,7 @@ public class GraphiteSinkDaemon extends AbstractBulkSinkDaemon {
     }
 
     @Override
-    protected BulkSender<UUID, Event> createSender(Map<String, String> parameters) {
+    protected BulkSender<Event> createSender(Map<String, String> parameters) {
         Properties graphiteProperties = PropertiesUtil.readProperties(parameters.getOrDefault("graphite.properties", "graphite.properties"));
 
         return new GraphiteEventSender(graphiteProperties);

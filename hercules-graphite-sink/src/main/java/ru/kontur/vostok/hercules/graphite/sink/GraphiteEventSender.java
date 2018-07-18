@@ -4,7 +4,6 @@ import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteClient;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetric;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricStorage;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
-import ru.kontur.vostok.hercules.kafka.util.processing.Entry;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -13,9 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.UUID;
 
-public class GraphiteEventSender implements BulkSender<UUID, Event> {
+public class GraphiteEventSender implements BulkSender<Event> {
 
     private final GraphiteClient client;
 
@@ -24,17 +22,18 @@ public class GraphiteEventSender implements BulkSender<UUID, Event> {
         this.client = new GraphiteClient(server[0], Integer.valueOf(server[1]));
     }
 
+
     @Override
-    public void send(Collection<Entry<UUID, Event>> events) {
+    public void accept(Collection<Event> events) {
         if (events.size() == 0) {
             return;
         }
 
         GraphiteMetricStorage storage = new GraphiteMetricStorage();
 
-        for (Entry<UUID, Event> entry : events) {
-            Optional<String> name = extractMetricName(entry.getValue());
-            Optional<GraphiteMetric> value = extractMetricValue(entry.getValue());
+        for (Event event : events) {
+            Optional<String> name = extractMetricName(event);
+            Optional<GraphiteMetric> value = extractMetricValue(event);
             if (name.isPresent() && value.isPresent()) {
                 storage.add(name.get(), value.get());
             }
