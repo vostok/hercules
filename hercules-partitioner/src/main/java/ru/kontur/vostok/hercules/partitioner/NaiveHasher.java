@@ -9,14 +9,14 @@ import ru.kontur.vostok.hercules.protocol.Variant;
  */
 public class NaiveHasher implements Hasher {
     public static int hash(Type type, Object value) {
-        return functions[type.value].hash(value);
+        return functions[type.code].hash(value);
     }
 
     @Override
     public int hash(Event event, String[] tags) {
         int hash = 0;
         for (String tag : tags) {
-            Variant tagValue = event.getTags().get(tag);
+            Variant tagValue = event.getTag(tag);
             hash = 31 * hash + ((tagValue != null) ? hash(tagValue.getType(), tagValue.getValue()) : 0);
         }
         return 0;

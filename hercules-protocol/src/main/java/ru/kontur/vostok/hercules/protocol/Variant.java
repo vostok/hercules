@@ -20,6 +20,10 @@ public class Variant {
         return value;
     }
 
+    public static Variant ofContainer(Container container) {
+        return new Variant(Type.CONTAINER, container);
+    }
+
     public static Variant ofByte(byte b) {
         return new Variant(Type.BYTE, b);
     }
@@ -116,6 +120,11 @@ public class Variant {
         }
         return new Variant(Type.TEXT_VECTOR, bytes);
     }
+    
+    public static Variant ofContainerVector(Container[] containers) {
+        checkVectorLength(containers.length);
+        return new Variant(Type.CONTAINER_VECTOR, containers);
+    }
 
     public static Variant ofByteArray(byte[] bytes) {
         return new Variant(Type.BYTE_ARRAY, bytes);
@@ -165,6 +174,15 @@ public class Variant {
             bytes[i] = texts[i].getBytes(StandardCharsets.UTF_8);
         }
         return new Variant(Type.TEXT_ARRAY, bytes);
+    }
+
+    /**
+     * Create variant of containers
+     * @param containers which must be wrapped
+     * @return specific variant
+     */
+    public static Variant ofContainerArray(Container[] containers) {
+        return new Variant(Type.CONTAINER_ARRAY, containers);
     }
 
     private static void checkVectorLength(int length) {

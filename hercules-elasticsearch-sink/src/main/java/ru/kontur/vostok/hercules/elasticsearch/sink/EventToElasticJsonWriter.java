@@ -16,8 +16,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 
-import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
-
 public class EventToElasticJsonWriter {
 
     @FunctionalInterface
@@ -34,35 +32,35 @@ public class EventToElasticJsonWriter {
     static {
         Arrays.setAll(toJsonWriters, idx -> (g, v) -> {throw new IllegalArgumentException("Not implemented for index " + idx);});
 
-        toJsonWriters[Type.BYTE.value] = EventToElasticJsonWriter::writeByte;
-        toJsonWriters[Type.SHORT.value] = EventToElasticJsonWriter::writeShort;
-        toJsonWriters[Type.INTEGER.value] = EventToElasticJsonWriter::writeInteger;
-        toJsonWriters[Type.LONG.value] = EventToElasticJsonWriter::writeLong;
-        toJsonWriters[Type.FLAG.value] = EventToElasticJsonWriter::writeFlag;
-        toJsonWriters[Type.FLOAT.value] = EventToElasticJsonWriter::writeFloat;
-        toJsonWriters[Type.DOUBLE.value] = EventToElasticJsonWriter::writeDouble;
-        toJsonWriters[Type.STRING.value] = EventToElasticJsonWriter::writeStringOrText;
-        toJsonWriters[Type.TEXT.value] = EventToElasticJsonWriter::writeStringOrText;
+        toJsonWriters[Type.BYTE.code] = EventToElasticJsonWriter::writeByte;
+        toJsonWriters[Type.SHORT.code] = EventToElasticJsonWriter::writeShort;
+        toJsonWriters[Type.INTEGER.code] = EventToElasticJsonWriter::writeInteger;
+        toJsonWriters[Type.LONG.code] = EventToElasticJsonWriter::writeLong;
+        toJsonWriters[Type.FLAG.code] = EventToElasticJsonWriter::writeFlag;
+        toJsonWriters[Type.FLOAT.code] = EventToElasticJsonWriter::writeFloat;
+        toJsonWriters[Type.DOUBLE.code] = EventToElasticJsonWriter::writeDouble;
+        toJsonWriters[Type.STRING.code] = EventToElasticJsonWriter::writeStringOrText;
+        toJsonWriters[Type.TEXT.code] = EventToElasticJsonWriter::writeStringOrText;
 
-        toJsonWriters[Type.BYTE_VECTOR.value] = EventToElasticJsonWriter::writeByteArrayOrVector;
-        toJsonWriters[Type.SHORT_VECTOR.value] = EventToElasticJsonWriter::writeShortArrayOrVector;
-        toJsonWriters[Type.INTEGER_VECTOR.value] = EventToElasticJsonWriter::writeIntegerArrayOrVector;
-        toJsonWriters[Type.LONG_VECTOR.value] = EventToElasticJsonWriter::writeLongArrayOrVector;
-        toJsonWriters[Type.FLOAT_VECTOR.value] = EventToElasticJsonWriter::writeFloatArrayOrVector;
-        toJsonWriters[Type.DOUBLE_VECTOR.value] = EventToElasticJsonWriter::writeDoubleArrayOrVector;
-        toJsonWriters[Type.FLAG_VECTOR.value] = EventToElasticJsonWriter::writeFlagArrayOrVector;
-        toJsonWriters[Type.STRING_VECTOR.value] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
-        toJsonWriters[Type.TEXT_VECTOR.value] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
+        toJsonWriters[Type.BYTE_VECTOR.code] = EventToElasticJsonWriter::writeByteArrayOrVector;
+        toJsonWriters[Type.SHORT_VECTOR.code] = EventToElasticJsonWriter::writeShortArrayOrVector;
+        toJsonWriters[Type.INTEGER_VECTOR.code] = EventToElasticJsonWriter::writeIntegerArrayOrVector;
+        toJsonWriters[Type.LONG_VECTOR.code] = EventToElasticJsonWriter::writeLongArrayOrVector;
+        toJsonWriters[Type.FLOAT_VECTOR.code] = EventToElasticJsonWriter::writeFloatArrayOrVector;
+        toJsonWriters[Type.DOUBLE_VECTOR.code] = EventToElasticJsonWriter::writeDoubleArrayOrVector;
+        toJsonWriters[Type.FLAG_VECTOR.code] = EventToElasticJsonWriter::writeFlagArrayOrVector;
+        toJsonWriters[Type.STRING_VECTOR.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
+        toJsonWriters[Type.TEXT_VECTOR.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
 
-        toJsonWriters[Type.BYTE_ARRAY.value] = EventToElasticJsonWriter::writeByteArrayOrVector;
-        toJsonWriters[Type.SHORT_ARRAY.value] = EventToElasticJsonWriter::writeShortArrayOrVector;
-        toJsonWriters[Type.INTEGER_ARRAY.value] = EventToElasticJsonWriter::writeIntegerArrayOrVector;
-        toJsonWriters[Type.LONG_ARRAY.value] = EventToElasticJsonWriter::writeLongArrayOrVector;
-        toJsonWriters[Type.FLOAT_ARRAY.value] = EventToElasticJsonWriter::writeFloatArrayOrVector;
-        toJsonWriters[Type.DOUBLE_ARRAY.value] = EventToElasticJsonWriter::writeDoubleArrayOrVector;
-        toJsonWriters[Type.FLAG_ARRAY.value] = EventToElasticJsonWriter::writeFlagArrayOrVector;
-        toJsonWriters[Type.STRING_ARRAY.value] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
-        toJsonWriters[Type.TEXT_ARRAY.value] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
+        toJsonWriters[Type.BYTE_ARRAY.code] = EventToElasticJsonWriter::writeByteArrayOrVector;
+        toJsonWriters[Type.SHORT_ARRAY.code] = EventToElasticJsonWriter::writeShortArrayOrVector;
+        toJsonWriters[Type.INTEGER_ARRAY.code] = EventToElasticJsonWriter::writeIntegerArrayOrVector;
+        toJsonWriters[Type.LONG_ARRAY.code] = EventToElasticJsonWriter::writeLongArrayOrVector;
+        toJsonWriters[Type.FLOAT_ARRAY.code] = EventToElasticJsonWriter::writeFloatArrayOrVector;
+        toJsonWriters[Type.DOUBLE_ARRAY.code] = EventToElasticJsonWriter::writeDoubleArrayOrVector;
+        toJsonWriters[Type.FLAG_ARRAY.code] = EventToElasticJsonWriter::writeFlagArrayOrVector;
+        toJsonWriters[Type.STRING_ARRAY.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
+        toJsonWriters[Type.TEXT_ARRAY.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
     }
 
 
@@ -71,7 +69,7 @@ public class EventToElasticJsonWriter {
             generator.writeStartObject();
             generator.writeStringField(TIMESTAMP_FIELD, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
-            for (Map.Entry<String, Variant> tag : event.getTags().entrySet()) {
+            for (Map.Entry<String, Variant> tag : event) {
                 if (TIMESTAMP_FIELD.equals(tag.getKey())) {
                     continue;
                 }
@@ -84,7 +82,7 @@ public class EventToElasticJsonWriter {
     }
 
     private static void writeVariantField(JsonGenerator generator, Variant variant) throws IOException {
-        toJsonWriters[variant.getType().value].write(generator, variant.getValue());
+        toJsonWriters[variant.getType().code].write(generator, variant.getValue());
     }
 
     private static void writeByte(JsonGenerator generator, Object value) throws IOException {

@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.gateway;
 import com.codahale.metrics.Meter;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import ru.kontur.vostok.hercules.auth.Action;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
@@ -106,7 +105,7 @@ public abstract class GatewayHandler implements HttpHandler {
     }
 
     private boolean auth(HttpServerExchange exchange, String apiKey, String stream) {
-        AuthResult authResult = authManager.auth(apiKey, stream, Action.WRITE);
+        AuthResult authResult = authManager.authWrite(apiKey, stream);
 
         if (authResult.isSuccess()) {
             return true;
