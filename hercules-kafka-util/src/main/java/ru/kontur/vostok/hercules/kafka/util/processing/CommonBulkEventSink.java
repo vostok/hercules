@@ -87,7 +87,7 @@ public class CommonBulkEventSink {
             }
 
             eventSender.accept(current.getRecords());
-            consumer.commitSync(current.getOffsets());
+            consumer.commitSync(current.getOffsets(null));
 
             current = next;
             next = new RecordStorage<>(batchSize);

@@ -12,8 +12,9 @@ import java.util.Map;
 public class RecordStorage<Key, Value> {
 
     private final int storageSize;
-    private final Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
     private final List<Value> records;
+
+    private final Map<String, Map<Integer, Long>> offsets = new HashMap<>();
 
     public RecordStorage(int storageSize) {
         this.storageSize = storageSize;
@@ -25,19 +26,31 @@ public class RecordStorage<Key, Value> {
             throw new IllegalStateException("Exceeded capacity");
         }
         records.add(record.value());
-        offsets.put(
-                new TopicPartition(record.topic(), record.partition()),
-                new OffsetAndMetadata(record.offset())
-        );
 
+        Map<Integer, Long> topicOffsets = offsets.computeIfAbsent(record.topic(), s -> new HashMap<>());
+        topicOffsets.put(record.partition(), record.offset());
     }
 
     public boolean available() {
         return records.size() < storageSize;
     }
 
-    public Map<TopicPartition, OffsetAndMetadata> getOffsets() {
-        return offsets;
+    public Map<TopicPartition, OffsetAndMetadata> getOffsets(String metadata) {
+        Map<TopicPartition, OffsetAndMetadata> result = new HashMap<>();
+
+        for (Map.Entry<String, Map<Integer, Long>> entry : offsets.entrySet()) {
+            String topic = entry.getKey();
+            for (Map.Entry<Integer, Long> offsetEntry : entry.getValue().entrySet()) {
+                Integer partition = offsetEntry.getKey();
+                Long offset = offsetEntry.getValue();
+                result.put(
+                        new TopicPartition(topic, partition),
+                        new OffsetAndMetadata(offset, metadata)
+                );
+            }
+        }
+
+        return result;
     }
 
     public List<Value> getRecords() {
