@@ -19,6 +19,7 @@ public class GatewayApplication {
     private static HttpServer server;
     private static EventSender eventSender;
     private static CuratorClient curatorClient;
+    private static AuthManager authManager;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -36,7 +37,9 @@ public class GatewayApplication {
             curatorClient.start();
 
             StreamRepository streamRepository = new StreamRepository(curatorClient);
-            AuthManager authManager = new AuthManager();
+
+            authManager = new AuthManager(curatorClient);
+            authManager.start();
 
             server = new HttpServer(httpserverProperties, authManager, eventSender, streamRepository);
             server.start();
@@ -68,6 +71,14 @@ public class GatewayApplication {
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
+        }
+
+        try {
+            if (authManager != null) {
+                authManager.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
 
         try {

@@ -16,6 +16,7 @@ public class TimelineApiApplication {
     private static CuratorClient curatorClient;
     private static TimelineReader timelineReader;
     private static CassandraConnector cassandraConnector;
+    private static AuthManager authManager;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -35,9 +36,11 @@ public class TimelineApiApplication {
 
             timelineReader = new TimelineReader(cassandraConnector);
 
+            authManager = new AuthManager(curatorClient);
+
             server = new HttpServer(
                     httpServerProperties,
-                    new AuthManager(),
+                    authManager,
                     new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader)
             );
             server.start();
@@ -69,6 +72,15 @@ public class TimelineApiApplication {
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error
         }
+
+        try {
+            if (authManager != null) {
+                authManager.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
         try {
             if (cassandraConnector != null) {
                 cassandraConnector.close();
