@@ -46,12 +46,11 @@ public class Blacklist {
 
         List<String> children = curatorClient.children("/hercules/auth/blacklist", e -> update());
 
-        ConcurrentHashMap<String, Object> oldApiKeys = apiKeys.get();
         ConcurrentHashMap<String, Object> newApiKeys = new ConcurrentHashMap<>(children.size());
         for (String apiKey : children) {
             newApiKeys.put(apiKey, STUB);
         }
-        apiKeys.compareAndSet(oldApiKeys, newApiKeys);
+        apiKeys.set(newApiKeys);
     }
 
     private enum State {

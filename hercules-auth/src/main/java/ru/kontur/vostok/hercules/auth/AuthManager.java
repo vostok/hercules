@@ -58,15 +58,11 @@ public final class AuthManager {
             return AuthResult.unknown();
         }
 
-        return PatternMatcher.matches(name, matchers) ? AuthResult.ok() : AuthResult.denied();
+        return PatternMatcher.matchesAnyOf(name, matchers) ? AuthResult.ok() : AuthResult.denied();
     }
 
     private void update() throws Exception {
-        List<String> rules = curatorClient.children("/hercules/auth/rules", e -> update());
-
-        ConcurrentHashMap<String, List<PatternMatcher>> oldReadRules = readRules.get();
-        ConcurrentHashMap<String, List<PatternMatcher>> oldWriteRules = writeRules.get();
-        ConcurrentHashMap<String, List<PatternMatcher>> oldManageRules = manageRules.get();
+        List<String> rules = curatorClient.children("/hercules/auth/rules", e -> update());//TODO: monitor watcher's event types
 
         ConcurrentHashMap<String, List<PatternMatcher>> newReadRules = new ConcurrentHashMap<>();
         ConcurrentHashMap<String, List<PatternMatcher>> newWriteRules = new ConcurrentHashMap<>();
@@ -94,9 +90,9 @@ public final class AuthManager {
             }
         }
 
-        readRules.compareAndSet(oldReadRules, newReadRules);
-        writeRules.compareAndSet(oldWriteRules, newWriteRules);
-        manageRules.compareAndSet(oldManageRules, newManageRules);
+        readRules.set(newReadRules);
+        writeRules.set(newWriteRules);
+        manageRules.set(newManageRules);
     }
 
     private void insertRule(ConcurrentHashMap<String, List<PatternMatcher>> rules, String apiKey, String pattern) {

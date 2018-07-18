@@ -17,7 +17,7 @@ public class PatternMatcher {
         return regexp.matcher(value).matches();
     }
 
-    public static boolean matches(String value, List<PatternMatcher> matchers) {
+    public static boolean matchesAnyOf(String value, List<PatternMatcher> matchers) {
         if (value == null || matchers == null || matchers.isEmpty()) {
             return false;
         }
@@ -46,7 +46,10 @@ public class PatternMatcher {
             }
             if (c == '?') {
                 sb.append(alphanumeric);
+                continue;
             }
+            // Otherwise pattern is invalid thus throw illegal argument exception
+            throw new IllegalArgumentException("Pattern contains prohibited chars");
         }
         return sb.toString();
     }
