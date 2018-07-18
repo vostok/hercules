@@ -78,7 +78,7 @@ public class ElasticAdapterHandler implements HttpHandler {
     }
 
     /**
-     * Functional interface which process hercules protocol events which has got from body of request
+     * Functional interface processing Hercules protocol events gotten from request body
      */
     @FunctionalInterface
     public interface ElasticAdapterFunction {

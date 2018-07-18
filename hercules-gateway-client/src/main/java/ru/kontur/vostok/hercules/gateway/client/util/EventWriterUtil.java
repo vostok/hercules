@@ -27,4 +27,29 @@ public class EventWriterUtil {
 
         return byteStream.toByteArray();
     }
+
+    /**
+     * Convert array of events to byte array
+     *
+     * @param events array of events which have to convert
+     * @return bytes of events after converting
+     */
+    public static byte[] toBytes(Event[] events) {
+        return toBytes(calcSize(events), events);
+    }
+
+    /**
+     * Calculate total size of events' array
+     *
+     * @return total size
+     */
+    private static int calcSize(Event[] events) {
+        int total = 0;
+
+        for (int i = 0; i < events.length; i++) {
+            total += events[i].getBytes().length;
+        }
+
+        return total;
+    }
 }

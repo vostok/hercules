@@ -114,6 +114,7 @@ public class EventPublisher {
         if (timeoutMillis > 0) {
             long nanos = System.nanoTime();
             while (TimeUnit.MILLISECONDS.toNanos(timeoutMillis) > System.nanoTime() - nanos && process() > 0) {
+                /* Empty */
             }
         }
 

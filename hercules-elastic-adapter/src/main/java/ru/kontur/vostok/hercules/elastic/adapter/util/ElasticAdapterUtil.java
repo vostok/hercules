@@ -89,7 +89,7 @@ public class ElasticAdapterUtil {
     /**
      * Convert stream of json events to stream of Hercules protocol events
      *
-     * @param inputStream Stream of multiJSON which contain json events
+     * @param inputStream Stream of multiJSON containing json events
      * @return Stream of Hercules Protocol events
      * @throws IOException can be thrown if parsing is failed
      */

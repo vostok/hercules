@@ -16,17 +16,20 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Client for Hercules Gateway API}
+ * Client for Hercules Gateway API
  *
  * @author Daniil Zhenikhov
  */
 public class GatewayClient implements Closeable {
-    private final static String PING = "/ping";
-    private final static String SEND_ACK = "/stream/send";
-    private final static String SEND_ASYNC = "/stream/sendAsync";
+    private static final int TIMEOUT = 3000;
+    private static final int COUNT_CONNECTION = 1000;
+
+    private static final String PING = "/ping";
+    private static final String SEND_ACK = "/stream/send";
+    private static final String SEND_ASYNC = "/stream/sendAsync";
 
 
-    private final CloseableHttpClient client = build();
+    private final CloseableHttpClient client = createHttpClient();
 
     public void ping(String url) {
         HttpGet httpGet = new HttpGet(url + PING);
@@ -39,11 +42,11 @@ public class GatewayClient implements Closeable {
      *
      * @param url Where request should be sent
      * @param apiKey key for sending
-     * @param stream topic in kafka
+     * @param stream topic name in kafka
      * @param data payload
      */
     public void sendAsync(String url, String apiKey, String stream, final byte[] data) {
-        HttpPost httpPost = getRequest(url, apiKey, SEND_ASYNC, stream, data);
+        HttpPost httpPost = buildRequest(url, apiKey, SEND_ASYNC, stream, data);
 
         try {
             client.execute(httpPost);
@@ -56,11 +59,11 @@ public class GatewayClient implements Closeable {
      *
      * @param url Where request should be sent
      * @param apiKey key for sending
-     * @param stream topic in kafka
+     * @param stream topic name in kafka
      * @param data payload
      */
     public void send(String url, String apiKey, String stream, final byte[] data) {
-        HttpPost httpPost = getRequest(url, apiKey, SEND_ACK, stream, data);
+        HttpPost httpPost = buildRequest(url, apiKey, SEND_ACK, stream, data);
 
         send(httpPost);
     }
@@ -73,11 +76,6 @@ public class GatewayClient implements Closeable {
         }
     }
 
-    /**
-     *  try execute query and print stack trace if exception has been thrown
-     *
-     * @param request The request should be sent
-     */
     private void send(HttpUriRequest request) {
         try {
             CloseableHttpResponse response = client.execute(request);
@@ -95,13 +93,13 @@ public class GatewayClient implements Closeable {
      *
      * @param url Where request should be sent
      * @param apiKey key for sending
-     * @param cmd Command in Hercules Gateway
-     * @param stream topic in kafka
+     * @param action Command in Hercules Gateway
+     * @param stream topic name in kafka
      * @param data payload
      * @return formatted http post request
      */
-    private HttpPost getRequest(String url, String apiKey, String cmd, String stream, byte[] data) {
-        HttpPost httpPost = new HttpPost(url + cmd + "?stream=" + stream);
+    private HttpPost buildRequest(String url, String apiKey, String action, String stream, byte[] data) {
+        HttpPost httpPost = new HttpPost(url + action + "?stream=" + stream);
 
         httpPost.addHeader("apiKey", apiKey);
 
@@ -116,18 +114,18 @@ public class GatewayClient implements Closeable {
      *
      * @return Customized http client
      */
-    private CloseableHttpClient build() {
+    private CloseableHttpClient createHttpClient() {
         RequestConfig requestConfig = RequestConfig
                 .custom()
-                .setSocketTimeout(3000)
-                .setConnectTimeout(3000)
+                .setSocketTimeout(TIMEOUT)
+                .setConnectTimeout(TIMEOUT)
                 .build();
 
         return HttpClientBuilder
                 .create()
                 .setDefaultRequestConfig(requestConfig)
-                .setMaxConnPerRoute(1000)
-                .setMaxConnTotal(1000)
+                .setMaxConnPerRoute(COUNT_CONNECTION)
+                .setMaxConnTotal(COUNT_CONNECTION)
                 .build();
     }
 }

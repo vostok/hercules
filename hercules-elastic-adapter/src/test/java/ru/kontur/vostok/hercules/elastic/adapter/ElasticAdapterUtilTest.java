@@ -16,23 +16,22 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class ElasticAdapterUtilTest {
-    private final UuidGenerator generator = UuidGenerator.getClientInstance();
-
-    private String jsonStringVariant = "{ \"A\": \"A\"}";
-    private String jsonIntVariant = "{ \"B\": 1}";
-    private String jsonIntArrayVariant = "{ \"C\": [1, 2, 3, 4]}";
-    private String jsonStringArrayVariant = "{ \"D\": [\"11\", \"22\", \"33\", \"44\"]}";
-    private String jsonEmptyArrayVariant = "{ \"E\": []}";
-    private String jsonDoubleVariant = "{ \"F\": 1.25}";
-    private String jsonDoubleArrayVariant = "{ \"G\": [1.25, 2.34]}";
-    private String jsonEmptyVariant = "{}";
-    private String jsonComplexVariant = "{" +
+    private static final UuidGenerator generator = UuidGenerator.getClientInstance();
+    private static final String jsonStringVariant = "{ \"A\": \"A\"}";
+    private static final String jsonIntVariant = "{ \"B\": 1}";
+    private static final String jsonIntArrayVariant = "{ \"C\": [1, 2, 3, 4]}";
+    private static final String jsonStringArrayVariant = "{ \"D\": [\"11\", \"22\", \"33\", \"44\"]}";
+    private static final String jsonEmptyArrayVariant = "{ \"E\": []}";
+    private static final String jsonDoubleVariant = "{ \"F\": 1.25}";
+    private static final String jsonDoubleArrayVariant = "{ \"G\": [1.25, 2.34]}";
+    private static final String jsonEmptyVariant = "{}";
+    private static final String jsonComplexVariant = "{" +
             "\"HA\": 1," +
             "\"HB\": 1.25," +
             "\"HC\": \"str\"," +
             "\"HD\": [1, 2, 3, 4]" +
             "}";
-    private String multiJson = jsonStringVariant +
+    private static final String multiJson = jsonStringVariant +
             jsonIntVariant +
             jsonIntArrayVariant +
             jsonStringArrayVariant +
@@ -41,15 +40,10 @@ public class ElasticAdapterUtilTest {
             jsonDoubleArrayVariant +
             jsonEmptyVariant +
             jsonComplexVariant;
+    private static final int count = 9;
+    private static final Event[] events = new Event[count];
 
-    private Event[] events;
-    private int count;
-
-    @Before
-    public void setUp() {
-        count = 9;
-        events = new Event[count];
-
+    static {
         events[0] = buildEvent(Collections.singletonMap("A", Variant.ofString("A")));
         events[1] = buildEvent(Collections.singletonMap("B", Variant.ofInteger(1)));
         events[2] = buildEvent(Collections.singletonMap("C", Variant.ofIntegerArray(new int[]{1, 2, 3, 4})));
@@ -126,12 +120,12 @@ public class ElasticAdapterUtilTest {
         Assert.assertEquals(count, events.length);
 
         for (int index = 0; index < count; index++ ) {
-            HerculesProtocolAssert.assertEquals(this.events[index + offset], events[index], false, false);
+            HerculesProtocolAssert.assertEquals(ElasticAdapterUtilTest.events[index + offset], events[index], false, false);
         }
 
     }
 
-    private Event buildEvent(Map<String, Variant> map) {
+    private static Event buildEvent(Map<String, Variant> map) {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
         eventBuilder.setEventId(generator.next());
