@@ -137,7 +137,7 @@ public class EventPublisher {
         Event[] eventsArray = new Event[actualBatchSize];
         eventsArray = events.toArray(eventsArray);
 
-        gatewayClient.sendAsync(this.url, this.apiKey, this.stream, EventWriterUtil.toBytes(CommonConstants.MAX_MESSAGE_SIZE, eventsArray));
+        gatewayClient.sendAsync(this.url, this.apiKey, this.stream, EventWriterUtil.toBytes(eventsArray));
 
         return actualBatchSize;
     }
