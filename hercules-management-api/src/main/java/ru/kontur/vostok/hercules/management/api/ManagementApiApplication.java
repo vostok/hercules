@@ -18,6 +18,7 @@ import java.util.Properties;
 public class ManagementApiApplication {
     private static HttpServer server;
     private static CuratorClient curatorClient;
+    private static AuthManager authManager;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -38,7 +39,8 @@ public class ManagementApiApplication {
             RuleRepository ruleRepository = new RuleRepository(curatorClient);
 
             AdminManager adminManager = new AdminManager(PropertiesUtil.toSet(applicationProperties, "keys"));
-            AuthManager authManager = new AuthManager();
+
+            authManager = new AuthManager(curatorClient);
 
             server = new HttpServer(httpserverProperties, adminManager, authManager, streamRepository, timelineRepository, blacklistRepository, ruleRepository);
             server.start();
@@ -62,6 +64,14 @@ public class ManagementApiApplication {
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
+        }
+
+        try {
+            if (authManager != null) {
+                authManager.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
 
         try {

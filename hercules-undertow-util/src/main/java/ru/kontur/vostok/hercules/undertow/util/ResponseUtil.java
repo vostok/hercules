@@ -21,6 +21,11 @@ public class ResponseUtil {
         exchange.endExchange();
     }
 
+    public static void forbidden(HttpServerExchange exchange) {
+        exchange.setStatusCode(403);
+        exchange.endExchange();
+    }
+
     public static void notFound(HttpServerExchange exchange) {
         exchange.setStatusCode(404);
         exchange.endExchange();
@@ -28,6 +33,11 @@ public class ResponseUtil {
 
     public static void conflict(HttpServerExchange exchange) {
         exchange.setStatusCode(409);
+        exchange.endExchange();
+    }
+
+    public static void unprocessableEntity(HttpServerExchange exchange) {
+        exchange.setStatusCode(422);
         exchange.endExchange();
     }
 

@@ -48,6 +48,7 @@
         <module>hercules-cassandra-util</module>
         <module>hercules-management-api</module>
         <module>hercules-undertow-util</module>
+        <module>hercules-metrics</module>
         <module>hercules-gateway-client</module>
         <module>hercules-elastic-adapter</module>
         <module>hercules-logger-log4j</module>
@@ -109,6 +110,11 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-framework</artifactId>
+                <version>${curator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
                 <version>${curator.version}</version>
             </dependency>
 
@@ -226,6 +232,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-cassandra-util</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-metrics</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
             </dependency>
             <dependency>
