@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import ru.kontur.vostok.hercules.auth.Action;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
@@ -45,7 +45,15 @@ public class CreateTimelineHandler implements HttpHandler {
             try {
                 Timeline timeline = deserializer.readValue(bytes);
 
-                authManager.auth(apiKey, timeline.getName(), Action.MANAGE);
+                AuthResult authResult = authManager.authManage(apiKey, timeline.getName());
+                if (!authResult.isSuccess()) {
+                    if (authResult.isUnknown()) {
+                        ResponseUtil.unauthorized(exch);
+                        return;
+                    }
+                    ResponseUtil.forbidden(exch);
+                    return;
+                }
                 //TODO: Auth sources
 
                 CreationResult creationResult = repository.create(timeline);

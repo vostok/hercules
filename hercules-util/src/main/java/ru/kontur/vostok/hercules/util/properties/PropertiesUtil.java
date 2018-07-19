@@ -3,16 +3,9 @@ package ru.kontur.vostok.hercules.util.properties;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
 
 /**
  * @author Gregory Koshelev
@@ -37,6 +30,14 @@ public class PropertiesUtil {
             return defaultValue;
         }
         return Integer.parseInt(stringValue);
+    }
+
+    public static long get(Properties properties, String name, long defaultValue) {
+        String stringValue = properties.getProperty(name);
+        if (stringValue == null || stringValue.isEmpty()) {
+            return defaultValue;
+        }
+        return Long.parseLong(stringValue);
     }
 
     public static Set<String> toSet(Properties properties, String name) {
@@ -64,5 +65,17 @@ public class PropertiesUtil {
 
     public static Supplier<RuntimeException> missingPropertyError(String propertyName) {
         return () -> new RuntimeException(String.format("Missing required property '%s'", propertyName));
+    }
+
+    public static Properties subProperties(Properties properties, String prefix, char delimiter) {
+        Properties props = new Properties();
+        int prefixLength = prefix.length();
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+            String name = ((String) entry.getKey());
+            if (name.length() > prefixLength && name.startsWith(prefix) && name.charAt(prefixLength) == delimiter) {
+                props.setProperty(name.substring(prefixLength + 1), (String) entry.getValue());
+            }
+        }
+        return props;
     }
 }

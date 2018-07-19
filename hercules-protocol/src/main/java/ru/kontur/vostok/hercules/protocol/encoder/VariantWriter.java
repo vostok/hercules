@@ -6,17 +6,18 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
-import java.util.function.ToIntFunction;
 
+/**
+ * Hercules Protocol Writer for any variant data
+ */
 public class VariantWriter implements Writer<Variant> {
 
-    private interface ObjectWriter extends BiConsumer<Encoder, Object> {}
-
     public static final VariantWriter INSTANCE = new VariantWriter();
-
     public static final ContainerWriter containerWriter = ContainerWriter.INSTANCE;
-    
+    public static final ContainerArrayWriter containerArrayWriter = ContainerArrayWriter.INSTANCE;
+    public static final ContainerVectorWriter containerVectorWriter = ContainerVectorWriter.INSTANCE;
     private static final ObjectWriter[] writers = new ObjectWriter[256];
+
     static {
         Arrays.setAll(writers, idx -> (e, v) -> {
             throw new IllegalArgumentException("Unsupported type with code " + idx);
@@ -33,6 +34,7 @@ public class VariantWriter implements Writer<Variant> {
         writers[Type.STRING.code] = VariantWriter::writeString;
         writers[Type.TEXT.code] = VariantWriter::writeText;
 
+        writers[Type.CONTAINER_VECTOR.code] = VariantWriter::writeContainerVector;
         writers[Type.BYTE_VECTOR.code] = VariantWriter::writeByteVector;
         writers[Type.SHORT_VECTOR.code] = VariantWriter::writeShortVector;
         writers[Type.INTEGER_VECTOR.code] = VariantWriter::writeIntegerVector;
@@ -43,6 +45,7 @@ public class VariantWriter implements Writer<Variant> {
         writers[Type.STRING_VECTOR.code] = VariantWriter::writeStringVector;
         writers[Type.TEXT_VECTOR.code] = VariantWriter::writeTextVector;
 
+        writers[Type.CONTAINER_ARRAY.code] = VariantWriter::writeContainerArray;
         writers[Type.BYTE_ARRAY.code] = VariantWriter::writeByteArray;
         writers[Type.SHORT_ARRAY.code] = VariantWriter::writeShortArray;
         writers[Type.INTEGER_ARRAY.code] = VariantWriter::writeIntegerArray;
@@ -52,12 +55,6 @@ public class VariantWriter implements Writer<Variant> {
         writers[Type.DOUBLE_ARRAY.code] = VariantWriter::writeDoubleArray;
         writers[Type.STRING_ARRAY.code] = VariantWriter::writeStringArray;
         writers[Type.TEXT_ARRAY.code] = VariantWriter::writeTextArray;
-    }
-
-    @Override
-    public void write(Encoder encoder, Variant variant) {
-        encoder.writeByte(variant.getType().code);
-        writers[variant.getType().code].accept(encoder, variant.getValue());
     }
 
     private static void writeContainer(Encoder encoder, Object value) {
@@ -101,6 +98,12 @@ public class VariantWriter implements Writer<Variant> {
         encoder.writeBytesAsText((byte[]) value);
     }
 
+    private static void writeContainerVector(Encoder encoder, Object value) {
+        Container[] containers = (Container[]) value;
+
+        containerVectorWriter.write(encoder, containers);
+    }
+
     private static void writeByteVector(Encoder encoder, Object value) {
         encoder.writeByteVector((byte[]) value);
     }
@@ -137,6 +140,12 @@ public class VariantWriter implements Writer<Variant> {
         encoder.writeBytesAsTextVector((byte[][]) value);
     }
 
+    private static void writeContainerArray(Encoder encoder, Object value) {
+        Container[] containers = (Container[]) value;
+
+        containerArrayWriter.write(encoder, containers);
+    }
+
     private static void writeByteArray(Encoder encoder, Object value) {
         encoder.writeByteArray((byte[]) value);
     }
@@ -171,5 +180,20 @@ public class VariantWriter implements Writer<Variant> {
 
     private static void writeTextArray(Encoder encoder, Object value) {
         encoder.writeBytesAsTextArray((byte[][]) value);
+    }
+
+    /**
+     * Hercules Protocol Write variant with encoder
+     *
+     * @param encoder Encoder for write data
+     * @param variant Variant which must be written
+     */
+    @Override
+    public void write(Encoder encoder, Variant variant) {
+        encoder.writeByte(variant.getType().code);
+        writers[variant.getType().code].accept(encoder, variant.getValue());
+    }
+
+    private interface ObjectWriter extends BiConsumer<Encoder, Object> {
     }
 }

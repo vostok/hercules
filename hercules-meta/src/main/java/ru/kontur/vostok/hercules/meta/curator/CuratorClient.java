@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.meta.curator;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
@@ -44,6 +45,10 @@ public class CuratorClient {
     public List<String> children(String path) throws Exception {
         List<String> children = curatorFramework.getChildren().forPath(path);
         return children;
+    }
+
+    public List<String> children(String path, CuratorWatcher watcher) throws Exception {
+        return curatorFramework.getChildren().usingWatcher(watcher).forPath(path);
     }
 
     public void createIfAbsent(String path) throws Exception {

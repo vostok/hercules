@@ -20,6 +20,10 @@ public class AuthResult {
         return status == AuthStatus.UNKNOWN;
     }
 
+    public boolean isDenied() {
+        return status == AuthStatus.DENIED;
+    }
+
     public String getMessage() {
         return message;
     }
