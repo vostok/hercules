@@ -22,7 +22,7 @@ import java.io.IOException;
  */
 public class GatewayClient implements Closeable {
     private static final int TIMEOUT = 3000;
-    private static final int COUNT_CONNECTION = 1000;
+    private static final int CONNECTION_COUNT = 1000;
 
     private static final String PING = "/ping";
     private static final String SEND_ACK = "/stream/send";
@@ -124,8 +124,8 @@ public class GatewayClient implements Closeable {
         return HttpClientBuilder
                 .create()
                 .setDefaultRequestConfig(requestConfig)
-                .setMaxConnPerRoute(COUNT_CONNECTION)
-                .setMaxConnTotal(COUNT_CONNECTION)
+                .setMaxConnPerRoute(CONNECTION_COUNT)
+                .setMaxConnTotal(CONNECTION_COUNT)
                 .build();
     }
 }
