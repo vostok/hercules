@@ -41,6 +41,7 @@ public class ManagementApiApplication {
             AdminManager adminManager = new AdminManager(PropertiesUtil.toSet(applicationProperties, "keys"));
 
             authManager = new AuthManager(curatorClient);
+            authManager.start();
 
             server = new HttpServer(httpserverProperties, adminManager, authManager, streamRepository, timelineRepository, blacklistRepository, ruleRepository);
             server.start();
