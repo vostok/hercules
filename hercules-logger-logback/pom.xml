@@ -24,6 +24,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-gateway-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-logger-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>ch.qos.logback</groupId>

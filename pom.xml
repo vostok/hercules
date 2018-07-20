@@ -28,6 +28,7 @@
         <httpclient.verstion>4.5.3</httpclient.verstion>
         <log4j.verstion>2.11.0</log4j.verstion>
         <logback.version>1.2.3</logback.version>
+        <jetbrains.annotations>16.0.2</jetbrains.annotations>
     </properties>
 
     <modules>
@@ -53,10 +54,18 @@
         <module>hercules-elastic-adapter</module>
         <module>hercules-logger-log4j</module>
         <module>hercules-logger-logback</module>
+        <module>hercules-logger-core</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Jetbrains Annotations -->
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${jetbrains.annotations}</version>
+            </dependency>
+
             <!-- Logging libraries -->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -252,6 +261,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-logger-logback</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-logger-core</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
             </dependency>
 

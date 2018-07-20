@@ -30,8 +30,10 @@ public class LogbackToEventConverterTest {
     private final Event eventWithoutException = buildEvent(createContextWithoutException());
     private final Event eventWithException = buildEvent(createContextWithException());
     private final Event eventWithTwoExceptions = buildEvent(createContextWithTwoExceptions());
+    private final Event eventWithMeta = buildEvent(createContextWithMeta());
 
     private final ILoggingEvent logEventWithoutException = createLogEvent();
+    private final ILoggingEvent logEventWithMeta = createLogEvent(null, true);
     private final ILoggingEvent logEventWithException = createLogEvent(createThrowable(0));
     private final ILoggingEvent logEventWithTwoException = createLogEvent(createThrowable(0, createThrowable(1)));
 
@@ -56,7 +58,14 @@ public class LogbackToEventConverterTest {
         HerculesProtocolAssert.assertEquals(eventWithTwoExceptions, actual, false, false);
     }
 
-    private ILoggingEvent createLogEvent(Throwable throwable) {
+    @Test
+    public void shouldConvertWithMeta() {
+        Event actual = LogbackToEventConverter.createEvent(logEventWithMeta);
+
+        HerculesProtocolAssert.assertEquals(eventWithMeta, actual, false, false);
+    }
+
+    private ILoggingEvent createLogEvent(Throwable throwable, boolean withMeta) {
         LoggingEvent loggingEvent = new LoggingEvent();
 
         loggingEvent.setLevel(Level.INFO);
@@ -66,7 +75,20 @@ public class LogbackToEventConverterTest {
             loggingEvent.setThrowableProxy(new ThrowableProxy(throwable));
         }
 
+        if (withMeta) {
+            Map<String, String> map = new HashMap<>();
+            map.put("meta-1", "meta-1");
+            map.put("meta-2", "meta-2");
+            map.put("meta-3", "meta-3");
+
+            loggingEvent.setMDCPropertyMap(map);
+        }
+
         return loggingEvent;
+    }
+
+    private ILoggingEvent createLogEvent(Throwable throwable) {
+        return createLogEvent(throwable, false);
     }
 
     private ILoggingEvent createLogEvent() {
@@ -77,6 +99,15 @@ public class LogbackToEventConverterTest {
         Map<String, Variant> map = new HashMap<>();
         map.put("level", Variant.ofString(Level.INFO.toString()));
         map.put("message", Variant.ofString(TEST_LOG_MESSAGE));
+
+        return map;
+    }
+
+    private Map<String, Variant> createContextWithMeta() {
+        Map<String, Variant> map = createContextWithoutException();
+        map.put("meta-1", Variant.ofString("meta-1"));
+        map.put("meta-2", Variant.ofString("meta-2"));
+        map.put("meta-3", Variant.ofString("meta-3"));
 
         return map;
     }

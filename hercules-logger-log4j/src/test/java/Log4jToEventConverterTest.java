@@ -2,6 +2,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.message.SimpleMessage;
+import org.apache.logging.log4j.util.SortedArrayStringMap;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.logger.log4j.util.Log4jToEventConverter;
 import ru.kontur.vostok.hercules.protocol.Container;
@@ -30,8 +31,10 @@ public class Log4jToEventConverterTest {
     private final Event eventWithoutException = buildEvent(createContextWithoutException());
     private final Event eventWithException = buildEvent(createContextWithException());
     private final Event eventWithTwoExceptions = buildEvent(createContextWithTwoExceptions());
+    private final Event eventWithMeta = buildEvent(createContextWithMeta());
 
     private final LogEvent logEventWithoutException = createLogEvent();
+    private final LogEvent logEventWithMeta = createLogEvent(null, true);
     private final LogEvent logEventWithException = createLogEvent(createThrowable(0));
     private final LogEvent logEventWithTwoException = createLogEvent(createThrowable(0, createThrowable(1)));
 
@@ -56,7 +59,14 @@ public class Log4jToEventConverterTest {
         HerculesProtocolAssert.assertEquals(eventWithTwoExceptions, actual, false, false);
     }
 
-    private LogEvent createLogEvent(Throwable throwable) {
+    @Test
+    public void shouldConvertWithMeta() {
+        Event actual = Log4jToEventConverter.createEvent(logEventWithMeta);
+
+        HerculesProtocolAssert.assertEquals(eventWithMeta, actual, false, false);
+    }
+
+    private LogEvent createLogEvent(Throwable throwable, boolean withMeta) {
         Log4jLogEvent.Builder builder = Log4jLogEvent
                 .newBuilder()
                 .setLevel(Level.INFO)
@@ -66,7 +76,20 @@ public class Log4jToEventConverterTest {
             builder.setThrown(throwable);
         }
 
+        if (withMeta) {
+            SortedArrayStringMap map = new SortedArrayStringMap();
+            map.putValue("meta-1", "meta-1");
+            map.putValue("meta-2", "meta-2");
+            map.putValue("meta-3", "meta-3");
+
+            builder.setContextData(map);
+        }
+
         return builder.build();
+    }
+
+    private LogEvent createLogEvent(Throwable throwable) {
+        return createLogEvent(throwable, false);
     }
 
     private LogEvent createLogEvent() {
@@ -86,6 +109,15 @@ public class Log4jToEventConverterTest {
         Container[] containers = new Container[]{createContainerFromThrowable(0)};
 
         map.put("exceptions", Variant.ofContainerArray(containers));
+
+        return map;
+    }
+
+    private Map<String, Variant> createContextWithMeta() {
+        Map<String, Variant> map = createContextWithoutException();
+        map.put("meta-1", Variant.ofString("meta-1"));
+        map.put("meta-2", Variant.ofString("meta-2"));
+        map.put("meta-3", Variant.ofString("meta-3"));
 
         return map;
     }
