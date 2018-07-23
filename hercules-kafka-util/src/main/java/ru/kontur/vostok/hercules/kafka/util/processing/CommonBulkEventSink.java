@@ -4,12 +4,17 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Serde;
-import ru.kontur.vostok.hercules.kafka.util.serialization.*;
+import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
+import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
+import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
+import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class CommonBulkEventSink {
