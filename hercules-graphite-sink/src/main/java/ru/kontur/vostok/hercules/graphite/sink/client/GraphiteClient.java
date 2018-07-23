@@ -1,9 +1,7 @@
 package ru.kontur.vostok.hercules.graphite.sink.client;
 
-import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.Socket;
 import java.util.List;
 import java.util.Locale;
@@ -25,9 +23,9 @@ public class GraphiteClient {
                 OutputStream stream = socket.getOutputStream();
                 PrintWriter writer = new PrintWriter(stream, true)
         ) {
-            for (Map.Entry<String, List<GraphiteMetric>> entry : metrics.getMetrics().entrySet()) {
+            for (Map.Entry<String, List<GraphiteMetricData>> entry : metrics.getMetrics().entrySet()) {
                 String metricName = entry.getKey();
-                for (GraphiteMetric graphiteMetric : entry.getValue()) {
+                for (GraphiteMetricData graphiteMetric : entry.getValue()) {
                     writer.printf(Locale.ENGLISH, "%s %f %d\n", metricName, graphiteMetric.getValue(), graphiteMetric.getTimestamp());
                 }
             }
