@@ -83,7 +83,7 @@ public class CuratorClient {
         }
     }
 
-    public void ensurePathExists(String path) throws Exception {
+    public void createPath(String path) throws Exception {
         List<String> segments = Arrays.stream(path.split("/"))
                 .filter(s -> Objects.nonNull(s) && !s.isEmpty())
                 .collect(Collectors.toList());
