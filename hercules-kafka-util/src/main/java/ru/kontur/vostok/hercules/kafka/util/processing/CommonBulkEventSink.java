@@ -3,14 +3,7 @@ package ru.kontur.vostok.hercules.kafka.util.processing;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.streams.Consumed;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import ru.kontur.vostok.hercules.kafka.util.serialization.*;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -18,13 +11,10 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class CommonBulkEventSink {
 
-    private static final String PUNCTUATION_INTERVAL = "punctuation.interval";
+    private static final String POLL_TIMEOUT = "poll.timeout";
     private static final String BATCH_SIZE = "batch.size";
 
     private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
@@ -46,8 +36,8 @@ public class CommonBulkEventSink {
         this.batchSize = PropertiesUtil.getAs(streamsProperties, BATCH_SIZE, Integer.class)
                 .orElseThrow(PropertiesUtil.missingPropertyError(BATCH_SIZE));
 
-        this.pollTimeout = PropertiesUtil.getAs(streamsProperties, PUNCTUATION_INTERVAL, Integer.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(PUNCTUATION_INTERVAL));
+        this.pollTimeout = PropertiesUtil.getAs(streamsProperties, POLL_TIMEOUT, Integer.class)
+                .orElseThrow(PropertiesUtil.missingPropertyError(POLL_TIMEOUT));
 
         streamsProperties.put("group.id", String.format(ID_TEMPLATE, destinationName, stream.getName()));
         streamsProperties.put("enable.auto.commit", false);
