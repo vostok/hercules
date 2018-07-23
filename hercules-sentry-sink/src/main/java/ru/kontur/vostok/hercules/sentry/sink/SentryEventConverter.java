@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Convert hercules event to sentry event builder
+ */
 public class SentryEventConverter {
 
     private static Optional<String> get(Variant variant) {
