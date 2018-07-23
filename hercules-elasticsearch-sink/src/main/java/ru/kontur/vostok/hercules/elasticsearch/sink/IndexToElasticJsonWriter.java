@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
-import java.util.TimeZone;
 
 public final class IndexToElasticJsonWriter {
 

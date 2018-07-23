@@ -8,7 +8,8 @@ import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class IndexToElasticJsonWriterTest {
 

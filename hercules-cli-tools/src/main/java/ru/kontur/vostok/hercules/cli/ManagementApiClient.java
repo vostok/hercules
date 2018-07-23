@@ -1,10 +1,8 @@
 package ru.kontur.vostok.hercules.cli;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
-import org.apache.http.HttpEntity;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
