@@ -31,6 +31,7 @@ public class SentryEventConverter {
         EventBuilder eventBuilder = new EventBuilder(event.getId());
         eventBuilder.withTimestamp(Date.from(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
+        // TODO: Implement transformation of stacktraces
         for (Map.Entry<String, Variant> entry : event) {
             String key = entry.getKey();
             if ("message".equals(key)) {
