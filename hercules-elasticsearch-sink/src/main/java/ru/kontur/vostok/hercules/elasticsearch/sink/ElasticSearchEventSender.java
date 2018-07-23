@@ -61,7 +61,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     private void writeEventRecords(OutputStream stream, Collection<Event> events) {
         toUnchecked(() -> {
             for (Event event : events) {
-                boolean result = IndexToElasticJsonWriter.writeIndex(stream, event);
+                boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
                 if (result) {
                     writeNewLine(stream);
                     EventToElasticJsonWriter.writeEvent(stream, event);

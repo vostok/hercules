@@ -4,7 +4,6 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
-import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
@@ -22,7 +21,7 @@ public class IndexToElasticJsonWriterTest {
         Event event = eventBuilder.build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        IndexToElasticJsonWriter.writeIndex(stream, event);
+        IndexToElasticJsonWriter.tryWriteIndex(stream, event);
 
         assertEquals("{\"index\":{\"_index\":\"just-some-index-value\",\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"}}", stream.toString());
     }
@@ -36,7 +35,7 @@ public class IndexToElasticJsonWriterTest {
         Event event = eventBuilder.build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        IndexToElasticJsonWriter.writeIndex(stream, event);
+        IndexToElasticJsonWriter.tryWriteIndex(stream, event);
 
         assertEquals("{\"index\":{\"_index\":\"awesome-project-production-1582.10.15\",\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"}}", stream.toString());
     }
@@ -48,7 +47,7 @@ public class IndexToElasticJsonWriterTest {
         Event event = eventBuilder.build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        boolean result = IndexToElasticJsonWriter.writeIndex(stream, event);
+        boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
 
         assertEquals("", stream.toString());
         assertFalse(result);
