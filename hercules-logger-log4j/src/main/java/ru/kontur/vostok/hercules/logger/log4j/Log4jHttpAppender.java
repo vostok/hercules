@@ -9,6 +9,7 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
+import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
 import ru.kontur.vostok.hercules.logger.log4j.util.Log4jToEventConverter;
 
 import java.io.Serializable;
@@ -20,44 +21,31 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Appender for log4j logger
+ *
  * @author Daniil Zhenikhov
  */
 @Plugin(name = "Log4jHttpAppender", category = "Core", elementType = "appender", printObject = true)
 public class Log4jHttpAppender extends AbstractAppender {
     private EventPublisher publisher;
+
     private Set<Thread> threadSet = new HashSet<>();
+    private EventPublisherFactory publisherFactory = new EventPublisherFactory();
+    private ThreadFactory threadFactory = r -> {
+        Thread thread = Executors.defaultThreadFactory().newThread(r);
+        thread.setDaemon(true);
+        threadSet.add(thread);
+        return thread;
+    };
 
     private Log4jHttpAppender(String name,
                               Filter filter,
                               Layout<? extends Serializable> layout,
 
-                              String url,
-                              String apiKey,
                               String stream,
-                              int batchSize,
-                              int capacity,
-                              long periodMillis,
-                              int threads,
                               boolean loseOnOverflow) {
         super(name, filter, layout);
 
-        ThreadFactory threadFactory = r -> {
-            Thread thread = Executors.defaultThreadFactory().newThread(r);
-            thread.setDaemon(true);
-            threadSet.add(thread);
-            return thread;
-        };
-
-        publisher = new EventPublisher(
-                stream,
-                periodMillis,
-                batchSize,
-                threads,
-                capacity,
-                loseOnOverflow,
-                threadFactory,
-                url,
-                apiKey);
+        publisher = publisherFactory.create(stream, loseOnOverflow, threadFactory);
         publisher.start();
     }
 
@@ -67,25 +55,9 @@ public class Log4jHttpAppender extends AbstractAppender {
             @PluginElement("Filter") final Filter filter,
             @PluginElement("Layout") Layout<? extends Serializable> layout,
 
-            @PluginAttribute("url") final String url,
-            @PluginAttribute("apiKey") final String apiKey,
             @PluginAttribute("stream") final String stream,
-            @PluginAttribute("batchSize") final int batchSize,
-            @PluginAttribute("capacity") final int capacity,
-            @PluginAttribute("periodMillis") final long periodMillis,
-            @PluginAttribute("threads") final int threads,
             @PluginAttribute("loseOnOverflow") final boolean loseOnOverflow
     ) {
-        if (url == null) {
-            LOGGER.error("Url is undefined");
-            return null;
-        }
-
-        if (apiKey == null) {
-            LOGGER.error("apiKey is undefined");
-            return null;
-        }
-
         if (stream == null) {
             LOGGER.error("stream is not chosen");
         }
@@ -95,13 +67,7 @@ public class Log4jHttpAppender extends AbstractAppender {
                 filter,
                 layout,
 
-                url,
-                apiKey,
                 stream,
-                batchSize,
-                capacity,
-                periodMillis,
-                threads,
                 loseOnOverflow
         );
     }

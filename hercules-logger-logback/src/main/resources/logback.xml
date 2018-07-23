@@ -12,15 +12,9 @@
         </filter>
     </appender>
 
-    <appender name="httpAppender" class="ru.kontur.vostok.hercules.gateway.client.appender.logback.LogbackHttpAppender">
+    <appender name="httpAppender" class="ru.kontur.vostok.hercules.logger.logback.LogbackHttpAppender">
         <Configuration class="ru.kontur.vostok.hercules.gateway.client.appender.logback.LogbackHttpConfiguration">
-            <url>http://localhost:6306</url>
-            <apiKey>anyApi-key123</apiKey>
             <stream>stream_test</stream>
-            <batchSize>100</batchSize>
-            <capacity>100000000</capacity>
-            <periodMillis>1000</periodMillis>
-            <threads>3</threads>
             <loseOnOverflow>false</loseOnOverflow>
         </Configuration>
     </appender>
