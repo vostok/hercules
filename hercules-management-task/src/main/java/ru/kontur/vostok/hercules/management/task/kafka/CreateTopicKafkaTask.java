@@ -11,6 +11,9 @@ public class CreateTopicKafkaTask extends KafkaTask {
         this.partitions = partitions;
     }
 
+    public CreateTopicKafkaTask() {
+    }
+
     public int getPartitions() {
         return partitions;
     }

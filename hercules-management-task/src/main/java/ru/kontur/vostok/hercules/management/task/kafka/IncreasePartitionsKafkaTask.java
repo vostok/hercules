@@ -11,6 +11,9 @@ public class IncreasePartitionsKafkaTask extends KafkaTask {
         this.newPartitions = newPartitions;
     }
 
+    public IncreasePartitionsKafkaTask() {
+    }
+
     public int getNewPartitions() {
         return newPartitions;
     }

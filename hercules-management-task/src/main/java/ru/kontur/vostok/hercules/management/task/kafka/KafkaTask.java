@@ -19,6 +19,9 @@ public abstract class KafkaTask {
         this.topic = topic;
     }
 
+    public KafkaTask() {
+    }
+
     public String getTopic() {
         return topic;
     }

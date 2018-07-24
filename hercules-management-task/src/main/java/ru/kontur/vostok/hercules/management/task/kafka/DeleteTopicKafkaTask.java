@@ -7,4 +7,7 @@ public class DeleteTopicKafkaTask extends KafkaTask {
     public DeleteTopicKafkaTask(String topic) {
         super(topic);
     }
+
+    public DeleteTopicKafkaTask() {
+    }
 }

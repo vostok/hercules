@@ -6,6 +6,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.management.task.kafka.CreateTopicKafkaTask;
 import ru.kontur.vostok.hercules.management.task.kafka.DeleteTopicKafkaTask;
 import ru.kontur.vostok.hercules.management.task.kafka.IncreasePartitionsKafkaTask;
@@ -41,7 +43,7 @@ public class KafkaManagerApplication {
 
             kafkaManager = new KafkaManager(kafkaProperties, PropertiesUtil.get(applicationProperties, "replicationFactor", (short) 1));
 
-            consumer = new KafkaConsumer<>(consumerProperties);
+            consumer = new KafkaConsumer<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer());
 
             final String topic = "hercules_management_kafka";
             ObjectMapper objectMapper = new ObjectMapper();
@@ -78,6 +80,9 @@ public class KafkaManagerApplication {
                     }
                 } catch (WakeupException e) {
                     // ignore for shutdown
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw e;
                 } finally {
                     consumer.close();
                 }
@@ -90,7 +95,7 @@ public class KafkaManagerApplication {
 
         Runtime.getRuntime().addShutdownHook(new Thread(KafkaManagerApplication::shutdown));
 
-        System.out.println("Cassandra Manager started for " + (System.currentTimeMillis() - start) + " millis");
+        System.out.println("Kafka Manager started for " + (System.currentTimeMillis() - start) + " millis");
     }
 
     private static void shutdown() {
@@ -128,6 +133,6 @@ public class KafkaManagerApplication {
             e.printStackTrace();//TODO: Process error
         }
 
-        System.out.println("Finished Cassandra Manager shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        System.out.println("Finished Kafka Manager shutdown for " + (System.currentTimeMillis() - start) + " millis");
     }
 }
