@@ -36,7 +36,6 @@ public class EventPublisherFactory {
             //TODO: remove extra param - loseOnOverflow
             return new EventPublisher(
                     PropertiesUtil.get(PROPERTIES, "threads", DEFAULT_THREADS_COUNT),
-                    false,
                     Executors.defaultThreadFactory(),
                     Collections.emptyList(),
                     PROPERTIES.getProperty("url"),
