@@ -18,7 +18,7 @@ public class LogEventBuilder {
     private static final UuidGenerator GENERATOR = UuidGenerator.getClientInstance();
 
     private final EventBuilder eventBuilder;
-    private final List<Container> containers;
+    private final List<Container> exceptionContainers;
 
     private boolean levelSet = false;
     private boolean messageSet = false;
@@ -28,7 +28,7 @@ public class LogEventBuilder {
         eventBuilder.setVersion(1);
         eventBuilder.setEventId(GENERATOR.next());
 
-        containers = new ArrayList<>();
+        exceptionContainers = new ArrayList<>();
     }
 
     public LogEventBuilder setLevel(String level) {
@@ -60,15 +60,15 @@ public class LogEventBuilder {
     public Event build() {
         requireFields();
 
-        if (!containers.isEmpty()) {
-            eventBuilder.setTag("exceptions", Variant.ofContainerArray(containers.toArray(new Container[containers.size()])));
+        if (!exceptionContainers.isEmpty()) {
+            eventBuilder.setTag("exceptions", Variant.ofContainerArray(exceptionContainers.toArray(new Container[exceptionContainers.size()])));
         }
 
         return eventBuilder.build();
     }
 
     void addException(Container container) {
-        containers.add(container);
+        exceptionContainers.add(container);
     }
 
     private void requireFields() {

@@ -48,11 +48,11 @@ public class Log4jToEventConverter {
                         .setFunction(stackTraceElement.getMethodName())
                         .setLine(stackTraceElement.getLineNumber())
                         .setSource(stackTraceElement.getClassName())
-                        .buildAndAdd();
+                        .endStackTraceElement();
             }
         }
 
-        exceptionBuilder.buildAndAdd();
+        exceptionBuilder.endException();
 
     }
 }

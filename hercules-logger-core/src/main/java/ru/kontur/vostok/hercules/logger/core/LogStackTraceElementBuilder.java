@@ -45,7 +45,7 @@ public class LogStackTraceElementBuilder {
      *
      * @return LogStackTraceElement parent builder
      */
-    public LogExceptionBuilder buildAndAdd() {
+    public LogExceptionBuilder endStackTraceElement() {
         requireFields();
 
         parent.addStackTraceElement(new Container(map));
@@ -53,10 +53,10 @@ public class LogStackTraceElementBuilder {
     }
 
     private void requireFields() {
-        if (!(map.containsKey("file")
-                && map.containsKey("line")
-                && map.containsKey("source")
-                && map.containsKey("function"))) {
+        if (!map.containsKey("file")
+                || !map.containsKey("line")
+                || !map.containsKey("source")
+                || !map.containsKey("function")) {
             throw new IllegalStateException("Require all fields to build LogStackTraceElement");
         }
     }

@@ -10,9 +10,12 @@ import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
+import ru.kontur.vostok.hercules.gateway.client.EventQueue;
 import ru.kontur.vostok.hercules.logger.log4j.util.Log4jToEventConverter;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -26,9 +29,10 @@ import java.util.concurrent.TimeUnit;
  */
 @Plugin(name = "Log4jHttpAppender", category = "Core", elementType = "appender", printObject = true)
 public class Log4jHttpAppender extends AbstractAppender {
+    private static final String QUEUE_NAME = "main";
+
     private EventPublisher publisher;
 
-    private Set<Thread> threadSet = new HashSet<>();
     private EventPublisherFactory publisherFactory = new EventPublisherFactory();
     private ThreadFactory threadFactory = r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
@@ -45,7 +49,12 @@ public class Log4jHttpAppender extends AbstractAppender {
                               boolean loseOnOverflow) {
         super(name, filter, layout);
 
-        publisher = publisherFactory.create(stream, loseOnOverflow, threadFactory);
+        publisher = new EventPublisher(
+                threads,
+                loseOnOverflow,
+                Collections.singletonList(new EventQueue(QUEUE_NAME, stream, periodMillis, capacity, batchSize)),
+                url,
+                apiKey);
         publisher.start();
     }
 
@@ -74,9 +83,8 @@ public class Log4jHttpAppender extends AbstractAppender {
 
     @Override
     public void append(LogEvent logEvent) {
-        if (!threadSet.contains(Thread.currentThread())) {
-            publisher.publish(Log4jToEventConverter.createEvent(logEvent));
-        }
+        publisher.publish(QUEUE_NAME, Log4jToEventConverter.createEvent(logEvent));
+
     }
 
     @Override

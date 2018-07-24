@@ -4,8 +4,10 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
+import ru.kontur.vostok.hercules.gateway.client.EventQueue;
 import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
@@ -16,30 +18,24 @@ import java.util.concurrent.ThreadFactory;
  * @author Daniil Zhenikhov
  */
 public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+    private static final String QUEUE_NAME = "main";
     private EventPublisher publisher;
     private LogbackHttpConfiguration configuration;
 
     private Set<Thread> threads = new HashSet<>();
     private EventPublisherFactory publisherFactory = new EventPublisherFactory();
     private ThreadFactory threadFactory = r -> {
-        Thread thread = new Thread(r);
-        thread.setDaemon(true);
-
-        String key = String.valueOf(thread.getId());
-        thread.setName(key);
-        threads.add(thread);
-
-        return thread;
-    };
 
     @Override
-    public void start() {
-        checkForNull();
-
-        publisher = publisherFactory.create(
-                configuration.getStream(),
+                configuration.getThreads(),
                 configuration.getLoseOnOverflow(),
-                threadFactory);
+                Collections.singletonList(new EventQueue(QUEUE_NAME,        publisher = publisherFactory.create(
+                        configuration.getStream(),
+                        configuration.getPeriodMillis(),
+                        configuration.getCapacity(),
+                        configuration.getBatchSize())),
+                configuration.getUrl(),
+                configuration.getApiKey());
         publisher.start();
         super.start();
     }
@@ -52,9 +48,7 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
 
     @Override
     protected void append(ILoggingEvent event) {
-        if (!threads.contains(Thread.currentThread())) {
-            publisher.publish(LogbackToEventConverter.createEvent(event));
-        }
+        publisher.publish(QUEUE_NAME, LogbackToEventConverter.createEvent(event));
     }
 
     public LogbackHttpConfiguration getConfiguration() {
@@ -70,6 +64,15 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
             throw new IllegalStateException("Stream is empty");
         }
 
+        if (configuration.getApiKey() == null) {
+            throw new IllegalStateException("ApiKey is empty");
+        }
+        if (configuration.getBatchSize() == null) {
+            throw new IllegalStateException("BatchSize is empty");
+        }
+        if (configuration.getCapacity() == null) {
+            throw new IllegalStateException("Capacity is empty");
+        }
         if (configuration.getLoseOnOverflow() == null) {
             throw new IllegalStateException("LoseOnOverflow is empty");
         }
