@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.logger.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import ru.kontur.vostok.hercules.gateway.client.ConfigurationConstants;
+import ru.kontur.vostok.hercules.gateway.client.DefaultConfigurationConstants;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
 import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
@@ -15,28 +15,28 @@ import java.util.Objects;
  * @author Daniil Zhenikhov
  */
 public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-    private EventPublisher publisher = EventPublisherFactory.create();
+    private EventPublisher publisher = EventPublisherFactory.getInstance();
     private LogbackHttpConfiguration configuration;
 
     @Override
     public void start() {
-        checkForNull();
+        checkForNull(configuration);
 
         publisher.register(
                 configuration.getName(),
                 configuration.getStream(),
                 Objects.nonNull(configuration.getPeriodMillis())
                         ? configuration.getPeriodMillis()
-                        : ConfigurationConstants.DEFAULT_PERIOD_MILLIS,
+                        : DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS,
                 Objects.nonNull(configuration.getCapacity())
                         ? configuration.getCapacity()
-                        : ConfigurationConstants.DEFAULT_CAPACITY,
+                        : DefaultConfigurationConstants.DEFAULT_CAPACITY,
                 Objects.nonNull(configuration.getBatchSize())
                         ? configuration.getBatchSize()
-                        : ConfigurationConstants.DEFAULT_BATCH_SIZE,
+                        : DefaultConfigurationConstants.DEFAULT_BATCH_SIZE,
                 Objects.nonNull(configuration.getLoseOnOverflow())
                         ? configuration.getLoseOnOverflow()
-                        : ConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW
+                        : DefaultConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW
         );
 
         publisher.start();
@@ -62,7 +62,7 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
         this.configuration = configuration;
     }
 
-    private void checkForNull() {
+    private static void checkForNull(LogbackHttpConfiguration configuration) {
         if (configuration.getStream() == null) {
             throw new IllegalStateException("Stream is empty");
         }

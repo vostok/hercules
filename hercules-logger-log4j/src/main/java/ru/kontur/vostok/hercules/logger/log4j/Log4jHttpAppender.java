@@ -8,7 +8,7 @@ import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
-import ru.kontur.vostok.hercules.gateway.client.ConfigurationConstants;
+import ru.kontur.vostok.hercules.gateway.client.DefaultConfigurationConstants;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
 import ru.kontur.vostok.hercules.logger.log4j.util.Log4jToEventConverter;
@@ -41,7 +41,7 @@ public class Log4jHttpAppender extends AbstractAppender {
 
         this.queueName = queueName;
 
-        publisher = EventPublisherFactory.create();
+        publisher = EventPublisherFactory.getInstance();
         publisher.register(queueName, stream, periodMillis, capacity, batchSize, loseOnOverflow);
         publisher.start();
     }
@@ -74,10 +74,10 @@ public class Log4jHttpAppender extends AbstractAppender {
 
                 stream,
                 queueName,
-                Objects.nonNull(loseOnOverflow) ? loseOnOverflow : ConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW,
-                Objects.nonNull(periodMillis) ? periodMillis : ConfigurationConstants.DEFAULT_PERIOD_MILLIS,
-                Objects.nonNull(batchSize) ? batchSize : ConfigurationConstants.DEFAULT_BATCH_SIZE,
-                Objects.nonNull(capacity) ? capacity : ConfigurationConstants.DEFAULT_CAPACITY
+                Objects.nonNull(loseOnOverflow) ? loseOnOverflow : DefaultConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW,
+                Objects.nonNull(periodMillis) ? periodMillis : DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS,
+                Objects.nonNull(batchSize) ? batchSize : DefaultConfigurationConstants.DEFAULT_BATCH_SIZE,
+                Objects.nonNull(capacity) ? capacity : DefaultConfigurationConstants.DEFAULT_CAPACITY
         );
     }
 
