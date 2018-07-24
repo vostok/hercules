@@ -4,10 +4,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author Gregory Koshelev
@@ -19,6 +23,19 @@ public class PropertiesUtil {
             return defaultValue;
         }
         return Short.parseShort(stringValue);
+    }
+
+
+    private static Map<Class<?>, Function<String, ?>> converters = new HashMap<>();
+    static {
+        converters.put(String.class, Function.identity());
+        converters.put(Integer.class, s -> {
+            try {
+                return Integer.valueOf(s);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        });
     }
 
     public static int get(Properties properties, String name, int defaultValue) {
@@ -40,7 +57,7 @@ public class PropertiesUtil {
     public static Set<String> toSet(Properties properties, String name) {
         String value = properties.getProperty(name, "");
         String[] split = value.split(",");
-        Set<String> set = new HashSet<String>(split.length);
+        Set<String> set = new HashSet<>(split.length);
         set.addAll(Arrays.asList(split));
         return set;
     }
@@ -55,11 +72,20 @@ public class PropertiesUtil {
         return properties;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> Optional<T> getAs(Properties properties, String name, Class<T> clazz) {
+        return Optional.ofNullable((T) converters.get(clazz).apply(properties.getProperty(name)));
+    }
+
+    public static Supplier<RuntimeException> missingPropertyError(String propertyName) {
+        return () -> new RuntimeException(String.format("Missing required property '%s'", propertyName));
+    }
+
     public static Properties subProperties(Properties properties, String prefix, char delimiter) {
         Properties props = new Properties();
         int prefixLength = prefix.length();
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-            String name = ((String)entry.getKey());
+            String name = ((String) entry.getKey());
             if (name.length() > prefixLength && name.startsWith(prefix) && name.charAt(prefixLength) == delimiter) {
                 props.setProperty(name.substring(prefixLength + 1), (String) entry.getValue());
             }

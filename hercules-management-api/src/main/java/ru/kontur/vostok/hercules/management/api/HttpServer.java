@@ -42,7 +42,7 @@ public class HttpServer {
             CassandraTaskQueue cassandraTaskQueue,
             KafkaTaskQueue kafkaTaskQueue) {
         String host = properties.getProperty("host", "0.0.0.0");
-        int port = PropertiesUtil.get(properties, "port", 6307);
+        int port = PropertiesUtil.get(properties, "port", 6309);
 
         CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository, kafkaTaskQueue);
         DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository, kafkaTaskQueue);

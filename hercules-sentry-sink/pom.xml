@@ -9,23 +9,29 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hercules-cli-tools</artifactId>
-
+    <artifactId>hercules-sentry-sink</artifactId>
     <dependencies>
 
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-protocol</artifactId>
+            <artifactId>hercules-meta</artifactId>
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-meta</artifactId>
+            <artifactId>hercules-kafka-util</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.mashape.unirest</groupId>
-            <artifactId>unirest-java</artifactId>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-streams</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry</artifactId>
         </dependency>
 
     </dependencies>
+
+
 </project>
