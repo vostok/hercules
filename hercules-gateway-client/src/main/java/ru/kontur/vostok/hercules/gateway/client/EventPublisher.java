@@ -23,6 +23,8 @@ public class EventPublisher {
     private final String apiKey;
 
     /**
+     * Note that <code>threadFactory</code> should create daemon-thread. It's needing for correct stopping.
+     *
      * @param threads        count of worker-threads
      * @param threadFactory  factory for worker-threads
      * @param url            url where events should be sent
@@ -38,14 +40,6 @@ public class EventPublisher {
         this.url = url;
         this.apiKey = apiKey;
         this.executor = new ScheduledThreadPoolExecutor(threads, threadFactory);
-    }
-
-    public EventPublisher(int threads,
-                          boolean loseOnOverflow,
-                          List<EventQueue> queues,
-                          String url,
-                          String apiKey) {
-        this(threads, Executors.defaultThreadFactory(), queues, url, apiKey);
     }
 
     public void start() {
