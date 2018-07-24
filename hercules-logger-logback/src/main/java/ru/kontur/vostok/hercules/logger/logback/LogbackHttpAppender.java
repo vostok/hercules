@@ -3,8 +3,10 @@ package ru.kontur.vostok.hercules.logger.logback;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
+import ru.kontur.vostok.hercules.gateway.client.EventQueue;
 import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
@@ -15,34 +17,22 @@ import java.util.concurrent.ThreadFactory;
  * @author Daniil Zhenikhov
  */
 public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+    private static final String QUEUE_NAME = "main";
     private LogbackHttpConfiguration configuration;
-    private Set<Thread> threads;
     private EventPublisher publisher;
 
     @Override
     public void start() {
         checkForNull();
-        threads = new HashSet<>();
-
-        ThreadFactory threadFactory = r -> {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-
-            String key = String.valueOf(thread.getId());
-            thread.setName(key);
-            threads.add(thread);
-
-            return thread;
-        };
 
         publisher = new EventPublisher(
-                configuration.getStream(),
-                configuration.getPeriodMillis(),
-                configuration.getBatchSize(),
                 configuration.getThreads(),
-                configuration.getCapacity(),
                 configuration.getLoseOnOverflow(),
-                threadFactory,
+                Collections.singletonList(new EventQueue(QUEUE_NAME,
+                        configuration.getStream(),
+                        configuration.getPeriodMillis(),
+                        configuration.getCapacity(),
+                        configuration.getBatchSize())),
                 configuration.getUrl(),
                 configuration.getApiKey());
         publisher.start();
@@ -57,9 +47,7 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
 
     @Override
     protected void append(ILoggingEvent event) {
-        if (!threads.contains(Thread.currentThread())) {
-            publisher.publish(LogbackToEventConverter.createEvent(event));
-        }
+        publisher.publish(QUEUE_NAME, LogbackToEventConverter.createEvent(event));
     }
 
     public LogbackHttpConfiguration getConfiguration() {

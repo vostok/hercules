@@ -57,10 +57,10 @@ public class LogbackToEventConverter {
                         .setFunction(stackTraceElement.getMethodName())
                         .setLine(stackTraceElement.getLineNumber())
                         .setSource(stackTraceElement.getClassName())
-                        .buildAndAdd();
+                        .endStackTraceElement();
             }
         }
-        exceptionBuilder.buildAndAdd();
+        exceptionBuilder.endException();
 
     }
 }

@@ -14,14 +14,16 @@ import java.util.Map;
  * @author Daniil Zhenikhov
  */
 public class LogExceptionBuilder {
+    private static final int DEFAULT_CAPACITY = 100;
+
     private final LogEventBuilder parent;
     private final Map<String, Variant> map;
-    private final List<Container> containers;
+    private final List<Container> stackTraceElementContainers;
 
     LogExceptionBuilder(LogEventBuilder parent) {
         this.parent = parent;
         this.map = new HashMap<>();
-        containers = new ArrayList<>();
+        stackTraceElementContainers = new ArrayList<>(DEFAULT_CAPACITY);
     }
 
     public LogExceptionBuilder setType(String type) {
@@ -53,11 +55,11 @@ public class LogExceptionBuilder {
      *
      * @return LogEvent parent builder
      */
-    public LogEventBuilder buildAndAdd() {
+    public LogEventBuilder endException() {
         requireFields();
 
-        if (!containers.isEmpty()) {
-            map.put("stacktrace", Variant.ofContainerArray(containers.toArray(new Container[containers.size()])));
+        if (!stackTraceElementContainers.isEmpty()) {
+            map.put("stacktrace", Variant.ofContainerArray(stackTraceElementContainers.toArray(new Container[stackTraceElementContainers.size()])));
         }
 
         parent.addException(new Container(map));
@@ -65,13 +67,13 @@ public class LogExceptionBuilder {
     }
 
     void addStackTraceElement(Container container) {
-        containers.add(container);
+        stackTraceElementContainers.add(container);
     }
 
     private void requireFields() {
-        if (!(map.containsKey("type")
-                && map.containsKey("message")
-                && map.containsKey("module"))) {
+        if (!map.containsKey("type")
+                || !map.containsKey("message")
+                || !map.containsKey("module")) {
             throw new IllegalStateException("Require all fields to build LogException");
         }
     }

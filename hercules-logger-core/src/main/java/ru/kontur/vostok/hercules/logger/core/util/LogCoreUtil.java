@@ -12,11 +12,11 @@ public final class LogCoreUtil {
      *
      * @param exception Top exception
      */
-    public static <TException> void consumeExceptionsChain(
-            TException exception,
-            Consumer<TException> consumer,
-            Function<TException, TException> getCauseFunction) {
-        TException currentException = exception;
+    public static <E> void consumeExceptionsChain(
+            E exception,
+            Consumer<E> consumer,
+            Function<E, E> getCauseFunction) {
+        E currentException = exception;
 
         while (currentException != null) {
             consumer.accept(currentException);
