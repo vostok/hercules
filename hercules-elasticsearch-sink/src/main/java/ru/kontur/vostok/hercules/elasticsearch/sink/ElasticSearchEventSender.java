@@ -5,20 +5,20 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkProcessor;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.util.TagExtractor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Properties;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-public class ElasticSearchEventSender implements AutoCloseable {
+public class ElasticSearchEventSender implements BulkSender<Event> {
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
@@ -31,7 +31,8 @@ public class ElasticSearchEventSender implements AutoCloseable {
         this.indexName = elasticsearchProperties.getProperty("index.name");
     }
 
-    public void send(Collection<BulkProcessor.Entry<UUID, Event>> events) {
+    @Override
+    public void accept(Collection<Event> events) {
         if (events.size() == 0) {
             return;
         }
@@ -59,18 +60,19 @@ public class ElasticSearchEventSender implements AutoCloseable {
         restClient.close();
     }
 
-    private void writeEventRecords(OutputStream stream, Collection<BulkProcessor.Entry<UUID, Event>> events) {
+
+    private void writeEventRecords(OutputStream stream, Collection<Event> events) {
         toUnchecked(() -> {
-            for (BulkProcessor.Entry<UUID, Event> entry : events) {
-                boolean result = IndexToElasticJsonWriter.writeIndex(stream, entry.getValue());
+            for (Event event : events) {
+                boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
                 if (result) {
                     writeNewLine(stream);
-                    EventToElasticJsonWriter.writeEvent(stream, entry.getValue());
+                    EventToElasticJsonWriter.writeEvent(stream, event);
                     writeNewLine(stream);
                 }
                 else {
                     // TODO: Add logging
-                    System.out.println(String.format("Cannot process event '%s' because of missing index data", entry.getValue().getId()));
+                    System.out.println(String.format("Cannot process event '%s' because of missing index data", event.getId()));
                 }
             }
         });

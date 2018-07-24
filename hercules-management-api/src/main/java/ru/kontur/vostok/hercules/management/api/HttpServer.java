@@ -31,7 +31,7 @@ public class HttpServer {
 
     public HttpServer(Properties properties, AdminManager adminManager, AuthManager authManager, StreamRepository streamRepository, TimelineRepository timelineRepository, BlacklistRepository blacklistRepository, RuleRepository ruleRepository) {
         String host = properties.getProperty("host", "0.0.0.0");
-        int port = PropertiesUtil.get(properties, "port", 6307);
+        int port = PropertiesUtil.get(properties, "port", 6309);
 
         CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository);
         DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository);

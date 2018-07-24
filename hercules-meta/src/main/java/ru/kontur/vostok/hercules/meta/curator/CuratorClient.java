@@ -8,9 +8,12 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * @author Gregory Koshelev
@@ -81,6 +84,22 @@ public class CuratorClient {
         } catch (Exception ex) {
             ex.printStackTrace();
             return DeletionResult.unknown();
+        }
+    }
+
+    public void createPath(String path) throws Exception {
+        List<String> segments = Arrays.stream(path.split("/"))
+                .filter(s -> Objects.nonNull(s) && !s.isEmpty())
+                .collect(Collectors.toList());
+
+        StringBuilder builder = new StringBuilder(path.length());
+        for (String segment : segments) {
+            builder.append('/').append(segment);
+            String partialPath = builder.toString();
+            Stat stat = curatorFramework.checkExists().forPath(partialPath);
+            if (Objects.isNull(stat)) {
+                curatorFramework.create().forPath(partialPath);
+            }
         }
     }
 
