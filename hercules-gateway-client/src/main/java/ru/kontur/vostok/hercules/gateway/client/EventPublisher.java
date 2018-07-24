@@ -19,7 +19,6 @@ public class EventPublisher {
     private final GatewayClient gatewayClient = new GatewayClient();
 
     private final ScheduledThreadPoolExecutor executor;
-    private final boolean loseOnOverflow;
     private final String url;
     private final String apiKey;
 
@@ -41,7 +40,6 @@ public class EventPublisher {
         this.url = url;
         this.apiKey = apiKey;
         this.executor = new ScheduledThreadPoolExecutor(threads, threadFactory);
-        this.loseOnOverflow = loseOnOverflow;
     }
 
     public EventPublisher(int threads,
@@ -63,8 +61,13 @@ public class EventPublisher {
         startQueueWorker(eventQueue);
     }
 
-    public void register(String name, String stream, long periodMillis, int capacity, int batchSize) {
-        register(new EventQueue(name, stream, periodMillis, capacity, batchSize));
+    public void register(String name,
+                         String stream,
+                         long periodMillis,
+                         int capacity,
+                         int batchSize,
+                         boolean loseOnOverflow) {
+        register(new EventQueue(name, stream, periodMillis, capacity, batchSize, loseOnOverflow));
     }
 
     public void registerAll(Collection<EventQueue> eventQueues) {
@@ -103,7 +106,7 @@ public class EventPublisher {
                 }
             }
         } catch (IllegalStateException e) {
-            if (loseOnOverflow) {
+            if (eventQueue.isLoseOnOverflow()) {
                 return;
             }
 
