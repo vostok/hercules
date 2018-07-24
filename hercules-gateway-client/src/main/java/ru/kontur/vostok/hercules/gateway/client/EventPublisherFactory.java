@@ -1,72 +1,60 @@
 package ru.kontur.vostok.hercules.gateway.client;
 
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.Executors;
 
 /**
  * @author Daniil Zhenikhov
  */
 public class EventPublisherFactory {
-    private static final String RESOURCE = "gateway-client.properties";
+    private static final int DEFAULT_THREADS_COUNT = 3;
+    private static final String DEFAULT_RESOURCE_NAME = "gateway-client.properties";
     private static final Properties PROPERTIES = new Properties();
-    private static final EventPublisherConfigurationFactory CONFIGURATION_FACTORY
-            = new EventPublisherConfigurationFactory();
-    private static final EventPublisherConfiguration PROPERTIES_CONFIGURATION;
+
+    private static EventPublisher INSTANCE;
 
     static {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        try (InputStream stream = loader.getResourceAsStream(RESOURCE)) {
-            if (stream != null) {
-                PROPERTIES.load(stream);
-
-                EventPublisherConfigurationFactory.checkRequiredFields(PROPERTIES);
-            }
+        String filename = System.getProperty("gateway.client.config", DEFAULT_RESOURCE_NAME);
+        try {
+            FileInputStream fileInputStream = new FileInputStream(filename);
+            PROPERTIES.load(fileInputStream);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-
-        PROPERTIES_CONFIGURATION = PROPERTIES.isEmpty() ? null : CONFIGURATION_FACTORY.create(PROPERTIES);
     }
 
-    public EventPublisher create(String stream,
-                                 boolean loseOnOverflow,
-                                 ThreadFactory threadFactory,
-                                 EventPublisherConfiguration configuration) {
-        return new EventPublisher(stream,
-                configuration.getPeriodMillis(),
-                configuration.getBatchSize(),
-                configuration.getThreads(),
-                configuration.getCapacity(),
-                loseOnOverflow,
-                threadFactory,
-                configuration.getUrl(),
-                configuration.getApiKey()
-        );
-    }
+    public static EventPublisher create() {
+        if (Objects.isNull(INSTANCE)) {
+            checkRequiredFields();
 
-    public EventPublisher create(String stream,
-                                 boolean loseOnOverflow,
-                                 ThreadFactory threadFactory) {
-        if (PROPERTIES.isEmpty()) {
-            throw new IllegalStateException("Can not create EventPublisher. Properties file is not set.");
+            //TODO: remove extra param - loseOnOverflow
+            return new EventPublisher(
+                    PropertiesUtil.get(PROPERTIES, "threads", DEFAULT_THREADS_COUNT),
+                    false,
+                    Executors.defaultThreadFactory(),
+                    Collections.emptyList(),
+                    PROPERTIES.getProperty("url"),
+                    PROPERTIES.getProperty("apiKey")
+            );
+        } else {
+            return INSTANCE;
         }
-
-        return create(stream,
-                loseOnOverflow,
-                threadFactory,
-                PROPERTIES_CONFIGURATION);
     }
 
-    public EventPublisher create(String stream,
-                                 boolean loseOnOverFlow,
-                                 ThreadFactory threadFactory,
-                                 String url,
-                                 String apiKey) {
-        return create(stream,
-                loseOnOverFlow,
-                threadFactory,
-                CONFIGURATION_FACTORY.create(url, apiKey));
+    private static void checkRequiredFields() {
+        if (!EventPublisherFactory.PROPERTIES.containsKey("url")
+                || !EventPublisherFactory.PROPERTIES.containsKey("apiKey")) {
+            throw new IllegalArgumentException("Missing required property ('url', 'apiKey')");
+        }
+    }
+
+    private EventPublisherFactory() {
+
     }
 }

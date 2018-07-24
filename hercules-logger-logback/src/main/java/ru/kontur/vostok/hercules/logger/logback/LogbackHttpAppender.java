@@ -2,15 +2,12 @@ package ru.kontur.vostok.hercules.logger.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import ru.kontur.vostok.hercules.gateway.client.ConfigurationConstants;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
-import ru.kontur.vostok.hercules.gateway.client.EventQueue;
 import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ThreadFactory;
+import java.util.Objects;
 
 /**
  * Appender for logback logger
@@ -18,25 +15,30 @@ import java.util.concurrent.ThreadFactory;
  * @author Daniil Zhenikhov
  */
 public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-    private static final String QUEUE_NAME = "main";
-    private EventPublisher publisher;
+    private EventPublisher publisher = EventPublisherFactory.create();
     private LogbackHttpConfiguration configuration;
 
-    private Set<Thread> threads = new HashSet<>();
-    private EventPublisherFactory publisherFactory = new EventPublisherFactory();
-    private ThreadFactory threadFactory = r -> {
-
     @Override
-                configuration.getThreads(),
-                configuration.getLoseOnOverflow(),
-                Collections.singletonList(new EventQueue(QUEUE_NAME,        publisher = publisherFactory.create(
-                        configuration.getStream(),
-                        configuration.getPeriodMillis(),
-                        configuration.getCapacity(),
-                        configuration.getBatchSize(),
-                        configuration.getLoseOnOverflow())),
-                configuration.getUrl(),
-                configuration.getApiKey());
+    public void start() {
+        checkForNull();
+
+        publisher.register(
+                configuration.getName(),
+                configuration.getStream(),
+                Objects.nonNull(configuration.getPeriodMillis())
+                        ? configuration.getPeriodMillis()
+                        : ConfigurationConstants.DEFAULT_PERIOD_MILLIS,
+                Objects.nonNull(configuration.getCapacity())
+                        ? configuration.getCapacity()
+                        : ConfigurationConstants.DEFAULT_CAPACITY,
+                Objects.nonNull(configuration.getBatchSize())
+                        ? configuration.getBatchSize()
+                        : ConfigurationConstants.DEFAULT_BATCH_SIZE,
+                Objects.nonNull(configuration.getLoseOnOverflow())
+                        ? configuration.getLoseOnOverflow()
+                        : ConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW
+        );
+
         publisher.start();
         super.start();
     }
@@ -49,7 +51,7 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
 
     @Override
     protected void append(ILoggingEvent event) {
-        publisher.publish(QUEUE_NAME, LogbackToEventConverter.createEvent(event));
+        publisher.publish(configuration.getName(), LogbackToEventConverter.createEvent(event));
     }
 
     public LogbackHttpConfiguration getConfiguration() {
@@ -65,17 +67,8 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
             throw new IllegalStateException("Stream is empty");
         }
 
-        if (configuration.getApiKey() == null) {
-            throw new IllegalStateException("ApiKey is empty");
-        }
-        if (configuration.getBatchSize() == null) {
-            throw new IllegalStateException("BatchSize is empty");
-        }
-        if (configuration.getCapacity() == null) {
-            throw new IllegalStateException("Capacity is empty");
-        }
-        if (configuration.getLoseOnOverflow() == null) {
-            throw new IllegalStateException("LoseOnOverflow is empty");
+        if (configuration.getName() == null) {
+            throw new IllegalStateException("queue's name is empty");
         }
 
     }
