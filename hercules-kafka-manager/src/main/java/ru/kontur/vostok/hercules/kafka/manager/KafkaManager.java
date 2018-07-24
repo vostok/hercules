@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.management.api.kafka;
+package ru.kontur.vostok.hercules.kafka.manager;
 
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
@@ -16,18 +16,16 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class KafkaManager {
-    private final int replicationFactor;
-
     private final AdminClient adminClient;
+    private final short replicationFactor;
 
-    public KafkaManager(Properties properties, int replicationFactor) {
-        this.replicationFactor = replicationFactor;
-
+    public KafkaManager(Properties properties, short replicationFactor) {
         this.adminClient = AdminClient.create(properties);
+        this.replicationFactor = replicationFactor;
     }
 
     public void createTopic(String topic, int partitions) {
-        NewTopic newTopic = new NewTopic(topic, partitions, (short) 3);//TODO: Replicas assignment should be used
+        NewTopic newTopic = new NewTopic(topic, partitions, replicationFactor);//TODO: Replicas assignment should be used
         CreateTopicsResult result = adminClient.createTopics(Collections.singletonList(newTopic));
         Future<Void> future = result.values().get(topic);
         try {
@@ -61,7 +59,7 @@ public class KafkaManager {
         }
     }
 
-    public void stop(long duration, TimeUnit unit) {
+    public void close(long duration, TimeUnit unit) {
         adminClient.close(duration, unit);
     }
 }

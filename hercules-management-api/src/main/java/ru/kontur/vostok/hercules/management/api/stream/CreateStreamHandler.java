@@ -6,7 +6,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.management.api.kafka.KafkaManager;
+import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -22,14 +22,14 @@ import java.util.Optional;
 public class CreateStreamHandler implements HttpHandler {
     private final AuthManager authManager;
     private final StreamRepository repository;
-    private final KafkaManager kafkaManager;
+    private final KafkaTaskQueue kafkaTaskQueue;
 
     private final ObjectReader deserializer;
 
-    public CreateStreamHandler(AuthManager authManager, StreamRepository repository, KafkaManager kafkaManager) {
+    public CreateStreamHandler(AuthManager authManager, StreamRepository repository, KafkaTaskQueue kafkaTaskQueue) {
         this.authManager = authManager;
         this.repository = repository;
-        this.kafkaManager = kafkaManager;
+        this.kafkaTaskQueue = kafkaTaskQueue;
 
         ObjectMapper objectMapper = new ObjectMapper();
         this.deserializer = objectMapper.readerFor(Stream.class);
@@ -70,7 +70,7 @@ public class CreateStreamHandler implements HttpHandler {
                 }
 
                 // Create topic
-                kafkaManager.createTopic(stream.getName(), stream.getPartitions());
+                kafkaTaskQueue.createTopic(stream.getName(), stream.getPartitions());
             } catch (IOException e) {
                 e.printStackTrace();
                 ResponseUtil.badRequest(exch);

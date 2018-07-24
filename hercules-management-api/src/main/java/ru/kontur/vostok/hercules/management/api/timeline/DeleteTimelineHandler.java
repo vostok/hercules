@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.management.api.timeline;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
-import ru.kontur.vostok.hercules.management.api.cassandra.CassandraManager;
+import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
 import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
@@ -17,12 +17,12 @@ import java.util.Optional;
 public class DeleteTimelineHandler implements HttpHandler {
     private final AuthManager authManager;
     private final TimelineRepository repository;
-    private final CassandraManager cassandraManager;
+    private final CassandraTaskQueue cassandraTaskQueue;
 
-    public DeleteTimelineHandler(AuthManager authManager, TimelineRepository repository, CassandraManager cassandraManager) {
+    public DeleteTimelineHandler(AuthManager authManager, TimelineRepository repository, CassandraTaskQueue cassandraTaskQueue) {
         this.authManager = authManager;
         this.repository = repository;
-        this.cassandraManager = cassandraManager;
+        this.cassandraTaskQueue = cassandraTaskQueue;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class DeleteTimelineHandler implements HttpHandler {
         //TODO: auth
 
         // Delete table
-        cassandraManager.deleteTable(timeline);
+        cassandraTaskQueue.deleteTable(timeline);
 
         // Delete metadata
         DeletionResult deletionResult = repository.delete(timeline);

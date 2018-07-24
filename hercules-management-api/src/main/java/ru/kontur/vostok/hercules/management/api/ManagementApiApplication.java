@@ -1,9 +1,8 @@
 package ru.kontur.vostok.hercules.management.api;
 
 import ru.kontur.vostok.hercules.auth.AuthManager;
-import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
-import ru.kontur.vostok.hercules.management.api.cassandra.CassandraManager;
-import ru.kontur.vostok.hercules.management.api.kafka.KafkaManager;
+import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
+import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.meta.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.rule.RuleRepository;
@@ -23,8 +22,8 @@ public class ManagementApiApplication {
     private static HttpServer server;
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
-    private static CassandraConnector cassandraConnector;
-    private static KafkaManager kafkaManager;
+    private static CassandraTaskQueue cassandraTaskQueue;
+    private static KafkaTaskQueue kafkaTaskQueue;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -35,7 +34,6 @@ public class ManagementApiApplication {
             Properties httpserverProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
             Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
             Properties applicationProperties = PropertiesUtil.readProperties(parameters.getOrDefault("application.properties", "application.properties"));
-            Properties cassandraProperties = PropertiesUtil.readProperties(parameters.getOrDefault("cassandra.properties", "cassandra.properties"));
             Properties kafkaProperties = PropertiesUtil.readProperties(parameters.getOrDefault("kafka.properties", "kafka.properties"));
 
             curatorClient = new CuratorClient(curatorProperties);
@@ -51,15 +49,10 @@ public class ManagementApiApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            cassandraConnector = new CassandraConnector(cassandraProperties);
-            cassandraConnector.connect();
-            CassandraManager cassandraManager = new CassandraManager(cassandraConnector);
+            cassandraTaskQueue = new CassandraTaskQueue(kafkaProperties);
+            kafkaTaskQueue = new KafkaTaskQueue(kafkaProperties);
 
-            int replicationFactor = PropertiesUtil.get(applicationProperties, "replicationFactor", 1);
-
-            kafkaManager = new KafkaManager(kafkaProperties, replicationFactor);
-
-            server = new HttpServer(httpserverProperties, adminManager, authManager, streamRepository, timelineRepository, blacklistRepository, ruleRepository, cassandraManager, kafkaManager);
+            server = new HttpServer(httpserverProperties, adminManager, authManager, streamRepository, timelineRepository, blacklistRepository, ruleRepository, cassandraTaskQueue, kafkaTaskQueue);
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -100,16 +93,16 @@ public class ManagementApiApplication {
         }
 
         try {
-            if (cassandraConnector != null) {
-                cassandraConnector.close();
+            if (cassandraTaskQueue != null) {
+                cassandraTaskQueue.close(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
         }
 
         try {
-            if (kafkaManager != null) {
-                kafkaManager.stop(5000, TimeUnit.MILLISECONDS);
+            if (kafkaTaskQueue != null) {
+                kafkaTaskQueue.close(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error

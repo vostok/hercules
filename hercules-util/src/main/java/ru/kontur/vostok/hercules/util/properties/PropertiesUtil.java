@@ -13,6 +13,14 @@ import java.util.Set;
  * @author Gregory Koshelev
  */
 public class PropertiesUtil {
+    public static short get(Properties properties, String name, short defaultValue) {
+        String stringValue = properties.getProperty(name);
+        if (stringValue == null || stringValue.isEmpty()) {
+            return defaultValue;
+        }
+        return Short.parseShort(stringValue);
+    }
+
     public static int get(Properties properties, String name, int defaultValue) {
         String stringValue = properties.getProperty(name);
         if (stringValue == null || stringValue.isEmpty()) {

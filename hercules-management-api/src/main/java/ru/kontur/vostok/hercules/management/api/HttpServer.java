@@ -7,8 +7,8 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
-import ru.kontur.vostok.hercules.management.api.cassandra.CassandraManager;
-import ru.kontur.vostok.hercules.management.api.kafka.KafkaManager;
+import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
+import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
 import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
 import ru.kontur.vostok.hercules.management.api.stream.CreateStreamHandler;
@@ -39,17 +39,17 @@ public class HttpServer {
             TimelineRepository timelineRepository,
             BlacklistRepository blacklistRepository,
             RuleRepository ruleRepository,
-            CassandraManager cassandraManager,
-            KafkaManager kafkaManager) {
+            CassandraTaskQueue cassandraTaskQueue,
+            KafkaTaskQueue kafkaTaskQueue) {
         String host = properties.getProperty("host", "0.0.0.0");
         int port = PropertiesUtil.get(properties, "port", 6307);
 
-        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository, kafkaManager);
-        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository, kafkaManager);
+        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository, kafkaTaskQueue);
+        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository, kafkaTaskQueue);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
 
-        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineRepository, cassandraManager);
-        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineRepository, cassandraManager);
+        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
+        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
 
         SetRuleHandler setRuleHandler = new SetRuleHandler(adminManager, ruleRepository);

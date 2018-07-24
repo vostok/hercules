@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.management.api.cassandra;
+package ru.kontur.vostok.hercules.cassandra.manager;
 
 import com.datastax.driver.core.Session;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
