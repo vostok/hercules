@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.util.Collections;
 import java.util.Properties;
@@ -44,6 +45,10 @@ public class CommonBulkEventSink {
         this.pollTimeout = PropertiesUtil.getAs(streamsProperties, POLL_TIMEOUT, Integer.class)
                 .orElseThrow(PropertiesUtil.missingPropertyError(POLL_TIMEOUT));
 
+        if (pollTimeout < 0) {
+            throw new IllegalArgumentException("Poll timeout must be greater than 0");
+        }
+
         streamsProperties.put("group.id", String.format(ID_TEMPLATE, destinationName, stream.getName()));
         streamsProperties.put("enable.auto.commit", false);
         streamsProperties.put("max.poll.records", batchSize);
@@ -69,10 +74,12 @@ public class CommonBulkEventSink {
          * collected data. If the total count of polled records exceeded batchSize after the last poll extra records
          * will be saved in next record storage to process these records at the next step of iteration.
          */
+        Timer timer = new Timer(TimeUnit.MICROSECONDS, pollTimeout);
         while (running) {
-            int timeLeft = pollTimeout;
-            while (running && current.available() && 0 < timeLeft) {
-                long startTime = System.currentTimeMillis();
+            timer.reset().start();
+            long timeLeft = pollTimeout;
+
+            while (running && current.available() &&  0 <= timeLeft) {
                 ConsumerRecords<UUID, Event> poll = consumer.poll(timeLeft);
                 for (ConsumerRecord<UUID, Event> record : poll) {
                     if (current.available()) {
@@ -81,9 +88,7 @@ public class CommonBulkEventSink {
                         next.add(record);
                     }
                 }
-
-                int pollDuration = (int)(System.currentTimeMillis() - startTime);
-                timeLeft -= pollDuration;
+                timeLeft = timer.timeLeft();
             }
 
             eventSender.accept(current.getRecords());
