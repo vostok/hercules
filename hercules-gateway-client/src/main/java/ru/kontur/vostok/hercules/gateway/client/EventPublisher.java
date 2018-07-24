@@ -24,13 +24,11 @@ public class EventPublisher {
 
     /**
      * @param threads        count of worker-threads
-     * @param loseOnOverflow flag is it possible to lose events when the queue is full
      * @param threadFactory  factory for worker-threads
      * @param url            url where events should be sent
      * @param apiKey         api key for sending events
      */
     public EventPublisher(int threads,
-                          boolean loseOnOverflow,
                           ThreadFactory threadFactory,
                           List<EventQueue> queues,
                           String url,
@@ -47,7 +45,7 @@ public class EventPublisher {
                           List<EventQueue> queues,
                           String url,
                           String apiKey) {
-        this(threads, loseOnOverflow, Executors.defaultThreadFactory(), queues, url, apiKey);
+        this(threads, Executors.defaultThreadFactory(), queues, url, apiKey);
     }
 
     public void start() {
