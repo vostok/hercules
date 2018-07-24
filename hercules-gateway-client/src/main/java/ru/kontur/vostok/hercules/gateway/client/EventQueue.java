@@ -16,15 +16,22 @@ public class EventQueue {
     private final String stream;
     private final long periodMillis;
     private final int batchSize;
+    private final boolean loseOnOverflow;
 
     private final AtomicInteger currentBytesSize = new AtomicInteger();
 
 
-    public EventQueue(String name, String stream, long periodMillis, int capacity, int batchSize) {
+    public EventQueue(String name,
+                      String stream,
+                      long periodMillis,
+                      int capacity,
+                      int batchSize,
+                      boolean loseOnOverflow) {
         this.name = name;
         this.periodMillis = periodMillis;
         this.stream = stream;
         this.batchSize = batchSize;
+        this.loseOnOverflow = loseOnOverflow;
 
         this.blockingQueue = new ArrayBlockingQueue<>(capacity);
     }
@@ -69,5 +76,9 @@ public class EventQueue {
 
     public int getBatchSize() {
         return batchSize;
+    }
+
+    public boolean isLoseOnOverflow() {
+        return loseOnOverflow;
     }
 }

@@ -33,7 +33,8 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
                         configuration.getStream(),
                         configuration.getPeriodMillis(),
                         configuration.getCapacity(),
-                        configuration.getBatchSize())),
+                        configuration.getBatchSize(),
+                        configuration.getLoseOnOverflow())),
                 configuration.getUrl(),
                 configuration.getApiKey());
         publisher.start();
