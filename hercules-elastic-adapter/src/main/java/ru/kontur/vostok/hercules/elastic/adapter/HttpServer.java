@@ -13,16 +13,16 @@ public class HttpServer {
     private final Undertow undertow;
     private final GatewayClient client;
 
-    public HttpServer(String host, int port, String stream, String url) {
-        client = new GatewayClient();
-        HttpHandler logHandler = new ElasticAdapterHandler((apiKey, content) -> client.send(url, apiKey, stream, content));
-        HttpHandler asyncLogHandler = new ElasticAdapterHandler((apiKey, content) -> client.sendAsync(url, apiKey, stream, content));
+    public HttpServer(String host, int port, String stream, String url, String apiKey) {
+        this.client = new GatewayClient();
+        HttpHandler logHandler = new ElasticAdapterHandler((content) -> client.send(url, apiKey, stream, content));
+        HttpHandler asyncLogHandler = new ElasticAdapterHandler((content) -> client.sendAsync(url, apiKey, stream, content));
 
         HttpHandler handler = Handlers.routing()
                 .post("/logs/{index}", logHandler)
                 .post("/async-logs/{index}", asyncLogHandler);
 
-        undertow = Undertow
+        this.undertow = Undertow
                 .builder()
                 .addHttpListener(port, host)
                 .setHandler(new BlockingHandler(handler))

@@ -23,26 +23,25 @@ public class ElasticAdapterApplication {
     private static final String STREAM = "stream";
     private static final String HOST = "host";
     private static final String PORT = "port";
+    private static final String API_KEY = "apiKey";
 
     private final HttpServer httpServer;
 
-    //TODO: do trim operation
     public ElasticAdapterApplication(Properties properties) {
-        if (!properties.containsKey("url") || !properties.containsKey("stream")) {
-            throw new IllegalArgumentException("Missing required property ('url', 'stream')");
-        }
-
         String url = PropertiesUtil
-                .getAs(properties,"url", String.class)
+                .getAs(properties,URL, String.class)
                 .orElseThrow(PropertiesUtil.missingPropertyError(URL));
         String stream = PropertiesUtil
-                .getAs(properties, "stream", String.class)
+                .getAs(properties, STREAM, String.class)
                 .orElseThrow(PropertiesUtil.missingPropertyError(STREAM));
+        String apiKey = PropertiesUtil
+                .getAs(properties, API_KEY, String.class)
+                .orElseThrow(PropertiesUtil.missingPropertyError(API_KEY));
 
-        int port = PropertiesUtil.get(properties, "port", 6307);
-        String host = properties.getProperty("host", "0.0.0.0");
+        int port = PropertiesUtil.get(properties, PORT, 6307);
+        String host = properties.getProperty(HOST, "0.0.0.0");
 
-        httpServer = new HttpServer(host, port, stream, url);
+        httpServer = new HttpServer(host, port, stream, url, apiKey);
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
     }
