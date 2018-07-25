@@ -36,7 +36,7 @@ public class ManagementApiClient {
 
     private static void createStream(Stream stream) throws Exception {
         HttpResponse<String> response = Unirest.post(server + "/streams/create")
-                .header("apiKey", "dummy")
+                .header("apiKey", "test-admin")
                 .body(stream)
                 .asString();
 
