@@ -42,10 +42,9 @@ public class DeleteTimelineHandler implements HttpHandler {
 
         //TODO: auth
 
-        // Delete table
         cassandraTaskQueue.deleteTable(timeline);
 
-        // Delete metadata
+        //TODO: Meta deletion may fail after successful topic deletion (no atomicity at all).
         DeletionResult deletionResult = repository.delete(timeline);
         if (!deletionResult.isSuccess()) {
             switch (deletionResult.getStatus()) {

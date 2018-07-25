@@ -69,7 +69,7 @@ public class CreateStreamHandler implements HttpHandler {
                     return;
                 }
 
-                // Create topic
+                //TODO: Topic creation may fail after successful meta creation (no atomicity at all).
                 kafkaTaskQueue.createTopic(stream.getName(), stream.getPartitions());
             } catch (IOException e) {
                 e.printStackTrace();

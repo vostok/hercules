@@ -7,6 +7,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.management.task.TaskConstants;
 import ru.kontur.vostok.hercules.management.task.cassandra.CassandraTask;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -42,7 +43,7 @@ public class CassandraManagerApplication {
 
             consumer = new KafkaConsumer<>(consumerProperties);
 
-            final String topic = "hercules_management_kafka";
+            final String topic = TaskConstants.cassandraTaskTopic;
             ObjectMapper objectMapper = new ObjectMapper();
             final ObjectReader deserializer = objectMapper.readerFor(CassandraTask.class);
 

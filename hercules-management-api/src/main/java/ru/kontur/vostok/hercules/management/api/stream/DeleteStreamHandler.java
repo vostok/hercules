@@ -42,10 +42,9 @@ public class DeleteStreamHandler implements HttpHandler {
 
         //TODO: auth
 
-        // Delete topic
         kafkaTaskQueue.deleteTopic(stream);
 
-        // Delete metadata
+        //TODO: Meta deletion may fail after successful topic deletion (no atomicity at all).
         DeletionResult deletionResult = repository.delete(stream);
         if (!deletionResult.isSuccess()) {
             switch (deletionResult.getStatus()) {

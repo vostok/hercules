@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
+import ru.kontur.vostok.hercules.management.task.TaskConstants;
 import ru.kontur.vostok.hercules.management.task.kafka.CreateTopicKafkaTask;
 import ru.kontur.vostok.hercules.management.task.kafka.DeleteTopicKafkaTask;
 import ru.kontur.vostok.hercules.management.task.kafka.IncreasePartitionsKafkaTask;
@@ -45,7 +46,7 @@ public class KafkaManagerApplication {
 
             consumer = new KafkaConsumer<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer());
 
-            final String topic = "hercules_management_kafka";
+            final String topic = TaskConstants.kafkaTaskTopic;
             ObjectMapper objectMapper = new ObjectMapper();
             final ObjectReader deserializer = objectMapper.readerFor(KafkaTask.class);
 

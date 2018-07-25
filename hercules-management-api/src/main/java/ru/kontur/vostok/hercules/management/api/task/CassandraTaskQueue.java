@@ -8,6 +8,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidSerializer;
+import ru.kontur.vostok.hercules.management.task.TaskConstants;
 import ru.kontur.vostok.hercules.management.task.cassandra.CassandraTask;
 import ru.kontur.vostok.hercules.management.task.cassandra.CassandraTaskType;
 
@@ -46,7 +47,7 @@ public class CassandraTaskQueue {
     private void sendTask(CassandraTask task) {
         try {
             byte[] value = serializer.writeValueAsBytes(task);
-            ProducerRecord<Void, byte[]> record = new ProducerRecord<>("hercules_management_cassandra", value);
+            ProducerRecord<Void, byte[]> record = new ProducerRecord<>(TaskConstants.cassandraTaskTopic, value);
             Future<RecordMetadata> result = producer.send(record);
             result.get(5_000, TimeUnit.MILLISECONDS);
         } catch (JsonProcessingException | InterruptedException | ExecutionException | TimeoutException e) {

@@ -69,7 +69,7 @@ public class CreateTimelineHandler implements HttpHandler {
                     return;
                 }
 
-                // Create table
+                //TODO: Table creation may fail after successful meta creation (no atomicity at all).
                 cassandraTaskQueue.createTable(timeline.getName());
             } catch (IOException e) {
                 e.printStackTrace();
