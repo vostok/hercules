@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
 import io.sentry.event.EventBuilder;
+import io.sentry.event.Sdk;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
@@ -17,6 +18,10 @@ import java.util.Optional;
  */
 public class SentryEventConverter {
 
+    private static final String SDK_NAME = "hercules-sentry-sink";
+    private static final String SDK_VERSION = Optional.ofNullable(SentryEventConverter.class.getPackage().getImplementationVersion()).orElse("UNKNOWN");
+    private static final Sdk SDK = new Sdk(SDK_NAME, SDK_VERSION, null);
+
     private static Optional<String> get(Variant variant) {
         if (Objects.isNull(variant) || (variant.getType() != Type.TEXT && variant.getType() != Type.STRING)) {
             return Optional.empty();
@@ -25,8 +30,7 @@ public class SentryEventConverter {
         }
     }
 
-    public static EventBuilder convert(Event event) {
-
+    public static io.sentry.event.Event convert(Event event) {
 
         EventBuilder eventBuilder = new EventBuilder(event.getId());
         eventBuilder.withTimestamp(Date.from(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
@@ -48,6 +52,9 @@ public class SentryEventConverter {
             }
         }
 
-        return eventBuilder;
+        io.sentry.event.Event sentryEvent = eventBuilder.build();
+        sentryEvent.setSdk(SDK);
+
+        return sentryEvent;
     }
 }

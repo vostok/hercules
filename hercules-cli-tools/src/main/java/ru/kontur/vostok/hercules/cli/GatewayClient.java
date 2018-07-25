@@ -32,10 +32,7 @@ public class GatewayClient {
 
         server = "http://" + properties.getProperty("server");
 
-        for (int i = 0; i < 100; ++i) {
-            sendEvents("test_stream", generateEvents(1));
-            Thread.sleep(5000);
-        }
+        sendEvents("test_sentry", generateEvents(1));
 
         Unirest.shutdown();
     }

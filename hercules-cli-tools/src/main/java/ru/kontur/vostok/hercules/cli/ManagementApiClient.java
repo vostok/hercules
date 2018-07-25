@@ -25,7 +25,7 @@ public class ManagementApiClient {
 
 
         BaseStream stream = new BaseStream();
-        stream.setName("test_stream");
+        stream.setName("test_sentry");
         stream.setPartitions(1);
         stream.setShardingKey(new String[0]);
 
