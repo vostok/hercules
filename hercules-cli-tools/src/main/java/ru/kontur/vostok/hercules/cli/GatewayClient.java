@@ -33,7 +33,7 @@ public class GatewayClient {
         server = "http://" + properties.getProperty("server");
 
         for (int i = 0; i < 100; ++i) {
-            sendEvents("bulk-test", generateEvents(1));
+            sendEvents("test_stream", generateEvents(1));
             Thread.sleep(5000);
         }
 

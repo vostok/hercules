@@ -25,19 +25,41 @@ public class ManagementApiClient {
 
 
         BaseStream stream = new BaseStream();
-        stream.setName("bulk-test");
+        stream.setName("test_stream");
         stream.setPartitions(1);
         stream.setShardingKey(new String[0]);
 
         createStream(stream);
+        //createRule("test", "test*", "rwm");
+        //unblock("test");
 
         Unirest.shutdown();
     }
 
     private static void createStream(Stream stream) throws Exception {
         HttpResponse<String> response = Unirest.post(server + "/streams/create")
-                .header("apiKey", "test-admin")
+                .header("apiKey", "test")
                 .body(stream)
+                .asString();
+
+        System.out.println(response.getStatusText());
+    }
+
+    private static void createRule(String key, String pattern, String rights) throws Exception {
+        HttpResponse<String> response = Unirest.post(server + "/rules/set")
+                .header("apiKey", "test-admin")
+                .queryString("key", key)
+                .queryString("pattern", pattern)
+                .queryString("rights", rights)
+                .asString();
+
+        System.out.println(response.getStatusText());
+    }
+
+    private static void unblock(String key) throws Exception {
+        HttpResponse<String> response = Unirest.post(server + "/blacklist/remove")
+                .header("apiKey", "test-admin")
+                .queryString("key", key)
                 .asString();
 
         System.out.println(response.getStatusText());
