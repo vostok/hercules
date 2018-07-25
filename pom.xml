@@ -48,6 +48,8 @@
         <module>hercules-graphite-sink</module>
         <module>hercules-undertow-util</module>
         <module>hercules-metrics</module>
+        <module>hercules-cli-api-key-manager</module>
+        <module>hercules-cli-initializer</module>
     </modules>
 
     <dependencyManagement>

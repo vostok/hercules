@@ -59,6 +59,7 @@ public class PropertiesUtil {
         try(InputStream in = new FileInputStream(path)) {
             properties.load(in);
         } catch (IOException ex) {
+            // TODO: log
             ex.printStackTrace();
         }
         return properties;
@@ -71,6 +72,10 @@ public class PropertiesUtil {
 
     public static Supplier<RuntimeException> missingPropertyError(String propertyName) {
         return () -> new RuntimeException(String.format("Missing required property '%s'", propertyName));
+    }
+
+    public static Properties subProperties(Properties properties, String prefix) {
+        return subProperties(properties, prefix, '.');
     }
 
     public static Properties subProperties(Properties properties, String prefix, char delimiter) {
