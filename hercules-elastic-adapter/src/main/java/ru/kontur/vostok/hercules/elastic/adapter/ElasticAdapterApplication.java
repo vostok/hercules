@@ -19,6 +19,11 @@ import java.util.Properties;
  * @author Daniil Zhenikhov
  */
 public class ElasticAdapterApplication {
+    private static final String URL = "url";
+    private static final String STREAM = "stream";
+    private static final String HOST = "host";
+    private static final String PORT = "port";
+
     private final HttpServer httpServer;
 
     //TODO: do trim operation
@@ -27,11 +32,15 @@ public class ElasticAdapterApplication {
             throw new IllegalArgumentException("Missing required property ('url', 'stream')");
         }
 
-        String url = properties.getProperty("url");
+        String url = PropertiesUtil
+                .getAs(properties,"url", String.class)
+                .orElseThrow(PropertiesUtil.missingPropertyError(URL));
+        String stream = PropertiesUtil
+                .getAs(properties, "stream", String.class)
+                .orElseThrow(PropertiesUtil.missingPropertyError(STREAM));
 
         int port = PropertiesUtil.get(properties, "port", 6307);
         String host = properties.getProperty("host", "0.0.0.0");
-        String stream = properties.getProperty("stream");
 
         httpServer = new HttpServer(host, port, stream, url);
 

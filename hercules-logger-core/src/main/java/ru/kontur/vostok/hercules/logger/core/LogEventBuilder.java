@@ -53,7 +53,7 @@ public class LogEventBuilder {
      *
      * @return new instance of that builder
      */
-    public LogExceptionBuilder withException() {
+    public LogExceptionBuilder startException() {
         return new LogExceptionBuilder(this);
     }
 

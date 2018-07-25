@@ -35,7 +35,7 @@ public class Log4jToEventConverter {
     }
 
     private static void addExceptionToBuilder(LogEventBuilder builder, Throwable throwable) {
-        LogExceptionBuilder exceptionBuilder = builder.withException()
+        LogExceptionBuilder exceptionBuilder = builder.startException()
                 .setType(throwable.getClass().getName())
                 .setMessage(throwable.getMessage());
 
@@ -43,7 +43,7 @@ public class Log4jToEventConverter {
             exceptionBuilder.setModule(throwable.getStackTrace()[0].getClassName());
 
             for (StackTraceElement stackTraceElement: throwable.getStackTrace()) {
-                exceptionBuilder.withStackTraceElement()
+                exceptionBuilder.startStackTraceElement()
                         .setFile(stackTraceElement.getFileName())
                         .setFunction(stackTraceElement.getMethodName())
                         .setLine(stackTraceElement.getLineNumber())

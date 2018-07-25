@@ -37,7 +37,7 @@ public class LogbackToEventConverter {
     }
 
     private static void addExceptionToBuilder(LogEventBuilder builder, IThrowableProxy throwableProxy) {
-        LogExceptionBuilder exceptionBuilder = builder.withException()
+        LogExceptionBuilder exceptionBuilder = builder.startException()
                 .setType(throwableProxy.getClassName())
                 .setMessage(throwableProxy.getMessage());
 
@@ -52,7 +52,7 @@ public class LogbackToEventConverter {
             for (StackTraceElementProxy stackTraceElementProxy: throwableProxy.getStackTraceElementProxyArray()) {
                 StackTraceElement stackTraceElement = stackTraceElementProxy.getStackTraceElement();
 
-                exceptionBuilder.withStackTraceElement()
+                exceptionBuilder.startStackTraceElement()
                         .setFile(stackTraceElement.getFileName())
                         .setFunction(stackTraceElement.getMethodName())
                         .setLine(stackTraceElement.getLineNumber())

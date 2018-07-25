@@ -46,7 +46,7 @@ public class LogExceptionBuilder {
      *
      * @return instance of that builder
      */
-    public LogStackTraceElementBuilder withStackTraceElement() {
+    public LogStackTraceElementBuilder startStackTraceElement() {
         return new LogStackTraceElementBuilder(this);
     }
 
