@@ -11,10 +11,12 @@ import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import ru.kontur.vostok.hercules.gateway.client.DefaultConfigurationConstants;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
+import ru.kontur.vostok.hercules.logger.core.util.LogCoreUtil;
 import ru.kontur.vostok.hercules.logger.log4j.util.Log4jToEventConverter;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,6 +26,9 @@ import java.util.concurrent.TimeUnit;
  */
 @Plugin(name = "Log4jHttpAppender", category = "Core", elementType = "appender", printObject = true)
 public class Log4jHttpAppender extends AbstractAppender {
+    private static final Integer DEFAULT_INTEGER = 0;
+    private static final Long DEFAULT_LONG = 0L;
+
     private EventPublisher publisher;
     private String queueName;
 
@@ -59,25 +64,17 @@ public class Log4jHttpAppender extends AbstractAppender {
             @PluginAttribute("batchSize") final Integer batchSize,
             @PluginAttribute("capacity") final  Integer capacity
     ) {
-        if (stream == null) {
-            LOGGER.error("stream is not chosen");
-        }
-
-        if (queueName == null) {
-            LOGGER.error("queue's name is not chosen");
-        }
-
         return new Log4jHttpAppender(
                 name,
                 filter,
                 layout,
 
-                stream,
-                queueName,
-                Objects.nonNull(loseOnOverflow) ? loseOnOverflow : DefaultConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW,
-                Objects.nonNull(periodMillis) ? periodMillis : DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS,
-                Objects.nonNull(batchSize) ? batchSize : DefaultConfigurationConstants.DEFAULT_BATCH_SIZE,
-                Objects.nonNull(capacity) ? capacity : DefaultConfigurationConstants.DEFAULT_CAPACITY
+                Optional.ofNullable(stream).orElseThrow(LogCoreUtil.missingLoggerConfiguration("stream")),
+                Optional.ofNullable(queueName).orElseThrow(LogCoreUtil.missingLoggerConfiguration("queue name")),
+                loseOnOverflow,
+                periodMillis.equals(DEFAULT_LONG) ? DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS : periodMillis,
+                batchSize.equals(DEFAULT_INTEGER)  ? DefaultConfigurationConstants.DEFAULT_BATCH_SIZE : batchSize,
+                capacity.equals(DEFAULT_INTEGER)  ? DefaultConfigurationConstants.DEFAULT_CAPACITY : capacity
         );
     }
 

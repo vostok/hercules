@@ -5,9 +5,11 @@ import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ru.kontur.vostok.hercules.gateway.client.DefaultConfigurationConstants;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
+import ru.kontur.vostok.hercules.logger.core.util.LogCoreUtil;
 import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Appender for logback logger
@@ -16,27 +18,22 @@ import java.util.Objects;
  */
 public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private EventPublisher publisher = EventPublisherFactory.getInstance();
-    private LogbackHttpConfiguration configuration;
+    private String stream;
+    private String queueName;
+    private Integer batchSize;
+    private Integer capacity;
+    private Long periodMillis;
+    private Boolean loseOnOverflow;
 
     @Override
     public void start() {
-        checkForNull(configuration);
-
         publisher.register(
-                configuration.getName(),
-                configuration.getStream(),
-                Objects.nonNull(configuration.getPeriodMillis())
-                        ? configuration.getPeriodMillis()
-                        : DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS,
-                Objects.nonNull(configuration.getCapacity())
-                        ? configuration.getCapacity()
-                        : DefaultConfigurationConstants.DEFAULT_CAPACITY,
-                Objects.nonNull(configuration.getBatchSize())
-                        ? configuration.getBatchSize()
-                        : DefaultConfigurationConstants.DEFAULT_BATCH_SIZE,
-                Objects.nonNull(configuration.getLoseOnOverflow())
-                        ? configuration.getLoseOnOverflow()
-                        : DefaultConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW
+                getQueueName(),
+                getStream(),
+                getPeriodMillis(),
+                getCapacity(),
+                getBatchSize(),
+                getLoseOnOverflow()
         );
 
         publisher.start();
@@ -51,26 +48,67 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
 
     @Override
     protected void append(ILoggingEvent event) {
-        publisher.publish(configuration.getName(), LogbackToEventConverter.createEvent(event));
+        publisher.publish(queueName, LogbackToEventConverter.createEvent(event));
     }
 
-    public LogbackHttpConfiguration getConfiguration() {
-        return configuration;
+    public String getStream() {
+        return Optional
+                .ofNullable(stream)
+                .orElseThrow(LogCoreUtil.missingLoggerConfiguration("stream"));
     }
 
-    public void setConfiguration(LogbackHttpConfiguration configuration) {
-        this.configuration = configuration;
+    public void setStream(String stream) {
+        this.stream = stream;
     }
 
-    private static void checkForNull(LogbackHttpConfiguration configuration) {
-        if (configuration.getStream() == null) {
-            throw new IllegalStateException("Stream is empty");
-        }
+    public String getQueueName() {
+        return Optional
+                .ofNullable(queueName)
+                .orElseThrow(LogCoreUtil.missingLoggerConfiguration("queue name"));
+    }
 
-        if (configuration.getName() == null) {
-            throw new IllegalStateException("queue's name is empty");
-        }
+    public void setQueueName(String queueName) {
+        this.queueName = queueName;
+    }
 
+    public Integer getBatchSize() {
+        return Objects.nonNull(batchSize)
+                ? batchSize
+                : DefaultConfigurationConstants.DEFAULT_BATCH_SIZE;
+    }
+
+    public void setBatchSize(Integer batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public Integer getCapacity() {
+        return Objects.nonNull(capacity)
+                ? capacity
+                : DefaultConfigurationConstants.DEFAULT_CAPACITY;
+    }
+
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
+    }
+
+    public Long getPeriodMillis() {
+        return Objects.nonNull(periodMillis)
+                ? periodMillis
+                : DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS;
+    }
+
+    public void setPeriodMillis(Long periodMillis) {
+        this.periodMillis = periodMillis;
+    }
+
+    public Boolean getLoseOnOverflow() {
+        return Objects.nonNull(loseOnOverflow)
+                ? loseOnOverflow
+                : DefaultConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW;
+    }
+
+    public void setLoseOnOverflow(Boolean loseOnOverflow) {
+        this.loseOnOverflow = loseOnOverflow;
     }
 }
 
