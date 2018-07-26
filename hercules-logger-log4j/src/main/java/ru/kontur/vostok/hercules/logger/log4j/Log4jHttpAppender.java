@@ -8,49 +8,46 @@ import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import ru.kontur.vostok.hercules.gateway.client.DefaultConfigurationConstants;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
-import ru.kontur.vostok.hercules.gateway.client.EventQueue;
+import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
+import ru.kontur.vostok.hercules.logger.core.util.LogCoreUtil;
 import ru.kontur.vostok.hercules.logger.log4j.util.Log4jToEventConverter;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Appender for log4j logger
+ *
  * @author Daniil Zhenikhov
  */
 @Plugin(name = "Log4jHttpAppender", category = "Core", elementType = "appender", printObject = true)
 public class Log4jHttpAppender extends AbstractAppender {
-    private static final String QUEUE_NAME = "main";
+    private static final Integer DEFAULT_INTEGER = 0;
+    private static final Long DEFAULT_LONG = 0L;
 
     private EventPublisher publisher;
+    private String queueName;
 
     private Log4jHttpAppender(String name,
                               Filter filter,
                               Layout<? extends Serializable> layout,
 
-                              String url,
-                              String apiKey,
                               String stream,
-                              int batchSize,
-                              int capacity,
+                              String queueName,
+                              boolean loseOnOverflow,
                               long periodMillis,
-                              int threads,
-                              boolean loseOnOverflow) {
+                              int batchSize,
+                              int capacity) {
         super(name, filter, layout);
 
-        publisher = new EventPublisher(
-                threads,
-                Executors.defaultThreadFactory(),
-                Collections.singletonList(new EventQueue(QUEUE_NAME, stream, periodMillis, capacity, batchSize, loseOnOverflow)),
-                url,
-                apiKey);
+        this.queueName = queueName;
+
+        publisher = EventPublisherFactory.getInstance();
+        publisher.register(queueName, stream, periodMillis, capacity, batchSize, loseOnOverflow);
         publisher.start();
     }
 
@@ -60,48 +57,33 @@ public class Log4jHttpAppender extends AbstractAppender {
             @PluginElement("Filter") final Filter filter,
             @PluginElement("Layout") Layout<? extends Serializable> layout,
 
-            @PluginAttribute("url") final String url,
-            @PluginAttribute("apiKey") final String apiKey,
             @PluginAttribute("stream") final String stream,
-            @PluginAttribute("batchSize") final int batchSize,
-            @PluginAttribute("capacity") final int capacity,
-            @PluginAttribute("periodMillis") final long periodMillis,
-            @PluginAttribute("threads") final int threads,
-            @PluginAttribute("loseOnOverflow") final boolean loseOnOverflow
+            @PluginAttribute("queueName") final String queueName,
+            @PluginAttribute("loseOnOverflow") final Boolean loseOnOverflow,
+            @PluginAttribute("periodMillis") final Long periodMillis,
+            @PluginAttribute("batchSize") final Integer batchSize,
+            @PluginAttribute("capacity") final  Integer capacity
     ) {
-        if (url == null) {
-            LOGGER.error("Url is undefined");
-            return null;
-        }
-
-        if (apiKey == null) {
-            LOGGER.error("apiKey is undefined");
-            return null;
-        }
-
-        if (stream == null) {
-            LOGGER.error("stream is not chosen");
-        }
+        LogCoreUtil.requireNotNullConfiguration(stream, "stream");
+        LogCoreUtil.requireNotNullConfiguration(queueName, "queueName");
 
         return new Log4jHttpAppender(
                 name,
                 filter,
                 layout,
 
-                url,
-                apiKey,
                 stream,
-                batchSize,
-                capacity,
-                periodMillis,
-                threads,
-                loseOnOverflow
+                queueName,
+                loseOnOverflow,
+                periodMillis.equals(DEFAULT_LONG) ? DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS : periodMillis,
+                batchSize.equals(DEFAULT_INTEGER)  ? DefaultConfigurationConstants.DEFAULT_BATCH_SIZE : batchSize,
+                capacity.equals(DEFAULT_INTEGER)  ? DefaultConfigurationConstants.DEFAULT_CAPACITY : capacity
         );
     }
 
     @Override
     public void append(LogEvent logEvent) {
-        publisher.publish(QUEUE_NAME, Log4jToEventConverter.createEvent(logEvent));
+        publisher.publish(queueName, Log4jToEventConverter.createEvent(logEvent));
 
     }
 

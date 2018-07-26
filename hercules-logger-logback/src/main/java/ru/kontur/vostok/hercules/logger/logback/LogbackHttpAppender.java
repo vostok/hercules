@@ -2,15 +2,15 @@ package ru.kontur.vostok.hercules.logger.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import ru.kontur.vostok.hercules.gateway.client.DefaultConfigurationConstants;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
-import ru.kontur.vostok.hercules.gateway.client.EventQueue;
+import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
+import ru.kontur.vostok.hercules.logger.core.util.LogCoreUtil;
 import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Appender for logback logger
@@ -18,25 +18,25 @@ import java.util.concurrent.ThreadFactory;
  * @author Daniil Zhenikhov
  */
 public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-    private static final String QUEUE_NAME = "main";
-    private LogbackHttpConfiguration configuration;
-    private EventPublisher publisher;
+    private EventPublisher publisher = EventPublisherFactory.getInstance();
+    private String stream;
+    private String queueName;
+    private Integer batchSize;
+    private Integer capacity;
+    private Long periodMillis;
+    private Boolean loseOnOverflow;
 
     @Override
     public void start() {
-        checkForNull();
+        publisher.register(
+                getQueueName(),
+                getStream(),
+                getPeriodMillis(),
+                getCapacity(),
+                getBatchSize(),
+                getLoseOnOverflow()
+        );
 
-        publisher = new EventPublisher(
-                configuration.getThreads(),
-                Executors.defaultThreadFactory(),
-                Collections.singletonList(new EventQueue(QUEUE_NAME,
-                        configuration.getStream(),
-                        configuration.getPeriodMillis(),
-                        configuration.getCapacity(),
-                        configuration.getBatchSize(),
-                        configuration.getLoseOnOverflow())),
-                configuration.getUrl(),
-                configuration.getApiKey());
         publisher.start();
         super.start();
     }
@@ -49,43 +49,67 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
 
     @Override
     protected void append(ILoggingEvent event) {
-        publisher.publish(QUEUE_NAME, LogbackToEventConverter.createEvent(event));
+        publisher.publish(queueName, LogbackToEventConverter.createEvent(event));
     }
 
-    public LogbackHttpConfiguration getConfiguration() {
-        return configuration;
+    public String getStream() {
+        LogCoreUtil.requireNotNullConfiguration(stream, "stream");
+
+        return stream;
     }
 
-    public void setConfiguration(LogbackHttpConfiguration configuration) {
-        this.configuration = configuration;
+    public void setStream(String stream) {
+        this.stream = stream;
     }
 
-    private void checkForNull() {
-        if (configuration.getUrl() == null) {
-            throw new IllegalStateException("Url is empty");
-        }
-        if (configuration.getStream() == null) {
-            throw new IllegalStateException("Stream is empty");
-        }
-        if (configuration.getApiKey() == null) {
-            throw new IllegalStateException("ApiKey is empty");
-        }
-        if (configuration.getBatchSize() == null) {
-            throw new IllegalStateException("BatchSize is empty");
-        }
-        if (configuration.getCapacity() == null) {
-            throw new IllegalStateException("Capacity is empty");
-        }
-        if (configuration.getLoseOnOverflow() == null) {
-            throw new IllegalStateException("LoseOnOverflow is empty");
-        }
-        if (configuration.getPeriodMillis() == null) {
-            throw new IllegalStateException("PeriodMillis is empty");
-        }
-        if (configuration.getThreads() == null) {
-            throw new IllegalStateException("Threads is empty");
-        }
+    public String getQueueName() {
+        LogCoreUtil.requireNotNullConfiguration(stream, "queueName");
 
+        return queueName;
+    }
+
+    public void setQueueName(String queueName) {
+        this.queueName = queueName;
+    }
+
+    public Integer getBatchSize() {
+        return Objects.nonNull(batchSize)
+                ? batchSize
+                : DefaultConfigurationConstants.DEFAULT_BATCH_SIZE;
+    }
+
+    public void setBatchSize(Integer batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public Integer getCapacity() {
+        return Objects.nonNull(capacity)
+                ? capacity
+                : DefaultConfigurationConstants.DEFAULT_CAPACITY;
+    }
+
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
+    }
+
+    public Long getPeriodMillis() {
+        return Objects.nonNull(periodMillis)
+                ? periodMillis
+                : DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS;
+    }
+
+    public void setPeriodMillis(Long periodMillis) {
+        this.periodMillis = periodMillis;
+    }
+
+    public Boolean getLoseOnOverflow() {
+        return Objects.nonNull(loseOnOverflow)
+                ? loseOnOverflow
+                : DefaultConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW;
+    }
+
+    public void setLoseOnOverflow(Boolean loseOnOverflow) {
+        this.loseOnOverflow = loseOnOverflow;
     }
 }
 
