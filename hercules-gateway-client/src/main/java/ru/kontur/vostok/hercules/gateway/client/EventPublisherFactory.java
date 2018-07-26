@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.gateway.client;
 
+import ru.kontur.vostok.hercules.util.properties.ConfigsUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.io.FileInputStream;
@@ -19,8 +20,9 @@ public class EventPublisherFactory {
     private static final String THREADS_PROPERTY = "threads";
     private static final String API_KEY_PROPERTY = "apiKey";
 
-    private static final int DEFAULT_THREADS_COUNT = 3;
     private static final String DEFAULT_RESOURCE_NAME = "gateway-client.properties";
+    private static final String PROPERTY_NAME = "gateway.client.config";
+    private static final int DEFAULT_THREADS_COUNT = 3;
     private static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
         thread.setDaemon(true);
@@ -30,18 +32,12 @@ public class EventPublisherFactory {
     private static EventPublisher INSTANCE;
 
     static {
-        String filename = System.getProperty("gateway.client.config");
-        boolean fromResources = false;
-        if (Objects.isNull(filename)) {
-            filename = DEFAULT_RESOURCE_NAME;
-            fromResources = true;
-        }
+        InputStream inputStream = ConfigsUtil.readConfig(PROPERTY_NAME, DEFAULT_RESOURCE_NAME);
         try {
-            Properties properties = loadProperties(filename, fromResources);
-            INSTANCE = createPublisher(properties);
+            INSTANCE = createPublisher(loadProperties(inputStream));
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
+        };
     }
 
     private EventPublisherFactory() {
@@ -70,19 +66,9 @@ public class EventPublisherFactory {
         );
     }
 
-    private static Properties loadProperties(String filename, boolean fromResources) throws IOException {
+    private static Properties loadProperties(InputStream inputStream) throws IOException {
         Properties properties = new Properties();
-        InputStream inputStream;
-
-        if (fromResources) {
-            ClassLoader loader = EventPublisherFactory.class.getClassLoader();
-            inputStream = loader.getResourceAsStream(filename);
-        } else {
-            inputStream = new FileInputStream(filename);
-        }
-
         properties.load(inputStream);
-
         return properties;
     }
 }

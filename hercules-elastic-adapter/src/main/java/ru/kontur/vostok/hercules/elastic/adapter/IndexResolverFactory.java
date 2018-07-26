@@ -1,9 +1,12 @@
 package ru.kontur.vostok.hercules.elastic.adapter;
 
+import ru.kontur.vostok.hercules.elastic.adapter.parser.ApiKeys;
 import ru.kontur.vostok.hercules.elastic.adapter.parser.ApiKeysParser;
+import ru.kontur.vostok.hercules.util.properties.ConfigsUtil;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -12,20 +15,15 @@ import java.util.*;
  */
 public class IndexResolverFactory {
     private static final String DEFAULT_RESOURCE_NAME = "api-keys.yml";
+    private static final String PROPERTY_NAME = "api.keys.location";
 
     private final static IndexResolver INSTANCE;
 
     static {
-        String filename = System.getProperty("api.keys.location");
-        boolean fromResources = false;
-        if (Objects.isNull(filename)) {
-            filename = DEFAULT_RESOURCE_NAME;
-            fromResources = true;
-        }
+        InputStream inputStream = ConfigsUtil.readConfig(PROPERTY_NAME, DEFAULT_RESOURCE_NAME);
         try {
-            InputStream inputStream = readApiKeys(filename, fromResources);
             INSTANCE = new IndexResolver(ApiKeysParser.parse(inputStream));
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
