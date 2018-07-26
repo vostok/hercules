@@ -34,6 +34,7 @@ public class PatternMatcher {
     private static String toRegexString(String pattern) {
         final int length = pattern.length();
         StringBuilder sb = new StringBuilder(length * 2);
+        sb.append('^');
         for (int i = 0; i < length; i++) {
             char c = pattern.charAt(i);
             if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || c == '_') {
@@ -51,6 +52,7 @@ public class PatternMatcher {
             // Otherwise pattern is invalid thus throw illegal argument exception
             throw new IllegalArgumentException("Pattern contains prohibited chars");
         }
+        sb.append('$');
         return sb.toString();
     }
 
