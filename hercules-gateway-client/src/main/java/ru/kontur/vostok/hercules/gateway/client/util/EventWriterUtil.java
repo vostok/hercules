@@ -17,7 +17,7 @@ public class EventWriterUtil {
      * Convert array of events to byte array
      *
      * @param size initial capacity for output stream
-     * @param events array of events which have to convert
+     * @param events array of events to convert
      * @return bytes of events after converting
      */
     public static byte[] toBytes(int size, Event[] events) {
@@ -31,7 +31,7 @@ public class EventWriterUtil {
     /**
      * Convert array of events to byte array
      *
-     * @param events array of events which have to convert
+     * @param events array of events to convert
      * @return bytes of events after converting
      */
     public static byte[] toBytes(Event[] events) {

@@ -19,6 +19,9 @@ import java.util.Properties;
  * @author Daniil Zhenikhov
  */
 public class ElasticAdapterApplication {
+    private static final int DEFAULT_PORT = 6307;
+    private static final String DEFAULT_HOST = "0.0.0.0";
+
     private static final String URL = "url";
     private static final String STREAM = "stream";
     private static final String HOST = "host";
@@ -37,9 +40,12 @@ public class ElasticAdapterApplication {
         String apiKey = PropertiesUtil
                 .getAs(properties, API_KEY, String.class)
                 .orElseThrow(PropertiesUtil.missingPropertyError(API_KEY));
-
-        int port = PropertiesUtil.get(properties, PORT, 6307);
-        String host = properties.getProperty(HOST, "0.0.0.0");
+        int port = PropertiesUtil
+                .getAs(properties, PORT, Integer.class)
+                .orElse(DEFAULT_PORT);
+        String host = PropertiesUtil
+                .getAs(properties, HOST, String.class)
+                .orElse(DEFAULT_HOST);
 
         httpServer = new HttpServer(host, port, stream, url, apiKey);
 

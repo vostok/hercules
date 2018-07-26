@@ -40,7 +40,7 @@ public class GatewayClient implements Closeable {
     /**
      * Request to {@link #SEND_ASYNC}
      *
-     * @param url Where request should be sent
+     * @param url gateway url
      * @param apiKey key for sending
      * @param stream topic name in kafka
      * @param data payload
@@ -57,7 +57,7 @@ public class GatewayClient implements Closeable {
 
     /**
      *
-     * @param url Where request should be sent
+     * @param url gateway url
      * @param apiKey key for sending
      * @param stream topic name in kafka
      * @param data payload
@@ -89,9 +89,9 @@ public class GatewayClient implements Closeable {
     }
 
     /**
-     * Form http post request
+     * Build http post request
      *
-     * @param url Where request should be sent
+     * @param url gateway url
      * @param apiKey key for sending
      * @param action Command in Hercules Gateway
      * @param stream topic name in kafka

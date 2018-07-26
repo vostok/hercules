@@ -1,21 +1,11 @@
 package ru.kontur.vostok.hercules.elastic.adapter;
 
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import com.sun.org.apache.xalan.internal.xsltc.dom.SingletonIterator;
-import jdk.nashorn.internal.parser.JSONParser;
-import ru.kontur.vostok.hercules.elastic.adapter.IndexResolver;
+import ru.kontur.vostok.hercules.elastic.adapter.parser.ApiKeysParser;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 /**
  * @author Daniil Zhenikhov
