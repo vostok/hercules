@@ -17,6 +17,14 @@ import java.util.function.Supplier;
  * @author Gregory Koshelev
  */
 public class PropertiesUtil {
+    public static short get(Properties properties, String name, short defaultValue) {
+        String stringValue = properties.getProperty(name);
+        if (stringValue == null || stringValue.isEmpty()) {
+            return defaultValue;
+        }
+        return Short.parseShort(stringValue);
+    }
+
 
     private static Map<Class<?>, Function<String, ?>> converters = new HashMap<>();
     static {

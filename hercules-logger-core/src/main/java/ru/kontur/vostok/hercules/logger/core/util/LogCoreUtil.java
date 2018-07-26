@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.logger.core.util;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -27,6 +28,12 @@ public final class LogCoreUtil {
 
     public static Supplier<RuntimeException> missingLoggerConfiguration(String confName) {
         return () -> new RuntimeException("Missing '" + confName + "' configuration");
+    }
+
+    public static void requireNotNullConfiguration(Object conf, String confName) {
+        if (Objects.isNull(conf)) {
+            throw missingLoggerConfiguration(confName).get();
+        }
     }
 
     private LogCoreUtil() {

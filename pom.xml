@@ -55,6 +55,9 @@
         <module>hercules-gateway-client</module>
         <module>hercules-elastic-adapter</module>
         <module>hercules-logger-log4j</module>
+        <module>hercules-management-task</module>
+        <module>hercules-cassandra-manager</module>
+        <module>hercules-kafka-manager</module>
         <module>hercules-logger-logback</module>
         <module>hercules-logger-core</module>
     </modules>
@@ -156,6 +159,11 @@
             </dependency>
 
             <!-- Jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
@@ -275,6 +283,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-logger-core</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-management-task</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
             </dependency>
 

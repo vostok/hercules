@@ -9,10 +9,13 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
+import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Http Handler for handling requests which are sent to elastic adapter.
@@ -21,6 +24,8 @@ import java.util.function.Consumer;
  * @author Daniil Zhenikhov
  */
 public class ElasticAdapterHandler implements HttpHandler {
+    private final IndexResolver indexResolver = IndexResolverFactory.getInstance();
+    private final Pattern authHeaderPattern = Pattern.compile("ELK ([a-zA-Z0-9\\-]+)");
 
     private final ElasticAdapterFunction handler;
 
@@ -32,35 +37,41 @@ public class ElasticAdapterHandler implements HttpHandler {
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         Optional<String> optionalIndex = ExchangeUtil.extractQueryParam(exchange, "index");
         if (!optionalIndex.isPresent()) {
-            exchange.setStatusCode(400);
-            exchange.endExchange();
+            ResponseUtil.badRequest(exchange);
+            return;
+        }
+        String index = optionalIndex.get();
+
+        Optional<String> authHeader = ExchangeUtil.extractHeaderValue(exchange, "Authorization");
+        if (!authHeader.isPresent()) {
+            ResponseUtil.unauthorized(exchange);
             return;
         }
 
-        //apiKey manager is not set
-        Optional<String> apiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!apiKey.isPresent()) {
-            exchange.setStatusCode(401);
-            exchange.endExchange();
+        Optional<String> apiKeyOptional = extractApiKey(authHeader.get());
+        if (!apiKeyOptional.isPresent()) {
+            ResponseUtil.unauthorized(exchange);
+            return;
+        }
+        String apiKey = apiKeyOptional.get();
+
+        if (!auth(indexResolver.checkIndex(apiKey, index), exchange)) {
             return;
         }
 
         int contentLength = ExchangeUtil.extractContentLength(exchange);
         if (contentLength < 0 || CommonConstants.MAX_MESSAGE_SIZE < contentLength) {
-            exchange.setStatusCode(400);
-            exchange.endExchange();
+            ResponseUtil.badRequest(exchange);
             return;
         }
 
-        //Extracting events and adding tag "index" to it
-        String index = optionalIndex.get();
         Event[] events = ElasticAdapterUtil.createEventStream(exchange.getInputStream())
                 .map(event -> patchEvent(event, eventBuilder -> eventBuilder.setTag("index", Variant.ofString(index))))
                 .toArray(Event[]::new);
 
         byte[] body = EventWriterUtil.toBytes(contentLength, events);
 
-        handler.handle(apiKey.get(), body);
+        handler.handle(body);
     }
 
     private Event patchEvent(Event event, Consumer<EventBuilder> consumer) {
@@ -77,6 +88,36 @@ public class ElasticAdapterHandler implements HttpHandler {
         return eventBuilder.build();
     }
 
+    private Optional<String> extractApiKey(String authHeader) {
+        Matcher matcher = authHeaderPattern.matcher(authHeader);
+
+        if (!matcher.matches()) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.ofNullable(matcher.group(1));
+        } catch (RuntimeException e) {
+            return Optional.empty();
+        }
+    }
+
+    private boolean auth(IndexResolver.Status status, HttpServerExchange exchange) {
+        switch (status) {
+            case UNKNOWN:
+                ResponseUtil.unauthorized(exchange);
+                return false;
+
+            case FORBIDDEN:
+                ResponseUtil.forbidden(exchange);
+                return false;
+
+            case OK:
+            default:
+                return true;
+        }
+    }
+
     /**
      * Functional interface processing Hercules protocol events gotten from request body
      */
@@ -85,9 +126,8 @@ public class ElasticAdapterHandler implements HttpHandler {
         /**
          * Handle bytes of events
          *
-         * @param apiKey extracted from query
          * @param content bytes of events in hercules protocol format
          */
-        void handle(String apiKey, byte[] content);
+        void handle(byte[] content);
     }
 }

@@ -64,13 +64,16 @@ public class Log4jHttpAppender extends AbstractAppender {
             @PluginAttribute("batchSize") final Integer batchSize,
             @PluginAttribute("capacity") final  Integer capacity
     ) {
+        LogCoreUtil.requireNotNullConfiguration(stream, "stream");
+        LogCoreUtil.requireNotNullConfiguration(queueName, "queueName");
+
         return new Log4jHttpAppender(
                 name,
                 filter,
                 layout,
 
-                Optional.ofNullable(stream).orElseThrow(LogCoreUtil.missingLoggerConfiguration("stream")),
-                Optional.ofNullable(queueName).orElseThrow(LogCoreUtil.missingLoggerConfiguration("queue name")),
+                stream,
+                queueName,
                 loseOnOverflow,
                 periodMillis.equals(DEFAULT_LONG) ? DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS : periodMillis,
                 batchSize.equals(DEFAULT_INTEGER)  ? DefaultConfigurationConstants.DEFAULT_BATCH_SIZE : batchSize,

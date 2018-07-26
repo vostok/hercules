@@ -15,10 +15,9 @@ import java.util.concurrent.ThreadFactory;
  * @author Daniil Zhenikhov
  */
 public class EventPublisherFactory {
-    // property fields
-    private static final String URL = "url";
-    private static final String THREADS = "threads";
-    private static final String API_KEY = "apiKey";
+    private static final String URL_PROPERTY = "url";
+    private static final String THREADS_PROPERTY = "threads";
+    private static final String API_KEY_PROPERTY = "apiKey";
 
     private static final int DEFAULT_THREADS_COUNT = 3;
     private static final String DEFAULT_RESOURCE_NAME = "gateway-client.properties";
@@ -54,13 +53,13 @@ public class EventPublisherFactory {
     }
 
     private static EventPublisher createPublisher(Properties properties) {
-        int threads = PropertiesUtil.get(properties, THREADS, DEFAULT_THREADS_COUNT);
+        int threads = PropertiesUtil.get(properties, THREADS_PROPERTY, DEFAULT_THREADS_COUNT);
         String url = PropertiesUtil
-                .getAs(properties, URL, String.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(URL));
+                .getAs(properties, URL_PROPERTY, String.class)
+                .orElseThrow(PropertiesUtil.missingPropertyError(URL_PROPERTY));
         String apiKey = PropertiesUtil
-                .getAs(properties, API_KEY, String.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(API_KEY));
+                .getAs(properties, API_KEY_PROPERTY, String.class)
+                .orElseThrow(PropertiesUtil.missingPropertyError(API_KEY_PROPERTY));
 
         return new EventPublisher(
                 threads,
@@ -76,7 +75,7 @@ public class EventPublisherFactory {
         InputStream inputStream;
 
         if (fromResources) {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            ClassLoader loader = EventPublisherFactory.class.getClassLoader();
             inputStream = loader.getResourceAsStream(filename);
         } else {
             inputStream = new FileInputStream(filename);

@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 
 /**
  * Appender for logback logger
@@ -52,9 +53,9 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
     }
 
     public String getStream() {
-        return Optional
-                .ofNullable(stream)
-                .orElseThrow(LogCoreUtil.missingLoggerConfiguration("stream"));
+        LogCoreUtil.requireNotNullConfiguration(stream, "stream");
+
+        return stream;
     }
 
     public void setStream(String stream) {
@@ -62,9 +63,9 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
     }
 
     public String getQueueName() {
-        return Optional
-                .ofNullable(queueName)
-                .orElseThrow(LogCoreUtil.missingLoggerConfiguration("queue name"));
+        LogCoreUtil.requireNotNullConfiguration(stream, "queueName");
+
+        return queueName;
     }
 
     public void setQueueName(String queueName) {

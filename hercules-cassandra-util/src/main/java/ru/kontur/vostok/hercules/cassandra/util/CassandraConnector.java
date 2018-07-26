@@ -65,7 +65,19 @@ public class CassandraConnector {
     }
 
     public void close() {
-        session.close();
-        cluster.close();
+        try {
+            if (session != null) {
+                session.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            if (cluster != null) {
+                cluster.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -6,6 +6,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
 import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
@@ -21,12 +22,14 @@ import java.util.Optional;
 public class CreateTimelineHandler implements HttpHandler {
     private final AuthManager authManager;
     private final TimelineRepository repository;
+    private final CassandraTaskQueue cassandraTaskQueue;
 
     private final ObjectReader deserializer;
 
-    public CreateTimelineHandler(AuthManager authManager, TimelineRepository repository) {
+    public CreateTimelineHandler(AuthManager authManager, TimelineRepository repository, CassandraTaskQueue cassandraTaskQueue) {
         this.authManager = authManager;
         this.repository = repository;
+        this.cassandraTaskQueue = cassandraTaskQueue;
 
         ObjectMapper objectMapper = new ObjectMapper();
         this.deserializer = objectMapper.readerFor(Timeline.class);
@@ -66,7 +69,8 @@ public class CreateTimelineHandler implements HttpHandler {
                     return;
                 }
 
-                //TODO: create table too
+                //TODO: Table creation may fail after successful meta creation (no atomicity at all).
+                cassandraTaskQueue.createTable(timeline.getName());
             } catch (IOException e) {
                 e.printStackTrace();
                 ResponseUtil.badRequest(exch);

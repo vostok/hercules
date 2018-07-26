@@ -145,20 +145,23 @@ public class EventPublisher {
         }
 
         int size = 0;
-        int nextUnprocessedIndex = 0;
+        int lastUnprocessedIndex = 0;
 
         for (int index = 0; index < events.size(); index++) {
+            if (events.get(index).getBytes().length >= CommonConstants.MAX_MESSAGE_SIZE)
+                continue;
+
             if (size + events.get(index).getBytes().length >= CommonConstants.MAX_MESSAGE_SIZE) {
-                sendSliceEvents(events, eventQueue.getStream(), size, nextUnprocessedIndex, index);
+                sendSliceEvents(events, eventQueue.getStream(), size, lastUnprocessedIndex, index);
 
                 size = 0;
-                nextUnprocessedIndex = index;
+                lastUnprocessedIndex = index;
             }
 
             size += events.get(index).getBytes().length;
         }
 
-        sendSliceEvents(events, eventQueue.getStream(), size, nextUnprocessedIndex, events.size());
+        sendSliceEvents(events, eventQueue.getStream(), size, lastUnprocessedIndex, events.size());
 
         return actualBatchSize;
     }
