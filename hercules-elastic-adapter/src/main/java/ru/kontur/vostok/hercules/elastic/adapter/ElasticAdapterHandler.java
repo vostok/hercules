@@ -3,8 +3,6 @@ package ru.kontur.vostok.hercules.elastic.adapter;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.elastic.adapter.util.ElasticAdapterUtil;
-import ru.kontur.vostok.hercules.elastic.adapter.util.IndexResolver;
-import ru.kontur.vostok.hercules.elastic.adapter.util.IndexResolverFactory;
 import ru.kontur.vostok.hercules.gateway.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;

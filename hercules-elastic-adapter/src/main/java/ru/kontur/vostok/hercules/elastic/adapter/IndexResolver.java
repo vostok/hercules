@@ -1,7 +1,8 @@
-package ru.kontur.vostok.hercules.elastic.adapter.util;
+package ru.kontur.vostok.hercules.elastic.adapter;
 
-import java.util.*;
-import java.util.regex.Matcher;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -19,7 +20,7 @@ public class IndexResolver {
      * <code>checkIndex</code> check apiKey and matches index with known patterns.
      *
      * @param apiKey should be checked
-     * @param index should be checked
+     * @param index  should be checked
      * @return Status of checking
      */
     public Status checkIndex(String apiKey, String index) {
@@ -27,11 +28,10 @@ public class IndexResolver {
             return Status.UNKNOWN;
         }
 
-        for (Pattern pattern: indexMap.get(apiKey)) {
+        for (Pattern pattern : indexMap.get(apiKey)) {
             if (!pattern.matcher(index).matches()) {
                 continue;
             }
-
             return Status.OK;
         }
 
@@ -39,7 +39,6 @@ public class IndexResolver {
     }
 
     /**
-     *
      * @param indexMap Map[ApiKey -> List of indexes]
      * @return transform indexes to regex patterns
      */
@@ -57,9 +56,9 @@ public class IndexResolver {
     }
 
     private Pattern transformIndexPatternToRegexp(String indexPattern) {
-        String strPattern = indexPattern
+        String strPattern = String.format("^%s$", indexPattern
                 .replaceAll("\\?", ".")
-                .replaceAll("\\*", ".*");
+                .replaceAll("\\*", ".*"));
 
         return Pattern.compile(strPattern);
     }

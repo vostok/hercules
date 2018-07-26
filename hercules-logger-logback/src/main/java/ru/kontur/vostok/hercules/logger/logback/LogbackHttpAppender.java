@@ -9,6 +9,7 @@ import ru.kontur.vostok.hercules.logger.logback.util.LogbackToEventConverter;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -27,7 +28,7 @@ public class LogbackHttpAppender extends UnsynchronizedAppenderBase<ILoggingEven
 
         publisher = new EventPublisher(
                 configuration.getThreads(),
-                configuration.getLoseOnOverflow(),
+                Executors.defaultThreadFactory(),
                 Collections.singletonList(new EventQueue(QUEUE_NAME,
                         configuration.getStream(),
                         configuration.getPeriodMillis(),

@@ -47,7 +47,7 @@ public class Log4jHttpAppender extends AbstractAppender {
 
         publisher = new EventPublisher(
                 threads,
-                loseOnOverflow,
+                Executors.defaultThreadFactory(),
                 Collections.singletonList(new EventQueue(QUEUE_NAME, stream, periodMillis, capacity, batchSize, loseOnOverflow)),
                 url,
                 apiKey);

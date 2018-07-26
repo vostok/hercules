@@ -1,0 +1,9 @@
+# It should be encrypted
+
+elk_api_keys:
+  test-HashOfSomething:
+    - test-*-??
+    - test-??
+  new-test-HashOfNewTest:
+    - test-mew-??-*-?
+    - new-????

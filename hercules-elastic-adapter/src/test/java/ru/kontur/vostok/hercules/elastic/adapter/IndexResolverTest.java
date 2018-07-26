@@ -1,10 +1,8 @@
 package ru.kontur.vostok.hercules.elastic.adapter;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import ru.kontur.vostok.hercules.elastic.adapter.util.IndexResolver;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,5 +52,13 @@ public class IndexResolverTest {
         Assert.assertEquals(
                 IndexResolver.Status.FORBIDDEN,
                 indexResolver.checkIndex(CORRECT_API_KEY, "test-as-1922.22.1"));
+    }
+
+    @Test
+    public void shouldCheckApiKey_PatternAsSubstr_ReturnForbidden() {
+        Assert.assertEquals(
+                IndexResolver.Status.FORBIDDEN,
+                indexResolver.checkIndex(CORRECT_API_KEY, "BEGIN---test-some-fake-info-1002.02.02---END")
+        );
     }
 }
