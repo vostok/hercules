@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hercules-management-api</artifactId>
+    <artifactId>hercules-cassandra-manager</artifactId>
 
     <dependencies>
         <dependency>
@@ -18,28 +18,11 @@
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-undertow-util</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-meta</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-auth</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-kafka-util</artifactId>
+            <artifactId>hercules-cassandra-util</artifactId>
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-management-task</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
         </dependency>
 
         <dependency>
@@ -62,7 +45,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>ru.kontur.vostok.hercules.management.api.ManagementApiApplication</mainClass>
+                                    <mainClass>ru.kontur.vostok.hercules.cassandra.manager.CassandraManagerApplication</mainClass>
                                 </transformer>
                             </transformers>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
