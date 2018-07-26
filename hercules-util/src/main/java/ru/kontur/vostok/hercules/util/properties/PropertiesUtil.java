@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -67,7 +68,11 @@ public class PropertiesUtil {
 
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> getAs(Properties properties, String name, Class<T> clazz) {
-        return Optional.ofNullable((T) converters.get(clazz).apply(properties.getProperty(name)));
+        Function<String, ?> converter = converters.get(clazz);
+        if (Objects.isNull(converter)) {
+            throw new RuntimeException(String.format("No converter found for class %s", clazz));
+        }
+        return Optional.ofNullable((T) converter.apply(properties.getProperty(name)));
     }
 
     public static Supplier<RuntimeException> missingPropertyError(String propertyName) {
