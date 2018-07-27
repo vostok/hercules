@@ -17,6 +17,8 @@ public class EventBuilder {
     private int version;
     private Map<String, Variant> tags = new LinkedHashMap<>();
 
+    private boolean wasBuild = false;
+
     public void setEventId(UUID eventId) {
         this.eventId = eventId;
     }
@@ -30,6 +32,12 @@ public class EventBuilder {
     }
 
     public Event build() {
+        if (wasBuild) {
+            throw new IllegalStateException("Builder already used");
+        } else {
+            wasBuild = true;
+        }
+
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Encoder encoder = new Encoder(stream);
 

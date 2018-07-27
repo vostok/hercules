@@ -18,6 +18,6 @@ public class ContainerUtil {
 
     public static <T> T extractRequired(Container container, String fieldName, Type type, Type ... types) {
         return ContainerUtil.<T>extractOptional(container, fieldName, type, types)
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required field '%s'", fieldName)));
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required field '%s' of type %s", fieldName, type)));
     }
 }

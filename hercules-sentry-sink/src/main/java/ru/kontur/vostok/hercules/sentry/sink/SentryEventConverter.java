@@ -11,7 +11,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
-import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -21,7 +21,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -46,15 +45,16 @@ public class SentryEventConverter {
         EventBuilder eventBuilder = new EventBuilder(event.getId());
         eventBuilder.withTimestamp(Date.from(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
-        eventBuilder.withSentryInterface(extractException(event));
+
+        EventUtil.<Container[]>extractOptional(event, "exceptions", Type.CONTAINER_VECTOR)
+                .ifPresent(exceptions -> eventBuilder.withSentryInterface(convertExceptions(exceptions)));
+
+        EventUtil.<String>extractOptional(event, "message", Type.TEXT).ifPresent(eventBuilder::withMessage);
 
         // TODO: Implement transformation of stacktraces
         for (Map.Entry<String, Variant> entry : event) {
             String key = entry.getKey();
-            if ("message".equals(key)) {
-                get(entry.getValue()).ifPresent(eventBuilder::withMessage);
-            }
-            else if ("environment".equals(key)) {
+            if ("environment".equals(key)) {
                 get(entry.getValue()).ifPresent(eventBuilder::withEnvironment);
             }
             else if ("release".equals(key)) {
@@ -71,13 +71,8 @@ public class SentryEventConverter {
         return sentryEvent;
     }
 
-    private static ExceptionInterface extractException(Event event) {
-        Optional<Container[]> exceptions = VariantUtil.extractRegardingType(event.getTag("exceptions"), Type.CONTAINER_VECTOR);
-        if (!exceptions.isPresent()) {
-            return null;
-        }
-
-        LinkedList<SentryException> sentryExceptions = Arrays.stream(exceptions.get())
+    private static ExceptionInterface convertExceptions(Container[] exceptions) {
+        LinkedList<SentryException> sentryExceptions = Arrays.stream(exceptions)
                 .map(SentryEventConverter::convertSingleException)
                 .collect(Collectors.toCollection(LinkedList::new));
 
@@ -88,11 +83,11 @@ public class SentryEventConverter {
         String type = ContainerUtil.extractRequired(exception, "type", Type.STRING);
         String value = ContainerUtil.extractRequired(exception, "value", Type.TEXT);
         String module = ContainerUtil.extractRequired(exception, "module", Type.TEXT);
-        Container[] stacktrace = ContainerUtil.extractRequired(exception, "stacktrace", Type.CONTAINER_VECTOR);
+        Container[] stacktrace = ContainerUtil.extractRequired(exception, "stacktrace", Type.CONTAINER_ARRAY);
 
         return new SentryException(
-                type,
                 value,
+                type,
                 module,
                 convertStacktrace(stacktrace)
         );
@@ -111,7 +106,7 @@ public class SentryEventConverter {
                 ContainerUtil.extractRequired(frame, "function", Type.STRING),
                 ContainerUtil.extractRequired(frame, "filename", Type.STRING),
                 ContainerUtil.extractRequired(frame, "lineno", Type.INTEGER),
-                (Integer) ContainerUtil.extractOptional(frame, "colno", Type.SHORT).orElse(null),
+                ContainerUtil.<Short>extractOptional(frame, "colno", Type.SHORT).map(Short::intValue).orElse(null),
                 ContainerUtil.extractRequired(frame, "abs_path", Type.TEXT),
                 null
         );

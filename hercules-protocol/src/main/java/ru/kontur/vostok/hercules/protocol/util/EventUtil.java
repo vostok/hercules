@@ -22,6 +22,6 @@ public class EventUtil {
 
     public static <T> T extractRequired(Event event, String tagName, Type type, Type... types) {
         return EventUtil.<T>extractOptional(event, tagName, type, types)
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required tag '%s'", tagName)));
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required tag '%s' of type %s", tagName, type)));
     }
 }

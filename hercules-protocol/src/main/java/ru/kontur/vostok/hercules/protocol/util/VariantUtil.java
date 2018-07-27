@@ -47,11 +47,11 @@ public final class VariantUtil {
 
     private static <T extends Enum<T>> int indexOf(T[] array, T element) {
         for (int i = 0; i < array.length; ++i) {
-            if (array[i].compareTo(element) != 0) {
+            if (array[i].compareTo(element) == 0) {
                 return i;
             }
         }
-        return -1;
+        return NOT_FOUND_INDEX;
     }
 
     private static <T> T[] join(T element, T[] array) {
