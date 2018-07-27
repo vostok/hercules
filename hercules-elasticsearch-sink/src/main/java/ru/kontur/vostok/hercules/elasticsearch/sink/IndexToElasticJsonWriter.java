@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.util.TagExtractor;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.IOException;
@@ -27,12 +27,12 @@ public final class IndexToElasticJsonWriter {
     public static boolean tryWriteIndex(OutputStream stream, Event event) throws IOException {
 
         String indexName;
-        Optional<String> index = TagExtractor.extractString(event, INDEX_TAG);
+        Optional<String> index = EventUtil.extractString(event, INDEX_TAG);
         if (index.isPresent()) {
             indexName = index.get();
         } else {
-            Optional<String> project = TagExtractor.extractString(event, PROJECT_TAG);
-            Optional<String> env = TagExtractor.extractString(event, ENVIRONMENT_TAG);
+            Optional<String> project = EventUtil.extractString(event, PROJECT_TAG);
+            Optional<String> env = EventUtil.extractString(event, ENVIRONMENT_TAG);
             if (project.isPresent() && env.isPresent()) {
                 indexName = project.get() + "-" +
                         env.get() + "-" +
