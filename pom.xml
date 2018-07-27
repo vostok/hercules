@@ -57,6 +57,7 @@
         <module>hercules-management-task</module>
         <module>hercules-cassandra-manager</module>
         <module>hercules-kafka-manager</module>
+        <module>hercules-init</module>
         <module>hercules-logger-logback</module>
         <module>hercules-logger-core</module>
     </modules>

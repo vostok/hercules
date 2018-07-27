@@ -43,5 +43,5 @@ public class TimelineRepository {
         return curatorClient.delete(zPrefix + '/' + name);
     }
 
-    private static String zPrefix = "/hercules/timeline";
+    private static String zPrefix = "/hercules/timelines";
 }

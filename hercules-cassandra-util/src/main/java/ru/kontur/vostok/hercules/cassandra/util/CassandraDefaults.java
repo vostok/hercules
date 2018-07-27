@@ -13,6 +13,7 @@ public final class CassandraDefaults {
     public static final int DEFAULT_CASSANDRA_PORT = ProtocolOptions.DEFAULT_PORT;
     public static final int DEFAULT_READ_TIMEOUT_MILLIS = SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS;
     public static final String DEFAULT_KEYSPACE = "hercules";
+    public static final short DEFAULT_REPLICATION_FACTOR = 3;
 
     // Default pooling options:
 

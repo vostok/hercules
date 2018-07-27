@@ -43,5 +43,5 @@ public class StreamRepository {
         return curatorClient.delete(zPrefix + '/' + name);
     }
 
-    private static String zPrefix = "/hercules/stream";
+    private static String zPrefix = "/hercules/streams";
 }
