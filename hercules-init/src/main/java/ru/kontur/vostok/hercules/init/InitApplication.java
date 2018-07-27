@@ -15,10 +15,9 @@ public class InitApplication {
         if (args.length == 0) {
             System.out.println("Arguments:\n"
                     + "\tapplication.properties=<path to file with properties>\n"
-                    + "\tinit-zk=<true if needed\n"
-                    + "\tinit-kafka=<true if needed\n"
-                    + "\tinit-cassandra=<true if needed\n"
-                    + "\trf=<replication factor (is used for cassandra and kafka>");
+                    + "\tinit-zk=<true if needed>\n"
+                    + "\tinit-kafka=<true if needed>\n"
+                    + "\tinit-cassandra=<true if needed>");
             return;
         }
 
