@@ -4,7 +4,7 @@ package ru.kontur.vostok.hercules.protocol.decoder;
  * Hercules Protocol Reader for vector
  *
  * @param <T> Type of collection for which defined Reader<T>
- * @author jdk
+ * @author Daniil Zhenikhov
  */
 public class VectorReader<T> extends CollectionReader<T> {
     public VectorReader(Reader<T> elementReader, Class<T> clazz) {

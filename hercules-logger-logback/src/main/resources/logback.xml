@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg %n
+            </Pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>TRACE</level>
+        </filter>
+    </appender>
+
+    <appender name="httpAppender" class="ru.kontur.vostok.hercules.logger.logback.LogbackHttpAppender">
+        <Configuration class="ru.kontur.vostok.hercules.logger.logback.LogbackHttpConfiguration">
+            <stream>stream_test</stream>
+            <loseOnOverflow>false</loseOnOverflow>
+        </Configuration>
+    </appender>
+
+    <root>
+        <level value="INFO"/>
+        <appender-ref ref="httpAppender"/>
+        <appender-ref ref="consoleAppender"/>
+    </root>
+</configuration>
