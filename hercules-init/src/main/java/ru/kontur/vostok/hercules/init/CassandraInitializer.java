@@ -1,0 +1,44 @@
+package ru.kontur.vostok.hercules.init;
+
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
+import ru.kontur.vostok.hercules.cassandra.util.CassandraDefaults;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+
+/**
+ * @author Gregory Koshelev
+ */
+public class CassandraInitializer {
+    private final Properties cassandraProperties;
+    private final short replicationFactor;
+
+    public CassandraInitializer(Properties properties, short replicationFactor) {
+        this.cassandraProperties = properties;
+        this.replicationFactor = replicationFactor;
+    }
+
+    public void init() {
+        List<String> nodes = PropertiesUtil.toList(cassandraProperties, "nodes");
+        if (nodes.isEmpty()) {
+            nodes = Collections.singletonList(CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS);
+        }
+
+        final int port = PropertiesUtil.get(cassandraProperties, "port", CassandraDefaults.DEFAULT_CASSANDRA_PORT);
+        final String keyspace = cassandraProperties.getProperty("keyspace", CassandraDefaults.DEFAULT_KEYSPACE);
+
+        Cluster.Builder builder = Cluster.builder().withPort(port).withoutJMXReporting();
+
+        for (String node : nodes) {
+            builder.addContactPoint(node);
+        }
+
+        try (Cluster cluster = builder.build(); Session session = cluster.connect()) {
+            // Create keyspace if it doesn't exist
+            session.execute("CREATE KEYSPACE IF NOT EXISTS " + keyspace + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : " + replicationFactor + " };");
+        }
+    }
+}

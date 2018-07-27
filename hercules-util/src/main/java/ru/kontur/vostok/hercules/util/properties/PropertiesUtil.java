@@ -1,11 +1,14 @@
 package ru.kontur.vostok.hercules.util.properties;
 
+import ru.kontur.vostok.hercules.util.text.StringUtil;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -17,15 +20,6 @@ import java.util.function.Supplier;
  * @author Gregory Koshelev
  */
 public class PropertiesUtil {
-    public static short get(Properties properties, String name, short defaultValue) {
-        String stringValue = properties.getProperty(name);
-        if (stringValue == null || stringValue.isEmpty()) {
-            return defaultValue;
-        }
-        return Short.parseShort(stringValue);
-    }
-
-
     private static Map<Class<?>, Function<String, ?>> converters = new HashMap<>();
     static {
         converters.put(String.class, Function.identity());
@@ -36,6 +30,19 @@ public class PropertiesUtil {
                 return null;
             }
         });
+    }
+
+    public static short get(Properties properties, String name, short defaultValue) {
+        String stringValue = properties.getProperty(name);
+        if (stringValue == null || stringValue.isEmpty()) {
+            return defaultValue;
+        }
+        return Short.parseShort(stringValue);
+    }
+
+    public static boolean getBoolean(Properties properties, String name, boolean defaultValue) {
+        String stringValue = properties.getProperty(name);
+        return StringUtil.tryParseBoolean(stringValue, defaultValue);
     }
 
     public static int get(Properties properties, String name, int defaultValue) {
@@ -55,11 +62,12 @@ public class PropertiesUtil {
     }
 
     public static Set<String> toSet(Properties properties, String name) {
-        String value = properties.getProperty(name, "");
-        String[] split = value.split(",");
-        Set<String> set = new HashSet<>(split.length);
-        set.addAll(Arrays.asList(split));
-        return set;
+        return new HashSet<>(toList(properties, name));
+    }
+
+    public static List<String> toList(Properties properties, String name) {
+        String value = properties.getProperty(name);
+        return StringUtil.toList(value, ',');
     }
 
     public static Properties readProperties(String path) {
