@@ -27,7 +27,6 @@ public class InitApplication {
         Properties applicationProperties =
                 PropertiesUtil.readProperties(
                         parameters.getOrDefault("application.properties", "application.properties"));
-        short replicationFactor = StringUtil.tryParseShort(parameters.get("rf"), (short) 1);
 
         if (StringUtil.tryParseBoolean(parameters.get("init-zk"), false)) {
             try {
@@ -40,7 +39,7 @@ public class InitApplication {
 
         if (StringUtil.tryParseBoolean(parameters.get("init-kafka"), false)) {
             try {
-                new KafkaInitializer(PropertiesUtil.subProperties(applicationProperties, "kafka", '.'), replicationFactor).init();
+                new KafkaInitializer(PropertiesUtil.subProperties(applicationProperties, "kafka", '.')).init();
             } catch (Exception e) {
                 System.out.println("Kafka initialization fails with exception " + e.toString());
                 e.printStackTrace();
@@ -49,7 +48,7 @@ public class InitApplication {
 
         if (StringUtil.tryParseBoolean(parameters.get("init-cassandra"), false)) {
             try {
-                new CassandraInitializer(PropertiesUtil.subProperties(applicationProperties, "cassandra", '.'), replicationFactor).init();
+                new CassandraInitializer(PropertiesUtil.subProperties(applicationProperties, "cassandra", '.')).init();
             } catch (Exception e) {
                 System.out.println("Cassandra initialization fails with exception " + e.toString());
                 e.printStackTrace();

@@ -32,12 +32,9 @@ public class PropertiesUtil {
         });
     }
 
-    public static short get(Properties properties, String name, short defaultValue) {
+    public static short getShort(Properties properties, String name, short defaultValue) {
         String stringValue = properties.getProperty(name);
-        if (stringValue == null || stringValue.isEmpty()) {
-            return defaultValue;
-        }
-        return Short.parseShort(stringValue);
+        return StringUtil.tryParseShort(stringValue, defaultValue);
     }
 
     public static boolean getBoolean(Properties properties, String name, boolean defaultValue) {

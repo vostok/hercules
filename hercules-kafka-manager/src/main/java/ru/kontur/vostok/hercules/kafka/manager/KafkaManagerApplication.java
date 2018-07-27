@@ -24,7 +24,7 @@ public class KafkaManagerApplication {
             Properties kafkaProperties = PropertiesUtil.readProperties(parameters.getOrDefault("kafka.properties", "kafka.properties"));
             Properties consumerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("consumer.properties", "consumer.properties"));
 
-            kafkaManager = new KafkaManager(kafkaProperties, PropertiesUtil.get(applicationProperties, "replicationFactor", (short) 1));
+            kafkaManager = new KafkaManager(kafkaProperties, PropertiesUtil.getShort(applicationProperties, "replicationFactor", (short) 1));
 
             consumer = new KafkaTaskConsumer(consumerProperties, kafkaManager);
             consumer.start();

@@ -14,11 +14,9 @@ import java.util.Properties;
  */
 public class CassandraInitializer {
     private final Properties cassandraProperties;
-    private final short replicationFactor;
 
-    public CassandraInitializer(Properties properties, short replicationFactor) {
+    public CassandraInitializer(Properties properties) {
         this.cassandraProperties = properties;
-        this.replicationFactor = replicationFactor;
     }
 
     public void init() {
@@ -27,6 +25,7 @@ public class CassandraInitializer {
             nodes = Collections.singletonList(CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS);
         }
 
+        final short replicationFactor = PropertiesUtil.getShort(cassandraProperties, "replication.factor", CassandraDefaults.DEFAULT_REPLICATION_FACTOR);
         final int port = PropertiesUtil.get(cassandraProperties, "port", CassandraDefaults.DEFAULT_CASSANDRA_PORT);
         final String keyspace = cassandraProperties.getProperty("keyspace", CassandraDefaults.DEFAULT_KEYSPACE);
 
