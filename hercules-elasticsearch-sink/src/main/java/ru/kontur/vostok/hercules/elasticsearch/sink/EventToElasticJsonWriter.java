@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 
-public class EventToElasticJsonWriter {
+public final class EventToElasticJsonWriter {
 
     @FunctionalInterface
     private interface VariantValueToJsonWriter {
@@ -179,5 +179,8 @@ public class EventToElasticJsonWriter {
             generator.writeString(new String(bytes, StandardCharsets.UTF_8));
         }
         generator.writeEndArray();
+    }
+
+    private EventToElasticJsonWriter() {
     }
 }

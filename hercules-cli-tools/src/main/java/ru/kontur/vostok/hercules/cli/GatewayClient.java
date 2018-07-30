@@ -15,10 +15,13 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 
 public class GatewayClient {
 
     private static final EventWriter eventWriter = new EventWriter();
+
+    private static final Random RANDOM = new Random();
 
     private static String server;
 
@@ -29,13 +32,10 @@ public class GatewayClient {
 
         server = "http://" + properties.getProperty("server");
 
-/*
-        for (int i = 0; i < 1000; ++i) {
-            sendEvents("test-elastic-sink", generateEvents(10000));
-        }*/
-
-        //sendSingleEvent("test-elastic-sink", generateEvent());
-        sendEvents("test-elastic-sink", generateEvents(10));
+        for (int i = 0; i < 100; ++i) {
+            sendEvents("bulk-test", generateEvents(1));
+            Thread.sleep(5000);
+        }
 
         Unirest.shutdown();
     }
@@ -86,17 +86,21 @@ public class GatewayClient {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
         eventBuilder.setEventId(UuidGenerator.getClientInstance().next());
-        eventBuilder.setTag("sample-tag", Variant.ofString("sample value"));
-        eventBuilder.setTag("sample-long", Variant.ofLong(123L));
-        eventBuilder.setTag("sample-flag", Variant.ofFlag(true));
-        eventBuilder.setTag("sample-float", Variant.ofFloat(0.123456789f));
-        eventBuilder.setTag("sample-double", Variant.ofDouble(0.123456789));
-        eventBuilder.setTag("project", Variant.ofString("awesome-project"));
-        eventBuilder.setTag("env", Variant.ofString("production"));
-        if (0 == i % 2) {
-            eventBuilder.setTag("index", Variant.ofString("tstidx0"));
-        } else {
-            eventBuilder.setTag("index", Variant.ofString("tstidx1"));
+
+        eventBuilder.setTag("message", Variant.ofString("Try to use project name"));
+        eventBuilder.setTag("environment", Variant.ofString("production"));
+        eventBuilder.setTag("release", Variant.ofString("123.456"));
+
+        eventBuilder.setTag("index", Variant.ofString("tstidx"));
+
+        eventBuilder.setTag("metric-name", Variant.ofString("test.gateway.client"));
+        eventBuilder.setTag("metric-value", Variant.ofDouble(RANDOM.nextInt(100)));
+
+        try {
+            //Thread.sleep(5_000);
+        }
+        catch (Exception e) {
+            // omit
         }
 
         Event result = eventBuilder.build();

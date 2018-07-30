@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
-import java.util.TimeZone;
 
 public final class IndexToElasticJsonWriter {
 
@@ -25,7 +24,7 @@ public final class IndexToElasticJsonWriter {
     private static final byte[] END_BYTES = "\"}}".getBytes(StandardCharsets.UTF_8);
 
 
-    public static boolean writeIndex(OutputStream stream, Event event) throws IOException {
+    public static boolean tryWriteIndex(OutputStream stream, Event event) throws IOException {
 
         String indexName;
         Optional<String> index = TagExtractor.extractString(event, INDEX_TAG);

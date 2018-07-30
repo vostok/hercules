@@ -7,6 +7,8 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
+import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
+import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
 import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
 import ru.kontur.vostok.hercules.management.api.stream.CreateStreamHandler;
@@ -29,16 +31,25 @@ import java.util.Properties;
 public class HttpServer {
     private final Undertow undertow;
 
-    public HttpServer(Properties properties, AdminManager adminManager, AuthManager authManager, StreamRepository streamRepository, TimelineRepository timelineRepository, BlacklistRepository blacklistRepository, RuleRepository ruleRepository) {
+    public HttpServer(
+            Properties properties,
+            AdminManager adminManager,
+            AuthManager authManager,
+            StreamRepository streamRepository,
+            TimelineRepository timelineRepository,
+            BlacklistRepository blacklistRepository,
+            RuleRepository ruleRepository,
+            CassandraTaskQueue cassandraTaskQueue,
+            KafkaTaskQueue kafkaTaskQueue) {
         String host = properties.getProperty("host", "0.0.0.0");
-        int port = PropertiesUtil.get(properties, "port", 6307);
+        int port = PropertiesUtil.get(properties, "port", 6309);
 
-        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository);
-        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository);
+        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository, kafkaTaskQueue);
+        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository, kafkaTaskQueue);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
 
-        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineRepository);
-        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineRepository);
+        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
+        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
 
         SetRuleHandler setRuleHandler = new SetRuleHandler(adminManager, ruleRepository);

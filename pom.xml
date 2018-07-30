@@ -26,6 +26,10 @@
         <unirest.version>1.4.9</unirest.version>
         <elasticsearch.client.version>6.2.4</elasticsearch.client.version>
         <micrometer.core>1.0.5</micrometer.core>
+        <httpclient.verstion>4.5.3</httpclient.verstion>
+        <log4j.verstion>2.11.0</log4j.verstion>
+        <logback.version>1.2.3</logback.version>
+        <jetbrains.annotations>16.0.2</jetbrains.annotations>
     </properties>
 
     <modules>
@@ -45,9 +49,19 @@
         <module>hercules-uuid</module>
         <module>hercules-cassandra-util</module>
         <module>hercules-management-api</module>
+        <module>hercules-sentry-sink</module>
+        <module>hercules-graphite-sink</module>
         <module>hercules-undertow-util</module>
         <module>hercules-metrics</module>
         <module>hercules-micrometer-registry</module>
+        <module>hercules-gateway-client</module>
+        <module>hercules-logger-log4j</module>
+        <module>hercules-management-task</module>
+        <module>hercules-cassandra-manager</module>
+        <module>hercules-kafka-manager</module>
+        <module>hercules-init</module>
+        <module>hercules-logger-logback</module>
+        <module>hercules-logger-core</module>
     </modules>
 
     <dependencyManagement>
@@ -57,6 +71,32 @@
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-core</artifactId>
                 <version>${micrometer.core}</version>
+            </dependency>
+        
+            <!-- Jetbrains Annotations -->
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${jetbrains.annotations}</version>
+            </dependency>
+
+            <!-- Logging libraries -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.verstion}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+
+            <!-- Apache Http client -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.verstion}</version>
             </dependency>
 
             <!-- Apache Kafka client -->
@@ -129,6 +169,11 @@
 
             <!-- Jackson -->
             <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${jackson.version}</version>
@@ -165,6 +210,13 @@
                 <version>${elasticsearch.client.version}</version>
             </dependency>
 
+            <!-- Sentry client -->
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry</artifactId>
+                <version>1.7.5</version>
+            </dependency>
+
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-util</artifactId>
@@ -179,6 +231,13 @@
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-protocol</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-protocol</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
@@ -213,6 +272,31 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-metrics</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-gateway-client</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-logger-log4j</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-logger-logback</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-logger-core</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-management-task</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
             </dependency>
 

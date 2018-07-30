@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.management.api.stream;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
@@ -16,10 +17,12 @@ import java.util.Optional;
 public class DeleteStreamHandler implements HttpHandler {
     private final AuthManager authManager;
     private final StreamRepository repository;
+    private final KafkaTaskQueue kafkaTaskQueue;
 
-    public DeleteStreamHandler(AuthManager authManager, StreamRepository repository) {
+    public DeleteStreamHandler(AuthManager authManager, StreamRepository repository, KafkaTaskQueue kafkaTaskQueue) {
         this.authManager = authManager;
         this.repository = repository;
+        this.kafkaTaskQueue = kafkaTaskQueue;
     }
 
     @Override
@@ -39,6 +42,9 @@ public class DeleteStreamHandler implements HttpHandler {
 
         //TODO: auth
 
+        kafkaTaskQueue.deleteTopic(stream);
+
+        //TODO: Meta deletion may fail after successful topic deletion (no atomicity at all).
         DeletionResult deletionResult = repository.delete(stream);
         if (!deletionResult.isSuccess()) {
             switch (deletionResult.getStatus()) {
@@ -50,8 +56,6 @@ public class DeleteStreamHandler implements HttpHandler {
                     return;
             }
         }
-
-        //TODO: delete topic too
 
         ResponseUtil.ok(exchange);
     }

@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 /**
  * Hercules Protocol Writer for array of container
  *
- * @author jdk
+ * @author Daniil Zhenikhov
  */
 public class ContainerArrayWriter implements Writer<Container[]> {
     public static final ContainerArrayWriter INSTANCE = new ContainerArrayWriter();
