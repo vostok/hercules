@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import io.sentry.event.Event.Level;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.Sdk;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -12,6 +13,7 @@ import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
+import ru.kontur.vostok.hercules.util.enumeration.EnumUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -49,7 +51,12 @@ public class SentryEventConverter {
         EventUtil.<Container[]>extractOptional(event, "exceptions", Type.CONTAINER_VECTOR)
                 .ifPresent(exceptions -> eventBuilder.withSentryInterface(convertExceptions(exceptions)));
 
-        EventUtil.<String>extractOptional(event, "message", Type.TEXT).ifPresent(eventBuilder::withMessage);
+        EventUtil.<String>extractOptional(event, "message", Type.TEXT)
+                .ifPresent(eventBuilder::withMessage);
+
+        EventUtil.<String>extractOptional(event, "level", Type.STRING)
+                .flatMap(s -> EnumUtil.parseOptional(Level.class, s))
+                .ifPresent(eventBuilder::withLevel);
 
         // TODO: Implement transformation of stacktraces
         for (Map.Entry<String, Variant> entry : event) {

@@ -99,6 +99,7 @@ public class GatewayClient {
         eventBuilder.setTag("exceptions", Variant.ofContainerVector(new Container[]{
                 createException(new IllegalArgumentException("aaa"))
         }));
+        eventBuilder.setTag("level", Variant.ofString("info"));
         Event result = eventBuilder.build();
 
         System.out.println("Event created: 0x" + DatatypeConverter.printHexBinary(result.getBytes()));
