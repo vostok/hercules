@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  description: 'Management api for Hercules. Uses for   for create, midify, delete streams and timelines'
+  description: 'Management api for Hercules. Uses for create, midify, delete streams and timelines'
   version: 0.1.0
   title: Hercules management API
 host: 'vstk-airgate:6307'
@@ -179,20 +179,20 @@ paths:
         - $ref: '#/parameters/apiKey'
         - name: key
           in: query
-          description: API-ключ, для которого устанавливается правило авторизации
+          description: API key for which rule is set
           required: true
           type: string
           pattern: '[a-zA-Z0-9_\-]+'
         - name: pattern
           in: query
-          description: Шаблон для названия стрима или таймлайна
+          description: Pattern for stream or timelime names
           required: true
           type: string
           pattern: '[a-z0-9_\*\?]+'
           example: proj_name_*
         - name: rights
           in: query
-          description: Маска прав
+          description: Combination of read, write and modified rights
           required: true
           type: string
           enum: 
@@ -343,7 +343,7 @@ definitions:
       slices:
         type: string
       shardingKey:
-        description: Если то то то
+        description: todo
         type: array
         items:
           type: string
@@ -362,7 +362,7 @@ parameters:
     type: string
     pattern: '^\d{3}-\d{2}-\d{4}$'
     required: true
-    description: API-ключ для идентификации клиента
+    description: API key for authorization
 responses:
   unauthorized:
     description: Unauthorized
