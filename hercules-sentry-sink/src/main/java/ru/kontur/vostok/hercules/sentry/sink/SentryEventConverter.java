@@ -58,19 +58,25 @@ public class SentryEventConverter {
                 .flatMap(s -> EnumUtil.parseOptional(Level.class, s))
                 .ifPresent(eventBuilder::withLevel);
 
-        // TODO: Implement transformation of stacktraces
+        EventUtil.<String>extractOptional(event, "platform", Type.STRING)
+                .ifPresent(eventBuilder::withPlatform);
+
+        EventUtil.<String>extractOptional(event,"environment", Type.STRING)
+                .ifPresent(eventBuilder::withEnvironment);
+
+        EventUtil.<String>extractOptional(event,"release", Type.STRING)
+                .ifPresent(eventBuilder::withRelease);
+
+        EventUtil.<String>extractOptional(event,"server", Type.STRING)
+                .ifPresent(eventBuilder::withServerName);
+
+
+        /*
         for (Map.Entry<String, Variant> entry : event) {
             String key = entry.getKey();
-            if ("environment".equals(key)) {
-                get(entry.getValue()).ifPresent(eventBuilder::withEnvironment);
-            }
-            else if ("release".equals(key)) {
-                get(entry.getValue()).ifPresent(eventBuilder::withRelease);
-            }
-            else {
-                get(entry.getValue()).ifPresent(value -> eventBuilder.withTag(key, value));
-            }
+            get(entry.getValue()).ifPresent(value -> eventBuilder.withTag(key, value));
         }
+        */
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
         sentryEvent.setSdk(SDK);
