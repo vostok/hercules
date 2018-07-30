@@ -87,7 +87,7 @@ public class GatewayClient {
         eventBuilder.setVersion(1);
         eventBuilder.setEventId(UuidGenerator.getClientInstance().next());
 
-        eventBuilder.setTag("token", Variant.ofString("1131f35ab5af49a1b1f3b1a3984d4590@4"));
+        eventBuilder.setTag("sentry-token", Variant.ofString("1131f35ab5af49a1b1f3b1a3984d4590@4"));
         eventBuilder.setTag("platform", Variant.ofString("python"));
         eventBuilder.setTag("server", Variant.ofString("just.some.server"));
 

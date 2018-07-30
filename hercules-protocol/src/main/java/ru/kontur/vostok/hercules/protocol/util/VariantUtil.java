@@ -5,7 +5,6 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -42,6 +41,24 @@ public final class VariantUtil {
                 return Optional.of((T) result);
             default:
                 return Optional.of((T) variant.getValue());
+        }
+    }
+
+    public static Optional<String> extractPrimitiveAsString(Variant variant) {
+        switch (variant.getType()) {
+            case BYTE:
+            case SHORT:
+            case INTEGER:
+            case LONG:
+            case FLAG:
+            case FLOAT:
+            case DOUBLE:
+                return Optional.of(String.valueOf(variant.getValue()));
+            case STRING:
+            case TEXT:
+                return Optional.of(new String((byte[]) variant.getValue(), StandardCharsets.UTF_8));
+            default:
+                return Optional.empty();
         }
     }
 

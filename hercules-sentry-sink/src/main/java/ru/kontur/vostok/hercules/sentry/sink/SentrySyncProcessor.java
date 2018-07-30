@@ -9,6 +9,7 @@ import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,6 +25,8 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
 
+    public static final String SENTRY_TOKEN_TAG = "sentry-token";
+
     private final ConcurrentHashMap<String, SentryClient> clients = new ConcurrentHashMap<>();
     private final String sentryHost;
     private final String sentryPort;
@@ -37,7 +40,7 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
     @Override
     public void process(UUID key, Event value) {
-        String token = EventUtil.extractRequired(value, "token", Type.STRING);
+        String token = EventUtil.extractRequired(value, SENTRY_TOKEN_TAG, Type.STRING);
 
         getSentryClient(token).sendEvent(SentryEventConverter.convert(value));
     }
