@@ -79,6 +79,10 @@ public class PropertiesUtil {
         return () -> new RuntimeException(String.format("Missing required property '%s'", propertyName));
     }
 
+    public static <T> T getRequiredProperty(Properties properties, String name, Class<T> clazz) {
+        return getAs(properties, name, clazz).orElseThrow(missingPropertyError(name));
+    }
+
     public static Properties subProperties(Properties properties, String prefix) {
         return subProperties(properties, prefix, '.');
     }

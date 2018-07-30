@@ -87,6 +87,8 @@ public class GatewayClient {
         eventBuilder.setVersion(1);
         eventBuilder.setEventId(UuidGenerator.getClientInstance().next());
 
+        eventBuilder.setTag("token", Variant.ofString("1131f35ab5af49a1b1f3b1a3984d4590@4"));
+
         eventBuilder.setTag("message", Variant.ofString("Try to use project name"));
         eventBuilder.setTag("environment", Variant.ofString("production"));
         eventBuilder.setTag("release", Variant.ofString("123.456"));
