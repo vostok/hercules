@@ -56,9 +56,9 @@ public class ReadStreamHandler implements HttpHandler {
                 } catch (Exception e) {
                     e.printStackTrace();
                     exchange.setStatusCode(500);
+                    exchange.endExchange();
                 }
                 finally {
-                    exchange.endExchange();
                 }
             });
         });
