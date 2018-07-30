@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.management.api.timeline;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
 import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
@@ -16,10 +17,12 @@ import java.util.Optional;
 public class DeleteTimelineHandler implements HttpHandler {
     private final AuthManager authManager;
     private final TimelineRepository repository;
+    private final CassandraTaskQueue cassandraTaskQueue;
 
-    public DeleteTimelineHandler(AuthManager authManager, TimelineRepository repository) {
+    public DeleteTimelineHandler(AuthManager authManager, TimelineRepository repository, CassandraTaskQueue cassandraTaskQueue) {
         this.authManager = authManager;
         this.repository = repository;
+        this.cassandraTaskQueue = cassandraTaskQueue;
     }
 
     @Override
@@ -39,6 +42,9 @@ public class DeleteTimelineHandler implements HttpHandler {
 
         //TODO: auth
 
+        cassandraTaskQueue.deleteTable(timeline);
+
+        //TODO: Meta deletion may fail after successful topic deletion (no atomicity at all).
         DeletionResult deletionResult = repository.delete(timeline);
         if (!deletionResult.isSuccess()) {
             switch (deletionResult.getStatus()) {
@@ -50,8 +56,6 @@ public class DeleteTimelineHandler implements HttpHandler {
                     return;
             }
         }
-
-        //TODO: delete table too
 
         ResponseUtil.ok(exchange);
     }

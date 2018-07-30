@@ -4,6 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
@@ -24,5 +27,15 @@ public final class StreamUtil {
 
     public static InputStream toInputStream(String data) {
         return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+    }
+
+    // Based on https://stackoverflow.com/a/24511534
+    public static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
+        return asStream(sourceIterator, false);
+    }
+
+    public static <T> Stream<T> asStream(Iterator<T> sourceIterator, boolean parallel) {
+        Iterable<T> iterable = () -> sourceIterator;
+        return StreamSupport.stream(iterable.spliterator(), parallel);
     }
 }
