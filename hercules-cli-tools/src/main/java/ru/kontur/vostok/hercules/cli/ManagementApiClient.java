@@ -25,7 +25,7 @@ public class ManagementApiClient {
 
 
         BaseStream stream = new BaseStream();
-        stream.setName("bulk-test");
+        stream.setName("test_retention");
         stream.setPartitions(1);
         stream.setShardingKey(new String[0]);
 
@@ -36,7 +36,7 @@ public class ManagementApiClient {
 
     private static void createStream(Stream stream) throws Exception {
         HttpResponse<String> response = Unirest.post(server + "/streams/create")
-                .header("apiKey", "dummy")
+                .header("apiKey", "test")
                 .body(stream)
                 .asString();
 
