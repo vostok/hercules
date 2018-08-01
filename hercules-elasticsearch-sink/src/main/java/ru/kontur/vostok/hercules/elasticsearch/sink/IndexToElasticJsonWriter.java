@@ -20,7 +20,7 @@ public final class IndexToElasticJsonWriter {
     private static final String ENVIRONMENT_TAG = "env";
 
     private static final byte[] START_BYTES = "{\"index\":{\"_index\":\"".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] MIDDLE_BYTES = "\",\"_id\":\"".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] MIDDLE_BYTES = "\",\"_type\":\"_doc\",\"_id\":\"".getBytes(StandardCharsets.UTF_8);
     private static final byte[] END_BYTES = "\"}}".getBytes(StandardCharsets.UTF_8);
 
 

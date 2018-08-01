@@ -23,12 +23,10 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
     private final RestClient restClient;
-    private final String indexName;
 
     public ElasticSearchEventSender(Properties elasticsearchProperties) {
         HttpHost[] hosts = parseHosts(elasticsearchProperties.getProperty("server"));
         this.restClient = RestClient.builder(hosts).build();
-        this.indexName = elasticsearchProperties.getProperty("index.name");
     }
 
     @Override
@@ -43,7 +41,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         if (0 < stream.size()) {
             Response response = toUnchecked(() -> restClient.performRequest(
                     "POST",
-                    "/" + indexName + "/_doc/_bulk",
+                    "/_bulk",
                     Collections.emptyMap(),
                     new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
 
