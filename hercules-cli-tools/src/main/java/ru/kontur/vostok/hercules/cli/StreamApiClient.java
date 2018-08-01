@@ -17,6 +17,8 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -35,7 +37,9 @@ public class StreamApiClient {
 
         server = "http://" + properties.getProperty("server");
 
-        getStreamContent("test-elastic-sink", 10);
+        System.out.println(String.format("Started at %s", DateTimeFormatter.ISO_DATE_TIME.format(LocalDateTime.now())));
+
+        getStreamContent("test_retention", 15);
 
         Unirest.shutdown();
     }

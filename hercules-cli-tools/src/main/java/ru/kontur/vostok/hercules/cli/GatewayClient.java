@@ -13,6 +13,8 @@ import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -25,14 +27,23 @@ public class GatewayClient {
 
     private static String server;
 
+    private static volatile boolean running = true;
+
     public static void main(String[] args) throws Exception {
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> running = false));
 
         Map<String, String> parameters = ArgsParser.parse(args);
         Properties properties = PropertiesUtil.readProperties(parameters.getOrDefault("gateway-client.properties", "gateway-client.properties"));
 
         server = "http://" + properties.getProperty("server");
 
-        sendEvents("test_elastic", generateEvents(100));
+
+
+        while (running) {
+            sendEvents("test_retention", generateEvents(1));
+            Thread.sleep(100);
+        }
 
         Unirest.shutdown();
     }
@@ -92,6 +103,8 @@ public class GatewayClient {
 
         eventBuilder.setTag("metric-name", Variant.ofString("test.gateway.client"));
         eventBuilder.setTag("metric-value", Variant.ofDouble(RANDOM.nextInt(100)));
+
+        eventBuilder.setTag("ts", Variant.ofString(DateTimeFormatter.ISO_DATE_TIME.format(LocalDateTime.now())));
 
         try {
             //Thread.sleep(5_000);

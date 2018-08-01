@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.stream.api;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -40,12 +41,13 @@ public class StreamReader {
     public ByteStreamContent getStreamContent(String streamName, StreamReadState readState, int k, int n, int take) {
 
         Properties props = new Properties();
-        props.put("bootstrap.servers", servers);
-        props.put("group.id", generateUniqueName());
-        props.put("enable.auto.commit", "false");
-        props.put("max.poll.records", take);
-        props.put("key.deserializer", VoidDeserializer.class.getName());
-        props.put("value.deserializer", ByteArrayDeserializer.class.getName());
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, generateUniqueName());
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, take);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, VoidDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 
         try {
             KafkaConsumer<Void, byte[]> consumer = new KafkaConsumer<>(props);
@@ -59,25 +61,34 @@ public class StreamReader {
                         .mapToObj(partition -> new TopicPartition(stream.getName(), partition))
                         .collect(Collectors.toList());
 
+                // TODO: Add partition exist checking
+                Map<TopicPartition, Long> offsets = consumer.beginningOffsets(partitions);
+                for (Map.Entry<TopicPartition, Long> entry : stateToMap(streamName, readState).entrySet()) {
+                    Long requestOffset = entry.getValue();
+                    Long beginningOffset = offsets.get(entry.getKey());
+                    if (beginningOffset < requestOffset) {
+                        offsets.put(entry.getKey(), entry.getValue());
+                    }
+                }
+
                 consumer.assign(partitions);
 
-                Map<Integer, Long> offsets = partitions.stream().collect(Collectors.toMap(TopicPartition::partition, p -> 0L));
-                offsets.putAll(stateToMap(readState));
-
                 for (TopicPartition partition : partitions) {
-                    consumer.seek(partition, offsets.get(partition.partition()));
+                    consumer.seek(partition, offsets.get(partition));
                 }
 
                 ConsumerRecords<Void, byte[]> poll = consumer.poll(pollTimeout);
 
+                Map<Integer, Long> offsetsByPartition = new HashMap<>();
                 List<byte[]> result = new ArrayList<>(poll.count());
                 for (ConsumerRecord<Void, byte[]> record : poll) {
                     result.add(record.value());
-                    offsets.put(record.partition(), record.offset() + 1);
+                    offsetsByPartition.put(record.partition(), record.offset() + 1);
                 }
+                offsetsByPartition.forEach((partition, offset) -> offsets.put(new TopicPartition(streamName, partition), offset));
 
                 return new ByteStreamContent(
-                        stateFromMap(offsets),
+                        stateFromMap(streamName, offsets),
                         result.toArray(new byte[][]{})
                 );
             } finally {
@@ -96,15 +107,19 @@ public class StreamReader {
         });
     }
 
-    private static Map<Integer, Long> stateToMap(StreamReadState state) {
+    private static Map<TopicPartition, Long> stateToMap(String streamName, StreamReadState state) {
         return Arrays.stream(state.getShardStates())
-                .collect(Collectors.toMap(StreamShardReadState::getPartition, StreamShardReadState::getOffset));
+                .collect(Collectors.toMap(
+                        shardState -> new TopicPartition(streamName, shardState.getPartition()),
+                        StreamShardReadState::getOffset
+                ));
     }
 
-    private static StreamReadState stateFromMap(Map<Integer, Long> map) {
+    private static StreamReadState stateFromMap(String streamName, Map<TopicPartition, Long> map) {
         return new StreamReadState(
                 map.entrySet().stream()
-                        .map(e -> new StreamShardReadState(e.getKey(), e.getValue()))
+                        .filter(e -> e.getKey().topic().equals(streamName))
+                        .map(e -> new StreamShardReadState(e.getKey().partition(), e.getValue()))
                         .collect(Collectors.toList())
                         .toArray(new StreamShardReadState[]{})
         );

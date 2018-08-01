@@ -25,7 +25,7 @@ public class ManagementApiClient {
 
 
         BaseStream stream = new BaseStream();
-        stream.setName("test_elastic");
+        stream.setName("test_retention");
         stream.setPartitions(1);
         stream.setShardingKey(new String[0]);
 
