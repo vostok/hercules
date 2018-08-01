@@ -77,7 +77,7 @@ public class StreamReader {
                     consumer.seek(partition, offsets.get(partition));
                 }
 
-                ConsumerRecords<Void, byte[]> poll = consumer.poll(0);
+                ConsumerRecords<Void, byte[]> poll = consumer.poll(pollTimeout);
 
                 Map<Integer, Long> offsetsByPartition = new HashMap<>();
                 List<byte[]> result = new ArrayList<>(poll.count());
