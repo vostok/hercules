@@ -17,6 +17,27 @@ public class HerculesMeterRegistry extends DropwizardMeterRegistry {
     private final HerculesMetricReporter reporter;
 
     public HerculesMeterRegistry(HerculesMetricConfig config,
+                                 Clock clock) {
+        this(config, clock, HierarchicalNameMapper.DEFAULT);
+    }
+
+    public HerculesMeterRegistry(HerculesMetricConfig config,
+                                 Clock clock,
+                                 HierarchicalNameMapper nameMapper) {
+        this(config, clock, nameMapper, new MetricRegistry());
+    }
+
+    public HerculesMeterRegistry(HerculesMetricConfig config,
+                                 Clock clock,
+                                 HierarchicalNameMapper hierarchicalNameMapper,
+                                 MetricRegistry metricRegistry) {
+        this(config, clock,
+                hierarchicalNameMapper,
+                metricRegistry,
+                defaultHerculesMetricReporter(config, clock, metricRegistry));
+    }
+
+    public HerculesMeterRegistry(HerculesMetricConfig config,
                                  Clock clock,
                                  HierarchicalNameMapper nameMapper,
                                  MetricRegistry metricRegistry,
@@ -35,6 +56,7 @@ public class HerculesMeterRegistry extends DropwizardMeterRegistry {
                                                                         Clock clock,
                                                                         MetricRegistry metricRegistry) {
         return HerculesMetricReporter.forRegistry(metricRegistry)
+                .registerStream(config.eventQueue())
                 .withClock(new DropwizardClock(clock))
                 .convertRatesTo(config.rateUnits())
                 .convertDurationsTo(config.durationUnits())

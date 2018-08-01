@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.micrometer.registry;
 
 import io.micrometer.core.instrument.dropwizard.DropwizardConfig;
 import io.micrometer.core.lang.Nullable;
+import ru.kontur.vostok.hercules.gateway.client.EventQueue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +29,27 @@ public interface HerculesMetricConfig extends DropwizardConfig {
      */
     default String prefix() {
         return "hercules.metrics";
+    }
+
+    default String prefixEventQueue() {
+        return prefix() + ".queue";
+    }
+
+    default EventQueue eventQueue() {
+        String prefixQueueName = prefixEventQueue();
+        String name = get(prefixQueueName + ".name");
+        String stream = get(prefixQueueName + ".stream");
+        long periodMillis = Long.parseLong(get(prefixQueueName + ".periodMillis"));
+        int batchSize = Integer.parseInt(get(prefixQueueName + ".batchSize"));
+        int capacity = Integer.parseInt(get(prefixQueueName + ".capacity"));
+        boolean loseOnOverflow = Boolean.parseBoolean(get(prefixQueueName + ".loseOnOverflow"));
+
+        return new EventQueue(name,
+                stream,
+                periodMillis,
+                batchSize,
+                capacity,
+                loseOnOverflow);
     }
 
     /**
