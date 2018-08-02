@@ -8,6 +8,8 @@ import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static ru.kontur.vostok.hercules.uuid.UuidUtil.makeMostSigBits;
+
 /**
  * UuidGenerator produces 128-bits UUID version 1.                                                                  <br>
  * <br>
@@ -68,13 +70,6 @@ public class UuidGenerator {
 
     public UUID withTicks(long ticks) {
         return new UUID(makeMostSigBits(ticks), makeLeastSigBits(type));
-    }
-
-    private static long makeMostSigBits(long ticks) {
-        return (0x00000000FFFFFFFFL & ticks) << 32// timestamp_low
-                | (0x0000FFFF00000000L & ticks) >>> 16// timestamp_mid
-                | (0x0FFF000000000000L & ticks) >>> 48// timestamp_hi
-                | 0x0000000000001000L;// version 1
     }
 
     private static long makeLeastSigBits(Type type) {

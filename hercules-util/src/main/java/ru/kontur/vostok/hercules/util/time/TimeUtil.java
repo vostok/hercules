@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.util.time;
 
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -8,6 +9,19 @@ import java.util.TimeZone;
  * @author Gregory Koshelev
  */
 public class TimeUtil {
+    /**
+     * 100ns ticks in 1 second
+     */
+    private static final long TICKS_IN_SEC = 10_000_000L;
+    /**
+     * 100ns ticks in 1 millisecond
+     */
+    private static final long TICKS_IN_MS = 10_000L;
+    /**
+     * Nanoseconds in 1 100ns tick
+     */
+    private static final long NANOS_IN_TICK = 100L;
+
     /**
      * EPOCH is offset from 1970-01-01T00:00:00.000Z to 1582-01-01T00:00:00.000Z in 100ns ticks. Epoch determines time-point to start Time Traps
      */
@@ -22,7 +36,7 @@ public class TimeUtil {
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTimeInMillis() * 10_000;
+        return calendar.getTimeInMillis() * TICKS_IN_MS;
     }
 
     /**
@@ -49,7 +63,7 @@ public class TimeUtil {
      * @return millis
      */
     public static long ticksToMillis(long ticks) {
-        return ticks / 10_000;
+        return ticks / TICKS_IN_MS;
     }
 
     /**
@@ -58,7 +72,7 @@ public class TimeUtil {
      * @return 100ns ticks
      */
     public static long millisToTicks(long millis) {
-        return millis * 10_000;
+        return millis * TICKS_IN_MS;
     }
 
     /**
@@ -86,10 +100,19 @@ public class TimeUtil {
      * @return Instant
      */
     public static Instant unixTicksToInstant(long ticks) {
-        return Instant.ofEpochSecond(ticks / 10_000_000, (ticks % 10_000_000) * 100);
+        return Instant.ofEpochSecond(ticks / TICKS_IN_SEC, (ticks % TICKS_IN_SEC) * NANOS_IN_TICK);
     }
 
     public static Instant gregorianTicksToInstant(long ticks) {
         return unixTicksToInstant(gregorianToUnixTicks(ticks));
+    }
+
+    /**
+     * Convert ZonedDateTime to Unix ticks (Unix timestamp in 100ns ticks)
+     * @param dateTime is ZonedDateTime
+     * @return Unix ticks
+     */
+    public static long dateTimeToUnixTicks(ZonedDateTime dateTime) {
+        return dateTime.toEpochSecond() * TICKS_IN_SEC + dateTime.getNano() / NANOS_IN_TICK;
     }
 }
