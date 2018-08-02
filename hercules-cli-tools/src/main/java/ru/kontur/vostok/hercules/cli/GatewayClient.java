@@ -28,7 +28,11 @@ public class GatewayClient {
 
     private static String server;
 
+    private static volatile boolean running = true;
+
     public static void main(String[] args) throws Exception {
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> running = false));
 
         Map<String, String> parameters = ArgsParser.parse(args);
         Properties properties = PropertiesUtil.readProperties(parameters.getOrDefault("gateway-client.properties", "gateway-client.properties"));
