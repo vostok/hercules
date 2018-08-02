@@ -9,6 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Simple Event build. NOT thread-safe
+ */
 public class EventBuilder {
 
     private static final ContainerWriter containerWriter = new ContainerWriter();
