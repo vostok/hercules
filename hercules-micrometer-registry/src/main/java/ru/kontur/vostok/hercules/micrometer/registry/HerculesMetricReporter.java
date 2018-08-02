@@ -1,16 +1,27 @@
 package ru.kontur.vostok.hercules.micrometer.registry;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Clock;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricAttribute;
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Timer;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisher;
 import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
 import ru.kontur.vostok.hercules.gateway.client.EventQueue;
-import ru.kontur.vostok.hercules.gateway.client.GatewayClient;
 import ru.kontur.vostok.hercules.protocol.Event;
-
-import java.util.*;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A reporter which publishes metric values to a Hercules gateway.
@@ -96,6 +107,12 @@ public class HerculesMetricReporter extends ScheduledReporter {
         }
     }
 
+    /**
+     * Build event and send it to event publisher
+     *
+     * @param entry pair of metric name and metric
+     * @param timestamp timestamp of metric snapshot
+     */
     private void publish(Map.Entry<String, ? extends Metric> entry, long timestamp) {
         Event event = HerculesMetricFormatter.createMetricEvent(
                 entry.getKey(),
@@ -173,6 +190,12 @@ public class HerculesMetricReporter extends ScheduledReporter {
             return this;
         }
 
+        /**
+         *  Register event queue in event publisher
+         *
+         * @param eventQueue the event queue for registration to event publisher
+         * @return {@code this}
+         */
         public HerculesMetricReporter.Builder registerStream(EventQueue eventQueue) {
             this.eventQueue = eventQueue;
             return this;
@@ -225,7 +248,7 @@ public class HerculesMetricReporter extends ScheduledReporter {
 
         /**
          * Builds a {@link HerculesMetricReporter} with the given properties, sending metrics using the
-         * given {@link GatewayClient}.
+         * given {@link EventPublisher}.
          *
          * @return a {@link HerculesMetricReporter}
          */

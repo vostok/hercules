@@ -1,13 +1,21 @@
 package ru.kontur.vostok.hercules.micrometer.registry;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Counting;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metered;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.Sampling;
+import com.codahale.metrics.Snapshot;
+import com.codahale.metrics.Timer;
+import java.util.HashMap;
+import java.util.Map;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author Daniil Zhenikhov
@@ -21,7 +29,7 @@ public final class HerculesMetricFormatter {
 
         MAPPER.put(Gauge.class, (name, metric, timestamp, rateUnit, durationUnit) ->
                 formatMetric(name,
-                        (Gauge<?>) metric,
+                        (Gauge) metric,
                         timestamp,
                         rateUnit,
                         durationUnit,
@@ -75,6 +83,10 @@ public final class HerculesMetricFormatter {
                 .create(name, metric, timestamp, rateUnit, durationUnit);
     }
 
+    /**
+     * Create base for event. Add tag "name", tag "timestamp", setting version, setting event id.
+     * After do consuming of specified metric type.
+     */
     private static <T extends Metric> Event formatMetric(String name,
                                                          T metric,
                                                          long timestamp,
@@ -83,7 +95,6 @@ public final class HerculesMetricFormatter {
                                                          MetricConsumer<T> consumer) {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
-        //TODO: generate event id
         eventBuilder.setEventId(GENERATOR.next());
 
         eventBuilder.setTag("timestamp", Variant.ofLong(timestamp));
@@ -93,13 +104,21 @@ public final class HerculesMetricFormatter {
         return eventBuilder.build();
     }
 
-    private static void consumeGauge(Gauge<?> gauge,
+    /**
+     * Consume {@link Gauge gauge} type metric. Setting
+     * tag "value" - metric's current value
+     */
+    private static void consumeGauge(Gauge gauge,
                                      String rateUnit,
                                      String durationUnit,
                                      EventBuilder eventBuilder) {
         eventBuilder.setTag("value", Variant.ofString(String.valueOf(gauge.getValue())));
     }
 
+    /**
+     * Consume {@link Counter counter} type metric. Setting
+     * {@code consumeCounting};
+     */
     private static void consumeCounter(Counter counter,
                                        String rateUnit,
                                        String durationUnit,
@@ -107,6 +126,11 @@ public final class HerculesMetricFormatter {
         consumeCounting(counter, eventBuilder);
     }
 
+    /**
+     * Consume {@link Histogram histogram} type metric. Setting
+     * {@code consumeCounting};
+     * {@code consumeSampling};
+     */
     private static void consumeHistogram(Histogram histogram,
                                          String rateUnit,
                                          String durationUnit,
@@ -115,6 +139,11 @@ public final class HerculesMetricFormatter {
         consumeSampling(histogram, eventBuilder);
     }
 
+    /**
+     * Consume {@link Meter meter} type metric. Setting
+     * {@code consumeMetered};
+     * tag "duration_unit".
+     */
     private static void consumeMeter(Meter meter,
                                      String rateUnit,
                                      String durationUnit,
@@ -123,6 +152,13 @@ public final class HerculesMetricFormatter {
         eventBuilder.setTag("rate_unit", Variant.ofString(rateUnit));
     }
 
+    /**
+     * Consume {@link Timer timer} type metric. Setting
+     * {@code consumeMetered};
+     * {@code consumeSampling};
+     * tag "rate_unit";
+     * tag "duration_unit".
+     */
     private static void consumeTimer(Timer timer,
                                      String rateUnit,
                                      String durationUnit,
@@ -133,6 +169,19 @@ public final class HerculesMetricFormatter {
         eventBuilder.setTag("duration_unit", Variant.ofString(durationUnit));
     }
 
+    /**
+     * Consume {@link Sampling sampling} type metric. Setting
+     * tag "max" - highest value in the snapshot;
+     * tag "mean" - arithmetic mean of the values in the snapshot;
+     * tag "min" - lowest value in the snapshot;
+     * tag "stddev" - standard deviation of the values in the snapshot;
+     * tag "p50" - median value in the distribution;
+     * tag "p75" - value at the 75th percentile in the distribution;
+     * tag "p95" - value at the 95 th percentile in the distribution;
+     * tag "p98" - value at the 98th percentile in the distribution;
+     * tag "p99" - value at the 99th percentile in the distribution;
+     * tag "p999" - value at the 99.9th percentile in the distribution;
+     */
     private static void consumeSampling(Sampling sampling, EventBuilder eventBuilder) {
         final Snapshot snapshot = sampling.getSnapshot();
 
@@ -148,10 +197,21 @@ public final class HerculesMetricFormatter {
         eventBuilder.setTag("p999", Variant.ofDouble(snapshot.get999thPercentile()));
     }
 
+    /**
+     * Consume {@link Counting counting} metric type. Setting tag "count".
+     */
     private static void consumeCounting(Counting counting, EventBuilder eventBuilder) {
         eventBuilder.setTag("count", Variant.ofLong(counting.getCount()));
     }
 
+    /**
+     * Consume {@link Metered metered} type metric. Setting
+     * tag "mean_rate" - mean rate;
+     * tag "m1_rate" - one-minute rate;
+     * tag "m5_rate" - five-minutes rate;
+     * tag "m15_rate" - fifteen-minutes rate;
+     * Also do {@code consumeCounting}.
+     */
     private static void consumeMetered(Metered metered, EventBuilder eventBuilder) {
         consumeCounting(metered, eventBuilder);
         eventBuilder.setTag("mean_rate", Variant.ofDouble(metered.getMeanRate()));

@@ -6,7 +6,6 @@ import io.micrometer.core.instrument.dropwizard.DropwizardClock;
 import io.micrometer.core.instrument.dropwizard.DropwizardMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.core.lang.Nullable;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -51,7 +50,11 @@ public class HerculesMeterRegistry extends DropwizardMeterRegistry {
             start();
     }
 
-    //TODO: stream registration
+    /**
+     * A build {@link HerculesMetricReporter default HerculesMetricReporter} instances. Defaults using the
+     * config eventQueue, {@link DropwizardClock DropwizardClock}, config rateUnit and
+     * config durationUnits.
+     */
     private static HerculesMetricReporter defaultHerculesMetricReporter(HerculesMetricConfig config,
                                                                         Clock clock,
                                                                         MetricRegistry metricRegistry) {

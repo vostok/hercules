@@ -2,9 +2,8 @@ package ru.kontur.vostok.hercules.micrometer.registry;
 
 import io.micrometer.core.instrument.dropwizard.DropwizardConfig;
 import io.micrometer.core.lang.Nullable;
-import ru.kontur.vostok.hercules.gateway.client.EventQueue;
-
 import java.util.concurrent.TimeUnit;
+import ru.kontur.vostok.hercules.gateway.client.EventQueue;
 
 /**
  * @author Daniil Zhenikhov
@@ -31,10 +30,16 @@ public interface HerculesMetricConfig extends DropwizardConfig {
         return "hercules.metrics";
     }
 
+    /**
+     * @return Property prefix to event queue configuration names.
+     */
     default String prefixEventQueue() {
         return prefix() + ".queue";
     }
 
+    /**
+     * @return Configured event queue
+     */
     default EventQueue eventQueue() {
         String prefixQueueName = prefixEventQueue();
         String name = get(prefixQueueName + ".name");
@@ -68,16 +73,6 @@ public interface HerculesMetricConfig extends DropwizardConfig {
     default TimeUnit durationUnits() {
         String v = get(prefix() + ".durationUnits");
         return v == null ? TimeUnit.MILLISECONDS : TimeUnit.valueOf(v.toUpperCase());
-    }
-
-    default String host() {
-        String v = get(prefix() + ".host");
-        return (v == null) ? "localhost" : v;
-    }
-
-    default int port() {
-        String v = get(prefix() + ".port");
-        return (v == null) ? 2004 : Integer.parseInt(v);
     }
 
     /**
