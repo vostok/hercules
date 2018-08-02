@@ -33,7 +33,7 @@ public interface HerculesMetricConfig extends DropwizardConfig {
     /**
      * @return Property prefix to event queue configuration names.
      */
-    default String prefixEventQueue() {
+    default String prefixEventQueueName() {
         return prefix() + ".queue";
     }
 
@@ -41,7 +41,7 @@ public interface HerculesMetricConfig extends DropwizardConfig {
      * @return Configured event queue
      */
     default EventQueue eventQueue() {
-        String prefixQueueName = prefixEventQueue();
+        String prefixQueueName = prefixEventQueueName();
         String name = get(prefixQueueName + ".name");
         String stream = get(prefixQueueName + ".stream");
         long periodMillis = Long.parseLong(get(prefixQueueName + ".periodMillis"));

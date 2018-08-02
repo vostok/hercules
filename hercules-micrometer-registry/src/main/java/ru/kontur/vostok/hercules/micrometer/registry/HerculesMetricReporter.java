@@ -5,7 +5,6 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricAttribute;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
@@ -25,11 +24,14 @@ import ru.kontur.vostok.hercules.protocol.Event;
 
 /**
  * A reporter which publishes metric values to a Hercules gateway.
+ * Filtering will be applying in the base class {@link com.codahale.metrics.ScheduledReporter}.
  *
  * @author Daniil Zhenikhov
  */
 public class HerculesMetricReporter extends ScheduledReporter {
     private static final String NAME = "hercules-metric-reporter";
+
+    private final HerculesMetricFormatter herculesMetricFormatter;
     private final EventPublisher eventPublisher;
     private final EventQueue eventQueue;
     private final Clock clock;
@@ -49,6 +51,10 @@ public class HerculesMetricReporter extends ScheduledReporter {
         this.clock = clock;
         this.eventQueue = eventQueue;
         this.eventPublisher = EventPublisherFactory.getInstance();
+        this.herculesMetricFormatter = new HerculesMetricFormatter(
+                getRateUnit(),
+                getDurationUnit(),
+                disabledMetricAttributes);
 
         eventPublisher.register(this.eventQueue);
     }
@@ -87,42 +93,29 @@ public class HerculesMetricReporter extends ScheduledReporter {
         final long timestamp = TimeUnit.MILLISECONDS.toSeconds(clock.getTime());
 
         for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
-            publish(entry, timestamp);
+            Event event = herculesMetricFormatter.formatGauge(entry.getKey(), entry.getValue(), timestamp);
+            eventPublisher.publish(eventQueue.getName(), event);
         }
 
         for (Map.Entry<String, Counter> entry : counters.entrySet()) {
-            publish(entry, timestamp);
+            Event event = herculesMetricFormatter.formatCounter(entry.getKey(), entry.getValue(), timestamp);
+            eventPublisher.publish(eventQueue.getName(), event);
         }
 
         for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
-            publish(entry, timestamp);
+            Event event = herculesMetricFormatter.formatHistogram(entry.getKey(), entry.getValue(), timestamp);
+            eventPublisher.publish(eventQueue.getName(), event);
         }
 
         for (Map.Entry<String, Meter> entry : meters.entrySet()) {
-            publish(entry, timestamp);
+            Event event = herculesMetricFormatter.formatMeter(entry.getKey(), entry.getValue(), timestamp);
+            eventPublisher.publish(eventQueue.getName(), event);
         }
 
         for (Map.Entry<String, Timer> entry : timers.entrySet()) {
-            publish(entry, timestamp);
+            Event event = herculesMetricFormatter.formatTimer(entry.getKey(), entry.getValue(), timestamp);
+            eventPublisher.publish(eventQueue.getName(), event);
         }
-    }
-
-    /**
-     * Build event and send it to event publisher
-     *
-     * @param entry pair of metric name and metric
-     * @param timestamp timestamp of metric snapshot
-     */
-    private void publish(Map.Entry<String, ? extends Metric> entry, long timestamp) {
-        Event event = HerculesMetricFormatter.createMetricEvent(
-                entry.getKey(),
-                entry.getValue(),
-                timestamp,
-                getRateUnit(),
-                getDurationUnit()
-        );
-
-        eventPublisher.publish(eventQueue.getName(), event);
     }
 
     /**
@@ -191,7 +184,7 @@ public class HerculesMetricReporter extends ScheduledReporter {
         }
 
         /**
-         *  Register event queue in event publisher
+         * Register event queue in event publisher
          *
          * @param eventQueue the event queue for registration to event publisher
          * @return {@code this}

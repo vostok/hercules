@@ -15,8 +15,7 @@ public class HerculesMeterRegistry extends DropwizardMeterRegistry {
     private final HerculesMetricConfig config;
     private final HerculesMetricReporter reporter;
 
-    public HerculesMeterRegistry(HerculesMetricConfig config,
-                                 Clock clock) {
+    public HerculesMeterRegistry(HerculesMetricConfig config, Clock clock) {
         this(config, clock, HierarchicalNameMapper.DEFAULT);
     }
 
@@ -30,7 +29,8 @@ public class HerculesMeterRegistry extends DropwizardMeterRegistry {
                                  Clock clock,
                                  HierarchicalNameMapper hierarchicalNameMapper,
                                  MetricRegistry metricRegistry) {
-        this(config, clock,
+        this(config,
+                clock,
                 hierarchicalNameMapper,
                 metricRegistry,
                 defaultHerculesMetricReporter(config, clock, metricRegistry));
