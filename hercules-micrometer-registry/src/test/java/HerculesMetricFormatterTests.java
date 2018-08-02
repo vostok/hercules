@@ -7,7 +7,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -29,6 +28,8 @@ import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 /**
+ * Skipping metric attribute tested. See {@code shouldConvertTimerMetricCorrect} and {@code shouldConvertMeterMetricCorrect}
+ *
  * @author Daniil Zhenikhov
  */
 public class HerculesMetricFormatterTests {
