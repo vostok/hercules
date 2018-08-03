@@ -22,6 +22,7 @@ public class GatewayApplication {
     private static EventSender eventSender;
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
+    private static AuthValidationManager authValidationManager;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -47,7 +48,10 @@ public class GatewayApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            server = new HttpServer(metricsCollector, httpserverProperties, authManager, eventSender, streamRepository);
+            authValidationManager = new AuthValidationManager(curatorClient);
+            authValidationManager.start();
+
+            server = new HttpServer(metricsCollector, httpserverProperties, authManager, authValidationManager, eventSender, streamRepository);
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -82,6 +86,14 @@ public class GatewayApplication {
         try {
             if (authManager != null) {
                 authManager.stop();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            if (authValidationManager != null) {
+                authValidationManager.stop();
             }
         } catch (Throwable e) {
             e.printStackTrace();

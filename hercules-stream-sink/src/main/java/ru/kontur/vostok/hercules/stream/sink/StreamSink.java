@@ -23,7 +23,6 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -50,7 +49,7 @@ public class StreamSink {
         Predicate<UUID, Event> predicate = (k, v) -> {
             for (Filter filter : filters) {
                 Variant value = v.getTag(filter.getTag());
-                if (value == null || !filter.getCondition().test(value)) {
+                if (!filter.getCondition().test(value)) {
                     return false;
                 }
             }

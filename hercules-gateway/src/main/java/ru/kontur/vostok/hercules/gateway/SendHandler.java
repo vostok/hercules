@@ -20,12 +20,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SendHandler extends GatewayHandler {
 
-    public SendHandler(MetricsCollector metricsCollector, AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
-        super(metricsCollector, authManager, eventSender, streamRepository);
+    public SendHandler(MetricsCollector metricsCollector, AuthManager authManager, AuthValidationManager authValidationManager, EventSender eventSender, StreamRepository streamRepository) {
+        super(metricsCollector, authManager, authValidationManager, eventSender, streamRepository);
     }
 
     @Override
-    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey) {
+    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, EventValidator validator) {
         exchange.getRequestReceiver().receiveFullBytes(
                 (exch, bytes) -> {
                     exch.dispatch(() -> {
@@ -34,6 +34,13 @@ public class SendHandler extends GatewayHandler {
                         AtomicBoolean processed = new AtomicBoolean(false);
                         while (reader.hasNext()) {
                             Event event = reader.next();
+                            if (!validator.validate(event)) {
+                                //TODO: should to log filtered events
+                                if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
+                                    ResponseUtil.ok(exchange);
+                                }
+                                continue;
+                            }
                             eventSender.send(
                                     event,
                                     event.getId(),

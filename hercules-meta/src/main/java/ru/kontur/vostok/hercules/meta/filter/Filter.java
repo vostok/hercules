@@ -7,6 +7,14 @@ public class Filter {
     private String tag;
     private Condition condition;
 
+    public Filter() {
+    }
+
+    public Filter(String tag, Condition condition) {
+        this.tag = tag;
+        this.condition = condition;
+    }
+
     public String getTag() {
         return tag;
     }

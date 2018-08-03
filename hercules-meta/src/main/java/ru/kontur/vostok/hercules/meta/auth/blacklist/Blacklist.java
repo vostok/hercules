@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.meta.blacklist;
+package ru.kontur.vostok.hercules.meta.auth.blacklist;
 
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 

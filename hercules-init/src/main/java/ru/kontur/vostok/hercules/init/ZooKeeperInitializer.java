@@ -25,6 +25,7 @@ public class ZooKeeperInitializer {
             curatorClient.createIfAbsent("/hercules/auth");
             curatorClient.createIfAbsent("/hercules/auth/blacklist");
             curatorClient.createIfAbsent("/hercules/auth/rules");
+            curatorClient.createIfAbsent("/hercules/auth/validations");
         } finally {
             curatorClient.stop();
         }
