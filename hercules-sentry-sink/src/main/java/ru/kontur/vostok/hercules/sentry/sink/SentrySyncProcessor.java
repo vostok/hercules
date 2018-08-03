@@ -28,27 +28,43 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
     public static final String SENTRY_TOKEN_TAG = "sentry-token";
 
     private final ConcurrentHashMap<String, SentryClient> clients = new ConcurrentHashMap<>();
-    private final String sentryHost;
-    private final String sentryPort;
-    private final String httpScheme;
+    //private final String sentryHost;
+    //private final String sentryPort;
+    //private final String httpScheme;
 
-    public SentrySyncProcessor(Properties properties) {
-        this.sentryHost = PropertiesUtil.getRequiredProperty(properties, SENTRY_HOST_PROPERTY, String.class);
-        this.sentryPort = PropertiesUtil.getRequiredProperty(properties, SENTRY_PORT_PROPERTY, String.class);
-        this.httpScheme = PropertiesUtil.getRequiredProperty(properties, SENTRY_HTTP_SCHEME_PROPERTY, String.class);
+    private final SentryClientHolder sentryClientHolder;
+
+    public SentrySyncProcessor(SentryClientHolder sentryClientHolder) {
+        //this.sentryHost = PropertiesUtil.getRequiredProperty(properties, SENTRY_HOST_PROPERTY, String.class);
+        //this.sentryPort = PropertiesUtil.getRequiredProperty(properties, SENTRY_PORT_PROPERTY, String.class);
+        //this.httpScheme = PropertiesUtil.getRequiredProperty(properties, SENTRY_HTTP_SCHEME_PROPERTY, String.class);
+
+        this.sentryClientHolder = sentryClientHolder;
     }
 
     @Override
     public void process(UUID key, Event value) {
-        String token = EventUtil.extractRequired(value, SENTRY_TOKEN_TAG, Type.STRING);
+        //String token = EventUtil.extractRequired(value, SENTRY_TOKEN_TAG, Type.STRING);
+        Optional<String> token = EventUtil.extractOptional(value, SENTRY_TOKEN_TAG, Type.STRING);
+        if (!token.isPresent())
+        {
+            return;
+        }
 
-        getSentryClient(token).sendEvent(SentryEventConverter.convert(value));
+        Optional<SentryClient> sentryClient = getSentryClient(token.get());
+        if (!sentryClient.isPresent()) {
+            System.out.println("Missing client for " + token.get());
+        } else {
+            sentryClient.get().sendEvent(SentryEventConverter.convert(value));
+        }
     }
 
-    private SentryClient getSentryClient(String token) {
-        return clients.computeIfAbsent(token, s -> SentryClientFactory.sentryClient(tokenToDsn(s)));
+    private Optional<SentryClient> getSentryClient(String token) {
+        return Optional.ofNullable(sentryClientHolder.getClient(token));
+        //return clients.computeIfAbsent(token, s -> SentryClientFactory.sentryClient(tokenToDsn(s)));
     }
 
+    /*
     private String tokenToDsn(String key) {
         String[] split = key.split("@");
         if (split.length != 2) {
@@ -58,5 +74,5 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
         String projectId = split[1];
 
         return httpScheme + "://" + token + "@" + sentryHost + ":" + sentryPort + "/" + projectId + "?" + DISABLE_UNCAUGHT_EXCEPTION_HANDLING;
-    }
+    }*/
 }
