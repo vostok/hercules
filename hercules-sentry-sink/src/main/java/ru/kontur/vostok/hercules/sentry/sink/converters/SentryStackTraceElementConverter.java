@@ -12,12 +12,12 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
  */
 public class SentryStackTraceElementConverter {
 
-    private static final String MODULE_FIELD_NAME = "module";
-    private static final String FUNCTION_FIELD_NAME = "function";
-    private static final String FILENAME_FIELD_NAME = "filename";
-    private static final String LINENO_FIELD_NAME = "lineno";
-    private static final String COLNO_FIELD_NAME = "colno";
-    private static final String ABS_PATH_FIELD_NAME = "abs_path";
+    private static final String MODULE_FIELD_NAME = "mod";
+    private static final String FUNCTION_FIELD_NAME = "fun";
+    private static final String FILENAME_FIELD_NAME = "fnm";
+    private static final String LINENO_FIELD_NAME = "ln";
+    private static final String COLNO_FIELD_NAME = "cn";
+    private static final String ABS_PATH_FIELD_NAME = "abs";
 
     public static SentryStackTraceElement convert(Container container) {
         return new SentryStackTraceElement(

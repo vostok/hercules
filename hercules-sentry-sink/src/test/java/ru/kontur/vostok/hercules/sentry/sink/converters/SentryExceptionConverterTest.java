@@ -22,22 +22,22 @@ public class SentryExceptionConverterTest {
 
     private static Container createFrame(String moduleName) {
         return ContainerBuilder.create()
-                .field("module", Variant.ofText(moduleName))
-                .field("function", Variant.ofString("testFunction"))
-                .field("filename", Variant.ofString("SomeFile.java"))
-                .field("lineno", Variant.ofInteger(123))
-                .field("colno", Variant.ofShort((short) 456))
-                .field("abs_path", Variant.ofText("/just/some/path/to/SomeFile.java"))
+                .field("mod", Variant.ofText(moduleName))
+                .field("fun", Variant.ofString("testFunction"))
+                .field("fnm", Variant.ofString("SomeFile.java"))
+                .field("ln", Variant.ofInteger(123))
+                .field("cn", Variant.ofShort((short) 456))
+                .field("abs", Variant.ofText("/just/some/path/to/SomeFile.java"))
                 .build();
     }
 
     @Test
     public void shouldConvert() throws Exception {
         Container container = ContainerBuilder.create()
-                .field("type", Variant.ofString("SomeExceptionClass"))
-                .field("value", Variant.ofText("Exception message"))
-                .field("module", Variant.ofText("test.module"))
-                .field("stacktrace", Variant.ofContainerArray(createStacktrace(2)))
+                .field("tp", Variant.ofString("SomeExceptionClass"))
+                .field("msg", Variant.ofText("Exception message"))
+                .field("mod", Variant.ofText("test.module"))
+                .field("str", Variant.ofContainerArray(createStacktrace(2)))
                 .build();
 
         SentryException exception = SentryExceptionConverter.convert(container);
@@ -60,7 +60,7 @@ public class SentryExceptionConverterTest {
     public void shouldThrowOnMissingValue() throws Exception {
         SentryExceptionConverter.convert(
                 ContainerBuilder.create()
-                        .field("type", Variant.ofText("test"))
+                        .field("tp", Variant.ofText("test"))
                         .build()
         );
     }
@@ -69,8 +69,8 @@ public class SentryExceptionConverterTest {
     public void shouldThrowOnMissingModule() throws Exception {
         SentryExceptionConverter.convert(
                 ContainerBuilder.create()
-                        .field("type", Variant.ofText("test"))
-                        .field("value", Variant.ofText("test"))
+                        .field("t", Variant.ofText("test"))
+                        .field("val", Variant.ofText("test"))
                         .build()
         );
     }
@@ -79,9 +79,9 @@ public class SentryExceptionConverterTest {
     public void shouldThrowOnMissingStacktrace() throws Exception {
         SentryExceptionConverter.convert(
                 ContainerBuilder.create()
-                        .field("type", Variant.ofText("test"))
-                        .field("value", Variant.ofText("test"))
-                        .field("module", Variant.ofText("test"))
+                        .field("tp", Variant.ofText("test"))
+                        .field("val", Variant.ofText("test"))
+                        .field("mod", Variant.ofText("test"))
                         .build()
         );
     }

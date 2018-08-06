@@ -13,12 +13,12 @@ public class SentryStackTraceElementConverterTest {
     public void shouldConvert() throws Exception {
 
         Container container = ContainerBuilder.create()
-                .field("module", Variant.ofText("test.module"))
-                .field("function", Variant.ofString("testFunction"))
-                .field("filename", Variant.ofString("SomeFile.java"))
-                .field("lineno", Variant.ofInteger(123))
-                .field("colno", Variant.ofShort((short) 456))
-                .field("abs_path", Variant.ofText("/just/some/path/to/SomeFile.java"))
+                .field("mod", Variant.ofText("test.module"))
+                .field("fun", Variant.ofString("testFunction"))
+                .field("fnm", Variant.ofString("SomeFile.java"))
+                .field("ln", Variant.ofInteger(123))
+                .field("cn", Variant.ofShort((short) 456))
+                .field("abs", Variant.ofText("/just/some/path/to/SomeFile.java"))
                 .build();
 
         SentryStackTraceElement result = SentryStackTraceElementConverter.convert(container);
@@ -43,7 +43,7 @@ public class SentryStackTraceElementConverterTest {
     public void shouldThrowOnMissingFunction() throws Exception {
         SentryStackTraceElementConverter.convert(
                 ContainerBuilder.create()
-                        .field("module", Variant.ofText("test.module"))
+                        .field("mod", Variant.ofText("test.module"))
                         .build()
         );
     }
@@ -52,8 +52,8 @@ public class SentryStackTraceElementConverterTest {
     public void shouldThrowOnMissingFilename() throws Exception {
         SentryStackTraceElementConverter.convert(
                 ContainerBuilder.create()
-                        .field("module", Variant.ofText("test.module"))
-                        .field("function", Variant.ofString("testFunction"))
+                        .field("mod", Variant.ofText("test.module"))
+                        .field("fun", Variant.ofString("testFunction"))
                         .build()
         );
     }
@@ -62,9 +62,9 @@ public class SentryStackTraceElementConverterTest {
     public void shouldThrowOnMissingLineNumber() throws Exception {
         SentryStackTraceElementConverter.convert(
                 ContainerBuilder.create()
-                        .field("module", Variant.ofText("test.module"))
-                        .field("function", Variant.ofString("testFunction"))
-                        .field("filename", Variant.ofString("SomeFile.java"))
+                        .field("mod", Variant.ofText("test.module"))
+                        .field("fun", Variant.ofString("testFunction"))
+                        .field("fnm", Variant.ofString("SomeFile.java"))
                         .build()
         );
     }
@@ -73,10 +73,10 @@ public class SentryStackTraceElementConverterTest {
     public void shouldThrowOnMissingAbsPath() throws Exception {
         SentryStackTraceElementConverter.convert(
                 ContainerBuilder.create()
-                        .field("module", Variant.ofText("test.module"))
-                        .field("function", Variant.ofString("testFunction"))
-                        .field("filename", Variant.ofString("SomeFile.java"))
-                        .field("lineno", Variant.ofInteger(123))
+                        .field("mod", Variant.ofText("test.module"))
+                        .field("fun", Variant.ofString("testFunction"))
+                        .field("fnm", Variant.ofString("SomeFile.java"))
+                        .field("ln", Variant.ofInteger(123))
                         .build()
         );
     }

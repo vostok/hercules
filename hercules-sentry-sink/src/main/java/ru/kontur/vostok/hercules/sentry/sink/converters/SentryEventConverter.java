@@ -37,13 +37,13 @@ public class SentryEventConverter {
     private static final String SDK_VERSION = "UNKNOWN";
     private static final Sdk SDK = new Sdk(SDK_NAME, SDK_VERSION, null);
 
-    private static final String EXCEPTIONS_TAG = "exceptions";
-    private static final String MESSAGE_TAG = "message";
-    private static final String LEVEL_TAG = "level";
+    private static final String EXCEPTIONS_TAG = "exc";
+    private static final String MESSAGE_TAG = "msg";
+    private static final String LEVEL_TAG = "lvl";
     private static final String PLATFORM_TAG = "platform";
-    private static final String ENVIRONMENT_TAG = "environment";
-    private static final String RELEASE_TAG = "release";
-    private static final String SERVER_TAG = "server";
+    private static final String ENVIRONMENT_TAG = "env";
+    private static final String RELEASE_TAG = "rlz";
+    private static final String SERVER_TAG = "srv";
 
     private static final Set<String> IGNORED_TAGS = Sets.newHashSet(
             SentrySyncProcessor.SENTRY_PROJECT_NAME_TAG,

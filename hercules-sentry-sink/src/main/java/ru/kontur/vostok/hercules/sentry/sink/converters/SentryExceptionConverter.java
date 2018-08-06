@@ -12,10 +12,10 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
  */
 public class SentryExceptionConverter {
 
-    private static final String TYPE_FIELD_NAME = "type";
-    private static final String VALUE_FIELD_NAME = "value";
-    private static final String MODULE_FIELD_NAME = "module";
-    private static final String STACKTRACE_FIELD_NAME = "stacktrace";
+    private static final String TYPE_FIELD_NAME = "tp";
+    private static final String VALUE_FIELD_NAME = "msg";
+    private static final String MODULE_FIELD_NAME = "mod";
+    private static final String STACKTRACE_FIELD_NAME = "str";
 
     public static SentryException convert(Container container) {
         String type = ContainerUtil.extractRequired(container, TYPE_FIELD_NAME, Type.STRING);

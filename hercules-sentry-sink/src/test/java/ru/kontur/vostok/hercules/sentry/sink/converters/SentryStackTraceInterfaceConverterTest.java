@@ -11,12 +11,12 @@ public class SentryStackTraceInterfaceConverterTest {
 
     private static Container createFrame(String moduleName) {
         return ContainerBuilder.create()
-                .field("module", Variant.ofText(moduleName))
-                .field("function", Variant.ofString("testFunction"))
-                .field("filename", Variant.ofString("SomeFile.java"))
-                .field("lineno", Variant.ofInteger(123))
-                .field("colno", Variant.ofShort((short) 456))
-                .field("abs_path", Variant.ofText("/just/some/path/to/SomeFile.java"))
+                .field("mod", Variant.ofText(moduleName))
+                .field("fun", Variant.ofString("testFunction"))
+                .field("fnm", Variant.ofString("SomeFile.java"))
+                .field("ln", Variant.ofInteger(123))
+                .field("cn", Variant.ofShort((short) 456))
+                .field("abs", Variant.ofText("/just/some/path/to/SomeFile.java"))
                 .build();
     }
 
