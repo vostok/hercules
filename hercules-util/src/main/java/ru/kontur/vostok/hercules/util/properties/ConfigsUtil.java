@@ -9,11 +9,16 @@ import java.util.Objects;
  * @author Daniil Zhenikhov
  */
 public final class ConfigsUtil {
+    private ConfigsUtil() {
+
+    }
+
     /**
      * Read config file.
      * <br>If propertyName exists then try to read from path specified in property.
      * <br>Else try to load from resources.
-     * @param propertyName name of property containing path to config file
+     *
+     * @param propertyName    name of property containing path to config file
      * @param defaultResource name of default resources containing config file
      * @return {@link java.io.InputStream input stream} of config file
      * @throws java.lang.RuntimeException wrapping exception that was occurred while trying to load config
@@ -36,7 +41,7 @@ public final class ConfigsUtil {
      * Read config file.
      * <br>
      *
-     * @param filename name of config file. May be resource or path to config file.
+     * @param filename      name of config file. May be resource or path to config file.
      * @param fromResources flag that config file is resource or not
      * @return {@link java.io.InputStream input stream} of config file
      * @throws FileNotFoundException if file is not resource and has not found, exception will be thrown
@@ -50,10 +55,6 @@ public final class ConfigsUtil {
             return inputStream;
         }
         return new FileInputStream(filename);
-
-    }
-
-    private ConfigsUtil() {
 
     }
 }

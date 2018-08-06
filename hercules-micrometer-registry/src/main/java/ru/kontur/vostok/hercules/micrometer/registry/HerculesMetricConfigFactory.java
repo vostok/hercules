@@ -31,7 +31,7 @@ public class HerculesMetricConfigFactory {
      * @throws IOException exception while loading config
      */
     public static HerculesMetricConfig fromResource(String resourceName) throws IOException {
-        InputStream inputStream =  ConfigsUtil.readConfig(resourceName, true);
+        InputStream inputStream = ConfigsUtil.readConfig(resourceName, true);
         Properties properties = loadProperties(inputStream);
 
         return properties::getProperty;
