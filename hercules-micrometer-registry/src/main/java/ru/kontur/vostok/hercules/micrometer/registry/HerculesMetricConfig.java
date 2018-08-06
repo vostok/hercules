@@ -2,13 +2,18 @@ package ru.kontur.vostok.hercules.micrometer.registry;
 
 import io.micrometer.core.instrument.dropwizard.DropwizardConfig;
 import io.micrometer.core.lang.Nullable;
+import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import ru.kontur.vostok.hercules.gateway.client.DefaultConfigurationConstants;
 import ru.kontur.vostok.hercules.gateway.client.EventQueue;
 
 /**
  * @author Daniil Zhenikhov
  */
 public interface HerculesMetricConfig extends DropwizardConfig {
+    Random RANDOM = new Random();
+
     /**
      * Accept configuration defaults
      */
@@ -41,20 +46,13 @@ public interface HerculesMetricConfig extends DropwizardConfig {
      * @return Configured event queue
      */
     default EventQueue eventQueue() {
-        String prefixQueueName = prefixEventQueueName();
-        String name = get(prefixQueueName + ".name");
-        String stream = get(prefixQueueName + ".stream");
-        long periodMillis = Long.parseLong(get(prefixQueueName + ".periodMillis"));
-        int batchSize = Integer.parseInt(get(prefixQueueName + ".batchSize"));
-        int capacity = Integer.parseInt(get(prefixQueueName + ".capacity"));
-        boolean loseOnOverflow = Boolean.parseBoolean(get(prefixQueueName + ".loseOnOverflow"));
-
-        return new EventQueue(name,
-                stream,
-                periodMillis,
-                batchSize,
-                capacity,
-                loseOnOverflow);
+        return new EventQueue(
+                queueName(),
+                streamName(),
+                queuePeriodMillis(),
+                queueBatchSize(),
+                queueCapacity(),
+                queueLoseOnOverflow());
     }
 
     /**
@@ -63,6 +61,64 @@ public interface HerculesMetricConfig extends DropwizardConfig {
      */
     default String[] tagsAsPrefix() {
         return new String[0];
+    }
+
+    /**
+     * @return Return name of event queue for registration.
+     */
+    default String queueName() {
+        String v = get(prefixEventQueueName() + ".name");
+        return v == null ? String.valueOf(RANDOM.nextLong()) : v;
+    }
+
+    /**
+     * @return Return topic name in kafka
+     */
+    default String streamName() {
+        String v = get(prefixEventQueueName() + ".stream");
+        Objects.requireNonNull(v);
+
+        return v;
+    }
+
+    /**
+     * @return Return period in millis for event queue
+     */
+    default long queuePeriodMillis() {
+        String v = get(prefixEventQueueName() + ".periodMillis");
+        return v == null
+                ? DefaultConfigurationConstants.DEFAULT_PERIOD_MILLIS
+                : Long.parseLong(v);
+    }
+
+    /**
+     * @return Return size of batch for event queue
+     */
+    default int queueBatchSize() {
+        String v = get(prefixEventQueueName() + ".batchSize");
+        return v == null
+                ? DefaultConfigurationConstants.DEFAULT_BATCH_SIZE
+                : Integer.parseInt(v);
+    }
+
+    /**
+     * @return Return capacity of event queue
+     */
+    default int queueCapacity() {
+        String v = get(prefixEventQueueName() + ".capacity");
+        return v == null
+                ? DefaultConfigurationConstants.DEFAULT_CAPACITY
+                : Integer.parseInt(v);
+    }
+
+    /**
+     * @return Return flag of event queue to lose events on overflow or not
+     */
+    default boolean queueLoseOnOverflow() {
+        String v = get(prefixEventQueueName() + ".loseOnOverflow");
+        return v == null
+                ? DefaultConfigurationConstants.DEFAULT_IS_LOSE_ON_OVERFLOW
+                : Boolean.parseBoolean(v);
     }
 
     default TimeUnit rateUnits() {
