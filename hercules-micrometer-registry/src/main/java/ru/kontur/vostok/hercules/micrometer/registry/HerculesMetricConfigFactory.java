@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.micrometer.registry;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +21,11 @@ public class HerculesMetricConfigFactory {
     static {
         DEFAULT_CONFIG_PATH = System.getProperty(PROPERTY_NAME);
         DEFAULT_CONFIG_PATH_EXIST = Objects.nonNull(DEFAULT_CONFIG_PATH);
+
+        if (DEFAULT_CONFIG_PATH_EXIST && !new File(DEFAULT_CONFIG_PATH).exists()) {
+            String message = String.format("File '%s' has not found", DEFAULT_CONFIG_PATH);
+            throw new RuntimeException(new FileNotFoundException(message));
+        }
     }
 
     /**
@@ -69,12 +75,14 @@ public class HerculesMetricConfigFactory {
      *
      * @return {@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricConfig HerculesMetricConfig}
      * @throws IOException exception while loading config
+     * @throws java.lang.IllegalStateException throws when config
      */
     public static HerculesMetricConfig fromFile() throws IOException {
         if (DEFAULT_CONFIG_PATH_EXIST) {
             return fromFile(DEFAULT_CONFIG_PATH);
         }
-        throw new FileNotFoundException(String.format("File '%s' has not found", DEFAULT_CONFIG_PATH));
+        String message = String.format("System property '%s' is not set", PROPERTY_NAME);
+        throw new IllegalStateException(message);
     }
 
     private static Properties loadProperties(InputStream inputStream) throws IOException {
