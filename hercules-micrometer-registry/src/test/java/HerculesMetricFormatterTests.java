@@ -1,4 +1,6 @@
+import com.codahale.metrics.Clock;
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -6,25 +8,19 @@ import com.codahale.metrics.MetricAttribute;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.HerculesProtocolAssert;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.WriteReadPipe;
-import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
-import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 /**
@@ -38,54 +34,50 @@ public class HerculesMetricFormatterTests {
     private static final String HISTOGRAM_METRIC_NAME = "histogram_test";
     private static final String METER_METRIC_NAME = "meter_test";
     private static final String TIMER_METRIC_NAME = "timer_test";
-    private static final String RATE_UNIT = calculateRateUnit(TimeUnit.MILLISECONDS);
+    private static final String RATE_UNIT = calculateRateUnit();
     private static final String DURATION_UNIT = TimeUnit.MILLISECONDS.toString().toLowerCase(Locale.US);
     private static final Long COUNTER_SUM_VALUE = 3L;
-
-    private static final Set<String> readableTags = Stream.concat(
-            Stream.of("name", "value", "rate_unit", "duration_unit"),
-            Arrays.stream(MetricAttribute.values()).map(MetricAttribute::getCode)
-    ).collect(Collectors.toSet());
-
+    private static final long TIMESTAMP = 0;
     private static final HerculesMetricFormatter FORMATTER = new HerculesMetricFormatter(
             RATE_UNIT,
             DURATION_UNIT,
-            new HashSet<>(Arrays.asList(MetricAttribute.MEAN_RATE)));
+            new HashSet<>(Collections.singletonList(MetricAttribute.MEAN_RATE)));
 
-    private static final UuidGenerator GENERATOR = UuidGenerator.getClientInstance();
+    private final UuidGenerator GENERATOR = UuidGenerator.getClientInstance();
+    private Gauge gaugeTest;
+    private Counter counterTest;
+    private Histogram histogramTest;
+    private Meter meterTest;
+    private Timer timerTest;
+    private long TICK = TimeUnit.SECONDS.toNanos(0);
+    private final Clock CLOCK = new Clock() {
+        @Override
+        public long getTick() {
+            return TICK = TICK + TimeUnit.MILLISECONDS.toNanos(400);
+        }
+    };
 
-    private static final WriteReadPipe<Event> PIPE = WriteReadPipe.init(
-            new EventWriter(),
-            EventReader.readTags(readableTags));
+    private static String calculateRateUnit() {
+        final String s = TimeUnit.MILLISECONDS.toString().toLowerCase(Locale.US);
+        return s.substring(0, s.length() - 1);
+    }
 
-
-    private static Gauge gaugeTest;
-    private static Counter counterTest;
-    private static Histogram histogramTest;
-    private static Meter meterTest;
-    private static Timer timerTest;
-
-    @BeforeClass
-    public static void setUp() {
+    @Before
+    public void setUp() {
         MetricRegistry registry = new MetricRegistry();
         gaugeTest = () -> GAUGE_METRIC_NAME;
         counterTest = registry.counter(COUNTER_METRIC_NAME);
         histogramTest = registry.histogram(HISTOGRAM_METRIC_NAME);
-        meterTest = registry.meter(METER_METRIC_NAME);
-        timerTest = registry.timer(TIMER_METRIC_NAME);
+        meterTest = new Meter(CLOCK);
+        timerTest = new Timer(new ExponentiallyDecayingReservoir(), CLOCK);
     }
 
-    private static String calculateRateUnit(TimeUnit unit) {
-        final String s = unit.toString().toLowerCase(Locale.US);
-        return s.substring(0, s.length() - 1);
-    }
+    @Before
 
     @Test
     public void shouldConvertGaugeMetricCorrect() {
-        Event expected = PIPE.process(eventGauge()).getProcessed();
-        Event actual = PIPE
-                .process(FORMATTER.formatGauge(GAUGE_METRIC_NAME, gaugeTest, 0))
-                .getProcessed();
+        Event expected = eventGauge();
+        Event actual = FORMATTER.formatGauge(GAUGE_METRIC_NAME, gaugeTest, TIMESTAMP);
 
         HerculesProtocolAssert.assertEquals(expected, actual, false, false);
     }
@@ -93,10 +85,8 @@ public class HerculesMetricFormatterTests {
     @Test
     public void shouldConvertCounterMetricCorrect() {
         counterTest.inc(COUNTER_SUM_VALUE);
-        Event expected = PIPE.process(eventCounter()).getProcessed();
-        Event actual = PIPE
-                .process(FORMATTER.formatCounter(COUNTER_METRIC_NAME, counterTest, 0))
-                .getProcessed();
+        Event expected = eventCounter();
+        Event actual = FORMATTER.formatCounter(COUNTER_METRIC_NAME, counterTest, TIMESTAMP);
 
         HerculesProtocolAssert.assertEquals(expected, actual, false, false);
     }
@@ -104,10 +94,9 @@ public class HerculesMetricFormatterTests {
     @Test
     public void shouldConvertHistogramMetricCorrect() {
         histogramTest.update(200);
-        Event expected = PIPE.process(eventHistogram(histogramTest)).getProcessed();
-        Event actual = PIPE
-                .process(FORMATTER.formatHistogram(HISTOGRAM_METRIC_NAME, histogramTest, 0))
-                .getProcessed();
+
+        Event expected = eventHistogram(histogramTest);
+        Event actual = FORMATTER.formatHistogram(HISTOGRAM_METRIC_NAME, histogramTest, TIMESTAMP);
 
         HerculesProtocolAssert.assertEquals(expected, actual, false, false);
     }
@@ -117,32 +106,34 @@ public class HerculesMetricFormatterTests {
      */
     @Test
     public void shouldConvertMeterMetricCorrect() throws InterruptedException {
-        meterTest.mark(100);
-        Thread.sleep(10000);
+        for (int i = 0; i < 12; i++) {
+            meterTest.mark(100);
+        }
 
-        Event expected = PIPE.process(eventMeter(meterTest)).getProcessed();
-        Event actual = PIPE
-                .process(FORMATTER.formatMeter(METER_METRIC_NAME, meterTest, 0))
-                .getProcessed();
+        Event expected = eventMeter(meterTest);
+        Event actual = FORMATTER.formatMeter(METER_METRIC_NAME, meterTest, TIMESTAMP);
 
         HerculesProtocolAssert.assertEquals(expected, actual, false, false);
     }
 
     @Test
-    public void shouldConvertTimerMetricCorrect() {
-        timerTest.time(() -> {
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-        Event expected = PIPE.process(eventTimer(timerTest)).getProcessed();
-        Event actual = PIPE
-                .process(FORMATTER.formatTimer(TIMER_METRIC_NAME, timerTest, 0))
-                .getProcessed();
+    public void shouldConvertTimerMetricCorrect() throws Exception {
+        timerTest.time(() -> doSomething(1000));
+
+        Event expected = eventTimer(timerTest);
+        Event actual = FORMATTER.formatTimer(TIMER_METRIC_NAME, timerTest, TIMESTAMP);
 
         HerculesProtocolAssert.assertEquals(expected, actual, false, false);
+    }
+
+    private int doSomething(int limit) {
+        int sum = 0;
+
+        for (int i = 0; i < limit; i++) {
+            sum += i;
+        }
+
+        return sum;
     }
 
     private Event eventTimer(Timer timer) {
@@ -233,6 +224,7 @@ public class HerculesMetricFormatterTests {
 
         eventBuilder.setVersion(1);
         eventBuilder.setEventId(GENERATOR.next());
+        eventBuilder.setTag("timestamp", Variant.ofLong(TIMESTAMP));
 
         map.forEach(eventBuilder::setTag);
 

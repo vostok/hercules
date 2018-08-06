@@ -46,8 +46,9 @@ public class HerculesMeterRegistry extends DropwizardMeterRegistry {
         this.config = config;
         this.reporter = reporter;
 
-        if (config.enabled())
+        if (config.enabled()) {
             start();
+        }
     }
 
     /**
