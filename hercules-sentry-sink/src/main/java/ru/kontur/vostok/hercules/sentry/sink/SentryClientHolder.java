@@ -38,6 +38,7 @@ public class SentryClientHolder {
         this.scheduledExecutor.scheduleAtFixedRate(this::update, 0,10000, TimeUnit.MILLISECONDS);
     }
 
+    // TODO: Add default client
     public Optional<SentryClient> getClient(String name) {
         return Optional.ofNullable(clients.get().get(name));
     }

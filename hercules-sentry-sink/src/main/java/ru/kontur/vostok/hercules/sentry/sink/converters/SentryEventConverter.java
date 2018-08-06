@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.sentry.sink;
+package ru.kontur.vostok.hercules.sentry.sink.converters;
 
 import com.google.common.collect.Sets;
 import io.sentry.event.Event.Level;
@@ -15,6 +15,7 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
+import ru.kontur.vostok.hercules.sentry.sink.SentrySyncProcessor;
 import ru.kontur.vostok.hercules.util.enumeration.EnumUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -22,7 +23,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 

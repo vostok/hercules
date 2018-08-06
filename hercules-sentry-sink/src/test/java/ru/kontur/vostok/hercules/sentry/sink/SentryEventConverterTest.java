@@ -9,6 +9,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
+import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 
 import java.util.HashMap;
 import java.util.Map;

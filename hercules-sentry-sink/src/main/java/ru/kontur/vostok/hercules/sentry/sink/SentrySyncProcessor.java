@@ -5,6 +5,7 @@ import org.apache.kafka.streams.processor.AbstractProcessor;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
+import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 
 import java.util.Optional;
 import java.util.UUID;
