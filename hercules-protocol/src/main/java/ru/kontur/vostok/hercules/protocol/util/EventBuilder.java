@@ -1,8 +1,10 @@
-package ru.kontur.vostok.hercules.protocol.encoder;
+package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.encoder.ContainerWriter;
+import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
 import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;

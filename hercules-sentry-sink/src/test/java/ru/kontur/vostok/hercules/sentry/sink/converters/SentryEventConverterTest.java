@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.sentry.sink;
+package ru.kontur.vostok.hercules.sentry.sink.converters;
 
 import io.sentry.event.Event;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -8,8 +8,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
-import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
+import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 
 import java.util.HashMap;
 import java.util.Map;

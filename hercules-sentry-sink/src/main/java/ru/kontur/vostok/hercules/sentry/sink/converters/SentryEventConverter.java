@@ -100,42 +100,9 @@ public class SentryEventConverter {
 
     private static ExceptionInterface convertExceptions(Container[] exceptions) {
         LinkedList<SentryException> sentryExceptions = Arrays.stream(exceptions)
-                .map(SentryEventConverter::convertSingleException)
+                .map(SentryExceptionConverter::convert)
                 .collect(Collectors.toCollection(LinkedList::new));
 
         return new ExceptionInterface(sentryExceptions);
-    }
-
-    private static SentryException convertSingleException(Container exception) {
-        String type = ContainerUtil.extractRequired(exception, "type", Type.STRING);
-        String value = ContainerUtil.extractRequired(exception, "value", Type.TEXT);
-        String module = ContainerUtil.extractRequired(exception, "module", Type.TEXT);
-        Container[] stacktrace = ContainerUtil.extractRequired(exception, "stacktrace", Type.CONTAINER_ARRAY);
-
-        return new SentryException(
-                value,
-                type,
-                module,
-                convertStacktrace(stacktrace)
-        );
-    }
-
-    private static StackTraceInterface convertStacktrace(Container[] stacktrace) {
-        return new StackTraceInterface(Arrays.stream(stacktrace)
-                .map(SentryEventConverter::convertSingleFrame)
-                .toArray(SentryStackTraceElement[]::new)
-        );
-    }
-
-    private static SentryStackTraceElement convertSingleFrame(Container frame){
-        return new SentryStackTraceElement(
-                ContainerUtil.extractRequired(frame, "module", Type.TEXT),
-                ContainerUtil.extractRequired(frame, "function", Type.STRING),
-                ContainerUtil.extractRequired(frame, "filename", Type.STRING),
-                ContainerUtil.extractRequired(frame, "lineno", Type.INTEGER),
-                ContainerUtil.<Short>extractOptional(frame, "colno", Type.SHORT).map(Short::intValue).orElse(null),
-                ContainerUtil.extractRequired(frame, "abs_path", Type.TEXT),
-                null
-        );
     }
 }

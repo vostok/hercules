@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.protocol;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
-import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
