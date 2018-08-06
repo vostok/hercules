@@ -15,7 +15,7 @@ import java.util.UUID;
  */
 public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
-    public static final String SENTRY_PROJECT_NAME_TAG = "sentry-token";
+    public static final String SENTRY_PROJECT_NAME_TAG = "sentry-project-name";
 
     private final SentryClientHolder sentryClientHolder;
 
