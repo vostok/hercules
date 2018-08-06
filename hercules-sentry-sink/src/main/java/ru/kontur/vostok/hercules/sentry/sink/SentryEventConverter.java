@@ -32,7 +32,9 @@ import java.util.stream.Collectors;
 public class SentryEventConverter {
 
     private static final String SDK_NAME = "hercules-sentry-sink";
-    private static final String SDK_VERSION = Optional.ofNullable(SentryEventConverter.class.getPackage().getImplementationVersion()).orElse("UNKNOWN");
+
+    // TODO: Extract actual version
+    private static final String SDK_VERSION = "UNKNOWN";
     private static final Sdk SDK = new Sdk(SDK_NAME, SDK_VERSION, null);
 
     private static final String EXCEPTIONS_TAG = "exceptions";
@@ -44,7 +46,7 @@ public class SentryEventConverter {
     private static final String SERVER_TAG = "server";
 
     private static final Set<String> IGNORED_TAGS = Sets.newHashSet(
-            SentrySyncProcessor.SENTRY_TOKEN_TAG,
+            SentrySyncProcessor.SENTRY_PROJECT_NAME_TAG,
             EXCEPTIONS_TAG,
             MESSAGE_TAG,
             LEVEL_TAG,
