@@ -14,7 +14,7 @@ public class SentryStackTraceElementConverter {
 
     private static final String MODULE_FIELD_NAME = "mod";
     private static final String FUNCTION_FIELD_NAME = "fun";
-    private static final String FILENAME_FIELD_NAME = "fnm";
+    public static final String FILENAME_FIELD_NAME = "fnm";
     private static final String LINENO_FIELD_NAME = "ln";
     private static final String COLNO_FIELD_NAME = "cn";
     private static final String ABS_PATH_FIELD_NAME = "abs";

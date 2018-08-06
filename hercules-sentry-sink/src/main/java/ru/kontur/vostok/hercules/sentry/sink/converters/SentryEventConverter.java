@@ -6,8 +6,6 @@ import io.sentry.event.EventBuilder;
 import io.sentry.event.Sdk;
 import io.sentry.event.interfaces.ExceptionInterface;
 import io.sentry.event.interfaces.SentryException;
-import io.sentry.event.interfaces.SentryStackTraceElement;
-import io.sentry.event.interfaces.StackTraceInterface;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
@@ -23,6 +21,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,7 +40,6 @@ public class SentryEventConverter {
     private static final String EXCEPTIONS_TAG = "exc";
     private static final String MESSAGE_TAG = "msg";
     private static final String LEVEL_TAG = "lvl";
-    private static final String PLATFORM_TAG = "platform";
     private static final String ENVIRONMENT_TAG = "env";
     private static final String RELEASE_TAG = "rlz";
     private static final String SERVER_TAG = "srv";
@@ -50,11 +49,12 @@ public class SentryEventConverter {
             EXCEPTIONS_TAG,
             MESSAGE_TAG,
             LEVEL_TAG,
-            PLATFORM_TAG,
             ENVIRONMENT_TAG,
             RELEASE_TAG,
             SERVER_TAG
     );
+
+    private static final String DEFAULT_PLATFORM = "";
 
     public static io.sentry.event.Event convert(Event event) {
 
@@ -72,9 +72,6 @@ public class SentryEventConverter {
                 .flatMap(s -> EnumUtil.parseOptional(Level.class, s))
                 .ifPresent(eventBuilder::withLevel);
 
-        EventUtil.<String>extractOptional(event, PLATFORM_TAG, Type.STRING)
-                .ifPresent(eventBuilder::withPlatform);
-
         EventUtil.<String>extractOptional(event, ENVIRONMENT_TAG, Type.STRING)
                 .ifPresent(eventBuilder::withEnvironment);
 
@@ -84,13 +81,14 @@ public class SentryEventConverter {
         EventUtil.<String>extractOptional(event, SERVER_TAG, Type.STRING)
                 .ifPresent(eventBuilder::withServerName);
 
-
         for (Map.Entry<String, Variant> entry : event) {
             String key = entry.getKey();
             if (!IGNORED_TAGS.contains(key)) {
                 VariantUtil.extractPrimitiveAsString(entry.getValue()).ifPresent(value -> eventBuilder.withTag(key, value));
             }
         }
+
+        eventBuilder.withPlatform(SentryEventConverter.extractPlatform(event));
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
         sentryEvent.setSdk(SDK);
@@ -104,5 +102,34 @@ public class SentryEventConverter {
                 .collect(Collectors.toCollection(LinkedList::new));
 
         return new ExceptionInterface(sentryExceptions);
+    }
+
+    private static String extractPlatform(Event event) {
+        Optional<Container[]> containers = EventUtil.extractOptional(event, EXCEPTIONS_TAG, Type.CONTAINER_VECTOR);
+        if (!containers.isPresent()) {
+            return DEFAULT_PLATFORM;
+        }
+
+        return Arrays.stream(containers.get())
+                .flatMap(container -> Arrays.stream(ContainerUtil.<Container[]>extractOptional(container, SentryExceptionConverter.STACKTRACE_FIELD_NAME, Type.CONTAINER_ARRAY).orElse(new Container[0])))
+                .findAny()
+                .map(container -> ContainerUtil.<String>extractRequired(container, SentryStackTraceElementConverter.FILENAME_FIELD_NAME, Type.STRING))
+                .map(SentryEventConverter::resolvePlatformByFileName)
+                .orElse(DEFAULT_PLATFORM);
+    }
+
+    private static String resolvePlatformByFileName(String fileName) {
+        if (Objects.isNull(fileName)) {
+            return DEFAULT_PLATFORM;
+        }
+
+        if (fileName.endsWith(".java")) {
+            return "java";
+        } else if (fileName.endsWith(".cs")) {
+            return "csharp";
+        } else if (fileName.endsWith(".py")) {
+            return "python";
+        }
+        return DEFAULT_PLATFORM;
     }
 }

@@ -92,4 +92,18 @@ public class SentryEventConverterTest {
         Assert.assertEquals(13, (int) stackTrace[1].getColno());
         Assert.assertEquals("/home/usr/git/project/src/java/com/example/test/AnotherModule.java", stackTrace[1].getAbsPath());
     }
+
+    @Test
+    public void shouldExtractPlatformValue() throws Exception {
+        EventBuilder eventBuilder = new EventBuilder();
+        eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
+        eventBuilder.setVersion(1);
+        eventBuilder.setTag("exc", Variant.ofContainerVector(new Container[]{
+                createException()
+        }));
+
+        Event sentryEvent = SentryEventConverter.convert(eventBuilder.build());
+
+        Assert.assertEquals("java", sentryEvent.getPlatform());
+    }
 }

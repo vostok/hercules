@@ -15,7 +15,7 @@ public class SentryExceptionConverter {
     private static final String TYPE_FIELD_NAME = "tp";
     private static final String VALUE_FIELD_NAME = "msg";
     private static final String MODULE_FIELD_NAME = "mod";
-    private static final String STACKTRACE_FIELD_NAME = "str";
+    public static final String STACKTRACE_FIELD_NAME = "str";
 
     public static SentryException convert(Container container) {
         String type = ContainerUtil.extractRequired(container, TYPE_FIELD_NAME, Type.STRING);
