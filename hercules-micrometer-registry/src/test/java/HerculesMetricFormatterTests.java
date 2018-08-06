@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.HerculesProtocolAssert;
@@ -44,18 +45,13 @@ public class HerculesMetricFormatterTests {
             new HashSet<>(Collections.singletonList(MetricAttribute.MEAN_RATE)));
 
     private final UuidGenerator GENERATOR = UuidGenerator.getClientInstance();
+    private final Clock CLOCK = Mockito.mock(Clock.class);
     private Gauge gaugeTest;
     private Counter counterTest;
     private Histogram histogramTest;
     private Meter meterTest;
     private Timer timerTest;
     private long TICK = TimeUnit.SECONDS.toNanos(0);
-    private final Clock CLOCK = new Clock() {
-        @Override
-        public long getTick() {
-            return TICK = TICK + TimeUnit.MILLISECONDS.toNanos(400);
-        }
-    };
 
     private static String calculateRateUnit() {
         final String s = TimeUnit.MILLISECONDS.toString().toLowerCase(Locale.US);
@@ -64,6 +60,9 @@ public class HerculesMetricFormatterTests {
 
     @Before
     public void setUp() {
+        Mockito.when(CLOCK.getTick()).then(invocation ->
+                TICK = TICK + TimeUnit.MILLISECONDS.toNanos(400));
+
         MetricRegistry registry = new MetricRegistry();
         gaugeTest = () -> GAUGE_METRIC_NAME;
         counterTest = registry.counter(COUNTER_METRIC_NAME);
@@ -71,8 +70,6 @@ public class HerculesMetricFormatterTests {
         meterTest = new Meter(CLOCK);
         timerTest = new Timer(new ExponentiallyDecayingReservoir(), CLOCK);
     }
-
-    @Before
 
     @Test
     public void shouldConvertGaugeMetricCorrect() {
