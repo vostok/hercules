@@ -33,7 +33,7 @@ public class ValidationSerializer {
         String apiKey = value.substring(0, streamOffset);
 
         int filtersOffset = value.indexOf('.', streamOffset + 1);
-        if (filtersOffset == -1 || filtersOffset == value.length()) {
+        if (filtersOffset == -1 || filtersOffset == value.length() - 1) {
             throw new IllegalArgumentException("No filters found in string value");
         }
         String stream = value.substring(streamOffset + 1, filtersOffset);
