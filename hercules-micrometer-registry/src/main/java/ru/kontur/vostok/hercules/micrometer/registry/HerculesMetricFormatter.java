@@ -35,22 +35,47 @@ public final class HerculesMetricFormatter {
         this.disabledMetricAttributes = disableMetricAttributes;
     }
 
+    /**
+     * {@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeGauge(com.codahale.metrics.Gauge, ru.kontur.vostok.hercules.protocol.encoder.EventBuilder)}
+     *
+     * @return event created from {@link com.codahale.metrics.Gauge gauge metric}
+     */
     public Event formatGauge(String name, Gauge metric, long timestamp) {
         return formatMetric(name, metric, timestamp, this::consumeGauge);
     }
 
+    /**
+     * {@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeCounter(com.codahale.metrics.Counter, ru.kontur.vostok.hercules.protocol.encoder.EventBuilder)}
+     *
+     * @return event created from {@link com.codahale.metrics.Counter counter metric}
+     */
     public Event formatCounter(String name, Counter metric, long timestamp) {
         return formatMetric(name, metric, timestamp, this::consumeCounter);
     }
 
+    /**
+     * {@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeHistogram(com.codahale.metrics.Histogram, ru.kontur.vostok.hercules.protocol.encoder.EventBuilder)}
+     *
+     * @return event created from {@link com.codahale.metrics.Histogram histogram metric}
+     */
     public Event formatHistogram(String name, Histogram metric, long timestamp) {
         return formatMetric(name, metric, timestamp, this::consumeHistogram);
     }
 
+    /**
+     * {@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeMeter(com.codahale.metrics.Meter, ru.kontur.vostok.hercules.protocol.encoder.EventBuilder)}
+     *
+     * @return event created from {@link com.codahale.metrics.Meter meter metric}
+     */
     public Event formatMeter(String name, Meter metric, long timestamp) {
         return formatMetric(name, metric, timestamp, this::consumeMeter);
     }
 
+    /**
+     * {@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeTimer(com.codahale.metrics.Timer, ru.kontur.vostok.hercules.protocol.encoder.EventBuilder)}
+     *
+     * @return event created from {@link com.codahale.metrics.Timer timer metric}
+     */
     public Event formatTimer(String name, Timer metric, long timestamp) {
         return formatMetric(name, metric, timestamp, this::consumeTimer);
     }
@@ -76,7 +101,7 @@ public final class HerculesMetricFormatter {
 
     /**
      * Consume {@link Gauge gauge} type metric. Setting
-     * tag "value" - metric's current value
+     * <br>tag "value" - metric's current value
      */
     //TODO: add any gauge generic type value
     private void consumeGauge(Gauge gauge,
@@ -86,7 +111,7 @@ public final class HerculesMetricFormatter {
 
     /**
      * Consume {@link Counter counter} type metric. Setting
-     * {@code consumeCounting};
+     * <br>{@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeCounting};
      */
     private void consumeCounter(Counter counter,
                                 EventBuilder eventBuilder) {
@@ -95,8 +120,8 @@ public final class HerculesMetricFormatter {
 
     /**
      * Consume {@link Histogram histogram} type metric. Setting
-     * {@code consumeCounting};
-     * {@code consumeSampling};
+     * <br>{@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeCounting};
+     * <br>{@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeSampling};
      */
     private void consumeHistogram(Histogram histogram,
                                   EventBuilder eventBuilder) {
@@ -106,8 +131,8 @@ public final class HerculesMetricFormatter {
 
     /**
      * Consume {@link Meter meter} type metric. Setting
-     * {@code consumeMetered};
-     * tag "duration_unit".
+     * <br>{@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeMetered};
+     * <br>tag "duration_unit".
      */
     private void consumeMeter(Meter meter,
                               EventBuilder eventBuilder) {
@@ -117,10 +142,10 @@ public final class HerculesMetricFormatter {
 
     /**
      * Consume {@link Timer timer} type metric. Setting
-     * {@code consumeMetered};
-     * {@code consumeSampling};
-     * tag "rate_unit";
-     * tag "duration_unit".
+     * <br>{@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeMetered};
+     * <br>{@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeSampling};
+     * <br>tag "rate_unit";
+     * <br>tag "duration_unit".
      */
     private void consumeTimer(Timer timer,
                               EventBuilder eventBuilder) {
@@ -132,16 +157,16 @@ public final class HerculesMetricFormatter {
 
     /**
      * Consume {@link Sampling sampling} type metric. Setting
-     * tag "max" - highest value in the snapshot;
-     * tag "mean" - arithmetic mean of the values in the snapshot;
-     * tag "min" - lowest value in the snapshot;
-     * tag "stddev" - standard deviation of the values in the snapshot;
-     * tag "p50" - median value in the distribution;
-     * tag "p75" - value at the 75th percentile in the distribution;
-     * tag "p95" - value at the 95 th percentile in the distribution;
-     * tag "p98" - value at the 98th percentile in the distribution;
-     * tag "p99" - value at the 99th percentile in the distribution;
-     * tag "p999" - value at the 99.9th percentile in the distribution;
+     * <br>tag "max" - highest value in the snapshot;
+     * <br>tag "mean" - arithmetic mean of the values in the snapshot;
+     * <br>tag "min" - lowest value in the snapshot;
+     * <br>tag "stddev" - standard deviation of the values in the snapshot;
+     * <br>tag "p50" - median value in the distribution;
+     * <br>tag "p75" - value at the 75th percentile in the distribution;
+     * <br>tag "p95" - value at the 95 th percentile in the distribution;
+     * <br>tag "p98" - value at the 98th percentile in the distribution;
+     * <br>tag "p99" - value at the 99th percentile in the distribution;
+     * <br>tag "p999" - value at the 99.9th percentile in the distribution;
      */
     private void consumeSampling(Sampling sampling, EventBuilder eventBuilder) {
         final Snapshot snapshot = sampling.getSnapshot();
@@ -167,11 +192,11 @@ public final class HerculesMetricFormatter {
 
     /**
      * Consume {@link Metered metered} type metric. Setting
-     * tag "mean_rate" - mean rate;
-     * tag "m1_rate" - one-minute rate;
-     * tag "m5_rate" - five-minutes rate;
-     * tag "m15_rate" - fifteen-minutes rate;
-     * Also do {@code consumeCounting}.
+     * <br>tag "mean_rate" - mean rate;
+     * <br>tag "m1_rate" - one-minute rate;
+     * <br>tag "m5_rate" - five-minutes rate;
+     * <br>tag "m15_rate" - fifteen-minutes rate;
+     * <br>Also do {@link ru.kontur.vostok.hercules.micrometer.registry.HerculesMetricFormatter#consumeCounting}.
      */
     private void consumeMetered(Metered metered, EventBuilder eventBuilder) {
         consumeCounting(metered, eventBuilder);
@@ -181,6 +206,10 @@ public final class HerculesMetricFormatter {
         setTagIfEnabled(eventBuilder, MetricAttribute.M15_RATE, Variant.ofDouble(metered.getFifteenMinuteRate()));
     }
 
+    /**
+     * Add tag to {@link ru.kontur.vostok.hercules.protocol.encoder.EventBuilder eventbuilder}
+     * if {@link com.codahale.metrics.MetricAttribute metricAttribute} are not contained in <code>disabledMetricAttributes</code>
+     */
     private void setTagIfEnabled(EventBuilder eventBuilder, MetricAttribute metricAttribute, Variant variant) {
         if (disabledMetricAttributes.contains(metricAttribute)) {
             return;
