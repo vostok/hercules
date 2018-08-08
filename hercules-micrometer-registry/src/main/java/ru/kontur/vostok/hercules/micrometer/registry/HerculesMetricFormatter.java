@@ -14,7 +14,7 @@ import com.codahale.metrics.Timer;
 import java.util.Set;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 /**
