@@ -25,6 +25,7 @@
         <guava.version>20.0</guava.version>
         <unirest.version>1.4.9</unirest.version>
         <elasticsearch-client.version>6.2.4</elasticsearch-client.version>
+        <micrometer.version>1.0.5</micrometer.version>
         <httpclient.version>4.5.3</httpclient.version>
         <log4j.version>2.11.0</log4j.version>
         <logback.version>1.2.3</logback.version>
@@ -51,6 +52,7 @@
         <module>hercules-graphite-sink</module>
         <module>hercules-undertow-util</module>
         <module>hercules-metrics</module>
+        <module>hercules-micrometer-registry</module>
         <module>hercules-gateway-client</module>
         <module>hercules-logger-log4j</module>
         <module>hercules-management-task</module>
@@ -63,6 +65,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Micrometer -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+        
             <!-- Jetbrains Annotations -->
             <dependency>
                 <groupId>org.jetbrains</groupId>
