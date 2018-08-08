@@ -19,6 +19,8 @@ public class EventPublisherFactory {
     private static final String URL_PROPERTY = "url";
     private static final String THREADS_PROPERTY = "threads";
     private static final String API_KEY_PROPERTY = "apiKey";
+    private static final String PROJECT_PROPERTY = "project";
+    private static final String ENVIRONMENT_PROPERTY = "env";
 
     private static final String DEFAULT_RESOURCE_NAME = "gateway-client.properties";
     private static final String PROPERTY_NAME = "gateway.client.config";
@@ -29,12 +31,21 @@ public class EventPublisherFactory {
         return thread;
     };
 
-    private static EventPublisher INSTANCE;
+    private static final EventPublisher INSTANCE;
+    private static final String PROJECT;
+    private static final String ENVIRONMENT;
 
     static {
         InputStream inputStream = ConfigsUtil.readConfig(PROPERTY_NAME, DEFAULT_RESOURCE_NAME);
         try {
-            INSTANCE = createPublisher(loadProperties(inputStream));
+            Properties properties = loadProperties(inputStream);
+            INSTANCE = createPublisher(properties);
+            PROJECT = PropertiesUtil
+                    .getAs(properties, PROJECT_PROPERTY, String.class)
+                    .orElseThrow(PropertiesUtil.missingPropertyError(PROJECT_PROPERTY));
+            ENVIRONMENT = PropertiesUtil
+                    .getAs(properties, ENVIRONMENT_PROPERTY, String.class)
+                    .orElseThrow(PropertiesUtil.missingPropertyError(ENVIRONMENT_PROPERTY));
         } catch (IOException e) {
             throw new RuntimeException(e);
         };
@@ -47,6 +58,12 @@ public class EventPublisherFactory {
     public static EventPublisher getInstance() {
         return INSTANCE;
     }
+    public static String getProject() {
+        return PROJECT;
+    }
+    public static String getEnvironment() {
+        return ENVIRONMENT;
+    }
 
     private static EventPublisher createPublisher(Properties properties) {
         int threads = PropertiesUtil.get(properties, THREADS_PROPERTY, DEFAULT_THREADS_COUNT);
@@ -56,6 +73,7 @@ public class EventPublisherFactory {
         String apiKey = PropertiesUtil
                 .getAs(properties, API_KEY_PROPERTY, String.class)
                 .orElseThrow(PropertiesUtil.missingPropertyError(API_KEY_PROPERTY));
+
 
         return new EventPublisher(
                 threads,
