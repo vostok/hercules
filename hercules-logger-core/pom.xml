@@ -16,6 +16,7 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-protocol</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
