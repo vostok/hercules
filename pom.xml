@@ -24,11 +24,11 @@
         <jackson.version>2.9.5</jackson.version>
         <guava.version>20.0</guava.version>
         <unirest.version>1.4.9</unirest.version>
-        <elasticsearch.client.version>6.2.4</elasticsearch.client.version>
-        <httpclient.verstion>4.5.3</httpclient.verstion>
-        <log4j.verstion>2.11.0</log4j.verstion>
+        <elasticsearch-client.version>6.2.4</elasticsearch-client.version>
+        <httpclient.version>4.5.3</httpclient.version>
+        <log4j.version>2.11.0</log4j.version>
         <logback.version>1.2.3</logback.version>
-        <jetbrains.annotations>16.0.2</jetbrains.annotations>
+        <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
     </properties>
 
     <modules>
@@ -67,14 +67,14 @@
             <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
-                <version>${jetbrains.annotations}</version>
+                <version>${jetbrains-annotations.version}</version>
             </dependency>
 
             <!-- Logging libraries -->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
-                <version>${log4j.verstion}</version>
+                <version>${log4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -86,7 +86,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>${httpclient.verstion}</version>
+                <version>${httpclient.version}</version>
             </dependency>
 
             <!-- Apache Kafka client -->
@@ -197,7 +197,7 @@
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-client</artifactId>
-                <version>${elasticsearch.client.version}</version>
+                <version>${elasticsearch-client.version}</version>
             </dependency>
 
             <!-- Sentry client -->

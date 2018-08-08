@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.logger.logback.util;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
+import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
 import ru.kontur.vostok.hercules.logger.core.LogEventBuilder;
 import ru.kontur.vostok.hercules.logger.core.LogExceptionBuilder;
 import ru.kontur.vostok.hercules.logger.core.util.LogCoreUtil;
@@ -17,10 +18,15 @@ import java.util.Objects;
  * @author Daniil Zhenikhov
  */
 public class LogbackToEventConverter {
+    private static final String PROJECT_TAG = "project";
+    private static final String ENVIRONMENT_TAG = "env";
+
     public static Event createEvent(ILoggingEvent loggingEvent) {
         LogEventBuilder builder = new LogEventBuilder()
                 .setLevel(loggingEvent.getLevel().levelStr)
-                .setMessage(loggingEvent.getFormattedMessage());
+                .setMessage(loggingEvent.getFormattedMessage())
+                .setProperty(PROJECT_TAG, Variant.ofString(EventPublisherFactory.getProject()))
+                .setProperty(ENVIRONMENT_TAG, Variant.ofString(EventPublisherFactory.getEnvironment()));
 
         if (Objects.nonNull(loggingEvent.getThrowableProxy())) {
             LogCoreUtil.consumeExceptionsChain(

@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.logger.log4j.util;
 
 import org.apache.logging.log4j.core.LogEvent;
+import ru.kontur.vostok.hercules.gateway.client.EventPublisherFactory;
 import ru.kontur.vostok.hercules.logger.core.LogEventBuilder;
 import ru.kontur.vostok.hercules.logger.core.LogExceptionBuilder;
 import ru.kontur.vostok.hercules.logger.core.util.LogCoreUtil;
@@ -15,10 +16,15 @@ import java.util.Objects;
  * @author Daniil Zhenikhov
  */
 public class Log4jToEventConverter {
+    private static final String PROJECT_TAG = "project";
+    private static final String ENVIRONMENT_TAG = "env";
+
     public static Event createEvent(LogEvent logEvent) {
         LogEventBuilder builder = new LogEventBuilder()
                 .setLevel(logEvent.getLevel().toString())
-                .setMessage(logEvent.getMessage().getFormattedMessage());
+                .setMessage(logEvent.getMessage().getFormattedMessage())
+                .setProperty(PROJECT_TAG, Variant.ofString(EventPublisherFactory.getProject()))
+                .setProperty(ENVIRONMENT_TAG, Variant.ofString(EventPublisherFactory.getEnvironment()));
 
         if (Objects.nonNull(logEvent.getThrown())) {
             LogCoreUtil.consumeExceptionsChain(
