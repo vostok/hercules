@@ -26,9 +26,11 @@
         <unirest.version>1.4.9</unirest.version>
         <elasticsearch.client.version>6.2.4</elasticsearch.client.version>
         <apache.httpclient.version>4.5.3</apache.httpclient.version>
-        <log4j.verstion>2.11.0</log4j.verstion>
+        <micrometer.version>1.0.5</micrometer.version>
+        <httpclient.version>4.5.3</httpclient.version>
+        <log4j.version>2.11.0</log4j.version>
         <logback.version>1.2.3</logback.version>
-        <jetbrains.annotations>16.0.2</jetbrains.annotations>
+        <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
     </properties>
 
     <modules>
@@ -51,6 +53,7 @@
         <module>hercules-graphite-sink</module>
         <module>hercules-undertow-util</module>
         <module>hercules-metrics</module>
+        <module>hercules-micrometer-registry</module>
         <module>hercules-gateway-client</module>
         <module>hercules-logger-log4j</module>
         <module>hercules-management-task</module>
@@ -63,18 +66,25 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Micrometer -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+        
             <!-- Jetbrains Annotations -->
             <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
-                <version>${jetbrains.annotations}</version>
+                <version>${jetbrains-annotations.version}</version>
             </dependency>
 
             <!-- Logging libraries -->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
-                <version>${log4j.verstion}</version>
+                <version>${log4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>

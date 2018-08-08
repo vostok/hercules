@@ -15,7 +15,7 @@ public final class IndexToElasticJsonWriter {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd").withZone(ZoneId.of("UTC"));
 
-    private static final String INDEX_TAG = "index";
+    private static final String INDEX_TAG = "$index";
     private static final String PROJECT_TAG = "project";
     private static final String ENVIRONMENT_TAG = "env";
 

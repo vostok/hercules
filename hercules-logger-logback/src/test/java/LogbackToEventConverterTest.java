@@ -99,6 +99,8 @@ public class LogbackToEventConverterTest {
         Map<String, Variant> map = new HashMap<>();
         map.put("level", Variant.ofString(Level.INFO.toString()));
         map.put("message", Variant.ofString(TEST_LOG_MESSAGE));
+        map.put("project", Variant.ofString("_project"));
+        map.put("env", Variant.ofString("_env"));
 
         return map;
     }
