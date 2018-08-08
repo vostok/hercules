@@ -18,7 +18,7 @@ public class IndexToElasticJsonWriterTest {
     public void shouldWriteIndexIfEventHasIndexTag() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
-        eventBuilder.setTag("index", Variant.ofString("just-some-index-value"));
+        eventBuilder.setTag("$index", Variant.ofString("just-some-index-value"));
         Event event = eventBuilder.build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

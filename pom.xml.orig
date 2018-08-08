@@ -24,10 +24,16 @@
         <jackson.version>2.9.5</jackson.version>
         <guava.version>20.0</guava.version>
         <unirest.version>1.4.9</unirest.version>
+<<<<<<< HEAD
+        <elasticsearch.client.version>6.2.4</elasticsearch.client.version>
+        <micrometer.core>1.0.5</micrometer.core>
+        <httpclient.verstion>4.5.3</httpclient.verstion>
+        <log4j.verstion>2.11.0</log4j.verstion>
+=======
         <elasticsearch-client.version>6.2.4</elasticsearch-client.version>
-        <micrometer.version>1.0.5</micrometer.version>
         <httpclient.version>4.5.3</httpclient.version>
         <log4j.version>2.11.0</log4j.version>
+>>>>>>> origin/master
         <logback.version>1.2.3</logback.version>
         <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
     </properties>
@@ -69,7 +75,7 @@
             <dependency>
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-core</artifactId>
-                <version>${micrometer.version}</version>
+                <version>${micrometer.core}</version>
             </dependency>
         
             <!-- Jetbrains Annotations -->
