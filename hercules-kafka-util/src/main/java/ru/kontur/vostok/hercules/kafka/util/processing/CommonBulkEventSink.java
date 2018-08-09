@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Serde;
+import ru.kontur.vostok.hercules.auth.PatternMatcher;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
@@ -27,7 +28,7 @@ public class CommonBulkEventSink {
 
     private final KafkaConsumer<UUID, Event> consumer;
     private final BulkSender<Event> eventSender;
-    private final String streamName;
+    private final PatternMatcher streamPattern;
     private final int pollTimeout;
     private final int batchSize;
 
@@ -35,7 +36,7 @@ public class CommonBulkEventSink {
 
     public CommonBulkEventSink(
             String destinationName,
-            Stream stream,
+            PatternMatcher streamPattern,
             Properties streamsProperties,
             BulkSender<Event> eventSender
     ) {
@@ -49,7 +50,7 @@ public class CommonBulkEventSink {
             throw new IllegalArgumentException("Poll timeout must be greater than 0");
         }
 
-        streamsProperties.put("group.id", String.format(ID_TEMPLATE, destinationName, stream.getName()));
+        streamsProperties.put("group.id", String.format(ID_TEMPLATE, destinationName, streamPattern.toString()));
         streamsProperties.put("enable.auto.commit", false);
         streamsProperties.put("max.poll.records", batchSize);
         streamsProperties.put("max.poll.interval.ms", pollTimeout * 10); // TODO: Find out how normal is this
@@ -59,11 +60,11 @@ public class CommonBulkEventSink {
 
         this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
         this.eventSender = eventSender;
-        this.streamName = stream.getName();
+        this.streamPattern = streamPattern;
     }
 
     public void start() {
-        consumer.subscribe(Collections.singleton(streamName));
+        consumer.subscribe(streamPattern.getRegexp());
 
         RecordStorage<UUID, Event> current = new RecordStorage<>(batchSize);
         RecordStorage<UUID, Event> next = new RecordStorage<>(batchSize);

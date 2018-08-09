@@ -1,22 +1,16 @@
 package ru.kontur.vostok.hercules.kafka.util.processing;
 
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
-import ru.kontur.vostok.hercules.meta.stream.Stream;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.auth.PatternMatcher;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
-
 public abstract class AbstractBulkSinkDaemon {
 
-    private CuratorClient curatorClient;
     private CommonBulkEventSink bulkEventSink;
     private BulkSender sender;
 
@@ -25,24 +19,14 @@ public abstract class AbstractBulkSinkDaemon {
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
         Properties streamProperties = PropertiesUtil.readProperties(parameters.getOrDefault("streams.properties", "streams.properties"));
 
-        curatorClient = new CuratorClient(curatorProperties);
-        curatorClient.start();
-
-        StreamRepository streamRepository = new StreamRepository(curatorClient);
-
-        String streamName = streamProperties.getProperty("stream.name");
-        Optional<Stream> stream = toUnchecked(() -> streamRepository.read(streamName));
-        if (!stream.isPresent()) {
-            throw new IllegalArgumentException("Unknown stream");
-        }
+        String pattern = PropertiesUtil.getRequiredProperty(streamProperties, "stream.name", String.class);
 
         //TODO: Validate sinkProperties
         try {
             sender = createSender(parameters);
-            bulkEventSink = new CommonBulkEventSink(getDaemonName(), stream.get(), streamProperties, sender);
+            bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender);
             bulkEventSink.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -74,14 +58,6 @@ public abstract class AbstractBulkSinkDaemon {
         try {
             if (Objects.nonNull(sender)) {
                 sender.close();
-            }
-        } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
-        }
-
-        try {
-            if (Objects.nonNull(curatorClient)) {
-                curatorClient.stop();
             }
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error
