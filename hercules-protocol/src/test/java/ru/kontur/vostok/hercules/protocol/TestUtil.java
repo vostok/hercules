@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.protocol;
 
-import ru.kontur.vostok.hercules.protocol.encoder.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 

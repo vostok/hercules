@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -72,6 +73,7 @@ public class PropertiesUtil {
         try(InputStream in = new FileInputStream(path)) {
             properties.load(in);
         } catch (IOException ex) {
+            // TODO: log
             ex.printStackTrace();
         }
         return properties;
@@ -79,11 +81,23 @@ public class PropertiesUtil {
 
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> getAs(Properties properties, String name, Class<T> clazz) {
-        return Optional.ofNullable((T) converters.get(clazz).apply(properties.getProperty(name)));
+        Function<String, ?> converter = converters.get(clazz);
+        if (Objects.isNull(converter)) {
+            throw new RuntimeException(String.format("No converter found for class %s", clazz));
+        }
+        return Optional.ofNullable((T) converter.apply(properties.getProperty(name)));
     }
 
     public static Supplier<RuntimeException> missingPropertyError(String propertyName) {
         return () -> new RuntimeException(String.format("Missing required property '%s'", propertyName));
+    }
+
+    public static <T> T getRequiredProperty(Properties properties, String name, Class<T> clazz) {
+        return getAs(properties, name, clazz).orElseThrow(missingPropertyError(name));
+    }
+
+    public static Properties subProperties(Properties properties, String prefix) {
+        return subProperties(properties, prefix, '.');
     }
 
     public static Properties subProperties(Properties properties, String prefix, char delimiter) {

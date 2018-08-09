@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.sentry.sink;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -46,7 +47,11 @@ public class SentrySinkDaemon {
             }
 
             Stream stream = streamOptional.get();
-            sentrySink = new SentrySink(streamsProperties, stream, new SentrySyncProcessor(sentryProperties));
+
+            String sentryUrl = PropertiesUtil.getRequiredProperty(sentryProperties, "sentry.url", String.class);
+            String sentryToken = PropertiesUtil.getRequiredProperty(sentryProperties, "sentry.token", String.class);
+
+            sentrySink = new SentrySink(streamsProperties, stream, new SentrySyncProcessor(new SentryClientHolder(new SentryApiClient(sentryUrl, sentryToken))));
             sentrySink.start();
         } catch (Throwable e) {
             e.printStackTrace();
