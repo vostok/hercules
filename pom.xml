@@ -24,8 +24,8 @@
         <jackson.version>2.9.5</jackson.version>
         <guava.version>20.0</guava.version>
         <unirest.version>1.4.9</unirest.version>
-        <elasticsearch.client.version>6.2.4</elasticsearch.client.version>
-        <apache.httpclient.version>4.5.3</apache.httpclient.version>
+        <elasticsearch-client.version>6.2.4</elasticsearch-client.version>
+        <apache-httpclient.version>4.5.3</apache-httpclient.version>
         <micrometer.version>1.0.5</micrometer.version>
         <log4j.version>2.11.0</log4j.version>
         <logback.version>1.2.3</logback.version>
@@ -95,7 +95,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>${apache.httpclient.version}</version>
+                <version>${apache-httpclient.version}</version>
             </dependency>
 
             <!-- Apache Kafka client -->
@@ -206,7 +206,7 @@
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-client</artifactId>
-                <version>${elasticsearch.client.version}</version>
+                <version>${elasticsearch-client.version}</version>
             </dependency>
 
             <!-- Sentry client -->
