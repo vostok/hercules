@@ -5,6 +5,7 @@ import org.apache.kafka.streams.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
+import ru.kontur.vostok.hercules.auth.PatternMatcher;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
@@ -15,6 +16,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * @author Gregory Koshelev
@@ -25,8 +27,8 @@ public class SentrySink {
 
     private final KafkaStreams kafkaStreams;
 
-    public SentrySink(Properties properties, Stream stream, SentrySyncProcessor syncProcessor) {
-        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, ID_PREFIX + stream.getName());
+    public SentrySink(Properties properties, PatternMatcher patternMatcher, SentrySyncProcessor syncProcessor) {
+        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, ID_PREFIX + patternMatcher.toString());
 
         Serde<UUID> keySerde = new UuidSerde();
 
@@ -35,7 +37,7 @@ public class SentrySink {
         Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
 
         StreamsBuilder builder = new StreamsBuilder();
-        builder.stream(stream.getName(), Consumed.with(keySerde, valueSerde)).process(() -> syncProcessor);
+        builder.stream(patternMatcher.getRegexp(), Consumed.with(keySerde, valueSerde)).process(() -> syncProcessor);
 
         kafkaStreams = new KafkaStreams(builder.build(), properties);
     }

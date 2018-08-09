@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import ru.kontur.vostok.hercules.auth.PatternMatcher;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -16,7 +17,6 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class SentrySinkDaemon {
-    private static CuratorClient curatorClient;
     private static SentrySink sentrySink;
 
     public static void main(String[] args) {
@@ -35,23 +35,11 @@ public class SentrySinkDaemon {
         }
 
         try {
-            curatorClient = new CuratorClient(curatorProperties);
-            curatorClient.start();
-
-            StreamRepository streamRepository = new StreamRepository(curatorClient);
-
-            String streamName = streamsProperties.getProperty("stream.name");
-            Optional<Stream> streamOptional = streamRepository.read(streamName);
-            if (!streamOptional.isPresent()) {
-                throw new IllegalArgumentException("Unknown stream");
-            }
-
-            Stream stream = streamOptional.get();
-
+            String streamPattern = PropertiesUtil.getRequiredProperty(streamsProperties, "stream.name", String.class);
             String sentryUrl = PropertiesUtil.getRequiredProperty(sentryProperties, "sentry.url", String.class);
             String sentryToken = PropertiesUtil.getRequiredProperty(sentryProperties, "sentry.token", String.class);
 
-            sentrySink = new SentrySink(streamsProperties, stream, new SentrySyncProcessor(new SentryClientHolder(new SentryApiClient(sentryUrl, sentryToken))));
+            sentrySink = new SentrySink(streamsProperties, new PatternMatcher(streamPattern), new SentrySyncProcessor(new SentryClientHolder(new SentryApiClient(sentryUrl, sentryToken))));
             sentrySink.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -71,14 +59,6 @@ public class SentrySinkDaemon {
         try {
             if (sentrySink != null) {
                 sentrySink.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
-        }
-
-        try {
-            if (curatorClient != null) {
-                curatorClient.stop();
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
