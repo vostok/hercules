@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.meta.auth.validation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -26,23 +27,24 @@ public class ValidationSerializer {
     }
 
     public Validation deserialize(String value) {
-        int streamOffset = value.indexOf('.');
-        if (streamOffset == -1 || streamOffset == value.length()) {
-            throw new IllegalArgumentException("No stream name found in string value");
+        String[] parts;
+        try {
+            parts = StringUtil.split(value, '.', 3);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Cannot deserialize validation", e);
         }
-        String apiKey = value.substring(0, streamOffset);
 
-        int filtersOffset = value.indexOf('.', streamOffset + 1);
-        if (filtersOffset == -1 || filtersOffset == value.length() - 1) {
-            throw new IllegalArgumentException("No filters found in string value");
-        }
-        String stream = value.substring(streamOffset + 1, filtersOffset);
+        String apiKey = parts[0];
+
+        String stream = parts[1];
+
         Filter[] filters;
         try {
-            filters = mapper.readValue(URLDecoder.decode(value.substring(filtersOffset + 1), "UTF-8"), Filter[].class);
+            filters = mapper.readValue(URLDecoder.decode(parts[2], "UTF-8"), Filter[].class);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Cannot deserialize filters");
+            throw new IllegalArgumentException("Cannot deserialize filters", e);
         }
+
         return new Validation(apiKey, stream, filters);
     }
 }
