@@ -32,6 +32,7 @@ public final class EventToElasticJsonWriter {
     static {
         Arrays.setAll(toJsonWriters, idx -> (g, v) -> {throw new IllegalArgumentException("Not implemented for index " + idx);});
 
+        toJsonWriters[Type.CONTAINER.code] = EventToElasticJsonWriter::skip;
         toJsonWriters[Type.BYTE.code] = EventToElasticJsonWriter::writeByte;
         toJsonWriters[Type.SHORT.code] = EventToElasticJsonWriter::writeShort;
         toJsonWriters[Type.INTEGER.code] = EventToElasticJsonWriter::writeInteger;
@@ -42,6 +43,7 @@ public final class EventToElasticJsonWriter {
         toJsonWriters[Type.STRING.code] = EventToElasticJsonWriter::writeStringOrText;
         toJsonWriters[Type.TEXT.code] = EventToElasticJsonWriter::writeStringOrText;
 
+        toJsonWriters[Type.CONTAINER_VECTOR.code] = EventToElasticJsonWriter::skip;
         toJsonWriters[Type.BYTE_VECTOR.code] = EventToElasticJsonWriter::writeByteArrayOrVector;
         toJsonWriters[Type.SHORT_VECTOR.code] = EventToElasticJsonWriter::writeShortArrayOrVector;
         toJsonWriters[Type.INTEGER_VECTOR.code] = EventToElasticJsonWriter::writeIntegerArrayOrVector;
@@ -52,6 +54,7 @@ public final class EventToElasticJsonWriter {
         toJsonWriters[Type.STRING_VECTOR.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
         toJsonWriters[Type.TEXT_VECTOR.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
 
+        toJsonWriters[Type.CONTAINER_ARRAY.code] = EventToElasticJsonWriter::skip;
         toJsonWriters[Type.BYTE_ARRAY.code] = EventToElasticJsonWriter::writeByteArrayOrVector;
         toJsonWriters[Type.SHORT_ARRAY.code] = EventToElasticJsonWriter::writeShortArrayOrVector;
         toJsonWriters[Type.INTEGER_ARRAY.code] = EventToElasticJsonWriter::writeIntegerArrayOrVector;
@@ -179,6 +182,10 @@ public final class EventToElasticJsonWriter {
             generator.writeString(new String(bytes, StandardCharsets.UTF_8));
         }
         generator.writeEndArray();
+    }
+
+    private static void skip(JsonGenerator generator, Object value) throws IOException {
+        generator.writeNull();
     }
 
     private EventToElasticJsonWriter() {
