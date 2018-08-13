@@ -38,7 +38,7 @@ public class SendAsyncHandler extends GatewayHandler {
                                     () -> {
                                         sentEventsMeter.mark(1);
                                     },
-                                    null
+                                    null //TODO: Metrics are coming!
                             );
                         }
                     });
