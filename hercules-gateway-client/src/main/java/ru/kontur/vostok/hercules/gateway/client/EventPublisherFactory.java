@@ -3,11 +3,9 @@ package ru.kontur.vostok.hercules.gateway.client;
 import ru.kontur.vostok.hercules.util.properties.ConfigsUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;

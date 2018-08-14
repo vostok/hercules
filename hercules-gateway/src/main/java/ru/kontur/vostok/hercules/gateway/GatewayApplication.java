@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
-import ru.kontur.vostok.hercules.util.args.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;

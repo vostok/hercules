@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.stream.api;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.util.args.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;

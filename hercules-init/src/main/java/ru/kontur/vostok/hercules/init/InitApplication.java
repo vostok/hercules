@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.init;
 
-import ru.kontur.vostok.hercules.util.args.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 

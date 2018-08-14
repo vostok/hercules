@@ -11,7 +11,10 @@
 
     <artifactId>hercules-stream-api</artifactId>
     <dependencies>
-
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-configuration</artifactId>
+        </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-auth</artifactId>
