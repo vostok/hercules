@@ -12,11 +12,19 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Abstract sink daemon implementation
+ */
 public abstract class AbstractBulkSinkDaemon {
 
     private CommonBulkEventSink bulkEventSink;
     private BulkSender sender;
 
+    /**
+     * Start daemon
+     *
+     * @param args command line arguments
+     */
     public void run(String[] args) {
         long start = System.currentTimeMillis();
 
@@ -44,8 +52,18 @@ public abstract class AbstractBulkSinkDaemon {
         System.out.println(String.format("%s sink daemon started for %d millis", getDaemonName(), System.currentTimeMillis() - start));
     }
 
+    /**
+     * Create instance of BulkSender which processes bulk of events
+     * Must be implemented in descendants
+     *
+     * @param sinkProperties properties for sender implementation
+     * @return sender instance
+     */
     protected abstract BulkSender createSender(Properties sinkProperties);
 
+    /**
+     * @return daemon name for logging, building consumer group name etc.
+     */
     protected abstract String getDaemonName();
 
     private void shutdown() {

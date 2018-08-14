@@ -17,6 +17,10 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+
+/**
+ * CommonBulkEventSink - common class for bulk processing of kafka streams content
+ */
 public class CommonBulkEventSink {
 
     private static final String POLL_TIMEOUT = "poll.timeout";
@@ -32,6 +36,12 @@ public class CommonBulkEventSink {
 
     private volatile boolean running = true;
 
+    /**
+     * @param destinationName data flow destination name, where data must be copied
+     * @param streamPattern stream which matches pattern will be processed by this sink
+     * @param streamsProperties kafka streams properties
+     * @param eventSender instance of bulk messages processor
+     */
     public CommonBulkEventSink(
             String destinationName,
             PatternMatcher streamPattern,
@@ -61,6 +71,9 @@ public class CommonBulkEventSink {
         this.streamPattern = streamPattern;
     }
 
+    /**
+     * Start sink
+     */
     public void start() {
         consumer.subscribe(streamPattern.getRegexp());
 
@@ -100,6 +113,11 @@ public class CommonBulkEventSink {
         consumer.unsubscribe();
     }
 
+    /**
+     * Stop sink
+     * @param timeout
+     * @param timeUnit
+     */
     public void stop(int timeout, TimeUnit timeUnit) {
         running = false;
         consumer.wakeup();
