@@ -1,11 +1,13 @@
 package ru.kontur.vostok.hercules.timeline.sink;
 
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Optional;
@@ -25,10 +27,12 @@ public class TimelineSinkDaemon {
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties streamsProperties = PropertiesUtil.readProperties(parameters.getOrDefault("streams.properties", "streams.properties"));
-        Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
-        Properties sinkProperties = PropertiesUtil.readProperties(parameters.getOrDefault("sink.properties", "sink.properties"));
-        Properties cassandraProperties = PropertiesUtil.readProperties(parameters.getOrDefault("cassandra.properties", "cassandra.properties"));
+        Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+
+        Properties streamsProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
+        Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+        Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
+        Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
 
         //TODO: Validate sinkProperties
         if (!sinkProperties.containsKey("timeline")) {

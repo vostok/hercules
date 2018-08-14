@@ -1,6 +1,10 @@
 package ru.kontur.vostok.hercules.management.api;
 
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
 import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.meta.blacklist.BlacklistRepository;
@@ -8,8 +12,7 @@ import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.rule.RuleRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Map;
 import java.util.Properties;
@@ -31,10 +34,11 @@ public class ManagementApiApplication {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties httpserverProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
-            Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
-            Properties applicationProperties = PropertiesUtil.readProperties(parameters.getOrDefault("application.properties", "application.properties"));
-            Properties kafkaProperties = PropertiesUtil.readProperties(parameters.getOrDefault("kafka.properties", "kafka.properties"));
+            Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+
+            Properties httpserverProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+            Properties kafkaProperties = PropertiesUtil.ofScope(properties, Scopes.KAFKA);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -44,7 +48,7 @@ public class ManagementApiApplication {
             BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
             RuleRepository ruleRepository = new RuleRepository(curatorClient);
 
-            AdminManager adminManager = new AdminManager(PropertiesUtil.toSet(applicationProperties, "keys"));
+            AdminManager adminManager = new AdminManager(PropertiesExtractor.toSet(properties, "keys"));
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
@@ -62,7 +66,7 @@ public class ManagementApiApplication {
 
         Runtime.getRuntime().addShutdownHook(new Thread(ManagementApiApplication::shutdown));
 
-        System.out.println("Management API started for " + (System.currentTimeMillis() - start) + " millis" );
+        System.out.println("Management API started for " + (System.currentTimeMillis() - start) + " millis");
     }
 
     private static void shutdown() {

@@ -2,10 +2,12 @@ package ru.kontur.vostok.hercules.timeline.api;
 
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
@@ -24,9 +26,11 @@ public class TimelineApiApplication {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties httpServerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
-            Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
-            Properties cassandraProperties = PropertiesUtil.readProperties(parameters.getOrDefault("cassandra.properties", "cassandra.properties"));
+            Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+
+            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+            Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

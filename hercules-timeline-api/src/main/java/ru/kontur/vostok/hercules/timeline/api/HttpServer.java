@@ -4,7 +4,7 @@ import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Properties;
 
@@ -14,7 +14,7 @@ public class HttpServer {
 
     public HttpServer(Properties properties, AuthManager authManager, ReadTimelineHandler readTimelineHandler) {
         String host = properties.getProperty("host", "0.0.0.0");
-        int port = PropertiesUtil.get(properties, "port", PropertiesUtil.get(properties, "server.port", 80));
+        int port = PropertiesExtractor.get(properties, "port", 6308);
 
         HttpHandler handler = Handlers.routing()
                 .get("/ping", exchange -> {

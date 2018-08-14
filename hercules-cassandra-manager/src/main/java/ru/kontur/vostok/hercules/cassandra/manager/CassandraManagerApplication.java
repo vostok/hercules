@@ -1,8 +1,10 @@
 package ru.kontur.vostok.hercules.cassandra.manager;
 
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
@@ -20,12 +22,13 @@ public class CassandraManagerApplication {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties cassandraProperties = PropertiesUtil.readProperties(parameters.getOrDefault("cassandra.properties", "cassandra.properties"));
-            Properties consumerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("consumer.properties", "consumer.properties"));
+            Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
 
+            Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
             cassandraConnector = new CassandraConnector(cassandraProperties);
             cassandraConnector.connect();
 
+            Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
             consumer = new CassandraTaskConsumer(consumerProperties, new CassandraManager(cassandraConnector));
             consumer.start();
         } catch (Throwable e) {

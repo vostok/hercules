@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.gateway.client;
 
 import ru.kontur.vostok.hercules.util.properties.ConfigsUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,12 +38,12 @@ public class EventPublisherFactory {
         try {
             Properties properties = loadProperties(inputStream);
             INSTANCE = createPublisher(properties);
-            PROJECT = PropertiesUtil
+            PROJECT = PropertiesExtractor
                     .getAs(properties, PROJECT_PROPERTY, String.class)
-                    .orElseThrow(PropertiesUtil.missingPropertyError(PROJECT_PROPERTY));
-            ENVIRONMENT = PropertiesUtil
+                    .orElseThrow(PropertiesExtractor.missingPropertyError(PROJECT_PROPERTY));
+            ENVIRONMENT = PropertiesExtractor
                     .getAs(properties, ENVIRONMENT_PROPERTY, String.class)
-                    .orElseThrow(PropertiesUtil.missingPropertyError(ENVIRONMENT_PROPERTY));
+                    .orElseThrow(PropertiesExtractor.missingPropertyError(ENVIRONMENT_PROPERTY));
         } catch (IOException e) {
             throw new RuntimeException(e);
         };
@@ -64,13 +64,13 @@ public class EventPublisherFactory {
     }
 
     private static EventPublisher createPublisher(Properties properties) {
-        int threads = PropertiesUtil.get(properties, THREADS_PROPERTY, DEFAULT_THREADS_COUNT);
-        String url = PropertiesUtil
+        int threads = PropertiesExtractor.get(properties, THREADS_PROPERTY, DEFAULT_THREADS_COUNT);
+        String url = PropertiesExtractor
                 .getAs(properties, URL_PROPERTY, String.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(URL_PROPERTY));
-        String apiKey = PropertiesUtil
+                .orElseThrow(PropertiesExtractor.missingPropertyError(URL_PROPERTY));
+        String apiKey = PropertiesExtractor
                 .getAs(properties, API_KEY_PROPERTY, String.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(API_KEY_PROPERTY));
+                .orElseThrow(PropertiesExtractor.missingPropertyError(API_KEY_PROPERTY));
 
 
         return new EventPublisher(

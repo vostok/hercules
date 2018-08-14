@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.init;
 
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.util.Map;
@@ -23,13 +25,13 @@ public class InitApplication {
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties applicationProperties =
-                PropertiesUtil.readProperties(
+        Properties properties =
+                PropertiesReader.read(
                         parameters.getOrDefault("application.properties", "application.properties"));
 
         if (StringUtil.tryParseBoolean(parameters.get("init-zk"), false)) {
             try {
-                new ZooKeeperInitializer(PropertiesUtil.subProperties(applicationProperties, "zk", '.')).init();
+                new ZooKeeperInitializer(PropertiesUtil.ofScope(properties, Scopes.ZOOKEEPER)).init();
             } catch (Exception e) {
                 System.out.println("ZooKeeper initialization fails with exception " + e.toString());
                 e.printStackTrace();
@@ -38,7 +40,7 @@ public class InitApplication {
 
         if (StringUtil.tryParseBoolean(parameters.get("init-kafka"), false)) {
             try {
-                new KafkaInitializer(PropertiesUtil.subProperties(applicationProperties, "kafka", '.')).init();
+                new KafkaInitializer(PropertiesUtil.ofScope(properties, Scopes.KAFKA)).init();
             } catch (Exception e) {
                 System.out.println("Kafka initialization fails with exception " + e.toString());
                 e.printStackTrace();
@@ -47,7 +49,7 @@ public class InitApplication {
 
         if (StringUtil.tryParseBoolean(parameters.get("init-cassandra"), false)) {
             try {
-                new CassandraInitializer(PropertiesUtil.subProperties(applicationProperties, "cassandra", '.')).init();
+                new CassandraInitializer(PropertiesUtil.ofScope(properties, Scopes.CASSANDRA)).init();
             } catch (Exception e) {
                 System.out.println("Cassandra initialization fails with exception " + e.toString());
                 e.printStackTrace();
