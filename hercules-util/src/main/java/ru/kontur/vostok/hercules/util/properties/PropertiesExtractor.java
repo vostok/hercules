@@ -2,10 +2,6 @@ package ru.kontur.vostok.hercules.util.properties;
 
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +16,7 @@ import java.util.function.Supplier;
 /**
  * @author Gregory Koshelev
  */
-public class PropertiesUtil {
+public class PropertiesExtractor {
     private static Map<Class<?>, Function<String, ?>> converters = new HashMap<>();
     static {
         converters.put(String.class, Function.identity());
@@ -68,17 +64,6 @@ public class PropertiesUtil {
         return StringUtil.toList(value, ',');
     }
 
-    public static Properties readProperties(String path) {
-        Properties properties = new Properties();
-        try(InputStream in = new FileInputStream(path)) {
-            properties.load(in);
-        } catch (IOException ex) {
-            // TODO: log
-            ex.printStackTrace();
-        }
-        return properties;
-    }
-
     @SuppressWarnings("unchecked")
     public static <T> Optional<T> getAs(Properties properties, String name, Class<T> clazz) {
         Function<String, ?> converter = converters.get(clazz);
@@ -94,21 +79,5 @@ public class PropertiesUtil {
 
     public static <T> T getRequiredProperty(Properties properties, String name, Class<T> clazz) {
         return getAs(properties, name, clazz).orElseThrow(missingPropertyError(name));
-    }
-
-    public static Properties subProperties(Properties properties, String prefix) {
-        return subProperties(properties, prefix, '.');
-    }
-
-    public static Properties subProperties(Properties properties, String prefix, char delimiter) {
-        Properties props = new Properties();
-        int prefixLength = prefix.length();
-        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-            String name = ((String) entry.getKey());
-            if (name.length() > prefixLength && name.startsWith(prefix) && name.charAt(prefixLength) == delimiter) {
-                props.setProperty(name.substring(prefixLength + 1), (String) entry.getValue());
-            }
-        }
-        return props;
     }
 }

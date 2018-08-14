@@ -5,7 +5,7 @@ import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import ru.kontur.vostok.hercules.kafka.util.KafkaDefaults;
 import ru.kontur.vostok.hercules.management.task.TaskConstants;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -21,7 +21,7 @@ public class KafkaInitializer {
     }
 
     public void init() {
-        final short replicationFactor = PropertiesUtil.getShort(kafkaProperties, "replication.factor", KafkaDefaults.DEFAULT_REPLICATION_FACTOR);
+        final short replicationFactor = PropertiesExtractor.getShort(kafkaProperties, "replication.factor", KafkaDefaults.DEFAULT_REPLICATION_FACTOR);
         try (AdminClient adminClient = AdminClient.create(kafkaProperties)) {
             CreateTopicsResult result = adminClient.createTopics(
                     Arrays.asList(

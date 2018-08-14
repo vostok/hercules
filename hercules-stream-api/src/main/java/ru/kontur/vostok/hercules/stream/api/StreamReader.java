@@ -11,7 +11,7 @@ import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.*;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
 import java.net.InetAddress;
@@ -34,7 +34,7 @@ public class StreamReader {
     public StreamReader(Properties properties, StreamRepository streamRepository) {
         this.streamRepository = streamRepository;
         this.servers = properties.getProperty("bootstrap.servers");
-        this.pollTimeout = PropertiesUtil.get(properties, "poll.timeout", 1000);
+        this.pollTimeout = PropertiesExtractor.get(properties, "poll.timeout", 1000);
     }
 
     // TODO: Probably we can use output streams to reduce memory consumption

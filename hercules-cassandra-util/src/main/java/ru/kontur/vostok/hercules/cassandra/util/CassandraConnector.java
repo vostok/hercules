@@ -6,7 +6,7 @@ import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.TableMetadata;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Properties;
 
@@ -25,14 +25,14 @@ public class CassandraConnector {
     }
 
     public void connect() {
-        final int connectionsPerHostLocal = PropertiesUtil.get(properties, "connectionsPerHostLocal", CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_LOCAL);
-        final int connectionsPerHostRemote = PropertiesUtil.get(properties, "connectionsPerHostRemote", CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_REMOTE);
-        final int maxRequestsPerConnectionLocal = PropertiesUtil.get(properties, "maxRequestsPerConnectionLocal", CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION_LOCAL);
-        final int maxRequestsPerConnectionRemote = PropertiesUtil.get(properties, "maxRequestsPerConnectionRemote", CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION_REMOTE);
+        final int connectionsPerHostLocal = PropertiesExtractor.get(properties, "connectionsPerHostLocal", CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_LOCAL);
+        final int connectionsPerHostRemote = PropertiesExtractor.get(properties, "connectionsPerHostRemote", CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_REMOTE);
+        final int maxRequestsPerConnectionLocal = PropertiesExtractor.get(properties, "maxRequestsPerConnectionLocal", CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION_LOCAL);
+        final int maxRequestsPerConnectionRemote = PropertiesExtractor.get(properties, "maxRequestsPerConnectionRemote", CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION_REMOTE);
 
         final String node = properties.getProperty("node", CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS);
-        final int port = PropertiesUtil.get(properties, "port", CassandraDefaults.DEFAULT_CASSANDRA_PORT);
-        final int readTimeout = PropertiesUtil.get(properties, "readTimeout", CassandraDefaults.DEFAULT_READ_TIMEOUT_MILLIS);
+        final int port = PropertiesExtractor.get(properties, "port", CassandraDefaults.DEFAULT_CASSANDRA_PORT);
+        final int readTimeout = PropertiesExtractor.get(properties, "readTimeout", CassandraDefaults.DEFAULT_READ_TIMEOUT_MILLIS);
 
         Cluster.Builder builder = Cluster.builder().addContactPoint(node).withPort(port);
 

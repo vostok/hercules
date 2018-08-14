@@ -6,7 +6,7 @@ import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Properties;
 
@@ -18,7 +18,7 @@ public class HttpServer {
 
     public HttpServer(MetricsCollector metricsCollector, Properties properties, AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
         String host = properties.getProperty("host", "0.0.0.0");
-        int port = PropertiesUtil.get(properties, "port", 6306);
+        int port = PropertiesExtractor.get(properties, "port", 6306);
 
         HttpHandler sendAsyncHandler = new SendAsyncHandler(metricsCollector, authManager, eventSender, streamRepository);
         HttpHandler sendHandler = new SendHandler(metricsCollector, authManager, eventSender, streamRepository);

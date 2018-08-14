@@ -1,10 +1,12 @@
 package ru.kontur.vostok.hercules.kafka.util.processing;
 
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.util.args.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Objects;
@@ -25,8 +27,10 @@ public abstract class AbstractBulkSinkDaemon {
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
-        Properties streamProperties = PropertiesUtil.readProperties(parameters.getOrDefault("streams.properties", "streams.properties"));
+        Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+        Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+        Properties streamProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
+        Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
         curatorClient = new CuratorClient(curatorProperties);
         curatorClient.start();
@@ -41,7 +45,7 @@ public abstract class AbstractBulkSinkDaemon {
 
         //TODO: Validate sinkProperties
         try {
-            sender = createSender(parameters);
+            sender = createSender(sinkProperties);
             bulkEventSink = new CommonBulkEventSink(getDaemonName(), stream.get(), streamProperties, sender);
             bulkEventSink.start();
         } catch (Throwable e) {
@@ -55,7 +59,7 @@ public abstract class AbstractBulkSinkDaemon {
         System.out.println(String.format("%s sink daemon started for %d millis", getDaemonName(), System.currentTimeMillis() - start));
     }
 
-    protected abstract BulkSender createSender(Map<String, String> parameters);
+    protected abstract BulkSender createSender(Properties sinkProperties);
 
     protected abstract String getDaemonName();
 
