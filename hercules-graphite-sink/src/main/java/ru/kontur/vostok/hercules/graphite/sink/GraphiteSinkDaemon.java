@@ -1,11 +1,9 @@
 package ru.kontur.vostok.hercules.graphite.sink;
 
-import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.kafka.util.processing.AbstractBulkSinkDaemon;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.protocol.Event;
 
-import java.util.Map;
 import java.util.Properties;
 
 public class GraphiteSinkDaemon extends AbstractBulkSinkDaemon {
@@ -15,9 +13,7 @@ public class GraphiteSinkDaemon extends AbstractBulkSinkDaemon {
     }
 
     @Override
-    protected BulkSender<Event> createSender(Map<String, String> parameters) {
-        Properties graphiteProperties = PropertiesReader.read(parameters.getOrDefault("graphite.properties", "graphite.properties"));
-
+    protected BulkSender<Event> createSender(Properties graphiteProperties) {
         return new GraphiteEventSender(graphiteProperties);
     }
 

@@ -30,6 +30,7 @@ public abstract class AbstractBulkSinkDaemon {
         Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
         Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
         Properties streamProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
+        Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
         curatorClient = new CuratorClient(curatorProperties);
         curatorClient.start();
@@ -44,7 +45,7 @@ public abstract class AbstractBulkSinkDaemon {
 
         //TODO: Validate sinkProperties
         try {
-            sender = createSender(parameters);
+            sender = createSender(sinkProperties);
             bulkEventSink = new CommonBulkEventSink(getDaemonName(), stream.get(), streamProperties, sender);
             bulkEventSink.start();
         } catch (Throwable e) {
@@ -58,7 +59,7 @@ public abstract class AbstractBulkSinkDaemon {
         System.out.println(String.format("%s sink daemon started for %d millis", getDaemonName(), System.currentTimeMillis() - start));
     }
 
-    protected abstract BulkSender createSender(Map<String, String> parameters);
+    protected abstract BulkSender createSender(Properties sinkProperties);
 
     protected abstract String getDaemonName();
 
