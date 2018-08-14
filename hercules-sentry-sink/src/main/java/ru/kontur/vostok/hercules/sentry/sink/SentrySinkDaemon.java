@@ -1,9 +1,12 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
-import ru.kontur.vostok.hercules.util.args.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Map;
 import java.util.Properties;
@@ -20,9 +23,10 @@ public class SentrySinkDaemon {
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties streamsProperties = PropertiesUtil.readProperties(parameters.getOrDefault("streams.properties", "streams.properties"));
-        Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
-        Properties sentryProperties = PropertiesUtil.readProperties(parameters.getOrDefault("sentry.properties", "sentry.properties"));
+        Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+
+        Properties streamsProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
+        Properties sentryProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
         //TODO: Validate sinkProperties
         if (!streamsProperties.containsKey("stream.name")) {
@@ -31,9 +35,9 @@ public class SentrySinkDaemon {
         }
 
         try {
-            String streamPattern = PropertiesUtil.getRequiredProperty(streamsProperties, "stream.name", String.class);
-            String sentryUrl = PropertiesUtil.getRequiredProperty(sentryProperties, "sentry.url", String.class);
-            String sentryToken = PropertiesUtil.getRequiredProperty(sentryProperties, "sentry.token", String.class);
+            String streamPattern = PropertiesExtractor.getRequiredProperty(streamsProperties, "stream.name", String.class);
+            String sentryUrl = PropertiesExtractor.getRequiredProperty(sentryProperties, "sentry.url", String.class);
+            String sentryToken = PropertiesExtractor.getRequiredProperty(sentryProperties, "sentry.token", String.class);
 
             sentrySink = new SentrySink(streamsProperties, new PatternMatcher(streamPattern), new SentrySyncProcessor(new SentryClientHolder(new SentryApiClient(sentryUrl, sentryToken))));
             sentrySink.start();

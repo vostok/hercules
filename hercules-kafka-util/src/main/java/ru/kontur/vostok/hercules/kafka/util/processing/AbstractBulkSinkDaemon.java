@@ -1,8 +1,11 @@
 package ru.kontur.vostok.hercules.kafka.util.processing;
 
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
-import ru.kontur.vostok.hercules.util.args.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Map;
 import java.util.Objects;
@@ -19,13 +22,15 @@ public abstract class AbstractBulkSinkDaemon {
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties streamProperties = PropertiesUtil.readProperties(parameters.getOrDefault("streams.properties", "streams.properties"));
+        Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+        Properties streamProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
+        Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
-        String pattern = PropertiesUtil.getRequiredProperty(streamProperties, "stream.name", String.class);
+        String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.name", String.class);
 
         //TODO: Validate sinkProperties
         try {
-            sender = createSender(parameters);
+            sender = createSender(sinkProperties);
             bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender);
             bulkEventSink.start();
         } catch (Throwable e) {
@@ -39,7 +44,7 @@ public abstract class AbstractBulkSinkDaemon {
         System.out.println(String.format("%s sink daemon started for %d millis", getDaemonName(), System.currentTimeMillis() - start));
     }
 
-    protected abstract BulkSender createSender(Map<String, String> parameters);
+    protected abstract BulkSender createSender(Properties sinkProperties);
 
     protected abstract String getDaemonName();
 

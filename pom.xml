@@ -7,7 +7,7 @@
     <groupId>ru.kontur.vostok.hercules</groupId>
     <artifactId>hercules</artifactId>
     <packaging>pom</packaging>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -34,6 +34,7 @@
 
     <modules>
         <module>hercules-util</module>
+        <module>hercules-configuration</module>
         <module>hercules-protocol</module>
         <module>hercules-partitioner</module>
         <module>hercules-meta</module>
@@ -54,13 +55,10 @@
         <module>hercules-metrics</module>
         <module>hercules-micrometer-registry</module>
         <module>hercules-gateway-client</module>
-        <module>hercules-logger-log4j</module>
         <module>hercules-management-task</module>
         <module>hercules-cassandra-manager</module>
         <module>hercules-kafka-manager</module>
         <module>hercules-init</module>
-        <module>hercules-logger-logback</module>
-        <module>hercules-logger-core</module>
     </modules>
 
     <dependencyManagement>
@@ -219,84 +217,74 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-util</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-configuration</artifactId>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-undertow-util</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-protocol</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-protocol</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-partitioner</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-meta</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-auth</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-kafka-util</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-uuid</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-cassandra-util</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-metrics</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-gateway-client</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-logger-log4j</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-logger-logback</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-logger-core</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-management-task</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>0.3.0-SNAPSHOT</version>
             </dependency>
 
             <!-- Test libraries -->

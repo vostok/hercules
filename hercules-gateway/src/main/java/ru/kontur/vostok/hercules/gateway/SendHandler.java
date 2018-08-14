@@ -27,32 +27,41 @@ public class SendHandler extends GatewayHandler {
     @Override
     public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey) {
         exchange.getRequestReceiver().receiveFullBytes(
-                (exch, bytes) -> {
-                    exch.dispatch(() -> {
-                        ReaderIterator<Event> reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(tags));
-                        AtomicInteger pendingEvents = new AtomicInteger(reader.getTotal());
-                        AtomicBoolean processed = new AtomicBoolean(false);
-                        while (reader.hasNext()) {
-                            Event event = reader.next();
-                            eventSender.send(
-                                    event,
-                                    event.getId(),
-                                    topic,
-                                    partitions,
-                                    shardingKey,
-                                    () -> {
-                                        if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
-                                            ResponseUtil.ok(exchange);
-                                        }
-                                        sentEventsMeter.mark(1);
-                                    },
-                                    () -> {
-                                        if (processed.compareAndSet(false, true)) {
-                                            ResponseUtil.unprocessableEntity(exchange);
-                                        }
-                                    });
+                (exch, bytes) -> exch.dispatch(() -> {
+                    ReaderIterator<Event> reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(tags));
+                    AtomicInteger pendingEvents = new AtomicInteger(reader.getTotal());
+                    AtomicBoolean processed = new AtomicBoolean(false);
+                    while (reader.hasNext()) {
+                        Event event;
+                        try {
+                            event = reader.next();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            //TODO: Metrics are coming!
+                            if (processed.compareAndSet(false, true)) {
+                                ResponseUtil.badRequest(exchange);
+                            }
+                            return;
                         }
-                    });
-                });
+                        eventSender.send(
+                                event,
+                                event.getId(),
+                                topic,
+                                partitions,
+                                shardingKey,
+                                () -> {
+                                    if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
+                                        ResponseUtil.ok(exchange);
+                                    }
+                                    sentEventsMeter.mark(1);
+                                },
+                                () -> {
+                                    //TODO: Metrics are coming!
+                                    if (processed.compareAndSet(false, true)) {
+                                        ResponseUtil.unprocessableEntity(exchange);
+                                    }
+                                });
+                    }
+                }));
     }
 }

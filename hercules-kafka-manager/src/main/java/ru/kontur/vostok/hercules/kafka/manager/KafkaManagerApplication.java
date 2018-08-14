@@ -1,7 +1,10 @@
 package ru.kontur.vostok.hercules.kafka.manager;
 
-import ru.kontur.vostok.hercules.util.args.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Map;
 import java.util.Properties;
@@ -20,11 +23,11 @@ public class KafkaManagerApplication {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties applicationProperties = PropertiesUtil.readProperties(parameters.getOrDefault("application.properties", "application.properties"));
-            Properties kafkaProperties = PropertiesUtil.readProperties(parameters.getOrDefault("kafka.properties", "kafka.properties"));
-            Properties consumerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("consumer.properties", "consumer.properties"));
+            Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+            Properties kafkaProperties = PropertiesUtil.ofScope(properties, Scopes.KAFKA);
+            Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
 
-            kafkaManager = new KafkaManager(kafkaProperties, PropertiesUtil.getShort(applicationProperties, "replicationFactor", (short) 1));
+            kafkaManager = new KafkaManager(kafkaProperties, PropertiesExtractor.getShort(properties, "replicationFactor", (short) 1));
 
             consumer = new KafkaTaskConsumer(consumerProperties, kafkaManager);
             consumer.start();

@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.util.Properties;
@@ -38,11 +38,11 @@ public class CommonBulkEventSink {
             Properties streamsProperties,
             BulkSender<Event> eventSender
     ) {
-        this.batchSize = PropertiesUtil.getAs(streamsProperties, BATCH_SIZE, Integer.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(BATCH_SIZE));
+        this.batchSize = PropertiesExtractor.getAs(streamsProperties, BATCH_SIZE, Integer.class)
+                .orElseThrow(PropertiesExtractor.missingPropertyError(BATCH_SIZE));
 
-        this.pollTimeout = PropertiesUtil.getAs(streamsProperties, POLL_TIMEOUT, Integer.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(POLL_TIMEOUT));
+        this.pollTimeout = PropertiesExtractor.getAs(streamsProperties, POLL_TIMEOUT, Integer.class)
+                .orElseThrow(PropertiesExtractor.missingPropertyError(POLL_TIMEOUT));
 
         if (pollTimeout < 0) {
             throw new IllegalArgumentException("Poll timeout must be greater than 0");

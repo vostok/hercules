@@ -6,7 +6,7 @@ import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -105,11 +105,11 @@ public class CuratorClient {
 
     private static CuratorFramework build(Properties properties) {
         String connectString = properties.getProperty("connectString", "localhost:2181");
-        int connectionTimeout = PropertiesUtil.get(properties, "connectionTimeout", 10_000);
-        int sessionTimeout = PropertiesUtil.get(properties, "sessionTimeout", 30_000);
-        int baseSleepTime = PropertiesUtil.get(properties, "retryPolicy.baseSleepTime", 1_000);
-        int maxRetries = PropertiesUtil.get(properties, "retryPolicy.maxRetries", 5);
-        int maxSleepTime = PropertiesUtil.get(properties, "retryPolicy.maxSleepTime", 8_000);
+        int connectionTimeout = PropertiesExtractor.get(properties, "connectionTimeout", 10_000);
+        int sessionTimeout = PropertiesExtractor.get(properties, "sessionTimeout", 30_000);
+        int baseSleepTime = PropertiesExtractor.get(properties, "retryPolicy.baseSleepTime", 1_000);
+        int maxRetries = PropertiesExtractor.get(properties, "retryPolicy.maxRetries", 5);
+        int maxSleepTime = PropertiesExtractor.get(properties, "retryPolicy.maxSleepTime", 8_000);
 
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime);
 
