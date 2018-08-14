@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.auth;
+package ru.kontur.vostok.hercules.util;
 
 import java.util.List;
 import java.util.regex.Pattern;

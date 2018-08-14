@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.kafka.util.processing;
 
-import ru.kontur.vostok.hercules.auth.PatternMatcher;
+import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.args.ArgsParser;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
