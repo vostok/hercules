@@ -1,13 +1,8 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
-import ru.kontur.vostok.hercules.protocol.Type;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
 
 /**
  * @author Gregory Koshelev
