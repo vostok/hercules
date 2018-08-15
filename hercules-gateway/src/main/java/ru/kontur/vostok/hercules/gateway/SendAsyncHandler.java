@@ -28,7 +28,18 @@ public class SendAsyncHandler extends GatewayHandler {
                     exch.dispatch(() -> {
                         Iterator<Event> reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(tags));
                         while (reader.hasNext()) {
-                            Event event = reader.next();
+                            Event event;
+                            try {
+                                event = reader.next();
+                                if (!eventValidator.validate(event)) {
+                                    //TODO: Metrics are coming!
+                                    return;
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                //TODO: Metrics are coming!
+                                return;
+                            }
                             eventSender.send(
                                     event,
                                     event.getId(),

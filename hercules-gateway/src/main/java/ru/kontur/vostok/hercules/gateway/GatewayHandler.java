@@ -5,6 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.gateway.validation.EventValidator;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -30,6 +31,7 @@ public abstract class GatewayHandler implements HttpHandler {
 
     protected final EventSender eventSender;
     protected final UuidGenerator uuidGenerator;
+    protected final EventValidator eventValidator;
 
     protected final Meter requestMeter;
     protected final Meter requestSizeMeter;
@@ -42,6 +44,7 @@ public abstract class GatewayHandler implements HttpHandler {
         this.eventSender = eventSender;
         this.streamRepository = streamRepository;
         this.uuidGenerator = UuidGenerator.getInternalInstance();
+        this.eventValidator = new EventValidator();
 
         this.requestMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".request");
         this.requestSizeMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".request_size");

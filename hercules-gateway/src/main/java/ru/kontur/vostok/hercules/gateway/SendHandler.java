@@ -35,6 +35,12 @@ public class SendHandler extends GatewayHandler {
                         Event event;
                         try {
                             event = reader.next();
+                            if (!eventValidator.validate(event)) {
+                                processed.set(true);
+                                //TODO: Metrics are coming!
+                                ResponseUtil.badRequest(exchange);
+                                return;
+                            }
                         } catch (Exception e) {
                             e.printStackTrace();
                             //TODO: Metrics are coming!
