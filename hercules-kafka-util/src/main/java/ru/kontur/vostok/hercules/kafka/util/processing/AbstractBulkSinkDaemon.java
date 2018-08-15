@@ -34,7 +34,7 @@ public abstract class AbstractBulkSinkDaemon {
         Properties streamProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
-        String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.name", String.class);
+        String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.pattern", String.class);
 
         //TODO: Validate sinkProperties
         try {
