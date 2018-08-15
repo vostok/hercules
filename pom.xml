@@ -53,8 +53,7 @@
         <module>hercules-sentry-sink</module>
         <module>hercules-graphite-sink</module>
         <module>hercules-undertow-util</module>
-        <module>hercules-metrics</module>
-        <module>hercules-micrometer-registry</module>
+        <module>hercules-health</module>
         <module>hercules-gateway-client</module>
         <module>hercules-management-task</module>
         <module>hercules-cassandra-manager</module>
@@ -64,12 +63,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Micrometer -->
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-core</artifactId>
-                <version>${micrometer.version}</version>
-            </dependency>
         
             <!-- Jetbrains Annotations -->
             <dependency>
@@ -289,7 +282,7 @@
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-metrics</artifactId>
+                <artifactId>hercules-health</artifactId>
                 <version>0.3.0-SNAPSHOT</version>
             </dependency>
             <dependency>

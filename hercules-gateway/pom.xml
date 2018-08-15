@@ -46,7 +46,7 @@
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-metrics</artifactId>
+            <artifactId>hercules-health</artifactId>
         </dependency>
 
         <dependency>

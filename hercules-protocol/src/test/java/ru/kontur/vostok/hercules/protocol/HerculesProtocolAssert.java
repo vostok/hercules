@@ -2,9 +2,12 @@ package ru.kontur.vostok.hercules.protocol;
 
 import org.junit.Assert;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
