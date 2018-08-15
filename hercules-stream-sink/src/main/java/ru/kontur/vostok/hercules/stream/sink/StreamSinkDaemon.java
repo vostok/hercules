@@ -83,7 +83,7 @@ public class StreamSinkDaemon {
 
         try {
             if (curatorClient != null) {
-                curatorClient.stop();
+                curatorClient.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error

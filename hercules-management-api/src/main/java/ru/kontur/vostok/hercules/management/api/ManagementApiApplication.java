@@ -82,7 +82,7 @@ public class ManagementApiApplication {
 
         try {
             if (authManager != null) {
-                authManager.stop();
+                authManager.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -90,7 +90,7 @@ public class ManagementApiApplication {
 
         try {
             if (curatorClient != null) {
-                curatorClient.stop();
+                curatorClient.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error

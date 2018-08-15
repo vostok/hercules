@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 public class TimelineApiApplication {
 
@@ -71,7 +72,7 @@ public class TimelineApiApplication {
         }
         try {
             if (curatorClient != null) {
-                curatorClient.stop();
+                curatorClient.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error
@@ -79,7 +80,7 @@ public class TimelineApiApplication {
 
         try {
             if (authManager != null) {
-                authManager.stop();
+                authManager.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace();

@@ -2,16 +2,18 @@ package ru.kontur.vostok.hercules.auth;
 
 import ru.kontur.vostok.hercules.meta.blacklist.Blacklist;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.util.application.shutdown.Stoppable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Gregory Koshelev
  */
-public final class AuthManager {
+public final class AuthManager implements Stoppable {
     private final CuratorClient curatorClient;
 
     private final AtomicReference<ConcurrentHashMap<String, List<PatternMatcher>>> readRules = new AtomicReference<>(new ConcurrentHashMap<>());
@@ -32,7 +34,8 @@ public final class AuthManager {
         update();
     }
 
-    public void stop() {
+    @Override
+    public void stop(long timeout, TimeUnit timeUnit) {
         blacklist.stop();
     }
 

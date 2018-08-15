@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 
 public class StreamApiApplication {
@@ -63,7 +64,7 @@ public class StreamApiApplication {
         }
         try {
             if (curatorClient != null) {
-                curatorClient.stop();
+                curatorClient.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error
@@ -71,7 +72,7 @@ public class StreamApiApplication {
 
         try {
             if (authManager != null) {
-                authManager.stop();
+                authManager.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             e.printStackTrace();

@@ -6,6 +6,7 @@ import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
+import ru.kontur.vostok.hercules.util.application.shutdown.Stoppable;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Arrays;
@@ -13,12 +14,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
  * @author Gregory Koshelev
  */
-public class CuratorClient {
+public class CuratorClient implements Stoppable {
     private final CuratorFramework curatorFramework;
 
     public CuratorClient(Properties properties) {
@@ -29,7 +31,9 @@ public class CuratorClient {
         curatorFramework.start();
     }
 
-    public void stop() {
+
+    @Override
+    public void stop(long timeout, TimeUnit timeUnit) {
         curatorFramework.close();
     }
 

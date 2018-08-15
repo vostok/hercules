@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerializer;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.application.shutdown.Stoppable;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Map;
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public class EventSender {
+public class EventSender implements Stoppable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventSender.class);
 
@@ -62,6 +63,7 @@ public class EventSender {
         });
     }
 
+    @Override
     public void stop(long timeout, TimeUnit timeUnit) {
         producer.close(timeout, timeUnit);
     }
