@@ -1,6 +1,9 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
@@ -11,7 +14,13 @@ import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
