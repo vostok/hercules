@@ -51,7 +51,6 @@ public class EventSender {
                 if (callback != null) {
                     callback.call();
                 }
-                LOGGER.trace("Successfully send message");
             } else {
                 if (errorCallback != null) {
                     errorCallback.call();
