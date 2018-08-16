@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.auth;
+package ru.kontur.vostok.hercules.util;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -7,10 +7,13 @@ import java.util.regex.Pattern;
  * @author Gregory Koshelev
  */
 public class PatternMatcher {
+
+    private final String pattern;
     private final Pattern regexp;
 
     public PatternMatcher(String pattern) {
-        regexp = Pattern.compile(toRegexString(pattern));
+        this.pattern = pattern;
+        this.regexp = Pattern.compile(toRegexString(pattern));
     }
 
     public boolean matches(String value) {
@@ -29,6 +32,15 @@ public class PatternMatcher {
         }
 
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return pattern;
+    }
+
+    public Pattern getRegexp() {
+        return regexp;
     }
 
     private static String toRegexString(String pattern) {
