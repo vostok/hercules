@@ -22,16 +22,23 @@ public class SendAsyncHandler extends GatewayHandler {
     }
 
     @Override
-    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, EventValidator validator) {
+    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, ContentValidator validator) {
         exchange.getRequestReceiver().receiveFullBytes(
                 (exch, bytes) -> {
                     exch.dispatch(() -> {
                         Iterator<Event> reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(tags));
                         while (reader.hasNext()) {
-                            Event event = reader.next();
-                            if (!validator.validate(event)) {
-                                //TODO: should to log filtered events
-                                continue;
+                            Event event;
+                            try {
+                                event = reader.next();
+                                if (!eventValidator.validate(event)) {
+                                    //TODO: Metrics are coming!
+                                    return;
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                //TODO: Metrics are coming!
+                                return;
                             }
                             eventSender.send(
                                     event,
