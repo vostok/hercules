@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.init;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraDefaults;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,13 +20,13 @@ public class CassandraInitializer {
     }
 
     public void init() {
-        List<String> nodes = PropertiesUtil.toList(cassandraProperties, "nodes");
+        List<String> nodes = PropertiesExtractor.toList(cassandraProperties, "nodes");
         if (nodes.isEmpty()) {
             nodes = Collections.singletonList(CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS);
         }
 
-        final short replicationFactor = PropertiesUtil.getShort(cassandraProperties, "replication.factor", CassandraDefaults.DEFAULT_REPLICATION_FACTOR);
-        final int port = PropertiesUtil.get(cassandraProperties, "port", CassandraDefaults.DEFAULT_CASSANDRA_PORT);
+        final short replicationFactor = PropertiesExtractor.getShort(cassandraProperties, "replication.factor", CassandraDefaults.DEFAULT_REPLICATION_FACTOR);
+        final int port = PropertiesExtractor.get(cassandraProperties, "port", CassandraDefaults.DEFAULT_CASSANDRA_PORT);
         final String keyspace = cassandraProperties.getProperty("keyspace", CassandraDefaults.DEFAULT_KEYSPACE);
 
         Cluster.Builder builder = Cluster.builder().withPort(port).withoutJMXReporting();

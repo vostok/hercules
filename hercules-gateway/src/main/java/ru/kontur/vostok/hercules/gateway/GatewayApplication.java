@@ -1,13 +1,15 @@
 package ru.kontur.vostok.hercules.gateway;
 
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
-import ru.kontur.vostok.hercules.util.args.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
@@ -30,10 +32,12 @@ public class GatewayApplication {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties httpserverProperties = PropertiesUtil.readProperties(parameters.getOrDefault("httpserver.properties", "httpserver.properties"));
-            Properties producerProperties = PropertiesUtil.readProperties(parameters.getOrDefault("producer.properties", "producer.properties"));
-            Properties curatorProperties = PropertiesUtil.readProperties(parameters.getOrDefault("curator.properties", "curator.properties"));
-            Properties metricsProperties = PropertiesUtil.readProperties(parameters.getOrDefault("metrics.properties", "metrics.properties"));
+            Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+
+            Properties httpserverProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+            Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
+            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+            Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();

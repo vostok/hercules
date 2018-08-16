@@ -1,0 +1,56 @@
+package ru.kontur.vostok.hercules.util.functional;
+
+import java.util.Objects;
+import java.util.function.Function;
+
+/**
+ * Result
+ *
+ * @author Kirill Sulim
+ */
+public class Result<R, E> {
+
+    private final R result;
+    private final E error;
+
+    private Result(R result, E error) {
+        this.result = result;
+        this.error = error;
+    }
+
+    public boolean isOk() {
+        return Objects.isNull(error);
+    }
+
+    public R get() {
+        return result;
+    }
+
+    public E getError() {
+        return error;
+    }
+
+    public <R1> Result<R1, E> map(Function<R, R1> converter) {
+        return map(converter, Function.identity());
+    }
+
+    public <R1, E1> Result<R1, E1> map(Function<R, R1> converter, Function<E, E1> errorConverter) {
+        return new Result<>(converter.apply(result), errorConverter.apply(error));
+    }
+
+    public <E1> Result<R, E1> mapError(Function<E, E1> errorConverter) {
+        return map(Function.identity(), errorConverter);
+    }
+
+    public static <R, E> Result<R, E> ok(R result) {
+        return new Result<>(result, null);
+    }
+
+    public static <E> Result<Void, E> ok() {
+        return new Result<>(null, null);
+    }
+
+    public static <R, E> Result<R, E> error(E error) {
+        return new Result<>(null, error);
+    }
+}

@@ -4,8 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.util.time.TimeUtil;
-import ru.kontur.vostok.hercules.uuid.UuidGenerator;
+import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 
 import java.net.URL;
 import java.nio.file.Files;

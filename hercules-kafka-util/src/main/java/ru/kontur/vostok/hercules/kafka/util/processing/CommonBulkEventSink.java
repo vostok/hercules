@@ -4,20 +4,23 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Serde;
+import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
-import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.time.Timer;
 
-import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+
+/**
+ * CommonBulkEventSink - common class for bulk processing of kafka streams content
+ */
 public class CommonBulkEventSink {
 
     private static final String POLL_TIMEOUT = "poll.timeout";
@@ -27,29 +30,35 @@ public class CommonBulkEventSink {
 
     private final KafkaConsumer<UUID, Event> consumer;
     private final BulkSender<Event> eventSender;
-    private final String streamName;
+    private final PatternMatcher streamPattern;
     private final int pollTimeout;
     private final int batchSize;
 
     private volatile boolean running = true;
 
+    /**
+     * @param destinationName data flow destination name, where data must be copied
+     * @param streamPattern stream which matches pattern will be processed by this sink
+     * @param streamsProperties kafka streams properties
+     * @param eventSender instance of bulk messages processor
+     */
     public CommonBulkEventSink(
             String destinationName,
-            Stream stream,
+            PatternMatcher streamPattern,
             Properties streamsProperties,
             BulkSender<Event> eventSender
     ) {
-        this.batchSize = PropertiesUtil.getAs(streamsProperties, BATCH_SIZE, Integer.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(BATCH_SIZE));
+        this.batchSize = PropertiesExtractor.getAs(streamsProperties, BATCH_SIZE, Integer.class)
+                .orElseThrow(PropertiesExtractor.missingPropertyError(BATCH_SIZE));
 
-        this.pollTimeout = PropertiesUtil.getAs(streamsProperties, POLL_TIMEOUT, Integer.class)
-                .orElseThrow(PropertiesUtil.missingPropertyError(POLL_TIMEOUT));
+        this.pollTimeout = PropertiesExtractor.getAs(streamsProperties, POLL_TIMEOUT, Integer.class)
+                .orElseThrow(PropertiesExtractor.missingPropertyError(POLL_TIMEOUT));
 
         if (pollTimeout < 0) {
             throw new IllegalArgumentException("Poll timeout must be greater than 0");
         }
 
-        streamsProperties.put("group.id", String.format(ID_TEMPLATE, destinationName, stream.getName()));
+        streamsProperties.put("group.id", String.format(ID_TEMPLATE, destinationName, streamPattern.toString()));
         streamsProperties.put("enable.auto.commit", false);
         streamsProperties.put("max.poll.records", batchSize);
         streamsProperties.put("max.poll.interval.ms", pollTimeout * 10); // TODO: Find out how normal is this
@@ -59,11 +68,14 @@ public class CommonBulkEventSink {
 
         this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
         this.eventSender = eventSender;
-        this.streamName = stream.getName();
+        this.streamPattern = streamPattern;
     }
 
+    /**
+     * Start sink
+     */
     public void start() {
-        consumer.subscribe(Collections.singleton(streamName));
+        consumer.subscribe(streamPattern.getRegexp());
 
         RecordStorage<UUID, Event> current = new RecordStorage<>(batchSize);
         RecordStorage<UUID, Event> next = new RecordStorage<>(batchSize);
@@ -101,6 +113,11 @@ public class CommonBulkEventSink {
         consumer.unsubscribe();
     }
 
+    /**
+     * Stop sink
+     * @param timeout
+     * @param timeUnit
+     */
     public void stop(int timeout, TimeUnit timeUnit) {
         running = false;
         consumer.wakeup();
