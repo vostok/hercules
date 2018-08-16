@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.metrics;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
@@ -95,5 +96,14 @@ public class MetricsCollector {
      */
     public <T> void gauge(String name, Supplier<T> supplier) {
         registry.register(name, (Gauge<T>) supplier::get);
+    }
+
+    /**
+     * Get histogram by the name
+     * @param name is the name of the histogram
+     * @return requested histogram
+     */
+    public Histogram histogram(String name) {
+        return registry.histogram(name);
     }
 }
