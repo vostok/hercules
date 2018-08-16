@@ -28,7 +28,6 @@
         <unirest.version>1.4.9</unirest.version>
         <elasticsearch-client.version>6.2.4</elasticsearch-client.version>
         <apache-httpclient.version>4.5.3</apache-httpclient.version>
-        <micrometer.version>1.0.5</micrometer.version>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>2.11.0</log4j.version>
         <logback.version>1.2.3</logback.version>
