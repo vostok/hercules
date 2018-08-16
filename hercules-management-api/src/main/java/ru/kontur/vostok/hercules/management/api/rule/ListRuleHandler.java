@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import ru.kontur.vostok.hercules.management.api.AdminManager;
-import ru.kontur.vostok.hercules.meta.rule.RuleRepository;
+import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 
 import java.util.List;
 
