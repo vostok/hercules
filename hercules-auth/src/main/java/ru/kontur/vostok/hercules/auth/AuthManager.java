@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.auth;
 
-import ru.kontur.vostok.hercules.meta.blacklist.Blacklist;
+import ru.kontur.vostok.hercules.meta.auth.blacklist.Blacklist;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 
