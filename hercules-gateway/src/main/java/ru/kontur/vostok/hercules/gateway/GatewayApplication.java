@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.gateway;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
@@ -19,6 +21,9 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class GatewayApplication {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GatewayApplication.class);
+
     private static MetricsCollector metricsCollector;
     private static HttpServer server;
     private static EventSender eventSender;
@@ -54,25 +59,26 @@ public class GatewayApplication {
             server = new HttpServer(metricsCollector, httpserverProperties, authManager, eventSender, streamRepository);
             server.start();
         } catch (Throwable e) {
-            e.printStackTrace();
+            LOGGER.error("Cannot start application due to", e);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(GatewayApplication::shutdown));
 
-        System.out.println("Gateway started for " + (System.currentTimeMillis() - start) + " millis" );
+        LOGGER.info("Gateway started for " + (System.currentTimeMillis() - start) + " millis" );
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        System.out.println("Started Gateway shutdown");
+        LOGGER.info("Started Gateway shutdown");
         try {
             if (server != null) {
                 server.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            LOGGER.error("Error on http server shutdown", e);
+            //TODO: Process error
         }
 
         try {
@@ -80,7 +86,8 @@ public class GatewayApplication {
                 eventSender.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            LOGGER.error("Error on event sender shutdown", e);
+            //TODO: Process error
         }
 
         try {
@@ -88,7 +95,7 @@ public class GatewayApplication {
                 authManager.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            LOGGER.error("Error on auth manager shutdown", e);
         }
 
         try {
@@ -96,7 +103,8 @@ public class GatewayApplication {
                 curatorClient.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            LOGGER.error("Error on curator client shutdown", e);
+            //TODO: Process error
         }
 
         try {
@@ -104,9 +112,10 @@ public class GatewayApplication {
                 metricsCollector.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            LOGGER.error("Error on metrics collector shutdown", e);
+            //TODO: Process error
         }
 
-        System.out.println("Finished Gateway shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Finished Gateway shutdown for " + (System.currentTimeMillis() - start) + " millis");
     }
 }
