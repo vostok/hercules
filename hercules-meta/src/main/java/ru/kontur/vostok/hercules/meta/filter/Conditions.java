@@ -30,6 +30,13 @@ public class Conditions {
         }
     }
 
+    public static class Exist implements Condition {
+        @Override
+        public boolean test(Variant variant) {
+            return variant != null;
+        }
+    }
+
     public static class Range implements Condition {
         private long left;
         private long right;
@@ -74,7 +81,7 @@ public class Conditions {
                return false;
            }
            long value = toLong(variant);
-           return (inclusiveLeft ? left <= value : left < value) && (inclusiveRight ? right >= value : right > value);
+           return variant != null && (inclusiveLeft ? left <= value : left < value) && (inclusiveRight ? right >= value : right > value);
         }
     }
 
@@ -91,7 +98,7 @@ public class Conditions {
 
         @Override
         public boolean test(Variant variant) {
-            return isAssignableToLong(variant) && toLong(variant) == value;
+            return variant != null && isAssignableToLong(variant) && toLong(variant) == value;
         }
     }
 
@@ -111,8 +118,7 @@ public class Conditions {
 
         @Override
         public boolean test(Variant variant) {
-            Type type = variant.getType();
-            return (type == Type.STRING || type == Type.TEXT) && Arrays.equals(bytes, (byte[]) variant.getValue());
+            return variant != null && isStringOrText(variant) && Arrays.equals(bytes, (byte[]) variant.getValue());
         }
     }
 
@@ -132,14 +138,18 @@ public class Conditions {
 
         @Override
         public boolean test(Variant variant) {
-            Type type = variant.getType();
-            return (type == Type.STRING || type == Type.TEXT) && ByteUtil.isSubarray((byte[]) variant.getValue(), bytes);
+            return variant != null && isStringOrText(variant) && ByteUtil.isSubarray((byte[]) variant.getValue(), bytes);
         }
     }
 
     private static boolean isAssignableToLong(Variant variant) {
         Type type = variant.getType();
         return type == Type.BYTE || type == Type.SHORT || type == Type.INTEGER || type == Type.LONG;
+    }
+
+    private static boolean isStringOrText(Variant variant) {
+        Type type = variant.getType();
+        return type == Type.STRING || type == Type.TEXT;
     }
 
     private static long toLong(Variant variant) {

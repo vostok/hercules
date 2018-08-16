@@ -3,6 +3,8 @@ package ru.kontur.vostok.hercules.gateway;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerializer;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -17,6 +19,9 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class EventSender {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventSender.class);
+
     private final KafkaProducer<UUID, byte[]> producer;
     private final Partitioner partitioner;
 
@@ -46,14 +51,14 @@ public class EventSender {
                 if (callback != null) {
                     callback.call();
                 }
-                return;
-            }
+            } else {
+                if (errorCallback != null) {
+                    errorCallback.call();
+                }
 
-            if (errorCallback != null) {
-                errorCallback.call();
+                LOGGER.error("Error on event send", exception);
+                //TODO: process exception
             }
-
-            exception.printStackTrace();//TODO: process exception
         });
     }
 

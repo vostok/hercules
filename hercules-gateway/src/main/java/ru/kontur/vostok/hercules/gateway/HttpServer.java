@@ -16,12 +16,12 @@ import java.util.Properties;
 public class HttpServer {
     private final Undertow undertow;
 
-    public HttpServer(MetricsCollector metricsCollector, Properties properties, AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
+    public HttpServer(MetricsCollector metricsCollector, Properties properties, AuthManager authManager, AuthValidationManager authValidationManager, EventSender eventSender, StreamRepository streamRepository) {
         String host = properties.getProperty("host", "0.0.0.0");
         int port = PropertiesExtractor.get(properties, "port", 6306);
 
-        HttpHandler sendAsyncHandler = new SendAsyncHandler(metricsCollector, authManager, eventSender, streamRepository);
-        HttpHandler sendHandler = new SendHandler(metricsCollector, authManager, eventSender, streamRepository);
+        HttpHandler sendAsyncHandler = new SendAsyncHandler(metricsCollector, authManager, authValidationManager, eventSender, streamRepository);
+        HttpHandler sendHandler = new SendHandler(metricsCollector, authManager, authValidationManager, eventSender, streamRepository);
 
         HttpHandler handler = Handlers.routing()
                 .get("/ping", exchange -> {

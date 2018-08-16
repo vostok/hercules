@@ -3,7 +3,10 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 public class EventReader implements Reader<Event> {
 

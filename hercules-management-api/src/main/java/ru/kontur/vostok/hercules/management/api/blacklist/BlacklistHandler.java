@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.management.api.blacklist;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.management.api.AdminManager;
-import ru.kontur.vostok.hercules.meta.blacklist.BlacklistRepository;
+import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 

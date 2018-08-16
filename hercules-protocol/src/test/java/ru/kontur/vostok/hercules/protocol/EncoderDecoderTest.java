@@ -8,7 +8,10 @@ import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class EncoderDecoderTest {
 

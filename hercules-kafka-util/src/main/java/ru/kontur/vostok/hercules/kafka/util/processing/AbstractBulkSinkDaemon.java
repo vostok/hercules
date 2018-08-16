@@ -4,49 +4,42 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
-import ru.kontur.vostok.hercules.meta.stream.Stream;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
-
+/**
+ * Abstract sink daemon implementation
+ */
 public abstract class AbstractBulkSinkDaemon {
 
-    private CuratorClient curatorClient;
     private CommonBulkEventSink bulkEventSink;
     private BulkSender sender;
 
+    /**
+     * Start daemon
+     *
+     * @param args command line arguments
+     */
     public void run(String[] args) {
         long start = System.currentTimeMillis();
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
         Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
-        Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
         Properties streamProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
-        curatorClient = new CuratorClient(curatorProperties);
-        curatorClient.start();
-
-        StreamRepository streamRepository = new StreamRepository(curatorClient);
-
-        String streamName = streamProperties.getProperty("stream.name");
-        Optional<Stream> stream = toUnchecked(() -> streamRepository.read(streamName));
-        if (!stream.isPresent()) {
-            throw new IllegalArgumentException("Unknown stream");
-        }
+        String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.pattern", String.class);
 
         //TODO: Validate sinkProperties
         try {
             sender = createSender(sinkProperties);
-            bulkEventSink = new CommonBulkEventSink(getDaemonName(), stream.get(), streamProperties, sender);
+            bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender);
             bulkEventSink.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -59,8 +52,18 @@ public abstract class AbstractBulkSinkDaemon {
         System.out.println(String.format("%s sink daemon started for %d millis", getDaemonName(), System.currentTimeMillis() - start));
     }
 
+    /**
+     * Create instance of BulkSender which processes bulk of events
+     * Must be implemented in descendants
+     *
+     * @param sinkProperties properties for sender implementation
+     * @return sender instance
+     */
     protected abstract BulkSender createSender(Properties sinkProperties);
 
+    /**
+     * @return daemon name for logging, building consumer group name etc.
+     */
     protected abstract String getDaemonName();
 
     private void shutdown() {
@@ -78,14 +81,6 @@ public abstract class AbstractBulkSinkDaemon {
         try {
             if (Objects.nonNull(sender)) {
                 sender.close();
-            }
-        } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
-        }
-
-        try {
-            if (Objects.nonNull(curatorClient)) {
-                curatorClient.stop();
             }
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error
