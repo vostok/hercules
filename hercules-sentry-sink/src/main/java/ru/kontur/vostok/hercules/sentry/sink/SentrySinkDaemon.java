@@ -83,7 +83,7 @@ public class SentrySinkDaemon {
 
         try {
             if (curatorClient != null) {
-                curatorClient.stop(5_000, TimeUnit.MILLISECONDS);
+                curatorClient.stop();
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error

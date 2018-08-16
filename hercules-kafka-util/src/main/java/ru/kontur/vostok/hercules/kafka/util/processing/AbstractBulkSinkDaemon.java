@@ -85,7 +85,7 @@ public abstract class AbstractBulkSinkDaemon {
 
         try {
             if (Objects.nonNull(curatorClient)) {
-                curatorClient.stop(5_000, TimeUnit.MILLISECONDS);
+                curatorClient.stop();
             }
         } catch (Throwable e) {
             e.printStackTrace(); //TODO: Process error

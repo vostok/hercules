@@ -4,7 +4,6 @@ import org.apache.curator.framework.CuratorFramework;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
@@ -27,7 +26,7 @@ public class ZooKeeperInitializer {
             curatorClient.createIfAbsent("/hercules/auth/blacklist");
             curatorClient.createIfAbsent("/hercules/auth/rules");
         } finally {
-            curatorClient.stop(5_000, TimeUnit.MILLISECONDS);
+            curatorClient.stop();
         }
     }
 }

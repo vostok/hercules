@@ -6,16 +6,14 @@ import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
-import ru.kontur.vostok.hercules.util.application.shutdown.Stoppable;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
  */
-public class HttpServer implements Stoppable {
+public class HttpServer {
     private final Undertow undertow;
 
     public HttpServer(MetricsCollector metricsCollector, Properties properties, AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
@@ -44,8 +42,7 @@ public class HttpServer implements Stoppable {
         undertow.start();
     }
 
-    @Override
-    public void stop(long timeout, TimeUnit timeUnit) {
+    public void stop() {
         undertow.stop();
     }
 }

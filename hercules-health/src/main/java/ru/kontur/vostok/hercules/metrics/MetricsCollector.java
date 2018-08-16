@@ -8,7 +8,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
-import ru.kontur.vostok.hercules.util.application.shutdown.Stoppable;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.net.InetSocketAddress;
@@ -19,7 +18,7 @@ import java.util.function.Supplier;
 /**
  * @author Gregory Koshelev
  */
-public class MetricsCollector implements Stoppable {
+public class MetricsCollector {
     private MetricRegistry registry = new MetricRegistry();
 
     private final long period;
@@ -57,8 +56,7 @@ public class MetricsCollector implements Stoppable {
     /**
      * Stop to report metrics to the Graphite
      */
-    @Override
-    public void stop(long timeout, TimeUnit timeUnit) {
+    public void stop() {
         graphiteReporter.stop();
     }
 
