@@ -25,7 +25,7 @@ public class SendHandler extends GatewayHandler {
     }
 
     @Override
-    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, EventValidator validator) {
+    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, ContentValidator validator) {
         exchange.getRequestReceiver().receiveFullBytes(
                 (exch, bytes) -> exch.dispatch(() -> {
                     ReaderIterator<Event> reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(tags));
@@ -35,6 +35,12 @@ public class SendHandler extends GatewayHandler {
                         Event event;
                         try {
                             event = reader.next();
+                            if (!eventValidator.validate(event)) {
+                                processed.set(true);
+                                //TODO: Metrics are coming!
+                                ResponseUtil.badRequest(exchange);
+                                return;
+                            }
                         } catch (Exception e) {
                             e.printStackTrace();
                             //TODO: Metrics are coming!

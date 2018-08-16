@@ -20,10 +20,10 @@ public class AuthValidationManager {
     private final CuratorClient curatorClient;
     private final AtomicReference<State> state = new AtomicReference<>(State.INIT);
     private final ValidationSerializer validationSerializer = new ValidationSerializer();
-    private final AtomicReference<Map<String, Map<String, EventValidator>>> validators = new AtomicReference<>(new HashMap<>());
+    private final AtomicReference<Map<String, Map<String, ContentValidator>>> validators = new AtomicReference<>(new HashMap<>());
     private final AtomicReference<Map<String, Map<String, Set<String>>>> tags = new AtomicReference<>(new HashMap<>());
 
-    private static final EventValidator EMPTY_VALIDATOR = new EventValidator(new Validation(null, null, new Filter[0]));
+    private static final ContentValidator EMPTY_VALIDATOR = new ContentValidator(new Validation(null, null, new Filter[0]));
 
     public AuthValidationManager(CuratorClient curatorClient) {
         this.curatorClient = curatorClient;
@@ -46,13 +46,13 @@ public class AuthValidationManager {
 
         List<String> children = curatorClient.children("/hercules/auth/validations", e -> update());
 
-        Map<String, Map<String, EventValidator>> newValidators = new HashMap<>();
+        Map<String, Map<String, ContentValidator>> newValidators = new HashMap<>();
         Map<String, Map<String, Set<String>>> newTags = new HashMap<>();
         for (String value : children) {
             Validation validation = validationSerializer.deserialize(value);
 
-            Map<String, EventValidator> streamToValidatorMap = newValidators.computeIfAbsent(validation.getApiKey(), key -> new HashMap<>());
-            streamToValidatorMap.put(validation.getStream(), new EventValidator(validation));
+            Map<String, ContentValidator> streamToValidatorMap = newValidators.computeIfAbsent(validation.getApiKey(), key -> new HashMap<>());
+            streamToValidatorMap.put(validation.getStream(), new ContentValidator(validation));
 
             Map<String, Set<String>> streamToTagsMap = newTags.computeIfAbsent(validation.getApiKey(), key -> new HashMap<>());
             streamToTagsMap.put(validation.getStream(), extractTags(validation));
@@ -69,7 +69,7 @@ public class AuthValidationManager {
         return tags.get().getOrDefault(apiKey, Collections.emptyMap()).getOrDefault(stream, Collections.emptySet());
     }
 
-    public EventValidator validator(String apiKey, String stream) {
+    public ContentValidator validator(String apiKey, String stream) {
         return validators.get().getOrDefault(apiKey, Collections.emptyMap()).getOrDefault(stream, EMPTY_VALIDATOR);
     }
 
