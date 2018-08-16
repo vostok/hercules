@@ -105,11 +105,11 @@ public abstract class GatewayHandler implements HttpHandler {
         tags.addAll(tagsToValidate);
 
         Marker marker = Marker.forKey(apiKey);
-        EventValidator validator = authValidationManager.validator(apiKey, stream);
+        ContentValidator validator = authValidationManager.validator(apiKey, stream);
         send(exchange, marker, topic, tags, partitions, shardingKey, validator);
     }
 
-    protected abstract void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, EventValidator validator);
+    protected abstract void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, ContentValidator validator);
 
     protected EventSender getEventSender() {
         return eventSender;

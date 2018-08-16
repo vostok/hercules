@@ -8,10 +8,10 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 /**
  * @author Gregory Koshelev
  */
-public class EventValidator {
+public class ContentValidator {
     private final Validation validation;
 
-    public EventValidator(Validation validation) {
+    public ContentValidator(Validation validation) {
         this.validation = validation;
     }
 

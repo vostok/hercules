@@ -25,7 +25,7 @@ public class SendHandler extends GatewayHandler {
     }
 
     @Override
-    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, EventValidator validator) {
+    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, ContentValidator validator) {
         exchange.getRequestReceiver().receiveFullBytes(
                 (exch, bytes) -> exch.dispatch(() -> {
                     ReaderIterator<Event> reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(tags));
