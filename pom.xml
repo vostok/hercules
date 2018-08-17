@@ -7,7 +7,7 @@
     <groupId>ru.kontur.vostok.hercules</groupId>
     <artifactId>hercules</artifactId>
     <packaging>pom</packaging>
-    <version>0.4.0-SNAPSHOT</version>
+    <version>0.5.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -15,7 +15,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <hercules.version>0.4.0-SNAPSHOT</hercules.version>
+        <hercules.version>0.5.1-SNAPSHOT</hercules.version>
 
         <kafka.version>1.1.0</kafka.version>
         <zookeeper.version>3.4.12</zookeeper.version>
@@ -28,6 +28,7 @@
         <unirest.version>1.4.9</unirest.version>
         <elasticsearch-client.version>6.2.4</elasticsearch-client.version>
         <apache-httpclient.version>4.5.3</apache-httpclient.version>
+        <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>2.11.0</log4j.version>
         <logback.version>1.2.3</logback.version>
         <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
@@ -82,6 +83,11 @@
                 <artifactId>logback-classic</artifactId>
                 <version>${logback.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
 
             <!-- Apache Http client -->
             <dependency>
@@ -107,6 +113,16 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Apache Curator -->

@@ -17,18 +17,29 @@ import java.util.Set;
  * @author Gregory Koshelev
  */
 public class SendAsyncHandler extends GatewayHandler {
-    public SendAsyncHandler(MetricsCollector metricsCollector, AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
-        super(metricsCollector, authManager, eventSender, streamRepository);
+    public SendAsyncHandler(MetricsCollector metricsCollector, AuthManager authManager, AuthValidationManager authValidationManager, EventSender eventSender, StreamRepository streamRepository) {
+        super(metricsCollector, authManager, authValidationManager, eventSender, streamRepository);
     }
 
     @Override
-    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey) {
+    public void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, ContentValidator validator) {
         exchange.getRequestReceiver().receiveFullBytes(
                 (exch, bytes) -> {
                     exch.dispatch(() -> {
                         Iterator<Event> reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(tags));
                         while (reader.hasNext()) {
-                            Event event = reader.next();
+                            Event event;
+                            try {
+                                event = reader.next();
+                                if (!eventValidator.validate(event)) {
+                                    //TODO: Metrics are coming!
+                                    return;
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                //TODO: Metrics are coming!
+                                return;
+                            }
                             eventSender.send(
                                     event,
                                     event.getId(),

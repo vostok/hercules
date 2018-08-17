@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.meta.rule;
+package ru.kontur.vostok.hercules.meta.auth.rule;
 
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 

@@ -5,6 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.gateway.validation.EventValidator;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -27,21 +28,25 @@ public abstract class GatewayHandler implements HttpHandler {
 
     private final AuthManager authManager;
     private final StreamRepository streamRepository;
+    private final AuthValidationManager authValidationManager;
 
     protected final EventSender eventSender;
     protected final UuidGenerator uuidGenerator;
+    protected final EventValidator eventValidator;
 
     protected final Meter requestMeter;
     protected final Meter requestSizeMeter;
     protected final Meter sentEventsMeter;
 
-    protected GatewayHandler(MetricsCollector metricsCollector, AuthManager authManager, EventSender eventSender, StreamRepository streamRepository) {
+    protected GatewayHandler(MetricsCollector metricsCollector, AuthManager authManager, AuthValidationManager authValidationManager, EventSender eventSender, StreamRepository streamRepository) {
         this.metricsCollector = metricsCollector;
 
         this.authManager = authManager;
+        this.authValidationManager = authValidationManager;
         this.eventSender = eventSender;
         this.streamRepository = streamRepository;
         this.uuidGenerator = UuidGenerator.getInternalInstance();
+        this.eventValidator = new EventValidator();
 
         this.requestMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".request");
         this.requestSizeMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".request_size");
@@ -60,12 +65,13 @@ public abstract class GatewayHandler implements HttpHandler {
         String stream = optionalStream.get();
         //TODO: stream name validation
 
-        Optional<String> apiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!apiKey.isPresent()) {
+        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
+        if (!optionalApiKey.isPresent()) {
             ResponseUtil.unauthorized(exchange);
             return;
         }
-        if (!auth(exchange, apiKey.get(), stream)) {
+        String apiKey = optionalApiKey.get();
+        if (!auth(exchange, apiKey, stream)) {
             return;
         }
 
@@ -88,17 +94,22 @@ public abstract class GatewayHandler implements HttpHandler {
             return;
         }
 
+        Set<String> tagsToValidate = authValidationManager.getTags(apiKey, stream);
+
         String[] shardingKey = baseStream.getShardingKey();
         int partitions = baseStream.getPartitions();
         String topic = baseStream.getName();
-        Set<String> tags = new HashSet<>(shardingKey.length);
-        tags.addAll(Arrays.asList(shardingKey));
 
-        Marker marker = Marker.forKey(apiKey.get());
-        send(exchange, marker, topic, tags, partitions, shardingKey);
+        Set<String> tags = new HashSet<>(shardingKey.length + tagsToValidate.size());
+        tags.addAll(Arrays.asList(shardingKey));
+        tags.addAll(tagsToValidate);
+
+        Marker marker = Marker.forKey(apiKey);
+        ContentValidator validator = authValidationManager.validator(apiKey, stream);
+        send(exchange, marker, topic, tags, partitions, shardingKey, validator);
     }
 
-    protected abstract void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey);
+    protected abstract void send(HttpServerExchange exchange, Marker marker, String topic, Set<String> tags, int partitions, String[] shardingKey, ContentValidator validator);
 
     protected EventSender getEventSender() {
         return eventSender;

@@ -1,17 +1,14 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
 import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
-import ru.kontur.vostok.hercules.meta.stream.Stream;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
-import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +16,6 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class SentrySinkDaemon {
-    private static CuratorClient curatorClient;
     private static SentrySink sentrySink;
 
     public static void main(String[] args) {
@@ -30,7 +26,6 @@ public class SentrySinkDaemon {
         Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
 
         Properties streamsProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
-        Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
         Properties sentryProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
         //TODO: Validate sinkProperties
@@ -40,23 +35,11 @@ public class SentrySinkDaemon {
         }
 
         try {
-            curatorClient = new CuratorClient(curatorProperties);
-            curatorClient.start();
-
-            StreamRepository streamRepository = new StreamRepository(curatorClient);
-
-            String streamName = streamsProperties.getProperty("stream.name");
-            Optional<Stream> streamOptional = streamRepository.read(streamName);
-            if (!streamOptional.isPresent()) {
-                throw new IllegalArgumentException("Unknown stream");
-            }
-
-            Stream stream = streamOptional.get();
-
+            String streamPattern = PropertiesExtractor.getRequiredProperty(streamsProperties, "stream.name", String.class);
             String sentryUrl = PropertiesExtractor.getRequiredProperty(sentryProperties, "sentry.url", String.class);
             String sentryToken = PropertiesExtractor.getRequiredProperty(sentryProperties, "sentry.token", String.class);
 
-            sentrySink = new SentrySink(streamsProperties, stream, new SentrySyncProcessor(new SentryClientHolder(new SentryApiClient(sentryUrl, sentryToken))));
+            sentrySink = new SentrySink(streamsProperties, new PatternMatcher(streamPattern), new SentrySyncProcessor(new SentryClientHolder(new SentryApiClient(sentryUrl, sentryToken))));
             sentrySink.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -76,14 +59,6 @@ public class SentrySinkDaemon {
         try {
             if (sentrySink != null) {
                 sentrySink.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
-        }
-
-        try {
-            if (curatorClient != null) {
-                curatorClient.stop();
             }
         } catch (Throwable e) {
             e.printStackTrace();//TODO: Process error
