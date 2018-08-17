@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.kafka.util.processing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
@@ -7,6 +9,7 @@ import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.time.SimpleTimer;
 
 import java.util.Map;
 import java.util.Objects;
@@ -18,6 +21,8 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractBulkSinkDaemon {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBulkSinkDaemon.class);
+
     private CommonBulkEventSink bulkEventSink;
     protected MetricsCollector metricsCollector;
     private BulkSender sender;
@@ -28,7 +33,7 @@ public abstract class AbstractBulkSinkDaemon {
      * @param args command line arguments
      */
     public void run(String[] args) {
-        long start = System.currentTimeMillis();
+        SimpleTimer timer = new SimpleTimer();
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
@@ -48,14 +53,14 @@ public abstract class AbstractBulkSinkDaemon {
             bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender, metricsCollector);
             bulkEventSink.start();
         } catch (Throwable e) {
-            e.printStackTrace();
+            LOGGER.error("Cannot start " + getDaemonName() + "due to", e);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 
-        System.out.println(String.format("%s sink daemon started for %d millis", getDaemonName(), System.currentTimeMillis() - start));
+        LOGGER.info(String.format("%s sink daemon started for %d millis", getDaemonName(), timer.elapsed()));
     }
 
     /**
@@ -73,15 +78,15 @@ public abstract class AbstractBulkSinkDaemon {
     protected abstract String getDaemonName();
 
     private void shutdown() {
-        long start = System.currentTimeMillis();
-        System.out.println(String.format("Prepare %s sink daemon to be shutdown", getDaemonName()));
+        SimpleTimer timer = new SimpleTimer();
+        LOGGER.info(String.format("Prepare %s sink daemon to be shutdown", getDaemonName()));
 
         try {
             if (Objects.nonNull(metricsCollector)) {
                 metricsCollector.stop();
             }
         } catch (Throwable t) {
-            t.printStackTrace();
+            LOGGER.error("Error on stopping metrics collector", t);
         }
 
         try {
@@ -89,7 +94,8 @@ public abstract class AbstractBulkSinkDaemon {
                 bulkEventSink.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+            LOGGER.error("Error on stopping bulk event sink", e);
+            //TODO: Process error
         }
 
         try {
@@ -97,9 +103,10 @@ public abstract class AbstractBulkSinkDaemon {
                 sender.close();
             }
         } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+            LOGGER.error("Error on stopping " + getDaemonName(), e);
+            //TODO: Process error
         }
 
-        System.out.println(String.format("Finished %s sink daemon shutdown for %d millis", getDaemonName(), System.currentTimeMillis() - start));
+        LOGGER.info(String.format("Finished %s sink daemon shutdown for %d millis", getDaemonName(), timer.elapsed()));
     }
 }
