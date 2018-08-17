@@ -3,7 +3,7 @@ info:
   description: 'Management api for Hercules. Uses for create, midify, delete streams and timelines'
   version: 0.1.0
   title: Hercules management API
-host: 'vstk-airgate:6307'
+host: 'vostok05:6307'
 tags: []
 schemes:
   - http
@@ -14,9 +14,6 @@ paths:
       summary: Ping
       description: Check server status
       operationId: Ping
-      produces:
-        - application/json
-      parameters: []
       responses:
         '200':
           $ref: '#/responses/success'
@@ -46,7 +43,7 @@ paths:
         '403':
           $ref: '#/responses/forbidden'
         '404':
-          $ref: '#/responses/notFound'
+          $ref: '#/responses/notFoundSourceStreams'
         '409':
           $ref: '#/responses/conflict'
   /streams/delete:
@@ -56,13 +53,11 @@ paths:
       summary: Delete stream
       description: Delete stream
       operationId: deleteStream
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: stream
           in: query
-          description: Название стрима
+          description: Stream name
           required: true
           type: string
           pattern: '[a-z0-9_]{1,48}'
@@ -85,12 +80,18 @@ paths:
       description: List streams
       operationId: listStreams
       produces:
-        - plain/text
+        - application/json
       parameters:
         - $ref: '#/parameters/apiKey'
       responses:
         '200':
-          $ref: '#/responses/success'
+          description: List of streams
+          schema:
+            type: array
+            items:
+              type: string
+        '400':
+          $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'
   /timelines/create:
@@ -100,8 +101,6 @@ paths:
       summary: Create timeline
       description: Create timeline
       operationId: createTimeline
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: body
@@ -119,7 +118,7 @@ paths:
         '403':
           $ref: '#/responses/forbidden'
         '404':
-          $ref: '#/responses/notFound'
+          $ref: '#/responses/notFoundSourceStreams'
         '409':
           $ref: '#/responses/conflict'
   /timelines/delete:
@@ -129,8 +128,6 @@ paths:
       summary: Delete timeline
       description: Delete timeline
       operationId: deleteTimeline
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: stream
@@ -158,12 +155,18 @@ paths:
       description: List timelines
       operationId: listTimelines
       produces:
-        - plain/text
+        - application/json
       parameters:
         - $ref: '#/parameters/apiKey'
       responses:
         '200':
-          $ref: '#/responses/success'
+          description: List of timelines
+          schema:
+            type: array
+            items:
+              type: string
+        '400':
+          $ref: '#/responses/badRequest' 
         '401':
           $ref: '#/responses/unauthorized'        
   /rules/set:
@@ -173,8 +176,6 @@ paths:
       summary: Set rules
       description: Set rules
       operationId: setRules
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: key
@@ -211,12 +212,6 @@ paths:
           $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'
-        '403':
-          $ref: '#/responses/forbidden'
-        '404':
-          $ref: '#/responses/notFound'
-        '409':
-          $ref: '#/responses/conflict'
   /rules/list:
     get:
       tags:
@@ -225,12 +220,16 @@ paths:
       description: List rules
       operationId: listRules
       produces:
-        - plain/text
+        - application/json
       parameters:
         - $ref: '#/parameters/apiKey'
       responses:
         '200':
-          $ref: '#/responses/success'
+          description: List of rules
+          schema:
+            type: array
+            items:
+              type: string
         '400':
           $ref: '#/responses/badRequest'
         '401':
@@ -242,28 +241,21 @@ paths:
       summary: Add apiKey to blacklist
       description: Add apiKey to blacklist
       operationId: addApiKeyToBlacklist
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
-        - name: body
-          in: body
-          description: need to add
-          schema:
-            type: string
+        - name: key
+          in: query
+          description: API key for adding to blacklist
+          required: true
+          type: string
+          pattern: '[a-zA-Z0-9_\-]+'
       responses:
         '200':
           $ref: '#/responses/success'
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'
-        '403':
-          $ref: '#/responses/forbidden'
-        '404':
-          $ref: '#/responses/notFound'
-        '409':
-          $ref: '#/responses/conflict'
+          $ref: '#/responses/unauthorized'       
   /blacklist/remove:
     post:
       tags:
@@ -271,15 +263,14 @@ paths:
       summary: Remove apiKey from blacklist
       description: Remove apiKey from blacklist
       operationId: removeApiKeyFromBlacklist
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
-        - name: body
-          in: body
-          description: need to add
-          schema:
-            type: string
+        - name: key
+          in: query
+          description: API key for adding to blacklist
+          required: true
+          type: string
+          pattern: '[a-zA-Z0-9_\-]+'
       responses:
         '200':
           $ref: '#/responses/success'
@@ -295,16 +286,21 @@ paths:
       description: List blacklist
       operationId: listBlacklist
       produces:
-        - plain/text
+        - application/json
       parameters:
         - $ref: '#/parameters/apiKey'
       responses:
         '200':
-          $ref: '#/responses/success'
+          description: List of blacklist API-keys
+          schema:
+            type: array
+            items:
+              type: string
+        '400':
+          $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'        
 definitions:
-  #$ref: './definitions.yaml'
   createStreamRequest:
     type: object
     properties:
@@ -320,7 +316,7 @@ definitions:
         type: integer
       shardingKey:
         type: array
-        description: Если то то то
+        description: Stream name
         items:
           type: string
       ttl:
@@ -334,7 +330,7 @@ definitions:
       name: msl_teststream_2
       partitions: 1
       shardingKey: []
-      ttl: 100500
+      ttl: 3600000
   createTimelineRequest:
     type: object
     properties:
@@ -366,33 +362,17 @@ parameters:
 responses:
   unauthorized:
     description: Unauthorized
-    schema:
-      type: string
-      example: Unauthorized error text
   managementRulesIsAbsent:
     description: Management rules for this apiKey is absent
   badRequest:
     description: Bad request
-    schema:
-      type: string
-      example: Bad request error text
   forbidden:
-    description: Forbidden
-    schema:
-      type: string
-      example: Forbidden error text
+    description: Forbidden for this API-key
   notFound: 
     description: Not Found
-    schema:
-      type: string
-      example: Not Found error text
+  notFoundSourceStreams: 
+    description: Source streams not found
   conflict:    
-    description: Conflict
-    schema:
-      type: string
-      example: Conflict error text
+    description: Conflict. Entity already exists
   success:
-    description: successful operation
-    schema:
-      type: string
-      example: OK
+    description: OK
