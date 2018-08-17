@@ -1,9 +1,12 @@
 package ru.kontur.vostok.hercules.kafka.util.processing;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Serde;
+import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
@@ -34,6 +37,9 @@ public class CommonBulkEventSink {
     private final int pollTimeout;
     private final int batchSize;
 
+    private final Meter processedEventsMeter;
+    private final com.codahale.metrics.Timer processTimeTimer;
+
     private volatile boolean running = true;
 
     /**
@@ -46,7 +52,8 @@ public class CommonBulkEventSink {
             String destinationName,
             PatternMatcher streamPattern,
             Properties streamsProperties,
-            BulkSender<Event> eventSender
+            BulkSender<Event> eventSender,
+            MetricsCollector metricsCollector
     ) {
         this.batchSize = PropertiesExtractor.getAs(streamsProperties, BATCH_SIZE, Integer.class)
                 .orElseThrow(PropertiesExtractor.missingPropertyError(BATCH_SIZE));
@@ -69,6 +76,9 @@ public class CommonBulkEventSink {
         this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
         this.eventSender = eventSender;
         this.streamPattern = streamPattern;
+
+        this.processedEventsMeter = metricsCollector.meter("bulkSinkProcessedEvents");
+        this.processTimeTimer = metricsCollector.timer("bulkSinkProcessTime");
     }
 
     /**
@@ -86,7 +96,8 @@ public class CommonBulkEventSink {
          * collected data. If the total count of polled records exceeded batchSize after the last poll extra records
          * will be saved in next record storage to process these records at the next step of iteration.
          */
-        Timer timer = new Timer(TimeUnit.MICROSECONDS, pollTimeout);
+        TimeUnit unit = TimeUnit.MICROSECONDS;
+        Timer timer = new Timer(unit, pollTimeout);
         while (running) {
             timer.reset().start();
             long timeLeft = pollTimeout;
@@ -103,8 +114,13 @@ public class CommonBulkEventSink {
                 timeLeft = timer.timeLeft();
             }
 
+            int recordsSize = current.getRecords().size();
+
             eventSender.accept(current.getRecords());
             consumer.commitSync(current.getOffsets(null));
+
+            processedEventsMeter.mark(recordsSize);
+            processTimeTimer.update(timer.elapsed(), unit);
 
             current = next;
             next = new RecordStorage<>(batchSize);

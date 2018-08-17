@@ -4,6 +4,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractBulkSinkDaemon {
 
     private CommonBulkEventSink bulkEventSink;
+    protected MetricsCollector metricsCollector;
     private BulkSender sender;
 
     /**
@@ -33,13 +35,17 @@ public abstract class AbstractBulkSinkDaemon {
         Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
         Properties streamProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
+        Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
         String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.pattern", String.class);
+
+        metricsCollector = new MetricsCollector(metricsProperties);
+        metricsCollector.start();
 
         //TODO: Validate sinkProperties
         try {
             sender = createSender(sinkProperties);
-            bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender);
+            bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender, metricsCollector);
             bulkEventSink.start();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -69,6 +75,14 @@ public abstract class AbstractBulkSinkDaemon {
     private void shutdown() {
         long start = System.currentTimeMillis();
         System.out.println(String.format("Prepare %s sink daemon to be shutdown", getDaemonName()));
+
+        try {
+            if (Objects.nonNull(metricsCollector)) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
 
         try {
             if (Objects.nonNull(bulkEventSink)) {
