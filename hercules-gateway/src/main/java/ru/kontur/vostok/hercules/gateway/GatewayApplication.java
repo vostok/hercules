@@ -12,6 +12,7 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
+import ru.kontur.vostok.hercules.util.application.ContextHolder;
 
 import java.util.Map;
 import java.util.Properties;
@@ -43,6 +44,9 @@ public class GatewayApplication {
             Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+
+            ContextHolder.init("gate", contextProperties);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();

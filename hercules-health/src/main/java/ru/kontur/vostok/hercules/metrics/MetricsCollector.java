@@ -9,6 +9,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
+import ru.kontur.vostok.hercules.util.application.Context;
+import ru.kontur.vostok.hercules.util.application.ContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.net.InetSocketAddress;
@@ -33,7 +35,14 @@ public class MetricsCollector {
     public MetricsCollector(Properties properties) {
         String graphiteServerAddr = properties.getProperty("graphite.server.addr", "localhost");
         int graphiteServerPort = PropertiesExtractor.get(properties, "graphite.server.port", 2003);
-        String prefix = properties.getProperty("graphite.prefix");
+
+        Context context = ContextHolder.get();
+        String prefix = String.join(".",
+                properties.getProperty("graphite.prefix"),
+                context.getApplicationName(),
+                context.getEnvironment(),
+                context.getInstanceId()
+        );
         long period = PropertiesExtractor.get(properties, "period", 60);
 
         this.period = period;
