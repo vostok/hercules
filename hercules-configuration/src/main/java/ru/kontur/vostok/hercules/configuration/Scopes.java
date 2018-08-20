@@ -20,6 +20,8 @@ public final class Scopes {
 
     public static final String METRICS = "metrics";
 
+    public static final String CONTEXT = "context";
+
     private Scopes() {
 
     }
