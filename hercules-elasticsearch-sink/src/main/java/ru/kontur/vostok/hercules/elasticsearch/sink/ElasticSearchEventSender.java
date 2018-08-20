@@ -1,11 +1,14 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import org.apache.http.HttpHost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
+import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.io.ByteArrayOutputStream;
@@ -15,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
@@ -24,9 +28,15 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
 
     private final RestClient restClient;
 
-    public ElasticSearchEventSender(Properties elasticsearchProperties) {
+    private final Timer elasticsearchRequestTimeTimer;
+    private final Meter elasticsearchRequestErrorsMeter;
+
+    public ElasticSearchEventSender(Properties elasticsearchProperties, MetricsCollector metricsCollector) {
         HttpHost[] hosts = parseHosts(elasticsearchProperties.getProperty("server"));
         this.restClient = RestClient.builder(hosts).build();
+
+        this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTime");
+        this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
     }
 
     @Override
@@ -39,6 +49,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         writeEventRecords(stream, events);
 
         if (0 < stream.size()) {
+            long start = System.currentTimeMillis();
             Response response = toUnchecked(() -> restClient.performRequest(
                     "POST",
                     "/_bulk",
@@ -46,7 +57,9 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
 
             ));
+            elasticsearchRequestTimeTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
             if (response.getStatusLine().getStatusCode() != 200) {
+                elasticsearchRequestErrorsMeter.mark();
                 throw new RuntimeException("Bad response");
             }
             BulkResponseHandler.process(response.getEntity());
