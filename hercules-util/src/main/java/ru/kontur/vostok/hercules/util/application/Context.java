@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.util.application;
 
 /**
- * Context
+ * Context - stores information about running application such as name, instance identifier, environment etc.
  *
  * @author Kirill Sulim
  */

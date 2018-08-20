@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 /**
- * ContextHolder
+ * ContextHolder stores context of application
  *
  * @author Kirill Sulim
  */
@@ -14,6 +14,13 @@ public class ContextHolder {
 
     private static volatile Context context;
 
+    /**
+     * Init application context. Must be called on startup if some parts of application uses this context
+     * (such as MetricsCollector).
+     *
+     * @param applicationName application name
+     * @param contextProperties context properties
+     */
     public static void init(String applicationName, Properties contextProperties) {
         context = new Context(
                 applicationName,
@@ -22,6 +29,11 @@ public class ContextHolder {
         );
     }
 
+    /**
+     * Get application context
+     *
+     * @return application context
+     */
     public static Context get() {
         if (Objects.isNull(context)) {
             throw new IllegalStateException("Context is nit initialized");

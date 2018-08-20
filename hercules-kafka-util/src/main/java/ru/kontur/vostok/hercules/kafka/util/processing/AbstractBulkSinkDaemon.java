@@ -43,7 +43,7 @@ public abstract class AbstractBulkSinkDaemon {
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
-        
+
         ContextHolder.init("sink." + getDaemonName(), contextProperties);
 
         String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.pattern", String.class);
