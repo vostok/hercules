@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
-import ru.kontur.vostok.hercules.util.application.ContextHolder;
+import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.time.SimpleTimer;
 
@@ -44,7 +44,7 @@ public abstract class AbstractBulkSinkDaemon {
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
 
-        ContextHolder.init("sink." + getDaemonName(), contextProperties);
+        ApplicationContextHolder.init("sink." + getDaemonName(), contextProperties);
 
         String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.pattern", String.class);
 

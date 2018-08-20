@@ -6,13 +6,13 @@ import java.util.Objects;
 import java.util.Properties;
 
 /**
- * ContextHolder stores context of application
+ * ApplicationContextHolder stores context of application
  *
  * @author Kirill Sulim
  */
-public class ContextHolder {
+public class ApplicationContextHolder {
 
-    private static volatile Context context;
+    private static volatile ApplicationContext applicationContext;
 
     /**
      * Init application context. Must be called on startup if some parts of application uses this context
@@ -22,7 +22,7 @@ public class ContextHolder {
      * @param contextProperties context properties
      */
     public static void init(String applicationName, Properties contextProperties) {
-        context = new Context(
+        applicationContext = new ApplicationContext(
                 applicationName,
                 PropertiesExtractor.getRequiredProperty(contextProperties, "environment", String.class),
                 PropertiesExtractor.getRequiredProperty(contextProperties, "instance.id", String.class)
@@ -34,10 +34,10 @@ public class ContextHolder {
      *
      * @return application context
      */
-    public static Context get() {
-        if (Objects.isNull(context)) {
-            throw new IllegalStateException("Context is nit initialized");
+    public static ApplicationContext get() {
+        if (Objects.isNull(applicationContext)) {
+            throw new IllegalStateException("Context is not initialized");
         }
-        return context;
+        return applicationContext;
     }
 }

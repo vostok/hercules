@@ -1,24 +1,24 @@
 package ru.kontur.vostok.hercules.util.application;
 
 /**
- * Context - stores information about running application such as name, instance identifier, environment etc.
+ * ApplicationContext - stores information about running application such as name, instance identifier, environment etc.
  *
  * @author Kirill Sulim
  */
-public class Context {
+public class ApplicationContext {
 
-    private final String applicationName;
+    private final String name;
     private final String environment;
     private final String instanceId;
 
-    public Context(String applicationName, String environment, String instanceId) {
-        this.applicationName = applicationName;
+    public ApplicationContext(String name, String environment, String instanceId) {
+        this.name = name;
         this.environment = environment;
         this.instanceId = instanceId;
     }
 
-    public String getApplicationName() {
-        return applicationName;
+    public String getName() {
+        return name;
     }
 
     public String getEnvironment() {
