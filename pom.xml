@@ -39,6 +39,7 @@
         <module>hercules-configuration</module>
         <module>hercules-protocol</module>
         <module>hercules-partitioner</module>
+        <module>hercules-throttling</module>
         <module>hercules-meta</module>
         <module>hercules-auth</module>
         <module>hercules-gate</module>
@@ -232,6 +233,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-configuration</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-throttling</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>
