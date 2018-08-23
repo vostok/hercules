@@ -31,7 +31,7 @@ public class HttpServer {
         Properties throttlingProperties = PropertiesUtil.ofScope(properties, "throttling");
 
         throttle = new CapacityThrottle<>(
-                PropertiesExtractor.get(throttlingProperties, "capacity", 100_000_000),
+                PropertiesExtractor.get(throttlingProperties, "capacity", 100_000_000L),
                 PropertiesExtractor.get(throttlingProperties, "threshold", 50),
                 PropertiesExtractor.get(throttlingProperties, "poolSize", 4),
                 PropertiesExtractor.get(throttlingProperties, "requestQueueSize", 1_000),
