@@ -88,7 +88,7 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
     public void throttleAsync(R request, C context) {
         int weight = weigher.weigh(request);
         if (weight < 0) {
-            throw new IllegalArgumentException("Request is invalid");
+            throw new IllegalStateException("Request is invalid");
         }
         int available = semaphore.availablePermits();
         if (threshold * capacity / 100 < available && semaphore.tryAcquire(weight)) {
@@ -108,6 +108,7 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
                     acquired = semaphore.tryAcquire(weight, timeQuota, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     throttledRequestProcessor.processAsync(request, ThrottledBy.INTERRUPTION);
+                    return;
                 }
                 if (acquired) {
                     requestProcessor.processAsync(request, context, () -> semaphore.release(weight));

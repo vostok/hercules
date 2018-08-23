@@ -43,10 +43,11 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                         ReaderIterator<Event> reader;
                         try {
                             reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.tags));
-                        } catch (Throwable throwable) {
+                        } catch (RuntimeException exception) {
                             ResponseUtil.badRequest(exchange);
                             callback.call();
-                            throw throwable;//TODO: Process exception
+                            LOGGER.error("Cannot create ReaderIterator", exception);
+                            throw exception;//TODO: Process exception
                         }
                         if (reader.getTotal() == 0) {
                             ResponseUtil.ok(exchange);
