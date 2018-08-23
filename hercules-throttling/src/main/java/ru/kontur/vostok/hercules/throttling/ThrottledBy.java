@@ -6,4 +6,5 @@ package ru.kontur.vostok.hercules.throttling;
 public enum ThrottledBy {
     EXPIRATION,
     QUEUE_OVERFLOW,
+    INTERRUPTION;
 }

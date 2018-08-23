@@ -98,19 +98,22 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
         long expiration = System.currentTimeMillis() + requestTimeout;
         try {
             executor.submit(() -> {
-                if (expiration < System.currentTimeMillis()) {
+                long timeQuota = expiration - System.currentTimeMillis();
+                if (timeQuota <= 0) {
                     throttledRequestProcessor.processAsync(request, ThrottledBy.EXPIRATION);
-                }
-                semaphore.acquireUninterruptibly(weight);
-                if (expiration < System.currentTimeMillis()) {
-                    try {
-                        throttledRequestProcessor.processAsync(request, ThrottledBy.EXPIRATION);
-                    } finally {
-                        semaphore.release(weight);
-                    }
                     return;
                 }
-                requestProcessor.processAsync(request, context, () -> semaphore.release(weight));
+                boolean acquired = false;
+                try {
+                    acquired = semaphore.tryAcquire(weight, timeQuota, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    throttledRequestProcessor.processAsync(request, ThrottledBy.INTERRUPTION);
+                }
+                if (acquired) {
+                    requestProcessor.processAsync(request, context, () -> semaphore.release(weight));
+                } else {
+                    throttledRequestProcessor.processAsync(request, ThrottledBy.EXPIRATION);
+                }
             });
         } catch (RejectedExecutionException exception) {
             throttledRequestProcessor.processAsync(request, ThrottledBy.QUEUE_OVERFLOW);
