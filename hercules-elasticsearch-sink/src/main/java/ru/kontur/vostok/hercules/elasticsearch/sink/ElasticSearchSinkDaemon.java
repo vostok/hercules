@@ -13,7 +13,7 @@ public class ElasticSearchSinkDaemon extends AbstractBulkSinkDaemon {
 
     @Override
     protected BulkSender createSender(Properties elasticsearchProperties) {
-        return new ElasticSearchEventSender(elasticsearchProperties);
+        return new ElasticSearchEventSender(elasticsearchProperties, super.metricsCollector);
     }
 
     @Override
