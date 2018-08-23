@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class CapacityThrottle<R, C> implements Throttle<R, C> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityThrottle.class);
 
-    private final int capacity;
+    private final long capacity;
     private final int threshold;
     private final int poolSize;
     private final int requestQueueSize;
@@ -42,7 +42,7 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
      * @param requestProcessor          processes requests
      * @param throttledRequestProcessor processes throttled (discarded by some reasons) requests
      */
-    public CapacityThrottle(int capacity, int threshold, int poolSize, int requestQueueSize, long requestTimeout, RequestWeigher<R> weigher, RequestProcessor<R, C> requestProcessor, ThrottledRequestProcessor<R> throttledRequestProcessor) {
+    public CapacityThrottle(long capacity, int threshold, int poolSize, int requestQueueSize, long requestTimeout, RequestWeigher<R> weigher, RequestProcessor<R, C> requestProcessor, ThrottledRequestProcessor<R> throttledRequestProcessor) {
         if (capacity <= 0) {
             throw new IllegalArgumentException("Capacity should be positive");
         }
@@ -68,7 +68,7 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
         this.requestProcessor = requestProcessor;
         this.throttledRequestProcessor = throttledRequestProcessor;
 
-        this.semaphore = new Semaphore(capacity);
+        this.semaphore = new Semaphore(capacity > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) capacity);
         this.executor = new ThreadPoolExecutor(
                 poolSize,
                 poolSize,
@@ -90,8 +90,8 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
         if (weight < 0) {
             throw new IllegalStateException("Request is invalid");
         }
-        int available = semaphore.availablePermits();
-        if (threshold * capacity / 100 < available && semaphore.tryAcquire(weight)) {
+        long available = semaphore.availablePermits();
+        if (threshold * capacity / 100L < available && semaphore.tryAcquire(weight)) {
             requestProcessor.processAsync(request, context, () -> semaphore.release(weight));
             return;
         }
