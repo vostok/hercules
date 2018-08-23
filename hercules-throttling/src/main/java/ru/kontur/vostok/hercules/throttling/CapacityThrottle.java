@@ -93,16 +93,13 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
         int available = semaphore.availablePermits();
         if (threshold * capacity / 100 < available && semaphore.tryAcquire(weight)) {
             requestProcessor.processAsync(request, context, () -> semaphore.release(weight));
+            return;
         }
         long expiration = System.currentTimeMillis() + requestTimeout;
         try {
             executor.submit(() -> {
                 if (expiration < System.currentTimeMillis()) {
-                    try {
-                        throttledRequestProcessor.processAsync(request, ThrottledBy.EXPIRATION);
-                    } finally {
-                        semaphore.release(weight);
-                    }
+                    throttledRequestProcessor.processAsync(request, ThrottledBy.EXPIRATION);
                 }
                 semaphore.acquireUninterruptibly(weight);
                 if (expiration < System.currentTimeMillis()) {
@@ -111,6 +108,7 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
                     } finally {
                         semaphore.release(weight);
                     }
+                    return;
                 }
                 requestProcessor.processAsync(request, context, () -> semaphore.release(weight));
             });
