@@ -108,6 +108,7 @@ public class GateHandler implements HttpHandler {
         Marker marker = Marker.forKey(apiKey);
         ContentValidator validator = authValidationManager.validator(apiKey, stream);
 
+        exchange.dispatch();
         SendContext context = new SendContext(async, marker, topic, tags, partitions, shardingKey, validator);
         throttle.throttleAsync(exchange, context);
     }
