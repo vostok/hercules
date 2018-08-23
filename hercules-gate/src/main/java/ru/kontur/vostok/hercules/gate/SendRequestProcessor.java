@@ -37,32 +37,38 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
 
     @Override
     public void processAsync(HttpServerExchange request, SendContext context, ThrottleCallback callback) {
-        request.getRequestReceiver().receiveFullBytes(
-                (exchange, bytes) -> exchange.dispatch(() -> {
-                    ReaderIterator<Event> reader;
-                    try {
-                        reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.tags));
-                    } catch (Throwable throwable) {
-                        ResponseUtil.badRequest(exchange);
-                        callback.call();
-                        throw throwable;//TODO: Process exception
-                    }
-                    if (reader.getTotal() == 0) {
-                        ResponseUtil.ok(exchange);
-                        callback.call();
-                        return;
-                    }
+        try {
+            request.getRequestReceiver().receiveFullBytes(
+                    (exchange, bytes) -> exchange.dispatch(() -> {
+                        ReaderIterator<Event> reader;
+                        try {
+                            reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.tags));
+                        } catch (Throwable throwable) {
+                            ResponseUtil.badRequest(exchange);
+                            callback.call();
+                            throw throwable;//TODO: Process exception
+                        }
+                        if (reader.getTotal() == 0) {
+                            ResponseUtil.ok(exchange);
+                            callback.call();
+                            return;
+                        }
 
-                    send(exchange, reader, context, callback);
-                }),
-                (exchange, e) -> {
-                    try {
-                        LOGGER.error("Request body was read with exception", e);
-                        ResponseUtil.internalServerError(exchange);
-                    } finally {
-                        callback.call();
-                    }
-                });
+                        send(exchange, reader, context, callback);
+                    }),
+                    (exchange, e) -> {
+                        try {
+                            LOGGER.error("Request body was read with exception", e);
+                            ResponseUtil.internalServerError(exchange);
+                        } finally {
+                            callback.call();
+                        }
+                    });
+        } catch (Throwable throwable) {
+            callback.call();
+            LOGGER.error("Error on request body read full bytes", throwable);
+            throw throwable;
+        }
     }
 
     public void send(HttpServerExchange exchange, ReaderIterator<Event> reader, SendContext context, ThrottleCallback callback) {
