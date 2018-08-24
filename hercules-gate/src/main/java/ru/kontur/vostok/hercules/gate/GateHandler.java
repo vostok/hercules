@@ -5,12 +5,10 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
-import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.uuid.Marker;
@@ -28,7 +26,7 @@ public class GateHandler implements HttpHandler {
     private final MetricsCollector metricsCollector;
 
     private final AuthManager authManager;
-    private final Throttle<HttpServerExchange, SendContext> throttle;
+    private final SendRequestProcessor sendRequestProcessor;
     private final StreamRepository streamRepository;
     private final AuthValidationManager authValidationManager;
 
@@ -39,11 +37,11 @@ public class GateHandler implements HttpHandler {
     private final Meter requestMeter;
     private final Meter requestSizeMeter;
 
-    public GateHandler(MetricsCollector metricsCollector, AuthManager authManager, Throttle<HttpServerExchange, SendContext> throttle, AuthValidationManager authValidationManager, StreamRepository streamRepository, boolean async) {
+    public GateHandler(MetricsCollector metricsCollector, AuthManager authManager, SendRequestProcessor sendRequestProcessor, AuthValidationManager authValidationManager, StreamRepository streamRepository, boolean async) {
         this.metricsCollector = metricsCollector;
 
         this.authManager = authManager;
-        this.throttle = throttle;
+        this.sendRequestProcessor = sendRequestProcessor;
         this.authValidationManager = authValidationManager;
         this.streamRepository = streamRepository;
         this.uuidGenerator = UuidGenerator.getInternalInstance();
@@ -109,7 +107,7 @@ public class GateHandler implements HttpHandler {
         ContentValidator validator = authValidationManager.validator(apiKey, stream);
 
         SendContext context = new SendContext(async, marker, topic, tags, partitions, shardingKey, validator);
-        throttle.throttleAsync(exchange, context);
+        sendRequestProcessor.processAsync(exchange, context, () -> {});
     }
 
     private boolean auth(HttpServerExchange exchange, String apiKey, String stream) {
