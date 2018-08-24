@@ -4,7 +4,8 @@ import io.sentry.SentryClient;
 import org.apache.kafka.streams.processor.AbstractProcessor;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
-import ru.kontur.vostok.hercules.protocol.util.EventUtil;
+import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 
 import java.util.Optional;
@@ -15,7 +16,7 @@ import java.util.UUID;
  */
 public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
-    public static final String SENTRY_PROJECT_NAME_TAG = "sentry-project-name";
+    public static final FieldDescription SENTRY_PROJECT_NAME_TAG = FieldDescription.create("sentry-project-name", Type.STRING);
 
     private final SentryClientHolder sentryClientHolder;
 
@@ -25,10 +26,10 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
     @Override
     public void process(UUID key, Event value) {
-        Optional<String> token = EventUtil.extractOptional(value, SENTRY_PROJECT_NAME_TAG, Type.STRING);
+        Optional<String> token = ContainerUtil.extractOptional(value.getPayload(), SENTRY_PROJECT_NAME_TAG);
         if (!token.isPresent()) {
             // TODO: logging
-            System.out.println("Missing required tag '" + SENTRY_PROJECT_NAME_TAG + "'");
+            System.out.println("Missing required tag '" + SENTRY_PROJECT_NAME_TAG.getName() + "'");
             return;
         }
 

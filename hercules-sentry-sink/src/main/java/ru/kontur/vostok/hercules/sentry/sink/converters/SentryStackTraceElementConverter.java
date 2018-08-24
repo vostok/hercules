@@ -4,6 +4,7 @@ import io.sentry.event.interfaces.SentryStackTraceElement;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
 
 /**
  * SentryStackTraceElementConverter
@@ -12,21 +13,21 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
  */
 public class SentryStackTraceElementConverter {
 
-    private static final String MODULE_FIELD_NAME = "mod";
-    private static final String FUNCTION_FIELD_NAME = "fun";
-    public static final String FILENAME_FIELD_NAME = "fnm";
-    private static final String LINENO_FIELD_NAME = "ln";
-    private static final String COLNO_FIELD_NAME = "cn";
-    private static final String ABS_PATH_FIELD_NAME = "abs";
+    private static final FieldDescription MODULE_FIELD = FieldDescription.create("mod", Type.TEXT);
+    private static final FieldDescription FUNCTION_FIELD = FieldDescription.create("fun", Type.STRING);
+    public static final FieldDescription FILENAME_FIELD = FieldDescription.create("fnm", Type.STRING);
+    private static final FieldDescription LINENO_FIELD =FieldDescription.create( "ln", Type.INTEGER);
+    private static final FieldDescription COLNO_FIELD =FieldDescription.create( "cn", Type.SHORT);
+    private static final FieldDescription ABS_PATH_FIELD = FieldDescription.create("abs", Type.TEXT);
 
     public static SentryStackTraceElement convert(Container container) {
         return new SentryStackTraceElement(
-                ContainerUtil.extractRequired(container, MODULE_FIELD_NAME, Type.TEXT),
-                ContainerUtil.extractRequired(container, FUNCTION_FIELD_NAME, Type.STRING),
-                ContainerUtil.extractRequired(container, FILENAME_FIELD_NAME, Type.STRING),
-                ContainerUtil.extractRequired(container, LINENO_FIELD_NAME, Type.INTEGER),
-                ContainerUtil.<Short>extractOptional(container, COLNO_FIELD_NAME, Type.SHORT).map(Short::intValue).orElse(null),
-                ContainerUtil.extractRequired(container, ABS_PATH_FIELD_NAME, Type.TEXT),
+                ContainerUtil.extractRequired(container, MODULE_FIELD),
+                ContainerUtil.extractRequired(container, FUNCTION_FIELD),
+                ContainerUtil.extractRequired(container, FILENAME_FIELD),
+                ContainerUtil.extractRequired(container, LINENO_FIELD),
+                ContainerUtil.<Short>extractOptional(container, COLNO_FIELD).map(Short::intValue).orElse(null),
+                ContainerUtil.extractRequired(container, ABS_PATH_FIELD),
                 null
         );
     }

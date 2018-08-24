@@ -48,7 +48,7 @@ public class GraphiteEventSender implements BulkSender<Event> {
     }
 
     private static Optional<String> extractMetricName(Event event) {
-        return Optional.ofNullable(event.getTag("metric-name"))
+        return Optional.ofNullable(event.getPayload().get("metric-name"))
                 .map(Variant::getValue)
                 .map(o -> new String((byte[]) o, StandardCharsets.UTF_8));
     }
@@ -56,7 +56,7 @@ public class GraphiteEventSender implements BulkSender<Event> {
     private static Optional<GraphiteMetricData> extractMetricValue(Event event) {
         final long timestamp = TimeUtil.gregorianTicksToUnixTime(event.getId().timestamp()) / 1000;
 
-        return Optional.ofNullable(event.getTag("metric-value"))
+        return Optional.ofNullable(event.getPayload().get("metric-value"))
                 .map(Variant::getValue)
                 .map(o -> new GraphiteMetricData(timestamp, (Double) o));
     }

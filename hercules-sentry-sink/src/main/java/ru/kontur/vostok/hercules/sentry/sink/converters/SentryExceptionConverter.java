@@ -4,6 +4,7 @@ import io.sentry.event.interfaces.SentryException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
 
 /**
  * SentryExceptionConverter
@@ -12,16 +13,16 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
  */
 public class SentryExceptionConverter {
 
-    private static final String TYPE_FIELD_NAME = "tp";
-    private static final String VALUE_FIELD_NAME = "msg";
-    private static final String MODULE_FIELD_NAME = "mod";
-    public static final String STACKTRACE_FIELD_NAME = "str";
+    private static final FieldDescription TYPE_FIELD = FieldDescription.create( "tp", Type.STRING);
+    private static final FieldDescription VALUE_FIELD = FieldDescription.create("msg", Type.TEXT);
+    private static final FieldDescription MODULE_FIELD = FieldDescription.create("mod", Type.TEXT);
+    public static final FieldDescription STACKTRACE_FIELD = FieldDescription.create("str", Type.CONTAINER_ARRAY);
 
     public static SentryException convert(Container container) {
-        String type = ContainerUtil.extractRequired(container, TYPE_FIELD_NAME, Type.STRING);
-        String value = ContainerUtil.extractRequired(container, VALUE_FIELD_NAME, Type.TEXT);
-        String module = ContainerUtil.extractRequired(container, MODULE_FIELD_NAME, Type.TEXT);
-        Container[] stacktrace = ContainerUtil.extractRequired(container, STACKTRACE_FIELD_NAME, Type.CONTAINER_ARRAY);
+        String type = ContainerUtil.extractRequired(container, TYPE_FIELD);
+        String value = ContainerUtil.extractRequired(container, VALUE_FIELD);
+        String module = ContainerUtil.extractRequired(container, MODULE_FIELD);
+        Container[] stacktrace = ContainerUtil.extractRequired(container, STACKTRACE_FIELD);
 
         return new SentryException(
                 value,

@@ -74,7 +74,7 @@ public final class EventToElasticJsonWriter {
             generator.writeStartObject();
             generator.writeStringField(TIMESTAMP_FIELD, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
-            for (Map.Entry<String, Variant> tag : event) {
+            for (Map.Entry<String, Variant> tag : event.getPayload()) {
                 if (TIMESTAMP_FIELD.equals(tag.getKey())) {
                     continue;
                 }

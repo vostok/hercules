@@ -101,7 +101,7 @@ public class HerculesProtocolAssert {
             Assert.assertEquals(expected.getId(), actual.getId());
         }
 
-        assertFieldsEquals(expected, actual);
+        assertFieldsEquals(expected.getPayload(), actual.getPayload());
         if (checkBytes) {
             Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
         }

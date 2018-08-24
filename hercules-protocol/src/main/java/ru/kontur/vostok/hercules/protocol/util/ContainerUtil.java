@@ -12,12 +12,12 @@ import java.util.Optional;
  */
 public class ContainerUtil {
 
-    public static <T> Optional<T> extractOptional(Container container, String fieldName, Type type, Type... types) {
-        return VariantUtil.extractRegardingType(container.get(fieldName), type, types);
+    public static <T> Optional<T> extractOptional(Container container, FieldDescription field) {
+        return VariantUtil.extractRegardingType(container.get(field.getName()), field.getType());
     }
 
-    public static <T> T extractRequired(Container container, String fieldName, Type type, Type ... types) {
-        return ContainerUtil.<T>extractOptional(container, fieldName, type, types)
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required field '%s' of type %s", fieldName, type)));
+    public static <T> T extractRequired(Container container, FieldDescription field) {
+        return ContainerUtil.<T>extractOptional(container, field)
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required field '%s' of type %s", field.getName(), field.getType())));
     }
 }

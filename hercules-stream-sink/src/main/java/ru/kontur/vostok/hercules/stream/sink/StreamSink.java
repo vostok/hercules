@@ -48,7 +48,7 @@ public class StreamSink {
 
         Predicate<UUID, Event> predicate = (k, v) -> {
             for (Filter filter : filters) {
-                Variant value = v.getTag(filter.getTag());
+                Variant value = v.getPayload().get(filter.getTag());
                 if (!filter.getCondition().test(value)) {
                     return false;
                 }

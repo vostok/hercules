@@ -45,11 +45,11 @@ public class DecoderTest {
         assertEquals(1, event.getVersion());
         assertEquals(137469727200000000L, event.getId().timestamp());
 
-        assertEquals(2, event.getTagCount());
-        assertNotNull(event.getTag("host"));
-        assertNotNull(event.getTag("timestamp"));
+        assertEquals(2, event.getPayload().size());
+        assertNotNull(event.getPayload().get("host"));
+        assertNotNull(event.getPayload().get("timestamp"));
 
-        Variant hostTagValue = event.getTag("host");
+        Variant hostTagValue = event.getPayload().get("host");
         assertNotNull(hostTagValue);
         assertEquals(Type.STRING, hostTagValue.getType());
         Object host = hostTagValue.getValue();
@@ -59,7 +59,7 @@ public class DecoderTest {
         assertEquals(9, hostAsBytes.length);
         assertArrayEquals("localhost".getBytes(StandardCharsets.UTF_8), hostAsBytes);
 
-        Variant timestampTagValue = event.getTag("timestamp");
+        Variant timestampTagValue = event.getPayload().get("timestamp");
         assertNotNull(timestampTagValue);
         assertEquals(Type.LONG, timestampTagValue.getType());
         Object timestamp = timestampTagValue.getValue();
