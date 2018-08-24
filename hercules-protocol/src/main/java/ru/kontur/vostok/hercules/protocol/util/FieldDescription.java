@@ -4,7 +4,7 @@ import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.util.arguments.ArgumentChecker;
 
 /**
- * FieldDescription
+ * FieldDescription stores field name and type
  *
  * @author Kirill Sulim
  */

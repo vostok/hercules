@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.util.arguments;
 import java.util.Objects;
 
 /**
- * ArgumentCapture
+ * ArgumentCapture capture for common types
  *
  * @author Kirill Sulim
  */

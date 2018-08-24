@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.util.arguments;
 
 /**
- * StringCapture
+ * StringCapture capture for string
  *
  * @author Kirill Sulim
  */

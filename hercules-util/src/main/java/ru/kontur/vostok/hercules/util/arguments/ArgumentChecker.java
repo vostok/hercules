@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.util.arguments;
 
 /**
- * ArgumentChecker
+ * ArgumentChecker set of static function to begin checking of argument
  *
  * @author Kirill Sulim
  */

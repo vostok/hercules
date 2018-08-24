@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.util.arguments;
 
 /**
- * ComparableArgumentCapture
+ * ComparableArgumentCapture capture of arguments of type T which can be comparable with type C
  *
  * @author Kirill Sulim
  */
