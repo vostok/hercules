@@ -26,8 +26,6 @@
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-constants</artifactId>
-            <version>0.6.0-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
 
         <dependency>

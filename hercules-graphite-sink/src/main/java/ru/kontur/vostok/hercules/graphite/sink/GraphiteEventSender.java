@@ -5,10 +5,10 @@ import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricData;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricStorage;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.tags.MetricsFields;
+import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
@@ -32,8 +32,9 @@ public class GraphiteEventSender implements BulkSender<Event> {
         GraphiteMetricStorage storage = new GraphiteMetricStorage();
 
         for (Event event : events) {
-            Optional<String> name = extractMetricName(event);
-            Optional<GraphiteMetricData> value = extractMetricValue(event);
+            final long timestamp = TimeUtil.gregorianTicksToUnixTime(event.getId().timestamp()) / 1000;
+            Optional<String> name = ContainerUtil.extractOptional(event.getPayload(), MetricsFields.METRIC_NAME_FIELD);
+            Optional<GraphiteMetricData> value = ContainerUtil.<Double>extractOptional(event.getPayload(), MetricsFields.METRIC_VALUE_FIELD).map(v -> new GraphiteMetricData(timestamp, v));
             if (name.isPresent() && value.isPresent()) {
                 storage.add(name.get(), value.get());
             }
@@ -45,19 +46,5 @@ public class GraphiteEventSender implements BulkSender<Event> {
     @Override
     public void close() throws Exception {
         /* Do nothing */
-    }
-
-    private static Optional<String> extractMetricName(Event event) {
-        return Optional.ofNullable(event.getPayload().get("metric-name"))
-                .map(Variant::getValue)
-                .map(o -> new String((byte[]) o, StandardCharsets.UTF_8));
-    }
-
-    private static Optional<GraphiteMetricData> extractMetricValue(Event event) {
-        final long timestamp = TimeUtil.gregorianTicksToUnixTime(event.getId().timestamp()) / 1000;
-
-        return Optional.ofNullable(event.getPayload().get("metric-value"))
-                .map(Variant::getValue)
-                .map(o -> new GraphiteMetricData(timestamp, (Double) o));
     }
 }

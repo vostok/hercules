@@ -297,6 +297,11 @@
                 <artifactId>hercules-management-task</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-constants</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
 
             <!-- Test libraries -->
             <dependency>
