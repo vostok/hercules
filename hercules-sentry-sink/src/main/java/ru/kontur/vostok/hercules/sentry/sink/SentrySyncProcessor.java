@@ -16,6 +16,7 @@ import java.util.UUID;
  */
 public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
+    // TODO: define project via setry-project-registry
     public static final FieldDescription SENTRY_PROJECT_NAME_TAG = FieldDescription.create("sentry-project-name", Type.STRING);
 
     private final SentryClientHolder sentryClientHolder;

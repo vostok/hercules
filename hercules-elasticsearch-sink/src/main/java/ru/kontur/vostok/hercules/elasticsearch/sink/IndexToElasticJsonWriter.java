@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
-import ru.kontur.vostok.hercules.protocol.tags.RootTags;
+import ru.kontur.vostok.hercules.protocol.tags.CommonFields;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -34,7 +34,7 @@ public final class IndexToElasticJsonWriter {
             indexName = index.get();
         } else {
             Optional<String> project = ContainerUtil.extractOptional(event.getPayload(), PROJECT_TAG);
-            Optional<String> env = ContainerUtil.extractOptional(event.getPayload(), RootTags.ENVIRONMENT_TAG);
+            Optional<String> env = ContainerUtil.extractOptional(event.getPayload(), CommonFields.ENVIRONMENT_FIELD);
             if (project.isPresent() && env.isPresent()) {
                 indexName = project.get() + "-" +
                         env.get() + "-" +
