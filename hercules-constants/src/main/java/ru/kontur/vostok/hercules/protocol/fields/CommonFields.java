@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.protocol.tags;
+package ru.kontur.vostok.hercules.protocol.fields;
 
 import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
 import ru.kontur.vostok.hercules.protocol.Type;

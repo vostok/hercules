@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.tags.CommonFields;
+import ru.kontur.vostok.hercules.protocol.fields.CommonFields;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
