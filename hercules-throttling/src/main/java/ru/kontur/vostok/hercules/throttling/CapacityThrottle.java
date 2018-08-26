@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.throttling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -81,8 +80,8 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
     /**
      * Asynchronously throttle request
      *
-     * @param request
-     * @param context request context
+     * @param request to be throttled
+     * @param context is additional request's data
      */
     @Override
     public void throttleAsync(R request, C context) {
@@ -125,9 +124,11 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
     public void shutdown(long timeout, TimeUnit unit) {
         executor.shutdown();
         try {
-            executor.awaitTermination(timeout, unit);
+            if (!executor.awaitTermination(timeout, unit)) {
+                LOGGER.warn("Shutdown process didn't completed for " + unit.toMillis(timeout) + " millis");
+            }
         } catch (InterruptedException e) {
-            e.printStackTrace();//TODO: Log shutdown process and process exception
+            LOGGER.error("Shutdown process was interrupted", e);
         }
     }
 }
