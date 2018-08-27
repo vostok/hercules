@@ -20,7 +20,7 @@ import java.io.IOException;
  *
  * @author Daniil Zhenikhov
  */
-public class GatewayClient implements Closeable {
+public class GateClient implements Closeable {
     private static final int TIMEOUT = 3000;
     private static final int CONNECTION_COUNT = 1000;
 
@@ -31,7 +31,7 @@ public class GatewayClient implements Closeable {
 
     private final CloseableHttpClient client = createHttpClient();
 
-    public void ping(String url) {
+    public void ping(String url) throws IOException {
         HttpGet httpGet = new HttpGet(url + PING);
 
         send(httpGet);
@@ -40,29 +40,24 @@ public class GatewayClient implements Closeable {
     /**
      * Request to {@link #SEND_ASYNC}
      *
-     * @param url gateway url
+     * @param url    gateway url
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
+     * @param data   payload
      */
-    public void sendAsync(String url, String apiKey, String stream, final byte[] data) {
+    public void sendAsync(String url, String apiKey, String stream, final byte[] data) throws IOException {
         HttpPost httpPost = buildRequest(url, apiKey, SEND_ASYNC, stream, data);
 
-        try {
-            client.execute(httpPost);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        client.execute(httpPost);
     }
 
     /**
-     *
-     * @param url gateway url
+     * @param url    gateway url
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
+     * @param data   payload
      */
-    public void send(String url, String apiKey, String stream, final byte[] data) {
+    public void send(String url, String apiKey, String stream, final byte[] data) throws IOException {
         HttpPost httpPost = buildRequest(url, apiKey, SEND_ACK, stream, data);
 
         send(httpPost);
@@ -76,26 +71,22 @@ public class GatewayClient implements Closeable {
         }
     }
 
-    private void send(HttpUriRequest request) {
-        try {
-            CloseableHttpResponse response = client.execute(request);
-            if (HttpStatus.SC_OK != response.getStatusLine().getStatusCode()) {
-                System.err.println("GatewayClient request fails with HTTP code " + response.getStatusLine().getStatusCode());
-            }
-            response.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void send(HttpUriRequest request) throws IOException {
+        CloseableHttpResponse response = client.execute(request);
+        if (HttpStatus.SC_OK != response.getStatusLine().getStatusCode()) {
+            System.err.println("GateClient request fails with HTTP code " + response.getStatusLine().getStatusCode());
         }
+        response.close();
     }
 
     /**
      * Build http post request
      *
-     * @param url gateway url
+     * @param url    gateway url
      * @param apiKey key for sending
      * @param action Command in Hercules Gateway
      * @param stream topic name in kafka
-     * @param data payload
+     * @param data   payload
      * @return formatted http post request
      */
     private HttpPost buildRequest(String url, String apiKey, String action, String stream, byte[] data) {

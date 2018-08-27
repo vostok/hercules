@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.gate.client;
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class EventPublisher {
     private final Object monitor = new Object();
     private final Map<String, EventQueue> queueMap = new HashMap<>();
-    private final GatewayClient gatewayClient = new GatewayClient();
+    private final GateClient gateClient = new GateClient();
 
     private final ScheduledThreadPoolExecutor executor;
     private final String url;
@@ -130,7 +131,7 @@ public class EventPublisher {
             }
         }
 
-        gatewayClient.close();
+        gateClient.close();
     }
 
     /**
@@ -187,12 +188,12 @@ public class EventPublisher {
                 .subList(startSlice, endSlice)
                 .toArray(new Event[endSlice - startSlice]);
 
-        gatewayClient.sendAsync(
+        ThrowableUtil.toUnchecked(() -> gateClient.sendAsync(
                 this.url,
                 this.apiKey,
                 stream,
-                EventWriterUtil.toBytes(size, eventsArray));
-
+                EventWriterUtil.toBytes(size, eventsArray))
+        );
     }
 
     private void startQueueWorker(EventQueue eventQueue) {
