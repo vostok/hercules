@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.protocol.fields;
+package ru.kontur.vostok.hercules.protocol.constants.fields;
 
 import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
 import ru.kontur.vostok.hercules.protocol.Type;
@@ -9,11 +9,6 @@ import ru.kontur.vostok.hercules.protocol.Type;
  * @author Kirill Sulim
  */
 public final class CommonFields {
-
-    /**
-     * Special name for marking use of special index in elasticsearch
-     */
-    public static final FieldDescription INDEX_FIELD = FieldDescription.create("$index", Type.STRING);
 
     /**
      * Environment field

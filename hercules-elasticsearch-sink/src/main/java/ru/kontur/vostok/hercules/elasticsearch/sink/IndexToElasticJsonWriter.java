@@ -1,7 +1,8 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.fields.CommonFields;
+import ru.kontur.vostok.hercules.protocol.constants.fields.CommonFields;
+import ru.kontur.vostok.hercules.protocol.constants.fields.ElasticSearchFields;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -24,7 +25,7 @@ public final class IndexToElasticJsonWriter {
     public static boolean tryWriteIndex(OutputStream stream, Event event) throws IOException {
 
         String indexName;
-        Optional<String> index = ContainerUtil.extractOptional(event.getPayload(), CommonFields.INDEX_FIELD);
+        Optional<String> index = ContainerUtil.extractOptional(event.getPayload(), ElasticSearchFields.INDEX_FIELD);
         if (index.isPresent()) {
             indexName = index.get();
         } else {

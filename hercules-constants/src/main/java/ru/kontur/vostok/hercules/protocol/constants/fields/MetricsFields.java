@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.protocol.fields;
+package ru.kontur.vostok.hercules.protocol.constants.fields;
 
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
  *
  * @author Kirill Sulim
  */
-public class MetricsFields {
+public final class MetricsFields {
 
     /**
      * Metric name field

@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.sentry.sink.converters;
 
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import ru.kontur.vostok.hercules.protocol.Container;
-import ru.kontur.vostok.hercules.protocol.fields.StackTraceFields;
+import ru.kontur.vostok.hercules.protocol.constants.fields.StackTraceFields;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 
 /**
