@@ -12,11 +12,13 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import ru.kontur.vostok.hercules.gate.client.url.strategy.RoundRobinUrlIterator;
-import ru.kontur.vostok.hercules.gate.client.url.strategy.UrlIterator;
+import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
+import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
+import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Client for Hercules Gateway API
@@ -24,6 +26,8 @@ import java.io.IOException;
  * @author Daniil Zhenikhov
  */
 public class GateClient implements Closeable {
+    private static final Random RANDOM = new Random();
+
     private static final int TIMEOUT = 3000;
     private static final int CONNECTION_COUNT = 1000;
 
@@ -31,65 +35,61 @@ public class GateClient implements Closeable {
     private static final String SEND_ACK = "/stream/send";
     private static final String SEND_ASYNC = "/stream/sendAsync";
 
-
     private final CloseableHttpClient client = createHttpClient();
 
-    public int ping(String url) throws IOException {
-        HttpGet httpGet = new HttpGet(url + PING);
-
-        return sendRequest(httpGet);
+    public void ping(String url) throws BadRequestException, UnavailableHostException {
+        sendToHost(url, urlParam -> {
+            HttpGet httpGet = new HttpGet(urlParam + PING);
+            return sendRequest(httpGet);
+        });
     }
 
-    public boolean ping(UrlIterator iterator) {
-        return sendToPool(iterator, this::ping);
+    public void sendAsync(String url, String apiKey, String stream, final byte[] data)
+            throws BadRequestException, UnavailableHostException {
+        sendToHost(url, urlParam -> {
+            HttpPost httpPost = buildRequest(url, apiKey, SEND_ASYNC, stream, data);
+            client.execute(httpPost);
+            return HttpStatus.SC_OK;
+        });
     }
 
-    public boolean ping(String[] urls) {
-        return ping(new RoundRobinUrlIterator(urls));
+    public void send(String url, String apiKey, String stream, final byte[] data)
+            throws BadRequestException, UnavailableHostException {
+        sendToHost(url, urlParam -> {
+            HttpPost httpPost = buildRequest(url, apiKey, SEND_ACK, stream, data);
+            return sendRequest(httpPost);
+        });
     }
 
-    /**
-     * Request to {@link #SEND_ASYNC}
-     *
-     * @param url    gateway url
-     * @param apiKey key for sending
-     * @param stream topic name in kafka
-     * @param data   payload
-     */
-    public int sendAsync(String url, String apiKey, String stream, final byte[] data) throws IOException {
-        HttpPost httpPost = buildRequest(url, apiKey, SEND_ASYNC, stream, data);
-        client.execute(httpPost);
-        return HttpStatus.SC_OK;
+    public void ping(String[] urls, int retryLimit) throws BadRequestException, UnavailableClusterException {
+        sendToPool(urls, retryLimit, this::ping);
     }
 
-    public boolean sendAsync(UrlIterator iterator, String apiKey, String stream, final byte[] data) {
-        return sendToPool(iterator, url -> sendAsync(url, apiKey, stream, data));
+    public void sendAsync(String[] urls, int retryLimit, String apiKey, String stream, final byte[] data)
+            throws BadRequestException, UnavailableClusterException {
+        sendToPool(urls, retryLimit, url -> sendAsync(url, apiKey, stream, data));
     }
 
-    public boolean sendAsync(String[] urls, String apiKey, String stream, final byte[] data) {
-        return sendAsync(new RoundRobinUrlIterator(urls), apiKey, stream, data);
+    public void send(String[] urls, int retryLimit, String apiKey, String stream, final byte[] data)
+            throws BadRequestException, UnavailableClusterException {
+        sendToPool(urls, retryLimit, url -> send(url, apiKey, stream, data));
     }
 
-    /**
-     * @param url    gateway url
-     * @param apiKey key for sending
-     * @param stream topic name in kafka
-     * @param data   payload
-     */
-    public int send(String url, String apiKey, String stream, final byte[] data) throws IOException {
-        HttpPost httpPost = buildRequest(url, apiKey, SEND_ACK, stream, data);
-
-        return sendRequest(httpPost);
+    public void ping(String[] urls) throws BadRequestException, UnavailableClusterException {
+        ping(urls, urls.length + 1);
     }
 
-    public boolean send(UrlIterator iterator, String apiKey, String stream, final byte[] data) {
-        return sendToPool(iterator, url -> send(url, apiKey, stream, data));
+    public void sendAsync(String[] urls, String apiKey, String stream, final byte[] data)
+            throws BadRequestException, UnavailableClusterException {
+        sendAsync(urls, urls.length + 1, apiKey, stream, data);
     }
 
-    public boolean send(String[] urls, String apiKey, String stream, final byte[] data) {
-        return send(new RoundRobinUrlIterator(urls), apiKey, stream, data);
+    public void send(String[] urls, String apiKey, String stream, final byte[] data)
+            throws BadRequestException, UnavailableClusterException {
+        send(urls, urls.length + 1, apiKey, stream, data);
     }
 
+    //TODO: logging
     public void close() {
         try {
             client.close();
@@ -98,39 +98,41 @@ public class GateClient implements Closeable {
         }
     }
 
-    /**
-     * @param iterator iterator of urls
-     * @param requestSender interface for sending data
-     * @return if data has sent successfully then return <code>true</code> else <code>false</code>
-     */
-    private boolean sendToPool(UrlIterator iterator, RequestSender requestSender) {
-        int statusCode;
-        String url;
+    //TODO: metrics
+    private void sendToPool(String[] urls, int retryLimit, HerculesRequestSender sender)
+            throws BadRequestException, UnavailableClusterException {
+        int seed = RANDOM.nextInt(urls.length);
 
-        while (iterator.hasNext()) {
+        for (int i = seed, count = 0;
+             count < retryLimit;
+             count++, i = (i + 1) % urls.length) {
+
             try {
-                url = iterator.next();
-                statusCode = requestSender.send(url);
-
-                if (statusCode == HttpStatus.SC_OK) {
-                    //TODO:metrics
-                    return true;
-                }
-                else if (statusCode >= 400 && statusCode < 500) {
-                    //TODO: metrics
-                    return false;
-                }
-            } catch (ClientProtocolException e) {
-                //TODO: may be case of bad address format
-                //TODO: metrics
-                return false;
-            } catch (IOException ignored) {
+                sender.send(urls[i]);
+                return;
+            } catch (UnavailableHostException ignored) {
             }
         }
 
-        //TODO: metrics;
-        return false;
+        throw new UnavailableClusterException();
+    }
 
+    //TODO: metrics
+    private void sendToHost(String url, ApacheRequestSender sender)
+            throws BadRequestException, UnavailableHostException {
+        try {
+            int statusCode = sender.send(url);
+
+            if (statusCode >= 400 && statusCode < 500) {
+                throw new BadRequestException();
+            } else if (statusCode >= 500){
+                throw new UnavailableHostException();
+            }
+        } catch (ClientProtocolException e) {
+            throw new BadRequestException(e);
+        } catch (IOException e) {
+            throw new UnavailableHostException(e);
+        }
     }
 
     private int sendRequest(HttpUriRequest request) throws IOException {
@@ -182,7 +184,12 @@ public class GateClient implements Closeable {
     }
 
     @FunctionalInterface
-    private interface RequestSender {
+    private interface ApacheRequestSender {
         int send(String url) throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface HerculesRequestSender {
+        void send(String url) throws BadRequestException, UnavailableHostException;
     }
 }

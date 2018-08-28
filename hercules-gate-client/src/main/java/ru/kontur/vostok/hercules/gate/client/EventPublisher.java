@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.gate.client;
 
+import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
+import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -195,8 +197,11 @@ public class EventPublisher {
                     this.apiKey,
                     stream,
                     EventWriterUtil.toBytes(size, eventsArray));
-        } catch (IOException e) {
-            //TODO: metrics
+        } catch (BadRequestException ignored) {
+            //TODO: logging and metrics
+        } catch (UnavailableHostException e) {
+            //TODO: logging and metrics
+            throw new RuntimeException(e);
         }
     }
 
