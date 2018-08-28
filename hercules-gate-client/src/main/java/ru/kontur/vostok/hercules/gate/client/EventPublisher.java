@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -188,12 +189,15 @@ public class EventPublisher {
                 .subList(startSlice, endSlice)
                 .toArray(new Event[endSlice - startSlice]);
 
-        ThrowableUtil.toUnchecked(() -> gateClient.sendAsync(
-                this.url,
-                this.apiKey,
-                stream,
-                EventWriterUtil.toBytes(size, eventsArray))
-        );
+        try {
+            gateClient.sendAsync(
+                    this.url,
+                    this.apiKey,
+                    stream,
+                    EventWriterUtil.toBytes(size, eventsArray));
+        } catch (IOException e) {
+            //TODO: metrics
+        }
     }
 
     private void startQueueWorker(EventQueue eventQueue) {
