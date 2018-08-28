@@ -11,7 +11,7 @@ import java.util.Map;
 public class RouteHandlerBuilder {
     private final Map<String, Map<HttpMethod, AsyncHttpHandler>> handlers = new HashMap<>();
 
-    public void addHandler(AsyncHttpHandler handler, String path, HttpMethod method) {
+    public void addHandler(String path, HttpMethod method, AsyncHttpHandler handler) {
         Map<HttpMethod, AsyncHttpHandler> map = handlers.computeIfAbsent(path, s -> new HashMap<>());
         map.putIfAbsent(method, handler);
     }

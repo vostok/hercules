@@ -18,7 +18,13 @@ public final class RouteHandler implements AsyncHttpHandler {
     @Override
     public void handleAsync(HttpServerRequest request) {
         String path = request.getPath();
-        HttpMethod method = request.getMethod();
+        HttpMethod method;
+        try {
+            method = request.getMethod();
+        } catch (NotSupportedHttpMethodException e) {
+            request.complete(HttpStatusCodes.METHOD_NOT_ALLOWED);
+            return;
+        }
         handlers.getOrDefault(path, Collections.emptyMap()).getOrDefault(method, notFoundHandler).handleAsync(request);
     }
 }

@@ -9,7 +9,7 @@ public interface HttpServerRequest {
      *
      * @return enum value <code>HttpMethod</code>
      */
-    HttpMethod getMethod();
+    HttpMethod getMethod() throws NotSupportedHttpMethodException;
 
     /**
      * Get URL part without host:port and query parameters. Started with '/' character.

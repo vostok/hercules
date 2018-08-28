@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.http.HttpMethod;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpServerRequestException;
 import ru.kontur.vostok.hercules.http.HttpServerResponse;
+import ru.kontur.vostok.hercules.http.NotSupportedHttpMethodException;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
@@ -30,8 +31,13 @@ public class JettyHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
-    public HttpMethod getMethod() {
-        return HttpMethod.valueOf(request.getMethod());
+    public HttpMethod getMethod() throws NotSupportedHttpMethodException {
+        String method = request.getMethod();
+        try {
+            return HttpMethod.valueOf(method);
+        } catch (IllegalArgumentException exception) {
+            throw new NotSupportedHttpMethodException("Unsupported method " + method);
+        }
     }
 
     @Override
@@ -53,7 +59,7 @@ public class JettyHttpServerRequest implements HttpServerRequest {
                 int length = Integer.parseInt(contentLength);
                 byte[] data = new byte[length];
                 int actual = body.read(data);
-                if (actual != length) {
+                if (actual != length || body.read() == -1) {
                     throw new HttpServerRequestException("Expect " + length + " bytes but read only " + actual + " bytes");
                 }
                 return data;
