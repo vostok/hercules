@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Type;
-import ru.kontur.vostok.hercules.util.arguments.ArgumentChecker;
+import ru.kontur.vostok.hercules.util.arguments.Preconditions;
 
 /**
  * FieldDescription stores field name and type
@@ -27,8 +27,10 @@ public class FieldDescription {
     }
 
     public static FieldDescription create(String name, Type type) {
-        ArgumentChecker.check(name).isNotEmpty();
-        ArgumentChecker.check(type).isNotNull();
+        Preconditions.checkNotNull(name);
+        Preconditions.check(!name.isEmpty(), "Field name must be present");
+
+        Preconditions.checkNotNull(type);
 
         return new FieldDescription(name, type);
     }
