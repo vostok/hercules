@@ -33,11 +33,7 @@ public class JettyHttpServerRequest implements HttpServerRequest {
     @Override
     public HttpMethod getMethod() throws NotSupportedHttpMethodException {
         String method = request.getMethod();
-        try {
-            return HttpMethod.valueOf(method);
-        } catch (IllegalArgumentException exception) {
-            throw new NotSupportedHttpMethodException("Unsupported method " + method);
-        }
+        return HttpMethod.parse(method);
     }
 
     @Override
@@ -70,8 +66,11 @@ public class JettyHttpServerRequest implements HttpServerRequest {
                 int length = Integer.parseInt(contentLength);
                 byte[] data = new byte[length];
                 int actual = body.read(data);
-                if (actual != length || body.read() == -1) {
+                if (actual != length) {
                     throw new HttpServerRequestException("Expect " + length + " bytes but read only " + actual + " bytes");
+                }
+                if (body.read() != -1) {
+                    throw new HttpServerRequestException("Expect " + length + "bytes but read more bytes");
                 }
                 return data;
             } else {
