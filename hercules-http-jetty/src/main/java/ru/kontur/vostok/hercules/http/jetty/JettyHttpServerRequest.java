@@ -51,6 +51,17 @@ public class JettyHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
+    public String getParameter(String name) {
+        return request.getParameter(name);
+    }
+
+    @Override
+    public String[] getParameterValues(String name) {
+        String[] values = request.getParameterValues(name);
+        return values != null ? values : EMPTY_STRING_ARRAY;
+    }
+
+    @Override
     public byte[] readBody() throws HttpServerRequestException {
         try {
             InputStream body = request.getInputStream();
@@ -86,4 +97,6 @@ public class JettyHttpServerRequest implements HttpServerRequest {
     public void complete() {
         asyncContext.complete();
     }
+
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 }

@@ -27,6 +27,22 @@ public interface HttpServerRequest {
     String getHeader(String name);
 
     /**
+     * Get query parameter value of the request. If parameter is used for multiple times, then return first value.
+     *
+     * @param name of the query parameter
+     * @return parameter value or <code>null</code> if it doesn't exist
+     */
+    String getParameter(String name);
+
+    /**
+     * Get all query parameter values of the request. If parameter doesn't present, then return empty array.
+     *
+     * @param name of the query parameter
+     * @return parameter values
+     */
+    String[] getParameterValues(String name);
+
+    /**
      * Get complete request body as byte array. Can be called once since content is read as stream.
      *
      * @return request body byte array
