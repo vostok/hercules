@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.http;
 
+import ru.kontur.vostok.hercules.http.handler.AsyncHttpHandler;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 

@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.http.jetty;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import ru.kontur.vostok.hercules.http.AsyncHttpHandler;
+import ru.kontur.vostok.hercules.http.handler.AsyncHttpHandler;
 import ru.kontur.vostok.hercules.http.AsyncHttpServer;
 
 import javax.servlet.AsyncContext;

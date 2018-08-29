@@ -1,4 +1,6 @@
-package ru.kontur.vostok.hercules.http;
+package ru.kontur.vostok.hercules.http.handler;
+
+import ru.kontur.vostok.hercules.http.HttpMethod;
 
 import java.util.HashMap;
 import java.util.Map;

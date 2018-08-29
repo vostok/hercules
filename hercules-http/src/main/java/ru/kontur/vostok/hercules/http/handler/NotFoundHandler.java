@@ -1,4 +1,7 @@
-package ru.kontur.vostok.hercules.http;
+package ru.kontur.vostok.hercules.http.handler;
+
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 
 /**
  * @author Gregory Koshelev
