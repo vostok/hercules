@@ -36,6 +36,15 @@ public class EventBuilder {
         tags.put(key, value);
     }
 
+    public void setTag(TagDescription tag, Variant value) {
+        if (tag.getType() != value.getType()) {
+            throw new IllegalArgumentException(
+                    String.format("Value type mismatch, expected: %s, actual: %s", tag.getType(), value.getType())
+            );
+        }
+        setTag(tag.getName(), value);
+    }
+
     public Event build() {
         if (wasBuild) {
             throw new IllegalStateException("Builder already used");

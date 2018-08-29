@@ -101,7 +101,7 @@ public class HerculesProtocolAssert {
             Assert.assertEquals(expected.getId(), actual.getId());
         }
 
-        assertFieldsEquals(expected, actual);
+        assertTagsEquals(expected.getPayload(), actual.getPayload());
         if (checkBytes) {
             Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
         }
@@ -113,10 +113,10 @@ public class HerculesProtocolAssert {
     }
 
     public static void assertEquals(Container expected, Container actual) {
-        assertFieldsEquals(expected, actual);
+        assertTagsEquals(expected, actual);
     }
 
-    private static void assertFieldsEquals(Iterable<Map.Entry<String, Variant>> expected, Iterable<Map.Entry<String, Variant>> actual) {
+    private static void assertTagsEquals(Iterable<Map.Entry<String, Variant>> expected, Iterable<Map.Entry<String, Variant>> actual) {
         Map<String, Variant> expectedMap = StreamSupport.stream(expected.spliterator(), false)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -128,7 +128,7 @@ public class HerculesProtocolAssert {
             String tagName = entry.getKey();
             Variant value = actualMap.get(entry.getKey());
             if (Objects.isNull(value)) {
-                Assert.fail("Missing field " + tagName);
+                Assert.fail("Missing tag " + tagName);
             }
             assertEquals(entry.getValue(), value);
             checked.add(tagName);
@@ -136,7 +136,7 @@ public class HerculesProtocolAssert {
         for (Map.Entry<String, Variant> entry : actual) {
             String tagName = entry.getKey();
             if (!checked.contains(tagName)) {
-                Assert.fail("Extra field " + tagName);
+                Assert.fail("Extra tag " + tagName);
             }
         }
     }

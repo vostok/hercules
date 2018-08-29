@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class ContainerWriteReadTest {
 
-    private final WriteReadPipe<Container> pipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readAllFields());
+    private final WriteReadPipe<Container> pipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readAllTags());
 
     @Test
     public void shouldReadWriteContainer() throws Exception {
@@ -36,7 +36,7 @@ public class ContainerWriteReadTest {
     }
 
     @Test
-    public void shouldSkipUnmarkedFields() throws Exception {
+    public void shouldSkipUnmarkedTags() throws Exception {
         Map<String, Variant> full = new HashMap<>();
         full.put("keep", Variant.ofInteger(1));
         full.put("skip", Variant.ofInteger(2));
@@ -46,7 +46,7 @@ public class ContainerWriteReadTest {
         filtered.put("keep", Variant.ofInteger(1));
         Container filteredContainer = new Container(filtered);
 
-        WriteReadPipe<Container> filterPipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readFields(Collections.singleton("keep")));
+        WriteReadPipe<Container> filterPipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readTags(Collections.singleton("keep")));
         Container processed = filterPipe.process(fullContainer).getProcessed();
 
         HerculesProtocolAssert.assertEquals(filteredContainer, processed);

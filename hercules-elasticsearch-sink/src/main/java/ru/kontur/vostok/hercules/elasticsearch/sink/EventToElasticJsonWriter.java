@@ -25,7 +25,7 @@ public final class EventToElasticJsonWriter {
         void write(JsonGenerator generator, Object value) throws IOException;
     }
 
-    private static final String TIMESTAMP_FIELD = "@timestamp";
+    private static final String TIMESTAMP_TAG_NAME = "@timestamp";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME.withZone(ZoneOffset.UTC);
 
     private static final JsonFactory FACTORY = new JsonFactory();
@@ -72,10 +72,10 @@ public final class EventToElasticJsonWriter {
     public static void writeEvent(OutputStream stream, Event event) throws IOException {
         try (JsonGenerator generator = FACTORY.createGenerator(stream, JsonEncoding.UTF8)) {
             generator.writeStartObject();
-            generator.writeStringField(TIMESTAMP_FIELD, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
+            generator.writeStringField(TIMESTAMP_TAG_NAME, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
-            for (Map.Entry<String, Variant> tag : event) {
-                if (TIMESTAMP_FIELD.equals(tag.getKey())) {
+            for (Map.Entry<String, Variant> tag : event.getPayload()) {
+                if (TIMESTAMP_TAG_NAME.equals(tag.getKey())) {
                     continue;
                 }
                 generator.writeFieldName(tag.getKey());

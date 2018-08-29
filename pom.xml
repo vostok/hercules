@@ -62,6 +62,7 @@
         <module>hercules-cassandra-manager</module>
         <module>hercules-kafka-manager</module>
         <module>hercules-init</module>
+        <module>hercules-tags</module>
         <module>hercules-http</module>
         <module>hercules-http-jetty</module>
     </modules>
@@ -309,6 +310,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-management-task</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-tags</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>

@@ -10,22 +10,22 @@ import java.util.Set;
 
 public class ContainerReader implements Reader<Container> {
 
-    public static final ContainerReader INSTANCE = readAllFields();
+    public static final ContainerReader INSTANCE = readAllTags();
 
     private static final VariantReader variantReader = VariantReader.INSTANCE;
 
-    private final Set<String> fields;
+    private final Set<String> tags;
 
-    private ContainerReader(Set<String> fields) {
-        this.fields = fields;
+    private ContainerReader(Set<String> tags) {
+        this.tags = tags;
     }
 
-    public static ContainerReader readAllFields() {
+    public static ContainerReader readAllTags() {
         return new ContainerReader(null);
     }
 
-    public static ContainerReader readFields(Set<String> fields) {
-        return new ContainerReader(fields);
+    public static ContainerReader readTags(Set<String> tags) {
+        return new ContainerReader(tags);
     }
 
     @Override
@@ -33,10 +33,10 @@ public class ContainerReader implements Reader<Container> {
         short length = decoder.readShort();
         Map<String, Variant> variantMap = new HashMap<>(length);
         while (0 <= --length) {
-            String fieldName = decoder.readString();
-            if (Objects.isNull(fields) || fields.contains(fieldName)) {
+            String tagName = decoder.readString();
+            if (Objects.isNull(tags) || tags.contains(tagName)) {
                 Variant variant = variantReader.read(decoder);
-                variantMap.put(fieldName, variant);
+                variantMap.put(tagName, variant);
             } else {
                 variantReader.skip(decoder);
             }

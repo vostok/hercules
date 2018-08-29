@@ -31,7 +31,7 @@ public class IndexToElasticJsonWriterTest {
     public void shouldWriteIndexIfEventHasProjectAndEnvTags() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
-        eventBuilder.setTag("project", Variant.ofString("awesome-project"));
+        eventBuilder.setTag("proj", Variant.ofString("awesome-project"));
         eventBuilder.setTag("env", Variant.ofString("production"));
         Event event = eventBuilder.build();
 
