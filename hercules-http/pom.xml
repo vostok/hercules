@@ -9,13 +9,5 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hercules-tags</artifactId>
-    <dependencies>
-        <dependency>
-            <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-protocol</artifactId>
-        </dependency>
-    </dependencies>
-
-
+    <artifactId>hercules-http</artifactId>
 </project>
