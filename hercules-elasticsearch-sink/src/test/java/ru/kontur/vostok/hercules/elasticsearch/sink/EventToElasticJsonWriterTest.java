@@ -149,7 +149,7 @@ public class EventToElasticJsonWriterTest {
     @Test
     public void shouldWriteContainer() throws Exception {
         ContainerBuilder containerBuilder = ContainerBuilder.create();
-        containerBuilder.field("a", Variant.ofInteger(123));
+        containerBuilder.tag("a", Variant.ofInteger(123));
 
         assertVariantConverted(
                 "{\"a\":123}",
@@ -160,10 +160,10 @@ public class EventToElasticJsonWriterTest {
     @Test
     public void shouldWriteNestedContainer() throws Exception {
         ContainerBuilder nested = ContainerBuilder.create();
-        nested.field("a", Variant.ofInteger(123));
+        nested.tag("a", Variant.ofInteger(123));
 
         ContainerBuilder wrapper = ContainerBuilder.create();
-        wrapper.field("nested", Variant.ofContainer(nested.build()));
+        wrapper.tag("nested", Variant.ofContainer(nested.build()));
 
 
         assertVariantConverted(
@@ -175,10 +175,10 @@ public class EventToElasticJsonWriterTest {
     @Test
     public void shouldWriteArrayOfContainers() throws Exception {
         ContainerBuilder first = ContainerBuilder.create();
-        first.field("a", Variant.ofInteger(123));
+        first.tag("a", Variant.ofInteger(123));
 
         ContainerBuilder second = ContainerBuilder.create();
-        second.field("b", Variant.ofInteger(456));
+        second.tag("b", Variant.ofInteger(456));
 
         assertVariantConverted(
                 "[{\"a\":123},{\"b\":456}]",

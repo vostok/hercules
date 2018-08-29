@@ -14,7 +14,7 @@ public class ContainerWriter implements Writer<Container> {
     @Override
     public void write(Encoder encoder, Container value) {
         if (Short.MAX_VALUE < value.size()) {
-            throw new RuntimeException("Only " + Short.MAX_VALUE + " fields are supported");
+            throw new RuntimeException("Only " + Short.MAX_VALUE + " tags are supported");
         }
 
         encoder.writeShort((short) value.size());

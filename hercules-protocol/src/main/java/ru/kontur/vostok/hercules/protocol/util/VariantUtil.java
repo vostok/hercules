@@ -3,25 +3,20 @@ package ru.kontur.vostok.hercules.protocol.util;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 
 public final class VariantUtil {
 
-    private static final int NOT_FOUND_INDEX = -1;
-
     private VariantUtil() {
     }
 
-    public static <T> Optional<T> extractRegardingType(Variant variant, Type type, Type... types) {
-        types = join(type, types);
-
+    public static <T> Optional<T> extractRegardingType(Variant variant, Type type) {
         if (Objects.isNull(variant)) {
             return Optional.empty();
         }
-        if (NOT_FOUND_INDEX == indexOf(types, variant.getType())) {
+        if (type != variant.getType()) {
             return Optional.empty();
         }
 
@@ -60,21 +55,5 @@ public final class VariantUtil {
             default:
                 return Optional.empty();
         }
-    }
-
-    private static <T extends Enum<T>> int indexOf(T[] array, T element) {
-        for (int i = 0; i < array.length; ++i) {
-            if (array[i].compareTo(element) == 0) {
-                return i;
-            }
-        }
-        return NOT_FOUND_INDEX;
-    }
-
-    private static <T> T[] join(T element, T[] array) {
-        T[] result = (T[]) Array.newInstance(element.getClass(), array.length + 1);
-        result[0] = element;
-        System.arraycopy(array, 0, result, 1, array.length);
-        return result;
     }
 }

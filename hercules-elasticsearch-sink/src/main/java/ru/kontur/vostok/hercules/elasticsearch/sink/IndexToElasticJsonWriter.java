@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.util.EventUtil;
+import ru.kontur.vostok.hercules.tags.CommonTags;
+import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
+import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.IOException;
@@ -15,10 +17,6 @@ public final class IndexToElasticJsonWriter {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd").withZone(ZoneId.of("UTC"));
 
-    private static final String INDEX_TAG = "$index";
-    private static final String PROJECT_TAG = "project";
-    private static final String ENVIRONMENT_TAG = "env";
-
     private static final byte[] START_BYTES = "{\"index\":{\"_index\":\"".getBytes(StandardCharsets.UTF_8);
     private static final byte[] MIDDLE_BYTES = "\",\"_type\":\"_doc\",\"_id\":\"".getBytes(StandardCharsets.UTF_8);
     private static final byte[] END_BYTES = "\"}}".getBytes(StandardCharsets.UTF_8);
@@ -27,12 +25,12 @@ public final class IndexToElasticJsonWriter {
     public static boolean tryWriteIndex(OutputStream stream, Event event) throws IOException {
 
         String indexName;
-        Optional<String> index = EventUtil.extractString(event, INDEX_TAG);
+        Optional<String> index = ContainerUtil.extractOptional(event.getPayload(), ElasticSearchTags.INDEX_TAG);
         if (index.isPresent()) {
             indexName = index.get();
         } else {
-            Optional<String> project = EventUtil.extractString(event, PROJECT_TAG);
-            Optional<String> env = EventUtil.extractString(event, ENVIRONMENT_TAG);
+            Optional<String> project = ContainerUtil.extractOptional(event.getPayload(), CommonTags.PROJECT_TAG);
+            Optional<String> env = ContainerUtil.extractOptional(event.getPayload(), CommonTags.ENVIRONMENT_TAG);
             if (project.isPresent() && env.isPresent()) {
                 indexName = project.get() + "-" +
                         env.get() + "-" +

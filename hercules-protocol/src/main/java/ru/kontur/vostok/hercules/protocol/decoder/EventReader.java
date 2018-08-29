@@ -11,7 +11,7 @@ import java.util.UUID;
 public class EventReader implements Reader<Event> {
 
     private static final UUIDReader uuidReader = new UUIDReader();
-    private static final ContainerReader containerSkipper = ContainerReader.readFields(Collections.emptySet());
+    private static final ContainerReader containerSkipper = ContainerReader.readTags(Collections.emptySet());
 
     private final ContainerReader containerReader;
 
@@ -48,10 +48,10 @@ public class EventReader implements Reader<Event> {
     }
 
     public static EventReader readAllTags() {
-        return new EventReader(ContainerReader.readAllFields());
+        return new EventReader(ContainerReader.readAllTags());
     }
 
     public static EventReader readTags(Set<String> tags) {
-        return new EventReader(ContainerReader.readFields(tags));
+        return new EventReader(ContainerReader.readTags(tags));
     }
 }
