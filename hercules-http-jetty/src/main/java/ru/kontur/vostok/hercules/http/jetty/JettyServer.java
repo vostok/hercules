@@ -38,7 +38,7 @@ public class JettyServer extends AsyncHttpServer {
     @Override
     protected boolean stopInternal(long timeout, TimeUnit unit) {
         try {
-            server.stop();
+            server.stop();//TODO: stop can block current thread forever, thus move stopiing to another thread with wait/notify.
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
