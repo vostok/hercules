@@ -12,6 +12,8 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
@@ -26,6 +28,7 @@ import java.util.Random;
  * @author Daniil Zhenikhov
  */
 public class GateClient implements Closeable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GateClient.class);
     private static final Random RANDOM = new Random();
 
     private static final int TIMEOUT = 3000;
@@ -35,7 +38,15 @@ public class GateClient implements Closeable {
     private static final String SEND_ACK = "/stream/send";
     private static final String SEND_ASYNC = "/stream/sendAsync";
 
-    private final CloseableHttpClient client = createHttpClient();
+    private final CloseableHttpClient client;
+
+    public GateClient(CloseableHttpClient client) {
+        this.client = client;
+    }
+
+    public GateClient() {
+        this.client = createHttpClient();
+    }
 
     public void ping(String url) throws BadRequestException, UnavailableHostException {
         sendToHost(url, urlParam -> {
@@ -89,12 +100,11 @@ public class GateClient implements Closeable {
         send(urls, urls.length + 1, apiKey, stream, data);
     }
 
-    //TODO: logging
     public void close() {
         try {
             client.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Error while closing http client: " + e.getLocalizedMessage());
         }
     }
 
@@ -110,7 +120,8 @@ public class GateClient implements Closeable {
             try {
                 sender.send(urls[i]);
                 return;
-            } catch (UnavailableHostException ignored) {
+            } catch (UnavailableHostException e) {
+                LOGGER.warn(e.getMessage());
             }
         }
 
@@ -124,14 +135,14 @@ public class GateClient implements Closeable {
             int statusCode = sender.send(url);
 
             if (statusCode >= 400 && statusCode < 500) {
-                throw new BadRequestException();
-            } else if (statusCode >= 500){
-                throw new UnavailableHostException();
+                throw new BadRequestException(statusCode);
+            } else if (statusCode >= 500) {
+                throw new UnavailableHostException(url);
             }
         } catch (ClientProtocolException e) {
             throw new BadRequestException(e);
         } catch (IOException e) {
-            throw new UnavailableHostException(e);
+            throw new UnavailableHostException(url, e);
         }
     }
 

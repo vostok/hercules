@@ -1,14 +1,15 @@
 package ru.kontur.vostok.hercules.gate.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
-import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
+import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -21,32 +22,42 @@ import java.util.concurrent.TimeUnit;
  * @author Daniil Zhenikhov
  */
 public class EventPublisher {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventPublisher.class);
+
     private final Object monitor = new Object();
     private final Map<String, EventQueue> queueMap = new HashMap<>();
     private final GateClient gateClient = new GateClient();
 
     private final ScheduledThreadPoolExecutor executor;
-    private final String url;
+    private final String[] urls;
     private final String apiKey;
 
     /**
      * Note that <code>threadFactory</code> should create daemon-thread. It's needing for correct stopping.
      *
-     * @param threads        count of worker-threads
-     * @param threadFactory  factory for worker-threads
-     * @param url            url where events should be sent
-     * @param apiKey         api key for sending events
+     * @param threads       count of worker-threads
+     * @param threadFactory factory for worker-threads
+     * @param urls          urls where events should be sent
+     * @param apiKey        api key for sending events
      */
+    public EventPublisher(int threads,
+                          ThreadFactory threadFactory,
+                          List<EventQueue> queues,
+                          String[] urls,
+                          String apiKey) {
+        registerAll(queues);
+
+        this.urls = urls;
+        this.apiKey = apiKey;
+        this.executor = new ScheduledThreadPoolExecutor(threads, threadFactory);
+    }
+
     public EventPublisher(int threads,
                           ThreadFactory threadFactory,
                           List<EventQueue> queues,
                           String url,
                           String apiKey) {
-        registerAll(queues);
-
-        this.url = url;
-        this.apiKey = apiKey;
-        this.executor = new ScheduledThreadPoolExecutor(threads, threadFactory);
+        this(threads, threadFactory, queues, new String[]{url}, apiKey);
     }
 
     public void start() {
@@ -138,7 +149,7 @@ public class EventPublisher {
     }
 
     /**
-     * Forms a batch of events and sends them to the {@link #url}
+     * Forms a batch of events and sends them to the {@link #urls}
      *
      * @param eventQueue EventQueue should be processing
      * @return actual count of events which has been processed
@@ -176,11 +187,11 @@ public class EventPublisher {
     /**
      * Create array from subList of <code>events</code> and send its to stream
      *
-     * @param events source events list
-     * @param stream topic name in kafka where should be send data
-     * @param size total size events in list
+     * @param events     source events list
+     * @param stream     topic name in kafka where should be send data
+     * @param size       total size events in list
      * @param startSlice start of sublist
-     * @param endSlice end of sublist
+     * @param endSlice   end of sublist
      */
     private void sendSliceEvents(List<Event> events,
                                  String stream,
@@ -193,14 +204,14 @@ public class EventPublisher {
 
         try {
             gateClient.sendAsync(
-                    this.url,
+                    this.urls,
                     this.apiKey,
                     stream,
                     EventWriterUtil.toBytes(size, eventsArray));
         } catch (BadRequestException ignored) {
-            //TODO: logging and metrics
-        } catch (UnavailableHostException e) {
-            //TODO: logging and metrics
+            LOGGER.warn("Failed to send a packet of events");
+        } catch (UnavailableClusterException e) {
+            LOGGER.warn("No url from cluster is available. Cluster = " + Arrays.toString(this.urls));
             throw new RuntimeException(e);
         }
     }

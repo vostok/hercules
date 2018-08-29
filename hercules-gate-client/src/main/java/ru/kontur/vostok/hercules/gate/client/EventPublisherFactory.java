@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadFactory;
  * @author Daniil Zhenikhov
  */
 public class EventPublisherFactory {
-    private static final String URL_PROPERTY = "url";
+    private static final String URLS_PROPERTY = "urls";
     private static final String THREADS_PROPERTY = "threads";
     private static final String API_KEY_PROPERTY = "apiKey";
     private static final String PROJECT_PROPERTY = "project";
@@ -46,7 +46,8 @@ public class EventPublisherFactory {
                     .orElseThrow(PropertiesExtractor.missingPropertyError(ENVIRONMENT_PROPERTY));
         } catch (IOException e) {
             throw new RuntimeException(e);
-        };
+        }
+        ;
     }
 
     private EventPublisherFactory() {
@@ -56,18 +57,21 @@ public class EventPublisherFactory {
     public static EventPublisher getInstance() {
         return INSTANCE;
     }
+
     public static String getProject() {
         return PROJECT;
     }
+
     public static String getEnvironment() {
         return ENVIRONMENT;
     }
 
     private static EventPublisher createPublisher(Properties properties) {
         int threads = PropertiesExtractor.get(properties, THREADS_PROPERTY, DEFAULT_THREADS_COUNT);
-        String url = PropertiesExtractor
-                .getAs(properties, URL_PROPERTY, String.class)
-                .orElseThrow(PropertiesExtractor.missingPropertyError(URL_PROPERTY));
+        String[] url = PropertiesExtractor
+                .getAs(properties, URLS_PROPERTY, String.class)
+                .orElseThrow(PropertiesExtractor.missingPropertyError(URLS_PROPERTY))
+                .split("\\s*,\\s*");
         String apiKey = PropertiesExtractor
                 .getAs(properties, API_KEY_PROPERTY, String.class)
                 .orElseThrow(PropertiesExtractor.missingPropertyError(API_KEY_PROPERTY));
