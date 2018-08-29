@@ -3,10 +3,13 @@ package ru.kontur.vostok.hercules.auth;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.Blacklist;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
+import ru.kontur.vostok.hercules.util.schedule.Scheduler;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -15,26 +18,36 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class AuthManager {
     private final CuratorClient curatorClient;
 
+    private final Scheduler scheduler;
+
     private final AtomicReference<ConcurrentHashMap<String, List<PatternMatcher>>> readRules = new AtomicReference<>(new ConcurrentHashMap<>());
     private final AtomicReference<ConcurrentHashMap<String, List<PatternMatcher>>> writeRules = new AtomicReference<>(new ConcurrentHashMap<>());
     private final AtomicReference<ConcurrentHashMap<String, List<PatternMatcher>>> manageRules = new AtomicReference<>(new ConcurrentHashMap<>());
 
     private final Blacklist blacklist;
 
+    private final RenewableTask updateTask;
+
     public AuthManager(CuratorClient curatorClient) {
         this.curatorClient = curatorClient;
 
-        this.blacklist = new Blacklist(curatorClient);
+        this.scheduler = new Scheduler(1);
+
+        this.blacklist = new Blacklist(curatorClient, scheduler);
+
+        this.updateTask = scheduler.task(this::update, 60_000, false);
     }
 
     public void start() throws Exception {
         blacklist.start();
 
-        update();
+        updateTask.renew();
     }
 
     public void stop() {
         blacklist.stop();
+        updateTask.disable();
+        scheduler.shutdown(5_000, TimeUnit.MILLISECONDS);
     }
 
     public AuthResult authRead(String apiKey, String name) {
@@ -62,8 +75,16 @@ public final class AuthManager {
         return PatternMatcher.matchesAnyOf(name, matchers) ? AuthResult.ok() : AuthResult.denied();
     }
 
-    private void update() throws Exception {
-        List<String> rules = curatorClient.children("/hercules/auth/rules", e -> update());//TODO: monitor watcher's event types
+    private void update() {
+        List<String> rules;
+        try {
+            rules = curatorClient.children("/hercules/auth/rules", e -> {
+                updateTask.renew();
+            });//TODO: monitor watcher's event types
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
 
         ConcurrentHashMap<String, List<PatternMatcher>> newReadRules = new ConcurrentHashMap<>();
         ConcurrentHashMap<String, List<PatternMatcher>> newWriteRules = new ConcurrentHashMap<>();
