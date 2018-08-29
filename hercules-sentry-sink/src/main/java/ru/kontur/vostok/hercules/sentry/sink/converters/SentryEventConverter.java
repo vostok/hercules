@@ -8,10 +8,10 @@ import io.sentry.event.interfaces.SentryException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.constants.fields.CommonFields;
-import ru.kontur.vostok.hercules.protocol.constants.fields.StackTraceFields;
+import ru.kontur.vostok.hercules.tags.CommonTags;
+import ru.kontur.vostok.hercules.tags.StackTraceTag;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
-import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
+import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
 import ru.kontur.vostok.hercules.sentry.sink.SentrySyncProcessor;
 import ru.kontur.vostok.hercules.util.enumeration.EnumUtil;
@@ -40,13 +40,13 @@ public class SentryEventConverter {
 
     private static final Set<String> IGNORED_TAGS = Stream.of(
             SentrySyncProcessor.SENTRY_PROJECT_NAME_TAG,
-            StackTraceFields.EXCEPTIONS_FIELD,
-            StackTraceFields.MESSAGE_FIELD,
-            StackTraceFields.LEVEL_FIELD,
-            CommonFields.ENVIRONMENT_FIELD,
-            StackTraceFields.RELEASE_FIELD,
-            StackTraceFields.SERVER_FIELD
-    ).map(FieldDescription::getName).collect(Collectors.toSet());
+            StackTraceTag.EXCEPTIONS_TAG,
+            StackTraceTag.MESSAGE_TAG,
+            StackTraceTag.LEVEL_TAG,
+            CommonTags.ENVIRONMENT_TAG,
+            StackTraceTag.RELEASE_TAG,
+            StackTraceTag.SERVER_TAG
+    ).map(TagDescription::getName).collect(Collectors.toSet());
 
     private static final String DEFAULT_PLATFORM = "";
 
@@ -56,23 +56,23 @@ public class SentryEventConverter {
         eventBuilder.withTimestamp(Date.from(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
 
-        ContainerUtil.<Container[]>extractOptional(event.getPayload(), StackTraceFields.EXCEPTIONS_FIELD)
+        ContainerUtil.<Container[]>extractOptional(event.getPayload(), StackTraceTag.EXCEPTIONS_TAG)
                 .ifPresent(exceptions -> eventBuilder.withSentryInterface(convertExceptions(exceptions)));
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceFields.MESSAGE_FIELD)
+        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.MESSAGE_TAG)
                 .ifPresent(eventBuilder::withMessage);
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceFields.LEVEL_FIELD)
+        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.LEVEL_TAG)
                 .flatMap(s -> EnumUtil.parseOptional(Level.class, s))
                 .ifPresent(eventBuilder::withLevel);
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), CommonFields.ENVIRONMENT_FIELD)
+        ContainerUtil.<String>extractOptional(event.getPayload(), CommonTags.ENVIRONMENT_TAG)
                 .ifPresent(eventBuilder::withEnvironment);
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceFields.RELEASE_FIELD)
+        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.RELEASE_TAG)
                 .ifPresent(eventBuilder::withRelease);
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceFields.SERVER_FIELD)
+        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.SERVER_TAG)
                 .ifPresent(eventBuilder::withServerName);
 
         for (Map.Entry<String, Variant> entry : event.getPayload()) {
@@ -99,15 +99,15 @@ public class SentryEventConverter {
     }
 
     private static String extractPlatform(Event event) {
-        Optional<Container[]> containers = ContainerUtil.extractOptional(event.getPayload(), StackTraceFields.EXCEPTIONS_FIELD);
+        Optional<Container[]> containers = ContainerUtil.extractOptional(event.getPayload(), StackTraceTag.EXCEPTIONS_TAG);
         if (!containers.isPresent()) {
             return DEFAULT_PLATFORM;
         }
 
         return Arrays.stream(containers.get())
-                .flatMap(container -> Arrays.stream(ContainerUtil.<Container[]>extractOptional(container, StackTraceFields.STACKTRACE_FIELD).orElse(new Container[0])))
+                .flatMap(container -> Arrays.stream(ContainerUtil.<Container[]>extractOptional(container, StackTraceTag.STACKTRACE_TAG).orElse(new Container[0])))
                 .findAny()
-                .map(container -> ContainerUtil.<String>extractRequired(container, StackTraceFields.FILENAME_FIELD))
+                .map(container -> ContainerUtil.<String>extractRequired(container, StackTraceTag.FILENAME_TAG))
                 .map(SentryEventConverter::resolvePlatformByFileName)
                 .orElse(DEFAULT_PLATFORM);
     }

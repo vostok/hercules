@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricData;
 import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricStorage;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.constants.fields.MetricsFields;
+import ru.kontur.vostok.hercules.tags.MetricsTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -33,8 +33,8 @@ public class GraphiteEventSender implements BulkSender<Event> {
 
         for (Event event : events) {
             final long timestamp = TimeUtil.gregorianTicksToUnixTime(event.getId().timestamp()) / 1000;
-            Optional<String> name = ContainerUtil.extractOptional(event.getPayload(), MetricsFields.METRIC_NAME_FIELD);
-            Optional<GraphiteMetricData> value = ContainerUtil.<Double>extractOptional(event.getPayload(), MetricsFields.METRIC_VALUE_FIELD).map(v -> new GraphiteMetricData(timestamp, v));
+            Optional<String> name = ContainerUtil.extractOptional(event.getPayload(), MetricsTags.METRIC_NAME_TAG);
+            Optional<GraphiteMetricData> value = ContainerUtil.<Double>extractOptional(event.getPayload(), MetricsTags.METRIC_VALUE_TAG).map(v -> new GraphiteMetricData(timestamp, v));
             if (name.isPresent() && value.isPresent()) {
                 storage.add(name.get(), value.get());
             }

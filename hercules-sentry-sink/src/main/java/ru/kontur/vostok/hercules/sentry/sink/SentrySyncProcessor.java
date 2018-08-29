@@ -5,7 +5,7 @@ import org.apache.kafka.streams.processor.AbstractProcessor;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
-import ru.kontur.vostok.hercules.protocol.util.FieldDescription;
+import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 
 import java.util.Optional;
@@ -17,7 +17,7 @@ import java.util.UUID;
 public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
     // TODO: define project via setry-project-registry
-    public static final FieldDescription SENTRY_PROJECT_NAME_TAG = FieldDescription.create("sentry-project-name", Type.STRING);
+    public static final TagDescription SENTRY_PROJECT_NAME_TAG = TagDescription.create("sentry-project-name", Type.STRING);
 
     private final SentryClientHolder sentryClientHolder;
 

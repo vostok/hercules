@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.sentry.sink.converters;
 
 import io.sentry.event.interfaces.SentryException;
 import ru.kontur.vostok.hercules.protocol.Container;
-import ru.kontur.vostok.hercules.protocol.constants.fields.StackTraceFields;
+import ru.kontur.vostok.hercules.tags.StackTraceTag;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 
 /**
@@ -13,10 +13,10 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 public class SentryExceptionConverter {
 
     public static SentryException convert(Container container) {
-        String type = ContainerUtil.extractRequired(container, StackTraceFields.TYPE_FIELD);
-        String value = ContainerUtil.extractRequired(container, StackTraceFields.VALUE_FIELD);
-        String module = ContainerUtil.extractRequired(container, StackTraceFields.EXCEPTION_MODULE_FIELD);
-        Container[] stacktrace = ContainerUtil.extractRequired(container, StackTraceFields.STACKTRACE_FIELD);
+        String type = ContainerUtil.extractRequired(container, StackTraceTag.TYPE_TAG);
+        String value = ContainerUtil.extractRequired(container, StackTraceTag.VALUE_TAG);
+        String module = ContainerUtil.extractRequired(container, StackTraceTag.EXCEPTION_MODULE_TAG);
+        Container[] stacktrace = ContainerUtil.extractRequired(container, StackTraceTag.STACKTRACE_TAG);
 
         return new SentryException(
                 value,

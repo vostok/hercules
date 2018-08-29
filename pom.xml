@@ -60,7 +60,7 @@
         <module>hercules-cassandra-manager</module>
         <module>hercules-kafka-manager</module>
         <module>hercules-init</module>
-        <module>hercules-constants</module>
+        <module>hercules-tags</module>
     </modules>
 
     <dependencyManagement>

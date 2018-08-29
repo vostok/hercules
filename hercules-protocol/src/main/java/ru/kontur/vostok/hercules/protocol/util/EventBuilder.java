@@ -36,7 +36,7 @@ public class EventBuilder {
         tags.put(key, value);
     }
 
-    public void setTag(FieldDescription tag, Variant value) {
+    public void setTag(TagDescription tag, Variant value) {
         if (tag.getType() != value.getType()) {
             throw new IllegalArgumentException(
                     String.format("Value type mismatch, expected: %s, actual: %s", tag.getType(), value.getType())
