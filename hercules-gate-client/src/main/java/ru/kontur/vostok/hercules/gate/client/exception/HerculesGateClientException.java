@@ -1,6 +1,8 @@
 package ru.kontur.vostok.hercules.gate.client.exception;
 
 /**
+ * Common class exception of Hercules Gate Client
+ *
  * @author Daniil Zhenikhov
  */
 public class HerculesGateClientException extends Exception {

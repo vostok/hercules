@@ -47,7 +47,6 @@ public class EventPublisherFactory {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        ;
     }
 
     private EventPublisherFactory() {

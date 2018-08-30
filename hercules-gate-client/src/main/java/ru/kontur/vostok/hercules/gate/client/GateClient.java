@@ -48,6 +48,13 @@ public class GateClient implements Closeable {
         this.client = createHttpClient();
     }
 
+    /**
+     * Request to {@value #PING}
+     *
+     * @param url Gate Url
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
+     */
     public void ping(String url) throws BadRequestException, UnavailableHostException {
         sendToHost(url, urlParam -> {
             HttpGet httpGet = new HttpGet(urlParam + PING);
@@ -55,6 +62,16 @@ public class GateClient implements Closeable {
         });
     }
 
+    /**
+     * Request to {@value #SEND_ASYNC}
+     *
+     * @param url Gate url
+     * @param apiKey key for sending
+     * @param stream topic name in kafka
+     * @param data payload
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
+     */
     public void sendAsync(String url, String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableHostException {
         sendToHost(url, urlParam -> {
@@ -64,6 +81,16 @@ public class GateClient implements Closeable {
         });
     }
 
+    /**
+     * Request to {@value #SEND_ACK}
+     *
+     * @param url Gate url
+     * @param apiKey key for sending
+     * @param stream topic name in kafka
+     * @param data payload
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
+     */
     public void send(String url, String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableHostException {
         sendToHost(url, urlParam -> {
@@ -72,29 +99,86 @@ public class GateClient implements Closeable {
         });
     }
 
+    /**
+     * Request to {@value #PING}
+     *
+     * @param urls addresses pool of gate
+     * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
+     */
     public void ping(String[] urls, int retryLimit) throws BadRequestException, UnavailableClusterException {
         sendToPool(urls, retryLimit, this::ping);
     }
 
+    /**
+     * Request to {@value #SEND_ASYNC}
+     *
+     * @param urls addresses pool of gate
+     * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
+     * @param apiKey key for sending
+     * @param stream topic name in kafka
+     * @param data payload
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
+     */
     public void sendAsync(String[] urls, int retryLimit, String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
         sendToPool(urls, retryLimit, url -> sendAsync(url, apiKey, stream, data));
     }
 
+    /**
+     * Request to {@value #SEND_ACK}
+     *
+     * @param urls addresses pool of gate
+     * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
+     * @param apiKey key for sending
+     * @param stream topic name in kafka
+     * @param data payload
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
+     */
     public void send(String[] urls, int retryLimit, String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
         sendToPool(urls, retryLimit, url -> send(url, apiKey, stream, data));
     }
 
+    /**
+     * Request to {@value #PING}. Count of retry is <code>urls.length + 1</code>
+     *
+     * @param urls addresses pool of gate
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
+     */
     public void ping(String[] urls) throws BadRequestException, UnavailableClusterException {
         ping(urls, urls.length + 1);
     }
 
+    /**
+     * Request to {@value #SEND_ASYNC}. Count of retry is <code>urls.length + 1</code>
+     *
+     * @param urls addresses pool of gate
+     * @param apiKey key for sending
+     * @param stream topic name in kafka
+     * @param data payload
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
+     */
     public void sendAsync(String[] urls, String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
         sendAsync(urls, urls.length + 1, apiKey, stream, data);
     }
 
+    /**
+     * Request to {@value #SEND_ACK}. Count of retry is <code>urls.length + 1</code>
+     *
+     * @param urls addresses pool of gate
+     * @param apiKey key for sending
+     * @param stream topic name in kafka
+     * @param data payload
+     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
+     */
     public void send(String[] urls, String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
         send(urls, urls.length + 1, apiKey, stream, data);
@@ -109,6 +193,9 @@ public class GateClient implements Closeable {
     }
 
     //TODO: metrics
+    /**
+     * Strategy of sending data to addresses pool
+     */
     private void sendToPool(String[] urls, int retryLimit, HerculesRequestSender sender)
             throws BadRequestException, UnavailableClusterException {
         int seed = RANDOM.nextInt(urls.length);
@@ -129,6 +216,9 @@ public class GateClient implements Closeable {
     }
 
     //TODO: metrics
+    /**
+     * Strategy of sending data to single host
+     */
     private void sendToHost(String url, ApacheRequestSender sender)
             throws BadRequestException, UnavailableHostException {
         try {
