@@ -8,6 +8,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * Representation of event queue
+ *
  * @author Daniil Zhenikhov
  */
 public class EventQueue {
