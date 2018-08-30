@@ -1,6 +1,8 @@
 package ru.kontur.vostok.hercules.meta.auth.blacklist;
 
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
+import ru.kontur.vostok.hercules.util.schedule.Scheduler;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,9 +15,11 @@ public class Blacklist {
     private final CuratorClient curatorClient;
     private final AtomicReference<ConcurrentHashMap<String, Object>> apiKeys = new AtomicReference<>(new ConcurrentHashMap<>());
     private final AtomicReference<State> state = new AtomicReference<>(State.INIT);
+    private final RenewableTask updateTask;
 
-    public Blacklist(CuratorClient curatorClient) {
+    public Blacklist(CuratorClient curatorClient, Scheduler scheduler) {
         this.curatorClient = curatorClient;
+        this.updateTask = scheduler.task(this::update, 60_000, false);
     }
 
     public boolean contains(String apiKey) {
@@ -30,21 +34,30 @@ public class Blacklist {
             throw new IllegalStateException("Invalid state of blacklist");
         }
 
-        update();
+        updateTask.renew();
 
         state.set(State.RUNNING);
     }
 
     public void stop() {
         state.set(State.STOPPED);
+        updateTask.disable();
     }
 
-    private void update() throws Exception {
+    private void update() {
         if (state.get() == State.STOPPED) {
             return;
         }
 
-        List<String> children = curatorClient.children("/hercules/auth/blacklist", e -> update());
+        List<String> children;
+        try {
+            children = curatorClient.children("/hercules/auth/blacklist", e -> {
+                updateTask.renew();
+            });
+        } catch (Exception e) {
+            e.printStackTrace();//TODO: Log it!
+            return;
+        }
 
         ConcurrentHashMap<String, Object> newApiKeys = new ConcurrentHashMap<>(children.size());
         for (String apiKey : children) {

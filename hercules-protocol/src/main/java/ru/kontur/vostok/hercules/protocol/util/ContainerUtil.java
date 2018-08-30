@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
-import ru.kontur.vostok.hercules.protocol.Type;
 
 import java.util.Optional;
 
@@ -12,12 +11,12 @@ import java.util.Optional;
  */
 public class ContainerUtil {
 
-    public static <T> Optional<T> extractOptional(Container container, String fieldName, Type type, Type... types) {
-        return VariantUtil.extractRegardingType(container.get(fieldName), type, types);
+    public static <T> Optional<T> extractOptional(Container container, TagDescription tag) {
+        return VariantUtil.extractRegardingType(container.get(tag.getName()), tag.getType());
     }
 
-    public static <T> T extractRequired(Container container, String fieldName, Type type, Type ... types) {
-        return ContainerUtil.<T>extractOptional(container, fieldName, type, types)
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required field '%s' of type %s", fieldName, type)));
+    public static <T> T extractRequired(Container container, TagDescription tag) {
+        return ContainerUtil.<T>extractOptional(container, tag)
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required tag '%s' of type %s", tag.getName(), tag.getType())));
     }
 }

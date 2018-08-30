@@ -14,10 +14,10 @@ import java.util.Map;
 public class ContainerBuilder {
 
     private boolean wasBuilt = false;
-    private final Map<String, Variant> fields = new HashMap<>();
+    private final Map<String, Variant> tags = new HashMap<>();
 
-    public ContainerBuilder field(String key, Variant value) {
-        fields.put(key, value);
+    public ContainerBuilder tag(String key, Variant value) {
+        tags.put(key, value);
         return this;
     }
 
@@ -27,7 +27,7 @@ public class ContainerBuilder {
         }
         wasBuilt = true;
 
-        return new Container(fields);
+        return new Container(tags);
     }
 
     public static ContainerBuilder create() {

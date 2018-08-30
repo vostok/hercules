@@ -7,7 +7,7 @@
     <groupId>ru.kontur.vostok.hercules</groupId>
     <artifactId>hercules</artifactId>
     <packaging>pom</packaging>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -15,13 +15,14 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <hercules.version>0.6.0-SNAPSHOT</hercules.version>
+        <hercules.version>0.7.0-SNAPSHOT</hercules.version>
 
         <kafka.version>1.1.0</kafka.version>
         <zookeeper.version>3.4.12</zookeeper.version>
         <curator.version>4.0.1</curator.version>
         <cassandra-driver.version>3.5.0</cassandra-driver.version>
         <undertow.version>2.0.7.Final</undertow.version>
+        <jetty.version>9.4.11.v20180605</jetty.version>
         <metrics.version>4.0.2</metrics.version>
         <jackson.version>2.9.5</jackson.version>
         <guava.version>20.0</guava.version>
@@ -39,6 +40,7 @@
         <module>hercules-configuration</module>
         <module>hercules-protocol</module>
         <module>hercules-partitioner</module>
+        <module>hercules-throttling</module>
         <module>hercules-meta</module>
         <module>hercules-auth</module>
         <module>hercules-gate</module>
@@ -60,11 +62,13 @@
         <module>hercules-cassandra-manager</module>
         <module>hercules-kafka-manager</module>
         <module>hercules-init</module>
+        <module>hercules-tags</module>
+        <module>hercules-http</module>
+        <module>hercules-http-jetty</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
-        
             <!-- Jetbrains Annotations -->
             <dependency>
                 <groupId>org.jetbrains</groupId>
@@ -162,6 +166,13 @@
                 <version>${undertow.version}</version>
             </dependency>
 
+            <!-- Jetty - HTTP-server -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+
             <!-- Metrics -->
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
@@ -236,6 +247,11 @@
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-throttling</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-undertow-util</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
@@ -294,6 +310,16 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-management-task</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-tags</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-http</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 

@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
@@ -142,6 +144,46 @@ public class EventToElasticJsonWriterTest {
     @Test
     public void shouldConvertEventWithTextArrayVariant() throws Exception {
         assertVariantConverted("[\"Абв\",\"Ежз\"]", Variant.ofTextArray(new String[]{"Абв", "Ежз"}));
+    }
+
+    @Test
+    public void shouldWriteContainer() throws Exception {
+        ContainerBuilder containerBuilder = ContainerBuilder.create();
+        containerBuilder.tag("a", Variant.ofInteger(123));
+
+        assertVariantConverted(
+                "{\"a\":123}",
+                Variant.ofContainer(containerBuilder.build())
+        );
+    }
+
+    @Test
+    public void shouldWriteNestedContainer() throws Exception {
+        ContainerBuilder nested = ContainerBuilder.create();
+        nested.tag("a", Variant.ofInteger(123));
+
+        ContainerBuilder wrapper = ContainerBuilder.create();
+        wrapper.tag("nested", Variant.ofContainer(nested.build()));
+
+
+        assertVariantConverted(
+                "{\"nested\":{\"a\":123}}",
+                Variant.ofContainer(wrapper.build())
+        );
+    }
+
+    @Test
+    public void shouldWriteArrayOfContainers() throws Exception {
+        ContainerBuilder first = ContainerBuilder.create();
+        first.tag("a", Variant.ofInteger(123));
+
+        ContainerBuilder second = ContainerBuilder.create();
+        second.tag("b", Variant.ofInteger(456));
+
+        assertVariantConverted(
+                "[{\"a\":123},{\"b\":456}]",
+                Variant.ofContainerArray(new Container[]{first.build(), second.build()})
+        );
     }
 
     private void assertVariantConverted(String convertedVariant, Variant variant) throws Exception {

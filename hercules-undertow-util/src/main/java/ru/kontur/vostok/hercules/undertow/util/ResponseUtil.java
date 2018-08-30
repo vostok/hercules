@@ -45,4 +45,9 @@ public class ResponseUtil {
         exchange.setStatusCode(500);
         exchange.endExchange();
     }
+
+    public static void serviceUnavailable(HttpServerExchange exchange) {
+        exchange.setStatusCode(503);
+        exchange.endExchange();
+    }
 }

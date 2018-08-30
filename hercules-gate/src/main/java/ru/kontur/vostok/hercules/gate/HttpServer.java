@@ -4,6 +4,7 @@ import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
@@ -20,8 +21,12 @@ public class HttpServer {
         String host = properties.getProperty("host", "0.0.0.0");
         int port = PropertiesExtractor.get(properties, "port", 6306);
 
-        HttpHandler sendAsyncHandler = new SendAsyncHandler(metricsCollector, authManager, authValidationManager, eventSender, streamRepository);
-        HttpHandler sendHandler = new SendHandler(metricsCollector, authManager, authValidationManager, eventSender, streamRepository);
+        Properties throttlingProperties = PropertiesUtil.ofScope(properties, "throttling");
+
+        SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(metricsCollector, eventSender);
+
+        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, sendRequestProcessor, authValidationManager, streamRepository, true);
+        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, sendRequestProcessor, authValidationManager, streamRepository, false);
 
         HttpHandler handler = Handlers.routing()
                 .get("/ping", exchange -> {
