@@ -13,7 +13,6 @@ import ru.kontur.vostok.hercules.tags.StackTraceTag;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
-import ru.kontur.vostok.hercules.sentry.sink.SentrySyncProcessor;
 import ru.kontur.vostok.hercules.util.enumeration.EnumUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -39,7 +38,6 @@ public class SentryEventConverter {
     private static final Sdk SDK = new Sdk(SDK_NAME, SDK_VERSION, null);
 
     private static final Set<String> IGNORED_TAGS = Stream.of(
-            SentrySyncProcessor.SENTRY_PROJECT_NAME_TAG,
             StackTraceTag.EXCEPTIONS_TAG,
             StackTraceTag.MESSAGE_TAG,
             StackTraceTag.LEVEL_TAG,

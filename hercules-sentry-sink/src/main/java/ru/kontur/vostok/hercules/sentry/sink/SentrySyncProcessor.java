@@ -2,11 +2,14 @@ package ru.kontur.vostok.hercules.sentry.sink;
 
 import io.sentry.SentryClient;
 import org.apache.kafka.streams.processor.AbstractProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
+import ru.kontur.vostok.hercules.tags.CommonTags;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -16,8 +19,7 @@ import java.util.UUID;
  */
 public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
-    // TODO: define project via setry-project-registry
-    public static final TagDescription SENTRY_PROJECT_NAME_TAG = TagDescription.create("sentry-project-name", Type.STRING);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
     private final SentryClientHolder sentryClientHolder;
 
@@ -27,16 +29,15 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
     @Override
     public void process(UUID key, Event value) {
-        Optional<String> token = ContainerUtil.extractOptional(value.getPayload(), SENTRY_PROJECT_NAME_TAG);
-        if (!token.isPresent()) {
-            // TODO: logging
-            System.out.println("Missing required tag '" + SENTRY_PROJECT_NAME_TAG.getName() + "'");
+        Optional<String> project = ContainerUtil.extractOptional(value.getPayload(), CommonTags.PROJECT_TAG);
+        if (!project.isPresent()) {
+            LOGGER.warn("Missing required tag '" + CommonTags.PROJECT_TAG.getName() + "'");
             return;
         }
 
-        Optional<SentryClient> sentryClient = sentryClientHolder.getClient(token.get());
+        Optional<SentryClient> sentryClient = sentryClientHolder.getClient("sentry/" + project.get());
         if (!sentryClient.isPresent()) {
-            System.out.println("Missing client for project '" + token.get() + "'");
+            LOGGER.warn("Missing client for project '" + project.get() + "'");
             return;
         }
 
