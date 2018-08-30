@@ -41,9 +41,9 @@ public class SentryEventConverter {
             StackTraceTag.EXCEPTIONS_TAG,
             StackTraceTag.MESSAGE_TAG,
             StackTraceTag.LEVEL_TAG,
-            CommonTags.ENVIRONMENT_TAG,
             StackTraceTag.RELEASE_TAG,
-            StackTraceTag.SERVER_TAG
+            StackTraceTag.SERVER_TAG,
+            CommonTags.ENVIRONMENT_TAG
     ).map(TagDescription::getName).collect(Collectors.toSet());
 
     private static final String DEFAULT_PLATFORM = "";
@@ -61,6 +61,7 @@ public class SentryEventConverter {
                 .ifPresent(eventBuilder::withMessage);
 
         ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.LEVEL_TAG)
+                .map(SentryEventConverter::prepareLevel)
                 .flatMap(s -> EnumUtil.parseOptional(Level.class, s))
                 .ifPresent(eventBuilder::withLevel);
 
@@ -105,7 +106,7 @@ public class SentryEventConverter {
         return Arrays.stream(containers.get())
                 .flatMap(container -> Arrays.stream(ContainerUtil.<Container[]>extractOptional(container, StackTraceTag.STACKTRACE_TAG).orElse(new Container[0])))
                 .findAny()
-                .map(container -> ContainerUtil.<String>extractRequired(container, StackTraceTag.FILENAME_TAG))
+                .map(container -> ContainerUtil.<String>extractOptional(container, StackTraceTag.FILENAME_TAG).orElse(null))
                 .map(SentryEventConverter::resolvePlatformByFileName)
                 .orElse(DEFAULT_PLATFORM);
     }
@@ -123,5 +124,17 @@ public class SentryEventConverter {
             return "python";
         }
         return DEFAULT_PLATFORM;
+    }
+
+    /*
+     * C-sharp client use "warn" as level value, so we must adapt it to sentry Level enum
+     */
+    private static String prepareLevel(String original) {
+        if ("warn".equals(original.toLowerCase())) {
+            return "warning";
+        }
+        else {
+            return original;
+        }
     }
 }

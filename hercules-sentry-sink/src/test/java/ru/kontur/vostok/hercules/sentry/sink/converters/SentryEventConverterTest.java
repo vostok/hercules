@@ -22,7 +22,7 @@ public class SentryEventConverterTest {
         stackFrame0Map.put("fun", Variant.ofString("function"));
         stackFrame0Map.put("fnm", Variant.ofString("SomeModule.java"));
         stackFrame0Map.put("ln", Variant.ofInteger(100));
-        stackFrame0Map.put("cn", Variant.ofShort((short) 12));
+        stackFrame0Map.put("cn", Variant.ofInteger(12));
         stackFrame0Map.put("abs", Variant.ofText("/home/usr/git/project/src/java/com/example/test/SomeModule.java"));
 
         Map<String, Variant> stackFrame1Map = new HashMap<>();
@@ -30,7 +30,7 @@ public class SentryEventConverterTest {
         stackFrame1Map.put("fun", Variant.ofString("function"));
         stackFrame1Map.put("fnm", Variant.ofString("AnotherModule.java"));
         stackFrame1Map.put("ln", Variant.ofInteger(200));
-        stackFrame1Map.put("cn", Variant.ofShort((short) 13));
+        stackFrame1Map.put("cn", Variant.ofInteger(13));
         stackFrame1Map.put("abs", Variant.ofText("/home/usr/git/project/src/java/com/example/test/AnotherModule.java"));
 
         Map<String, Variant> exceptionMap = new HashMap<>();

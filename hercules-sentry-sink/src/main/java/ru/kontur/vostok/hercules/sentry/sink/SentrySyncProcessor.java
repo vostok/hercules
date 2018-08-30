@@ -41,6 +41,12 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
             return;
         }
 
-        sentryClient.get().sendEvent(SentryEventConverter.convert(value));
+        try {
+            io.sentry.event.Event sentryEvent = SentryEventConverter.convert(value);
+            sentryClient.get().sendEvent(sentryEvent);
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception while trying to process event", e);
+        }
     }
 }

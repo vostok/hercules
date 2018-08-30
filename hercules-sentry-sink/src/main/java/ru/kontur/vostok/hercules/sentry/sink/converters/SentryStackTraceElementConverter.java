@@ -16,10 +16,10 @@ public class SentryStackTraceElementConverter {
         return new SentryStackTraceElement(
                 ContainerUtil.extractRequired(container, StackTraceTag.STACK_FRAME_MODULE_TAG),
                 ContainerUtil.extractRequired(container, StackTraceTag.FUNCTION_TAG),
-                ContainerUtil.extractRequired(container, StackTraceTag.FILENAME_TAG),
-                ContainerUtil.extractRequired(container, StackTraceTag.LINE_NUMBER_TAG),
-                ContainerUtil.<Short>extractOptional(container, StackTraceTag.COLUMN_NUMBER_TAG).map(Short::intValue).orElse(null),
-                ContainerUtil.extractRequired(container, StackTraceTag.ABS_PATH_TAG),
+                ContainerUtil.<String>extractOptional(container, StackTraceTag.FILENAME_TAG).orElse(null),
+                ContainerUtil.<Integer>extractOptional(container, StackTraceTag.LINE_NUMBER_TAG).orElse(0),
+                ContainerUtil.<Integer>extractOptional(container, StackTraceTag.COLUMN_NUMBER_TAG).orElse(null),
+                ContainerUtil.<String>extractOptional(container, StackTraceTag.ABS_PATH_TAG).orElse(null),
                 null
         );
     }
