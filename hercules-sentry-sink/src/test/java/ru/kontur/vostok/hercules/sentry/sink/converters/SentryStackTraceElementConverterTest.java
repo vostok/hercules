@@ -17,7 +17,7 @@ public class SentryStackTraceElementConverterTest {
                 .tag("fun", Variant.ofString("testFunction"))
                 .tag("fnm", Variant.ofString("SomeFile.java"))
                 .tag("ln", Variant.ofInteger(123))
-                .tag("cn", Variant.ofShort((short) 456))
+                .tag("cn", Variant.ofInteger(456))
                 .tag("abs", Variant.ofText("/just/some/path/to/SomeFile.java"))
                 .build();
 
@@ -27,7 +27,7 @@ public class SentryStackTraceElementConverterTest {
         Assert.assertEquals("testFunction", result.getFunction());
         Assert.assertEquals("SomeFile.java", result.getFileName());
         Assert.assertEquals(123, result.getLineno());
-        Assert.assertEquals(456, result.getColno().intValue());
+        Assert.assertEquals(456, (int) result.getColno());
         Assert.assertEquals("/just/some/path/to/SomeFile.java", result.getAbsPath());
     }
 
@@ -44,39 +44,6 @@ public class SentryStackTraceElementConverterTest {
         SentryStackTraceElementConverter.convert(
                 ContainerBuilder.create()
                         .tag("mod", Variant.ofText("test.module"))
-                        .build()
-        );
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowOnMissingFilename() throws Exception {
-        SentryStackTraceElementConverter.convert(
-                ContainerBuilder.create()
-                        .tag("mod", Variant.ofText("test.module"))
-                        .tag("fun", Variant.ofString("testFunction"))
-                        .build()
-        );
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowOnMissingLineNumber() throws Exception {
-        SentryStackTraceElementConverter.convert(
-                ContainerBuilder.create()
-                        .tag("mod", Variant.ofText("test.module"))
-                        .tag("fun", Variant.ofString("testFunction"))
-                        .tag("fnm", Variant.ofString("SomeFile.java"))
-                        .build()
-        );
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowOnMissingAbsPath() throws Exception {
-        SentryStackTraceElementConverter.convert(
-                ContainerBuilder.create()
-                        .tag("mod", Variant.ofText("test.module"))
-                        .tag("fun", Variant.ofString("testFunction"))
-                        .tag("fnm", Variant.ofString("SomeFile.java"))
-                        .tag("ln", Variant.ofInteger(123))
                         .build()
         );
     }

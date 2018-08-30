@@ -13,7 +13,6 @@ import ru.kontur.vostok.hercules.tags.StackTraceTag;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
-import ru.kontur.vostok.hercules.sentry.sink.SentrySyncProcessor;
 import ru.kontur.vostok.hercules.util.enumeration.EnumUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -39,13 +38,12 @@ public class SentryEventConverter {
     private static final Sdk SDK = new Sdk(SDK_NAME, SDK_VERSION, null);
 
     private static final Set<String> IGNORED_TAGS = Stream.of(
-            SentrySyncProcessor.SENTRY_PROJECT_NAME_TAG,
             StackTraceTag.EXCEPTIONS_TAG,
             StackTraceTag.MESSAGE_TAG,
             StackTraceTag.LEVEL_TAG,
-            CommonTags.ENVIRONMENT_TAG,
             StackTraceTag.RELEASE_TAG,
-            StackTraceTag.SERVER_TAG
+            StackTraceTag.SERVER_TAG,
+            CommonTags.ENVIRONMENT_TAG
     ).map(TagDescription::getName).collect(Collectors.toSet());
 
     private static final String DEFAULT_PLATFORM = "";
@@ -63,6 +61,7 @@ public class SentryEventConverter {
                 .ifPresent(eventBuilder::withMessage);
 
         ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.LEVEL_TAG)
+                .map(SentryEventConverter::prepareLevel)
                 .flatMap(s -> EnumUtil.parseOptional(Level.class, s))
                 .ifPresent(eventBuilder::withLevel);
 
@@ -107,7 +106,7 @@ public class SentryEventConverter {
         return Arrays.stream(containers.get())
                 .flatMap(container -> Arrays.stream(ContainerUtil.<Container[]>extractOptional(container, StackTraceTag.STACKTRACE_TAG).orElse(new Container[0])))
                 .findAny()
-                .map(container -> ContainerUtil.<String>extractRequired(container, StackTraceTag.FILENAME_TAG))
+                .map(container -> ContainerUtil.<String>extractOptional(container, StackTraceTag.FILENAME_TAG).orElse(null))
                 .map(SentryEventConverter::resolvePlatformByFileName)
                 .orElse(DEFAULT_PLATFORM);
     }
@@ -125,5 +124,17 @@ public class SentryEventConverter {
             return "python";
         }
         return DEFAULT_PLATFORM;
+    }
+
+    /*
+     * C-sharp client use "warn" as level value, so we must adapt it to sentry Level enum
+     */
+    private static String prepareLevel(String original) {
+        if ("warn".equals(original.toLowerCase())) {
+            return "warning";
+        }
+        else {
+            return original;
+        }
     }
 }

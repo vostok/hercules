@@ -81,7 +81,7 @@ public final class StackTraceTag {
     /**
      * Stacktrace frame column number
      */
-    public static final TagDescription COLUMN_NUMBER_TAG = TagDescription.create( "cn", Type.SHORT);
+    public static final TagDescription COLUMN_NUMBER_TAG = TagDescription.create( "cn", Type.INTEGER);
 
     /**
      * Stacktrace frame file path

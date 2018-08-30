@@ -28,14 +28,8 @@ public class SentrySinkDaemon {
         Properties streamsProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
         Properties sentryProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
-        //TODO: Validate sinkProperties
-        if (!streamsProperties.containsKey("stream.name")) {
-            System.out.println("Validation fails (streams.properties): 'stream.name' should be specified");
-            return;
-        }
-
         try {
-            String streamPattern = PropertiesExtractor.getRequiredProperty(streamsProperties, "stream.name", String.class);
+            String streamPattern = PropertiesExtractor.getRequiredProperty(streamsProperties, "stream.pattern", String.class);
             String sentryUrl = PropertiesExtractor.getRequiredProperty(sentryProperties, "sentry.url", String.class);
             String sentryToken = PropertiesExtractor.getRequiredProperty(sentryProperties, "sentry.token", String.class);
 
