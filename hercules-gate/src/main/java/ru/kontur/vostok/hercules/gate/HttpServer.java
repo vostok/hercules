@@ -3,10 +3,15 @@ package ru.kontur.vostok.hercules.gate;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
+import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
+import ru.kontur.vostok.hercules.throttling.Throttle;
+import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowRequestWeigher;
+import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowThrottledRequestProcessor;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Properties;
@@ -16,6 +21,7 @@ import java.util.Properties;
  */
 public class HttpServer {
     private final Undertow undertow;
+    private final Throttle<HttpServerExchange, SendContext> throttle;
 
     public HttpServer(MetricsCollector metricsCollector, Properties properties, AuthManager authManager, AuthValidationManager authValidationManager, EventSender eventSender, StreamRepository streamRepository) {
         String host = properties.getProperty("host", "0.0.0.0");
@@ -24,9 +30,15 @@ public class HttpServer {
         Properties throttlingProperties = PropertiesUtil.ofScope(properties, "throttling");
 
         SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(metricsCollector, eventSender);
+        this.throttle = new CapacityThrottle<>(
+                PropertiesExtractor.get(throttlingProperties, "capacity", 100_000_000L),
+                PropertiesExtractor.get(throttlingProperties, "requestTimeout", 5_000L),
+                new DefaultUndertowRequestWeigher(),
+                sendRequestProcessor,
+                new DefaultUndertowThrottledRequestProcessor());
 
-        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, sendRequestProcessor, authValidationManager, streamRepository, true);
-        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, sendRequestProcessor, authValidationManager, streamRepository, false);
+        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, true);
+        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, false);
 
         HttpHandler handler = Handlers.routing()
                 .get("/ping", exchange -> {
