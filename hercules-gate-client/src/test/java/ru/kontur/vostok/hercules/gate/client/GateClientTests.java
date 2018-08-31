@@ -1,18 +1,12 @@
 package ru.kontur.vostok.hercules.gate.client;
 
-import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
+import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
-
-import java.io.IOException;
 
 /**
  * @author Daniil Zhenikhov
@@ -28,32 +22,32 @@ public class GateClientTests {
     private static GateClient GATE_CLIENT = new GateClient(HTTP_CLIENT);
 
     @Test(expected = BadRequestException.class)
-    public void shouldThrow_Host_Return4xx() throws BadRequestException, UnavailableHostException {
+    public void shouldThrow_Host_Return4xx() throws BadRequestException, UnavailableHostException, HttpProtocolException {
         GATE_CLIENT.ping(_4xx_ADDR);
     }
 
     @Test(expected = UnavailableHostException.class)
-    public void shouldThrow_Hots_return5xx() throws BadRequestException, UnavailableHostException {
+    public void shouldThrow_Hots_return5xx() throws BadRequestException, UnavailableHostException, HttpProtocolException {
         GATE_CLIENT.ping(_5xx_ADDR);
     }
 
     @Test(expected = BadRequestException.class)
     public void shouldThrow_Cluster_return4xx() throws BadRequestException, UnavailableClusterException {
-        GATE_CLIENT.ping(new String[] {_4xx_ADDR, _5xx_ADDR, _503_ADDR});
+        GATE_CLIENT.ping(new String[]{_4xx_ADDR, _5xx_ADDR, _503_ADDR});
     }
 
     @Test(expected = UnavailableClusterException.class)
     public void shouldThrow_Cluster_return5xx() throws BadRequestException, UnavailableClusterException {
-        GATE_CLIENT.ping(new String[] {_5xx_ADDR, _503_ADDR});
+        GATE_CLIENT.ping(new String[]{_5xx_ADDR, _503_ADDR});
     }
 
-    @Test(expected = BadRequestException.class)
-    public void shouldThrow_Host_throwClientProtocolExc() throws BadRequestException, UnavailableHostException {
+    @Test(expected = HttpProtocolException.class)
+    public void shouldThrow_Host_throwClientProtocolExc() throws BadRequestException, UnavailableHostException, HttpProtocolException {
         GATE_CLIENT.ping(CLIENT_PROTOCOL_EXC_ADDR);
     }
 
     @Test(expected = UnavailableHostException.class)
-    public void shouldThrow_Host_throwIOException() throws BadRequestException, UnavailableHostException {
+    public void shouldThrow_Host_throwIOException() throws BadRequestException, UnavailableHostException, HttpProtocolException {
         GATE_CLIENT.ping(IOEXC_ADDR);
     }
 }
