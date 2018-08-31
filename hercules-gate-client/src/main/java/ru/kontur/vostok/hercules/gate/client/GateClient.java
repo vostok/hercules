@@ -15,6 +15,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
+import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
 
@@ -55,7 +56,7 @@ public class GateClient implements Closeable {
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
-    public void ping(String url) throws BadRequestException, UnavailableHostException {
+    public void ping(String url) throws BadRequestException, UnavailableHostException, HttpProtocolException {
         sendToHost(url, urlParam -> {
             HttpGet httpGet = new HttpGet(urlParam + PING);
             return sendRequest(httpGet);
@@ -73,7 +74,7 @@ public class GateClient implements Closeable {
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
     public void sendAsync(String url, String apiKey, String stream, final byte[] data)
-            throws BadRequestException, UnavailableHostException {
+            throws BadRequestException, UnavailableHostException, HttpProtocolException {
         sendToHost(url, urlParam -> {
             HttpPost httpPost = buildRequest(url, apiKey, SEND_ASYNC, stream, data);
             client.execute(httpPost);
@@ -92,7 +93,7 @@ public class GateClient implements Closeable {
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
     public void send(String url, String apiKey, String stream, final byte[] data)
-            throws BadRequestException, UnavailableHostException {
+            throws BadRequestException, UnavailableHostException, HttpProtocolException {
         sendToHost(url, urlParam -> {
             HttpPost httpPost = buildRequest(url, apiKey, SEND_ACK, stream, data);
             return sendRequest(httpPost);
@@ -107,7 +108,8 @@ public class GateClient implements Closeable {
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void ping(String[] urls, int retryLimit) throws BadRequestException, UnavailableClusterException {
+    public void ping(String[] urls, int retryLimit)
+            throws BadRequestException, UnavailableClusterException {
         sendToPool(urls, retryLimit, this::ping);
     }
 
@@ -150,7 +152,8 @@ public class GateClient implements Closeable {
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void ping(String[] urls) throws BadRequestException, UnavailableClusterException {
+    public void ping(String[] urls)
+            throws BadRequestException, UnavailableClusterException {
         ping(urls, urls.length + 1);
     }
 
@@ -207,7 +210,7 @@ public class GateClient implements Closeable {
             try {
                 sender.send(urls[i]);
                 return;
-            } catch (UnavailableHostException e) {
+            } catch (HttpProtocolException | UnavailableHostException e) {
                 LOGGER.warn(e.getMessage());
             }
         }
@@ -220,7 +223,7 @@ public class GateClient implements Closeable {
      * Strategy of sending data to single host
      */
     private void sendToHost(String url, ApacheRequestSender sender)
-            throws BadRequestException, UnavailableHostException {
+            throws BadRequestException, UnavailableHostException, HttpProtocolException {
         try {
             int statusCode = sender.send(url);
 
@@ -230,7 +233,7 @@ public class GateClient implements Closeable {
                 throw new UnavailableHostException(url);
             }
         } catch (ClientProtocolException e) {
-            throw new BadRequestException(e);
+            throw new HttpProtocolException(e);
         } catch (IOException e) {
             throw new UnavailableHostException(url, e);
         }
@@ -291,6 +294,6 @@ public class GateClient implements Closeable {
 
     @FunctionalInterface
     private interface HerculesRequestSender {
-        void send(String url) throws BadRequestException, UnavailableHostException;
+        void send(String url) throws BadRequestException, UnavailableHostException, HttpProtocolException;
     }
 }
