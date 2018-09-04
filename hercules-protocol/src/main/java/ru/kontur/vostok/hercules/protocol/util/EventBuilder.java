@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.ContainerWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
@@ -10,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Simple Event build. NOT thread-safe
@@ -36,10 +38,11 @@ public class EventBuilder {
         tags.put(key, value);
     }
 
-    public void setTag(TagDescription tag, Variant value) {
-        if (tag.getType() != value.getType()) {
+    public <T> void setTag(TagDescription<T> tag, Variant value) {
+        if (!tag.getExtractors().containsKey(value.getType())) {
+            String allowedValues = "[" + tag.getExtractors().keySet().stream().map(String::valueOf).collect(Collectors.joining()) + "]";
             throw new IllegalArgumentException(
-                    String.format("Value type mismatch, expected: %s, actual: %s", tag.getType(), value.getType())
+                    String.format("Value type mismatch, expected one of %s, actual: %s", allowedValues, value.getType())
             );
         }
         setTag(tag.getName(), value);

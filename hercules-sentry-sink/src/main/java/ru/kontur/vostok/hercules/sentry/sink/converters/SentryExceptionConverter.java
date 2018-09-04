@@ -13,10 +13,10 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 public class SentryExceptionConverter {
 
     public static SentryException convert(Container container) {
-        String type = ContainerUtil.extractRequired(container, StackTraceTag.TYPE_TAG);
-        String value = ContainerUtil.extractRequired(container, StackTraceTag.VALUE_TAG);
-        String module = ContainerUtil.extractRequired(container, StackTraceTag.EXCEPTION_MODULE_TAG);
-        Container[] stacktrace = ContainerUtil.extractRequired(container, StackTraceTag.STACKTRACE_TAG);
+        String type = ContainerUtil.extract(container, StackTraceTag.TYPE_TAG);
+        String value = ContainerUtil.extract(container, StackTraceTag.VALUE_TAG);
+        String module = ContainerUtil.extract(container, StackTraceTag.EXCEPTION_MODULE_TAG);
+        Container[] stacktrace = ContainerUtil.extract(container, StackTraceTag.STACKTRACE_TAG).orElseGet(() -> new Container[0]);
 
         return new SentryException(
                 value,

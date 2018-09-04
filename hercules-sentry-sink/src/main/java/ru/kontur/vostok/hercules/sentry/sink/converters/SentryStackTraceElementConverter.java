@@ -14,12 +14,12 @@ public class SentryStackTraceElementConverter {
 
     public static SentryStackTraceElement convert(Container container) {
         return new SentryStackTraceElement(
-                ContainerUtil.extractRequired(container, StackTraceTag.STACK_FRAME_MODULE_TAG),
-                ContainerUtil.extractRequired(container, StackTraceTag.FUNCTION_TAG),
-                ContainerUtil.<String>extractOptional(container, StackTraceTag.FILENAME_TAG).orElse(null),
-                ContainerUtil.<Integer>extractOptional(container, StackTraceTag.LINE_NUMBER_TAG).orElse(0),
-                ContainerUtil.<Integer>extractOptional(container, StackTraceTag.COLUMN_NUMBER_TAG).orElse(null),
-                ContainerUtil.<String>extractOptional(container, StackTraceTag.ABS_PATH_TAG).orElse(null),
+                ContainerUtil.extract(container, StackTraceTag.STACK_FRAME_MODULE_TAG),
+                ContainerUtil.extract(container, StackTraceTag.FUNCTION_TAG),
+                ContainerUtil.extract(container, StackTraceTag.FILENAME_TAG).orElse(null),
+                ContainerUtil.extract(container, StackTraceTag.LINE_NUMBER_TAG).orElse(0),
+                ContainerUtil.extract(container, StackTraceTag.COLUMN_NUMBER_TAG).orElse(null),
+                ContainerUtil.extract(container, StackTraceTag.ABS_PATH_TAG).orElse(null),
                 null
         );
     }

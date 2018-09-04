@@ -33,8 +33,8 @@ public class GraphiteEventSender implements BulkSender<Event> {
 
         for (Event event : events) {
             final long timestamp = TimeUtil.gregorianTicksToUnixTime(event.getId().timestamp()) / 1000;
-            Optional<String> name = ContainerUtil.extractOptional(event.getPayload(), MetricsTags.METRIC_NAME_TAG);
-            Optional<GraphiteMetricData> value = ContainerUtil.<Double>extractOptional(event.getPayload(), MetricsTags.METRIC_VALUE_TAG).map(v -> new GraphiteMetricData(timestamp, v));
+            Optional<String> name = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_NAME_TAG);
+            Optional<GraphiteMetricData> value = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_VALUE_TAG).map(v -> new GraphiteMetricData(timestamp, v));
             if (name.isPresent() && value.isPresent()) {
                 storage.add(name.get(), value.get());
             }
