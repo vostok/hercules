@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Type;
-import ru.kontur.vostok.hercules.util.enumeration.EnumUtil;
 
 import java.util.HashMap;
 import java.util.Map;
