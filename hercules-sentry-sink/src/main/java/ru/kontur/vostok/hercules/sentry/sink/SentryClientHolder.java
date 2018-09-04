@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 public class SentryClientHolder {
 
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
-    private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disable warn message
+    private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
     private final AtomicReference<Map<String, SentryClient>> clients = new AtomicReference<>(Collections.emptyMap());
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
