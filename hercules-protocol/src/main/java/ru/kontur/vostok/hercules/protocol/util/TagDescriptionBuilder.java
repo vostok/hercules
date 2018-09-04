@@ -39,10 +39,7 @@ public class TagDescriptionBuilder<T> {
     }
 
     public static <T> TagDescriptionBuilder<T> parsable(String name, Function<String, ? extends T> parser) {
-        Function<Object, ? extends T> extractor = o -> parser.apply(StandardExtractors.extractString(o));
-        return new TagDescriptionBuilder<T>(name)
-                .addExtractor(Type.STRING, extractor)
-                .addExtractor(Type.TEXT, extractor);
+        return textual(name).convert(parser);
     }
 
     public static <T extends Enum<T>> TagDescriptionBuilder<T> enumValue(String name, Class<T> clazz) {
@@ -68,11 +65,7 @@ public class TagDescriptionBuilder<T> {
 
     public <T2> TagDescriptionBuilder<T2> convert(Function<? super T, ? extends T2> converter) {
         TagDescriptionBuilder<T2> result = new TagDescriptionBuilder<>(this.tagName);
-        for (Map.Entry<Type, Function<Object, ? extends T>> entry : this.extractors.entrySet()) {
-            Type type = entry.getKey();
-            Function<Object, ? extends T> extractor = entry.getValue();
-            result.addExtractor(type, extractor.andThen(converter));
-        }
+        this.extractors.forEach((type, extractor) -> result.addExtractor(type, extractor.andThen(converter)));
         return result;
     }
 
