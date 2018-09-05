@@ -1,7 +1,10 @@
 package ru.kontur.vostok.hercules.tags;
 
-import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
+import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
+
+import java.util.Optional;
 
 /**
  * StackTraceTag collection of tag for stacktrace info
@@ -14,77 +17,109 @@ public final class StackTraceTag {
     /**
      * List of exceptions from trown to causes
      */
-    public static final TagDescription EXCEPTIONS_TAG = TagDescription.create("exc", Type.CONTAINER_VECTOR);
+    public static final TagDescription<Optional<Container[]>> EXCEPTIONS_TAG = TagDescriptionBuilder
+            .containerList("exc")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     /**
      * Exception message
      */
-    public static final TagDescription MESSAGE_TAG = TagDescription.create("msg", Type.TEXT);
+    public static final TagDescription<Optional<String>> MESSAGE_TAG = TagDescriptionBuilder.textual("msg")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     /**
      * Error level
      */
-    public static final TagDescription LEVEL_TAG = TagDescription.create("lvl", Type.STRING);
+    public static final TagDescription<Optional<String>> LEVEL_TAG = TagDescriptionBuilder.textual("lvl")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     /**
      * Release name
      */
-    public static final TagDescription RELEASE_TAG = TagDescription.create("rlz", Type.STRING);
+    public static final TagDescription<Optional<String>> RELEASE_TAG = TagDescriptionBuilder.textual("rlz")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     /**
      * Server name
      */
-    public static final TagDescription SERVER_TAG = TagDescription.create("srv", Type.STRING);
+    public static final TagDescription<Optional<String>> SERVER_TAG = TagDescriptionBuilder.textual("srv")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     // Exception tags
     /**
      * Exception class simple name
      */
-    public static final TagDescription TYPE_TAG = TagDescription.create( "tp", Type.STRING);
+    public static final TagDescription<String> TYPE_TAG = TagDescriptionBuilder.textual("tp").build();
 
     /**
      * Exception message
      */
-    public static final TagDescription VALUE_TAG = TagDescription.create("msg", Type.TEXT);
+    public static final TagDescription<String> VALUE_TAG = TagDescriptionBuilder.textual("msg").build();
 
     /**
      * Exception module full name
      */
-    public static final TagDescription EXCEPTION_MODULE_TAG = TagDescription.create("mod", Type.TEXT);
+    public static final TagDescription<String> EXCEPTION_MODULE_TAG = TagDescriptionBuilder.textual("mod").build();
 
     /**
      * Collection of stacktrace frame
      */
-    public static final TagDescription STACKTRACE_TAG = TagDescription.create("str", Type.CONTAINER_ARRAY);
+    public static final TagDescription<Optional<Container[]>> STACKTRACE_TAG = TagDescriptionBuilder
+            .containerList("str")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     // Stack frame tags
     /**
      * Stacktrace frame module full name
      */
-    public static final TagDescription STACK_FRAME_MODULE_TAG = TagDescription.create("mod", Type.TEXT);
+    public static final TagDescription<String> STACK_FRAME_MODULE_TAG = TagDescriptionBuilder.textual("mod").build();
 
     /**
      * Stacktrace frame function name
      */
-    public static final TagDescription FUNCTION_TAG = TagDescription.create("fun", Type.STRING);
+    public static final TagDescription<String> FUNCTION_TAG = TagDescriptionBuilder.textual("fun").build();
 
     /**
      * Stacktrace frame file name
      */
-    public static final TagDescription FILENAME_TAG = TagDescription.create("fnm", Type.STRING);
+    public static final TagDescription<Optional<String>> FILENAME_TAG = TagDescriptionBuilder.textual("fnm")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     /**
      * Stacktrace frame line number
      */
-    public static final TagDescription LINE_NUMBER_TAG = TagDescription.create( "ln", Type.INTEGER);
+    public static final TagDescription<Optional<Integer>> LINE_NUMBER_TAG = TagDescriptionBuilder.integer("ln")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     /**
      * Stacktrace frame column number
      */
-    public static final TagDescription COLUMN_NUMBER_TAG = TagDescription.create( "cn", Type.INTEGER);
+    public static final TagDescription<Optional<Integer>> COLUMN_NUMBER_TAG = TagDescriptionBuilder.integer("cn")
+            .convert(Optional::ofNullable)
+            .addDefault(Optional::empty)
+            .build();
 
     /**
      * Stacktrace frame file path
      */
-    public static final TagDescription ABS_PATH_TAG = TagDescription.create("abs", Type.TEXT);
+    public static final TagDescription<Optional<String>> ABS_PATH_TAG = TagDescriptionBuilder.textual("abs")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 }

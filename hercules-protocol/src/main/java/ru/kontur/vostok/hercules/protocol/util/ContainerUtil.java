@@ -1,8 +1,12 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.Variant;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * ContainerUtil
@@ -11,12 +15,16 @@ import java.util.Optional;
  */
 public class ContainerUtil {
 
-    public static <T> Optional<T> extractOptional(Container container, TagDescription tag) {
-        return VariantUtil.extractRegardingType(container.get(tag.getName()), tag.getType());
-    }
-
-    public static <T> T extractRequired(Container container, TagDescription tag) {
-        return ContainerUtil.<T>extractOptional(container, tag)
-                .orElseThrow(() -> new IllegalArgumentException(String.format("Missing required tag '%s' of type %s", tag.getName(), tag.getType())));
+    public static <T> T extract(Container container, TagDescription<T> tag) {
+        Variant variant = container.get(tag.getName());
+        Type type = Optional.ofNullable(variant).map(Variant::getType).orElse(null);
+        Function<Object, ? extends T> extractor = tag.getExtractors().get(type);
+        if (Objects.isNull(extractor)) {
+            throw new IllegalArgumentException(String.format("Tag '%s' cannot contain value of type '%s'", tag.getName(),  type));
+        }
+        else {
+            Object value = Optional.ofNullable(variant).map(Variant::getValue).orElse(null);
+            return extractor.apply(value);
+        }
     }
 }

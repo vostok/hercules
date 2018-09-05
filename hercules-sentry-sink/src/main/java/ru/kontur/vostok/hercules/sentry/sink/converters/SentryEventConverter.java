@@ -54,24 +54,24 @@ public class SentryEventConverter {
         eventBuilder.withTimestamp(Date.from(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
 
-        ContainerUtil.<Container[]>extractOptional(event.getPayload(), StackTraceTag.EXCEPTIONS_TAG)
+        ContainerUtil.extract(event.getPayload(), StackTraceTag.EXCEPTIONS_TAG)
                 .ifPresent(exceptions -> eventBuilder.withSentryInterface(convertExceptions(exceptions)));
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.MESSAGE_TAG)
+        ContainerUtil.extract(event.getPayload(), StackTraceTag.MESSAGE_TAG)
                 .ifPresent(eventBuilder::withMessage);
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.LEVEL_TAG)
+        ContainerUtil.extract(event.getPayload(), StackTraceTag.LEVEL_TAG)
                 .map(SentryEventConverter::prepareLevel)
                 .flatMap(s -> EnumUtil.parseOptional(Level.class, s))
                 .ifPresent(eventBuilder::withLevel);
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), CommonTags.ENVIRONMENT_TAG)
+        ContainerUtil.extract(event.getPayload(), CommonTags.ENVIRONMENT_TAG)
                 .ifPresent(eventBuilder::withEnvironment);
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.RELEASE_TAG)
+        ContainerUtil.extract(event.getPayload(), StackTraceTag.RELEASE_TAG)
                 .ifPresent(eventBuilder::withRelease);
 
-        ContainerUtil.<String>extractOptional(event.getPayload(), StackTraceTag.SERVER_TAG)
+        ContainerUtil.extract(event.getPayload(), StackTraceTag.SERVER_TAG)
                 .ifPresent(eventBuilder::withServerName);
 
         for (Map.Entry<String, Variant> entry : event.getPayload()) {
@@ -98,15 +98,15 @@ public class SentryEventConverter {
     }
 
     private static String extractPlatform(Event event) {
-        Optional<Container[]> containers = ContainerUtil.extractOptional(event.getPayload(), StackTraceTag.EXCEPTIONS_TAG);
+        Optional<Container[]> containers = ContainerUtil.extract(event.getPayload(), StackTraceTag.EXCEPTIONS_TAG);
         if (!containers.isPresent()) {
             return DEFAULT_PLATFORM;
         }
 
         return Arrays.stream(containers.get())
-                .flatMap(container -> Arrays.stream(ContainerUtil.<Container[]>extractOptional(container, StackTraceTag.STACKTRACE_TAG).orElse(new Container[0])))
+                .flatMap(container -> Arrays.stream(ContainerUtil.extract(container, StackTraceTag.STACKTRACE_TAG).orElse(new Container[0])))
                 .findAny()
-                .map(container -> ContainerUtil.<String>extractOptional(container, StackTraceTag.FILENAME_TAG).orElse(null))
+                .map(container -> ContainerUtil.extract(container, StackTraceTag.FILENAME_TAG).orElse(null))
                 .map(SentryEventConverter::resolvePlatformByFileName)
                 .orElse(DEFAULT_PLATFORM);
     }

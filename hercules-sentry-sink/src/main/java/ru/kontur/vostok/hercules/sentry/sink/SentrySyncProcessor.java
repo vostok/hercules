@@ -29,7 +29,7 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
     @Override
     public void process(UUID key, Event value) {
-        Optional<String> project = ContainerUtil.extractOptional(value.getPayload(), CommonTags.PROJECT_TAG);
+        Optional<String> project = ContainerUtil.extract(value.getPayload(), CommonTags.PROJECT_TAG);
         if (!project.isPresent()) {
             LOGGER.warn("Missing required tag '" + CommonTags.PROJECT_TAG.getName() + "'");
             return;
