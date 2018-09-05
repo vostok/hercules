@@ -7,6 +7,8 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -23,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 public class ElasticSearchEventSender implements BulkSender<Event> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchEventSender.class);
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
@@ -82,8 +86,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     writeNewLine(stream);
                 }
                 else {
-                    // TODO: Add logging
-                    System.out.println(String.format("Cannot process event '%s' because of missing index data", event.getId()));
+                    LOGGER.error(String.format("Cannot process event '%s' because of missing index data", event.getId()));
                 }
             }
         });

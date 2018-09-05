@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -15,6 +17,8 @@ import java.util.Optional;
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 public final class BulkResponseHandler {
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
 
     private final static JsonFactory FACTORY = new JsonFactory();
 
@@ -48,7 +52,7 @@ public final class BulkResponseHandler {
                 // TODO: Format log when logging will be added
                 String type = Optional.ofNullable(error.get("type")).map(JsonNode::asText).orElse("");
                 String reason = Optional.ofNullable(error.get("reason")).map(JsonNode::asText).orElse("");
-                System.out.println(String.format("Bulk processing error: id=%s, type=%s, reason=%s", id, type, reason).replaceAll("[\\r\\n]+", ""));
+                LOGGER.error(String.format("Bulk processing error: id=%s, type=%s, reason=%s", id, type, reason).replaceAll("[\\r\\n]+", " "));
             }
         }
     }
