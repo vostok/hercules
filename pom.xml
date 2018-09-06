@@ -351,7 +351,7 @@
                     <version>2.5.3</version>
                     <configuration>
                         <goals>deploy</goals>
-                        <autoversionsubmodules>true</autoversionsubmodules>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
                     </configuration>
                 </plugin>
             </plugins>
