@@ -13,7 +13,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <hercules.version>0.9.1-SNAPSHOT</hercules.version>
+        <hercules.version>${project.version}</hercules.version>
 
         <kafka.version>1.1.0</kafka.version>
         <zookeeper.version>3.4.12</zookeeper.version>
