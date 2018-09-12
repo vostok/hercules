@@ -22,7 +22,7 @@ public class EventBuilder {
 
     private UUID eventId;
     private int version;
-    private Map<String, Variant> tags = new LinkedHashMap<>();
+    ContainerBuilder containerBuilder = ContainerBuilder.create();
 
     private boolean wasBuild = false;
 
@@ -35,17 +35,11 @@ public class EventBuilder {
     }
 
     public void setTag(String key, Variant value) {
-        tags.put(key, value);
+        containerBuilder.tag(key, value);
     }
 
     public <T> void setTag(TagDescription<T> tag, Variant value) {
-        if (!tag.getExtractors().containsKey(value.getType())) {
-            String allowedValues = "[" + tag.getExtractors().keySet().stream().map(String::valueOf).collect(Collectors.joining()) + "]";
-            throw new IllegalArgumentException(
-                    String.format("Value type mismatch, expected one of %s, actual: %s", allowedValues, value.getType())
-            );
-        }
-        setTag(tag.getName(), value);
+        containerBuilder.tag(tag, value);
     }
 
     public Event build() {
@@ -61,7 +55,7 @@ public class EventBuilder {
         encoder.writeUnsignedByte(version);
         encoder.writeUuid(eventId);
 
-        Container container = new Container(tags);
+        Container container = containerBuilder.build();
         containerWriter.write(encoder, container);
 
         return new Event(stream.toByteArray(), version, eventId, container);

@@ -7,11 +7,11 @@ import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 import java.util.Optional;
 
 /**
- * StackTraceTag collection of tag for stacktrace info
+ * StackTraceTags collection of tag for stacktrace info
  *
  * @author Kirill Sulim
  */
-public final class StackTraceTag {
+public final class StackTraceTags {
 
     // Root tags
     /**
