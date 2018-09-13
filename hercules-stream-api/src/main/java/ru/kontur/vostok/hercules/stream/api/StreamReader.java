@@ -98,7 +98,7 @@ public class StreamReader {
                     }
                     // endOffset < requestOffset
                     else {
-                        // This read will not return data, but mark that request offset is greater than max available offset
+                        // These offsets will not be polled, but returning them marks these offsets as overflowed
                         overflowedOffsets.put(partition, requestOffset);
                     }
                 }
