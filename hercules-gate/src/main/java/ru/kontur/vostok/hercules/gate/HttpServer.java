@@ -35,7 +35,8 @@ public class HttpServer {
                 PropertiesExtractor.get(throttlingProperties, "requestTimeout", 5_000L),
                 new DefaultUndertowRequestWeigher(),
                 sendRequestProcessor,
-                new DefaultUndertowThrottledRequestProcessor());
+                new DefaultUndertowThrottledRequestProcessor()
+        );
 
         HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, true);
         HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, false);

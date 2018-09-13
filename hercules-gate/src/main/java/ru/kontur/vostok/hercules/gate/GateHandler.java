@@ -38,7 +38,14 @@ public class GateHandler implements HttpHandler {
     private final Meter requestMeter;
     private final Meter requestSizeMeter;
 
-    public GateHandler(MetricsCollector metricsCollector, AuthManager authManager, Throttle<HttpServerExchange, SendContext> throttle, AuthValidationManager authValidationManager, StreamRepository streamRepository, boolean async) {
+    public GateHandler(
+            MetricsCollector metricsCollector,
+            AuthManager authManager,
+            Throttle<HttpServerExchange, SendContext> throttle,
+            AuthValidationManager authValidationManager,
+            StreamRepository streamRepository,
+            boolean async
+    ) {
         this.metricsCollector = metricsCollector;
 
         this.authManager = authManager;
