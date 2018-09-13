@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,6 +28,9 @@ import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked
 public class ElasticSearchEventSender implements BulkSender<Event> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchEventSender.class);
+
+    private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
+    private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
@@ -49,6 +53,8 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             return;
         }
 
+        events.forEach(event -> RECEIVED_EVENT_LOGGER.trace(LoggingConstants.RECEIVED_EVENT_TRACE_TEMPLATE, event.getId().toString()));
+
         ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
         writeEventRecords(stream, events);
 
@@ -68,6 +74,8 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             }
             BulkResponseHandler.process(response.getEntity());
         }
+
+        events.forEach(event -> PROCESSED_EVENT_LOGGER.trace(LoggingConstants.PROCESSED_EVENT_TRACE_TEMPLATE, event.getId().toString()));
     }
 
     @Override
