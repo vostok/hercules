@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.management.api;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
+import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
@@ -21,6 +22,7 @@ import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Properties;
@@ -33,7 +35,7 @@ public class HttpServer {
 
     public HttpServer(
             Properties properties,
-            AdminManager adminManager,
+            AdminAuthManager adminAuthManager,
             AuthManager authManager,
             StreamRepository streamRepository,
             TimelineRepository timelineRepository,
@@ -45,6 +47,8 @@ public class HttpServer {
         String host = properties.getProperty("host", "0.0.0.0");
         int port = PropertiesExtractor.get(properties, "port", 6309);
 
+        AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
+
         CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository, kafkaTaskQueue);
         DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository, kafkaTaskQueue);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
@@ -53,12 +57,12 @@ public class HttpServer {
         DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
 
-        SetRuleHandler setRuleHandler = new SetRuleHandler(adminManager, ruleRepository);
-        ListRuleHandler listRuleHandler = new ListRuleHandler(adminManager, ruleRepository);
+        HttpHandler setRuleHandler = adminAuthManagerWrapper.wrap(new SetRuleHandler(ruleRepository));
+        HttpHandler listRuleHandler = adminAuthManagerWrapper.wrap(new ListRuleHandler(ruleRepository));
 
-        AddBlacklistHandler addBlacklistHandler = new AddBlacklistHandler(adminManager, blacklistRepository);
-        RemoveBlacklistHandler removeBlacklistHandler = new RemoveBlacklistHandler(adminManager, blacklistRepository);
-        ListBlacklistHandler listBlacklistHandler = new ListBlacklistHandler(adminManager, blacklistRepository);
+        HttpHandler addBlacklistHandler = adminAuthManagerWrapper.wrap(new AddBlacklistHandler(blacklistRepository));
+        HttpHandler removeBlacklistHandler = adminAuthManagerWrapper.wrap(new RemoveBlacklistHandler(blacklistRepository));
+        HttpHandler listBlacklistHandler = adminAuthManagerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
 
         HttpHandler handler = Handlers.routing()
                 .get("/ping", exchange -> {

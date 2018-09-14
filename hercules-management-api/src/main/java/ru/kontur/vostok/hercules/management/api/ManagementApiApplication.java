@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.management.api;
 
+import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
@@ -48,7 +49,7 @@ public class ManagementApiApplication {
             BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
             RuleRepository ruleRepository = new RuleRepository(curatorClient);
 
-            AdminManager adminManager = new AdminManager(PropertiesExtractor.toSet(properties, "keys"));
+            AdminAuthManager adminAuthManager = new AdminAuthManager(PropertiesExtractor.toSet(properties, "keys"));
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
@@ -56,7 +57,7 @@ public class ManagementApiApplication {
             cassandraTaskQueue = new CassandraTaskQueue(kafkaProperties);
             kafkaTaskQueue = new KafkaTaskQueue(kafkaProperties);
 
-            server = new HttpServer(httpserverProperties, adminManager, authManager, streamRepository, timelineRepository, blacklistRepository, ruleRepository, cassandraTaskQueue, kafkaTaskQueue);
+            server = new HttpServer(httpserverProperties, adminAuthManager, authManager, streamRepository, timelineRepository, blacklistRepository, ruleRepository, cassandraTaskQueue, kafkaTaskQueue);
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();

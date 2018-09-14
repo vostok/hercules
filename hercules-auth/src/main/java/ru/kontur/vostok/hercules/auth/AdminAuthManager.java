@@ -1,16 +1,14 @@
-package ru.kontur.vostok.hercules.management.api;
-
-import ru.kontur.vostok.hercules.auth.AuthResult;
+package ru.kontur.vostok.hercules.auth;
 
 import java.util.Set;
 
 /**
  * @author Gregory Koshelev
  */
-public class AdminManager {
+public class AdminAuthManager {
     private final Set<String> adminKeys;
 
-    public AdminManager(Set<String> adminKeys) {
+    public AdminAuthManager(Set<String> adminKeys) {
         this.adminKeys = adminKeys;
     }
 

@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.management.api.blacklist;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
-import ru.kontur.vostok.hercules.management.api.AdminManager;
+import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 
 import java.util.List;
@@ -14,8 +14,8 @@ import java.util.List;
 public class ListBlacklistHandler extends BlacklistHandler {
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ListBlacklistHandler(AdminManager adminManager, BlacklistRepository repository) {
-        super(adminManager, repository);
+    public ListBlacklistHandler(BlacklistRepository repository) {
+        super(repository);
     }
 
     @Override

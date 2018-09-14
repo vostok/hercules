@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.management.api.rule;
 
 import io.undertow.server.HttpServerExchange;
-import ru.kontur.vostok.hercules.management.api.AdminManager;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
@@ -12,8 +11,8 @@ import java.util.Optional;
  * @author Gregory Koshelev
  */
 public class SetRuleHandler extends RuleHandler {
-    public SetRuleHandler(AdminManager adminManager, RuleRepository repository) {
-        super(adminManager, repository);
+    public SetRuleHandler(RuleRepository repository) {
+        super(repository);
     }
 
     @Override
