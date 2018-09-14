@@ -92,11 +92,11 @@ public class StreamReader {
                     if (requestOffset < beginningOffset) {
                         offsetsToRequest.put(partition, beginningOffset);
                     }
-                    // beginningOffset <= requestOffset && requestOffset <= endOffset
+                    // beginningOffset <= requestOffset && requestOffset < endOffset
                     else if (requestOffset < endOffset) {
                         offsetsToRequest.put(partition, requestOffset);
                     }
-                    // endOffset < requestOffset
+                    // endOffset <= requestOffset
                     else {
                         // These offsets will not be polled, but returning them marks these offsets as overflowed
                         overflowedOffsets.put(partition, requestOffset);
