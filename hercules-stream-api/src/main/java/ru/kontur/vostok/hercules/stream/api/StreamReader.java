@@ -93,7 +93,7 @@ public class StreamReader {
                         offsetsToRequest.put(partition, beginningOffset);
                     }
                     // beginningOffset <= requestOffset && requestOffset <= endOffset
-                    else if (requestOffset <= endOffset) {
+                    else if (requestOffset < endOffset) {
                         offsetsToRequest.put(partition, requestOffset);
                     }
                     // endOffset < requestOffset
