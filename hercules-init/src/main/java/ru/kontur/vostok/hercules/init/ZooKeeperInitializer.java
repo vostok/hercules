@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.init;
 
-import org.apache.curator.framework.CuratorFramework;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 
 import java.util.Properties;
@@ -26,6 +25,9 @@ public class ZooKeeperInitializer {
             curatorClient.createIfAbsent("/hercules/auth/blacklist");
             curatorClient.createIfAbsent("/hercules/auth/rules");
             curatorClient.createIfAbsent("/hercules/auth/validations");
+            curatorClient.createIfAbsent("/hercules/sink");
+            curatorClient.createIfAbsent("/hercules/sink/sentry");
+            curatorClient.createIfAbsent("/hercules/sink/sentry/registry");
         } finally {
             curatorClient.stop();
         }

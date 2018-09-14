@@ -22,22 +22,33 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
     private final SentryClientHolder sentryClientHolder;
+    private final SentryProjectRegistry sentryProjectRegistry;
 
-    public SentrySyncProcessor(SentryClientHolder sentryClientHolder) {
+    public SentrySyncProcessor(
+            SentryClientHolder sentryClientHolder,
+            SentryProjectRegistry sentryProjectRegistry
+    ) {
         this.sentryClientHolder = sentryClientHolder;
+        this.sentryProjectRegistry = sentryProjectRegistry;
     }
 
     @Override
     public void process(UUID key, Event value) {
         Optional<String> project = ContainerUtil.extract(value.getPayload(), CommonTags.PROJECT_TAG);
         if (!project.isPresent()) {
-            LOGGER.warn("Missing required tag '" + CommonTags.PROJECT_TAG.getName() + "'");
+            LOGGER.warn("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
             return;
         }
 
-        Optional<SentryClient> sentryClient = sentryClientHolder.getClient("sentry/" + project.get());
+        Optional<String> sentryProjectName = sentryProjectRegistry.getSentryProjectName(project.get());
+        if (!sentryProjectName.isPresent()) {
+            LOGGER.warn("Project '{}' not found in registry", project.get());
+            return;
+        }
+
+        Optional<SentryClient> sentryClient = sentryClientHolder.getClient(sentryProjectName.get());
         if (!sentryClient.isPresent()) {
-            LOGGER.warn("Missing client for project '" + project.get() + "'");
+            LOGGER.warn("Missing client for project '{}'", project.get());
             return;
         }
 

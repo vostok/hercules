@@ -40,7 +40,8 @@ public class HttpServer {
             BlacklistRepository blacklistRepository,
             RuleRepository ruleRepository,
             CassandraTaskQueue cassandraTaskQueue,
-            KafkaTaskQueue kafkaTaskQueue) {
+            KafkaTaskQueue kafkaTaskQueue
+    ) {
         String host = properties.getProperty("host", "0.0.0.0");
         int port = PropertiesExtractor.get(properties, "port", 6309);
 
