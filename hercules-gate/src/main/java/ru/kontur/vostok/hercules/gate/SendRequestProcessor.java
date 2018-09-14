@@ -14,7 +14,6 @@ import ru.kontur.vostok.hercules.throttling.RequestProcessor;
 import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
-import sun.rmi.runtime.Log;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -85,11 +84,11 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
             Event event;
             try {
                 event = reader.next();
-                RECEIVED_EVENT_LOGGER.trace(LoggingConstants.RECEIVED_EVENT_TRACE_TEMPLATE, event.getId().toString());
+                RECEIVED_EVENT_LOGGER.trace("{}", event.getId());
                 if (!eventValidator.validate(event)) {
                     //TODO: Metrics are coming!
                     LOGGER.warn("Invalid event data");
-                    DROPPED_EVENT_LOGGER.trace(LoggingConstants.DROPPED_EVENT_TRACE_TEMPLATE, event.getId().toString());
+                    DROPPED_EVENT_LOGGER.trace("{}", event.getId());
                     if (processed.compareAndSet(false, true)) {
                         ResponseUtil.badRequest(exchange);
                         callback.call();
@@ -113,7 +112,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                     }
                     callback.call();
                 }
-                DROPPED_EVENT_LOGGER.trace(LoggingConstants.DROPPED_EVENT_TRACE_TEMPLATE, event.getId().toString());
+                DROPPED_EVENT_LOGGER.trace("{}", event.getId());
                 continue;
             }
             eventSender.send(
@@ -129,7 +128,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                             }
                             callback.call();
                         }
-                        PROCESSED_EVENT_LOGGER.trace(LoggingConstants.PROCESSED_EVENT_TRACE_TEMPLATE, event.getId().toString());
+                        PROCESSED_EVENT_LOGGER.trace("{}", event.getId());
                         sentEventsMeter.mark(1);
                     },
                     () -> {
@@ -140,7 +139,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                             }
                             callback.call();
                         }
-                        DROPPED_EVENT_LOGGER.trace(LoggingConstants.DROPPED_EVENT_TRACE_TEMPLATE, event.getId().toString());
+                        DROPPED_EVENT_LOGGER.trace("{}", event.getId());
                     }
             );
         }
