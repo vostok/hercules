@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
@@ -20,6 +22,9 @@ import java.util.Optional;
  * @author Gregory Koshelev
  */
 public class CreateStreamHandler implements HttpHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateStreamHandler.class);
+
     private final AuthManager authManager;
     private final StreamRepository repository;
     private final KafkaTaskQueue kafkaTaskQueue;
@@ -72,11 +77,11 @@ public class CreateStreamHandler implements HttpHandler {
                 //TODO: Topic creation may fail after successful meta creation (no atomicity at all).
                 kafkaTaskQueue.createTopic(stream.getName(), stream.getPartitions());
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.error("Error on processing request", e);
                 ResponseUtil.badRequest(exch);
                 return;
             } catch (Exception e) {
-                e.printStackTrace();
+                LOGGER.error("Error on processing request", e);
                 ResponseUtil.internalServerError(exch);
                 return;
             }
