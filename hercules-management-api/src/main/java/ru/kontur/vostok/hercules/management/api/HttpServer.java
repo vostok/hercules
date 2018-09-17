@@ -8,6 +8,9 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
+import ru.kontur.vostok.hercules.management.api.sink.sentry.DeleteProjectHandler;
+import ru.kontur.vostok.hercules.management.api.sink.sentry.ListProjectHandler;
+import ru.kontur.vostok.hercules.management.api.sink.sentry.SetProjectHandler;
 import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
 import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
@@ -20,6 +23,7 @@ import ru.kontur.vostok.hercules.management.api.timeline.DeleteTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.ListTimelineHandler;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
+import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
@@ -41,6 +45,7 @@ public class HttpServer {
             TimelineRepository timelineRepository,
             BlacklistRepository blacklistRepository,
             RuleRepository ruleRepository,
+            SentryProjectRepository sentryProjectRepository,
             CassandraTaskQueue cassandraTaskQueue,
             KafkaTaskQueue kafkaTaskQueue
     ) {
@@ -64,6 +69,10 @@ public class HttpServer {
         HttpHandler removeBlacklistHandler = adminAuthManagerWrapper.wrap(new RemoveBlacklistHandler(blacklistRepository));
         HttpHandler listBlacklistHandler = adminAuthManagerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
 
+        HttpHandler sentryRegistryListHandler = adminAuthManagerWrapper.wrap(new ListProjectHandler(sentryProjectRepository));
+        HttpHandler sentryRegistrySetHandler = adminAuthManagerWrapper.wrap(new SetProjectHandler(sentryProjectRepository));
+        HttpHandler sentryRegistryDeleteHandler = adminAuthManagerWrapper.wrap(new DeleteProjectHandler(sentryProjectRepository));
+
         HttpHandler handler = Handlers.routing()
                 .get("/ping", exchange -> {
                     exchange.setStatusCode(200);
@@ -79,7 +88,10 @@ public class HttpServer {
                 .get("/rules/list", listRuleHandler)
                 .post("/blacklist/add", addBlacklistHandler)
                 .post("/blacklist/remove", removeBlacklistHandler)
-                .get("/blacklist/list", listBlacklistHandler);
+                .get("/blacklist/list", listBlacklistHandler)
+                .get("/sink/sentry/registry", sentryRegistryListHandler)
+                .post("/sink/sentry/registry", sentryRegistrySetHandler)
+                .delete("/sink/sentry/registry", sentryRegistryDeleteHandler);
 
         undertow = Undertow
                 .builder()

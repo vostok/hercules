@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
@@ -46,7 +47,7 @@ public class SentrySinkDaemon {
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
-            sentryProjectRegistry = new SentryProjectRegistry(curatorClient);
+            sentryProjectRegistry = new SentryProjectRegistry(new SentryProjectRepository(curatorClient));
             sentryProjectRegistry.start();
 
             sentrySink = new SentrySink(

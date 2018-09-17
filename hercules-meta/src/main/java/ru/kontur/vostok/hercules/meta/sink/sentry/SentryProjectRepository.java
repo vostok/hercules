@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.meta.sink.sentry;
 
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,25 +19,38 @@ public class SentryProjectRepository {
         this.curatorClient = curatorClient;
     }
 
-    public List<String> list() throws Exception {
-        List<String> rules = curatorClient.children(zPrefix);
-        return rules;
+    public List<SentryProjectMappingRecord> list() throws Exception {
+        return curatorClient.children(zPrefix).stream()
+                .map(SentryProjectRepository::deserialize)
+                .collect(Collectors.toList());
     }
 
-    public void assign(String project, String sentryProjectId) throws Exception {
-        delete(project);
-        String record = project + ":" + sentryProjectId.replaceAll("/", ":");
-        curatorClient.createIfAbsent(zPrefix + "/" + record);
+    public void add(SentryProjectMappingRecord record) throws Exception {
+        delete(record.getProject());
+        curatorClient.createIfAbsent(zPrefix + "/" + serialize(record));
     }
 
     public void delete(String project) throws Exception {
-        List<String> projectRecords = list().stream()
-                .filter(record -> record.startsWith(project + ":"))
-                .collect(Collectors.toList());
+        final String search = project + ":";
+        curatorClient.children(zPrefix).stream()
+                .filter(record -> record.startsWith(search))
+                .forEach(record -> ThrowableUtil.toUnchecked(() -> curatorClient.delete(zPrefix + "/" + record)));
+    }
 
-        for (String projectRecord : projectRecords) {
-            curatorClient.delete(projectRecord);
+    private static SentryProjectMappingRecord deserialize(String record) {
+        String[] split = record.split(":");
+        if (split.length != 3) {
+            throw new IllegalArgumentException(String.format("Invalid sentry registry record: '%s'", record));
         }
+        return new SentryProjectMappingRecord(split[0], split[1] + "/" + split[2]);
+    }
+
+    private static String serialize(SentryProjectMappingRecord record) {
+        String[] split = record.getSentryProject().split("/");
+        if (split.length != 2) {
+            throw new IllegalArgumentException(String.format("Invalid sentry project name: '%s'", record.getSentryProject()));
+        }
+        return record.getProject() + ":" + split[0] + ":" + split[1];
     }
 
     private static String zPrefix = "/hercules/sink/sentry/registry";

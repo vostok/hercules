@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
+import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
@@ -48,6 +49,7 @@ public class ManagementApiApplication {
             TimelineRepository timelineRepository = new TimelineRepository(curatorClient);
             BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
             RuleRepository ruleRepository = new RuleRepository(curatorClient);
+            SentryProjectRepository sentryProjectRepository = new SentryProjectRepository(curatorClient);
 
             AdminAuthManager adminAuthManager = new AdminAuthManager(PropertiesExtractor.toSet(properties, "keys"));
 
@@ -57,7 +59,18 @@ public class ManagementApiApplication {
             cassandraTaskQueue = new CassandraTaskQueue(kafkaProperties);
             kafkaTaskQueue = new KafkaTaskQueue(kafkaProperties);
 
-            server = new HttpServer(httpserverProperties, adminAuthManager, authManager, streamRepository, timelineRepository, blacklistRepository, ruleRepository, cassandraTaskQueue, kafkaTaskQueue);
+            server = new HttpServer(
+                    httpserverProperties,
+                    adminAuthManager,
+                    authManager,
+                    streamRepository,
+                    timelineRepository,
+                    blacklistRepository,
+                    ruleRepository,
+                    sentryProjectRepository,
+                    cassandraTaskQueue,
+                    kafkaTaskQueue
+            );
             server.start();
         } catch (Throwable e) {
             e.printStackTrace();
