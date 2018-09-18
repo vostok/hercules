@@ -7,6 +7,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.management.task.TaskConstants;
 import ru.kontur.vostok.hercules.management.task.kafka.CreateTopicKafkaTask;
@@ -24,6 +26,9 @@ import java.util.concurrent.Executors;
  * @author Gregory Koshelev
  */
 public class KafkaTaskConsumer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaTaskConsumer.class);
+
     private final ExecutorService executor = Executors.newFixedThreadPool(1);
     private final KafkaManager kafkaManager;
     private final KafkaConsumer<Void, byte[]> consumer;
@@ -49,7 +54,7 @@ public class KafkaTaskConsumer {
                         try {
                             task = deserializer.readValue(value);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            LOGGER.error("Error on message deserialization", e);
                             continue;
                         }
                         if (task instanceof CreateTopicKafkaTask) {
@@ -68,9 +73,6 @@ public class KafkaTaskConsumer {
                 }
             } catch (WakeupException e) {
                 // ignore for shutdown
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw e;
             } finally {
                 consumer.close();
             }
