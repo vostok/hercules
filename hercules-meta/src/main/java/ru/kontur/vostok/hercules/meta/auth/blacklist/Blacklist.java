@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.meta.auth.blacklist;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
 import ru.kontur.vostok.hercules.util.schedule.Scheduler;
@@ -12,6 +14,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Gregory Koshelev
  */
 public class Blacklist {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Blacklist.class);
+
     private final CuratorClient curatorClient;
     private final AtomicReference<ConcurrentHashMap<String, Object>> apiKeys = new AtomicReference<>(new ConcurrentHashMap<>());
     private final AtomicReference<State> state = new AtomicReference<>(State.INIT);
@@ -55,7 +60,7 @@ public class Blacklist {
                 updateTask.renew();
             });
         } catch (Exception e) {
-            e.printStackTrace();//TODO: Log it!
+            LOGGER.error("Error on updating list", e);
             return;
         }
 
