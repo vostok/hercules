@@ -15,6 +15,8 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.sentry.api.auth.BearerAuthHttpInterceptor;
 import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
@@ -36,6 +38,8 @@ import java.util.stream.Collectors;
  * @author Kirill Sulim
  */
 public class SentryApiClient {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SentryApiClient.class);
 
     private static final String API_URL = "/api/0/";
     private static final String PROJECTS_URL = API_URL + "projects/";
@@ -93,8 +97,7 @@ public class SentryApiClient {
             ));
         }
         catch (Exception e) {
-            // TODO: logging
-            e.printStackTrace();
+            LOGGER.error("Error on request", e);
             return Result.error(e.getMessage());
         }
     }
@@ -120,8 +123,7 @@ public class SentryApiClient {
             return Result.ok(resultList);
         }
         catch (Exception e) {
-            // TODO: logging
-            e.printStackTrace();
+            LOGGER.error("Error on paged request", e);
             return Result.error(e.getMessage());
         }
     }

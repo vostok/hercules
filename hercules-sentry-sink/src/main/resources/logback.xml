@@ -1,11 +1,86 @@
-<configuration>
+<configuration scan="true">
+
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <file>hercules_sentry_sink.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>hercules_sentry_sink.log.%i.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>20</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>20MB</maxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <appender name="RECEIVED_EVENTS_FILE" class="ch.qos.logback.core.FileAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
+        </encoder>
+        <file>hercules_sentry_sink_received_events.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>hercules_sentry_sink_received_events.log.%i.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>1</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>20MB</maxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <appender name="PROCESSED_EVENTS_FILE" class="ch.qos.logback.core.FileAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
+        </encoder>
+        <file>hercules_sentry_sink_processed_events.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>hercules_sentry_sink_processed_events.log.%i.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>1</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>20MB</maxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <appender name="DROPPED_EVENTS_FILE" class="ch.qos.logback.core.FileAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
+        </encoder>
+        <file>hercules_sentry_sink_dropped_events.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>hercules_sentry_sink_dropped_events.log.%i.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>1</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>20MB</maxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <logger name="RECEIVED_EVENTS" level="trace" additivity="false">
+        <appender-ref ref="RECEIVED_EVENTS_FILE" />
+    </logger>
+
+    <logger name="PROCESSED_EVENTS" level="trace" additivity="false">
+        <appender-ref ref="PROCESSED_EVENTS_FILE" />
+    </logger>
+
+    <logger name="DROPPED_EVENTS" level="trace" additivity="false">
+        <appender-ref ref="DROPPED_EVENTS_FILE" />
+    </logger>
+
     <root level="info">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
     </root>
+
 </configuration>

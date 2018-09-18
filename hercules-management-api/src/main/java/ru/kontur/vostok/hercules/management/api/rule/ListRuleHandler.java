@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.management.api.rule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
-import ru.kontur.vostok.hercules.management.api.AdminManager;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 
 import java.util.List;
@@ -14,8 +13,8 @@ import java.util.List;
 public class ListRuleHandler extends RuleHandler {
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ListRuleHandler(AdminManager adminManager, RuleRepository repository) {
-        super(adminManager, repository);
+    public ListRuleHandler(RuleRepository repository) {
+        super(repository);
     }
 
     @Override

@@ -3,6 +3,8 @@ package ru.kontur.vostok.hercules.sentry.sink;
 import io.sentry.DefaultSentryClientFactory;
 import io.sentry.SentryClient;
 import io.sentry.SentryClientFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.sentry.api.model.DsnInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
@@ -28,6 +30,8 @@ import java.util.stream.Stream;
  */
 public class SentryClientHolder {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SentryClientHolder.class);
+
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
     private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
@@ -49,8 +53,7 @@ public class SentryClientHolder {
     private void update() {
         Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects();
         if (!projects.isOk()) {
-            // TODO: logging
-            System.out.println(projects.getError());
+            LOGGER.error("Cannot update project info due to: {}", projects.getError());
         }
 
         Map<String, SentryClient> updatedClients = new HashMap<>();
@@ -58,8 +61,7 @@ public class SentryClientHolder {
         for (ProjectInfo projectInfo : projects.get()) {
             Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(projectInfo);
             if (!publicDsn.isOk()) {
-                // TODO: logging
-                System.out.println(publicDsn.getError());
+                LOGGER.error("Cannot get public dns for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
                 return;
             }
 
