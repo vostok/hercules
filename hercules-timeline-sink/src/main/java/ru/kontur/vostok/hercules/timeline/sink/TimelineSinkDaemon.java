@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.timeline.sink;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
@@ -18,6 +20,9 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class TimelineSinkDaemon {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TimelineSinkDaemon.class);
+
     private static CuratorClient curatorClient;
     private static CassandraConnector cassandraConnector;
     private static TimelineSink timelineSink;
@@ -36,7 +41,7 @@ public class TimelineSinkDaemon {
 
         //TODO: Validate sinkProperties
         if (!sinkProperties.containsKey("timeline")) {
-            System.out.println("Validation fails (sink.properties): 'timeline' should be specified");
+            LOGGER.error("Validation fails (sink.properties): 'timeline' should be specified");
             return;
         }
 
@@ -58,37 +63,39 @@ public class TimelineSinkDaemon {
             Timeline timeline = timelineOptional.get();
             timelineSink = new TimelineSink(streamsProperties, timeline, cassandraConnector);
             timelineSink.start();
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            LOGGER.error("Error on starting timeline sink daemon", t);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(TimelineSinkDaemon::shutdown));
 
-        System.out.println("Stream Sink Daemon started for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Stream Sink Daemon started for {} millis", System.currentTimeMillis() - start);
     }
 
     public static void shutdown() {
         long start = System.currentTimeMillis();
-        System.out.println("Prepare Timeline Sink Daemon to be shutdown");
+        LOGGER.info("Prepare Timeline Sink Daemon to be shutdown");
 
         try {
             if (timelineSink != null) {
                 timelineSink.stop(5_000, TimeUnit.MILLISECONDS);
             }
-        } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping timeline sink", t);
+            //TODO: Process error
         }
 
         try {
             if (curatorClient != null) {
                 curatorClient.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping curator client", t);
+            //TODO: Process error
         }
 
-        System.out.println("Finished Timeline Sink Daemon shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Finished Timeline Sink Daemon shutdown for {} millis", System.currentTimeMillis() - start);
     }
 }

@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.util.schedule;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -8,6 +11,9 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class Scheduler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
+
     private final ScheduledExecutorService executor;
 
     public Scheduler(int threadPoolSize) {
@@ -37,7 +43,7 @@ public class Scheduler {
         try {
             boolean terminated = executor.awaitTermination(timeout, unit);//TODO: Log unsuccessful termination
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOGGER.warn("Shutdown interrupted", e);
         }
     }
 }

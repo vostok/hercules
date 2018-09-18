@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.stream.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
@@ -13,6 +15,8 @@ import java.util.Properties;
 
 
 public class StreamApiApplication {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StreamApiApplication.class);
 
     private static HttpServer server;
     private static CuratorClient curatorClient;
@@ -40,41 +44,43 @@ public class StreamApiApplication {
 
             server = new HttpServer(httpServerProperties, authManager, new ReadStreamHandler(streamReader));
             server.start();
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            LOGGER.error("Error on starting stream API", t);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(StreamApiApplication::shutdown));
 
-        System.out.println("Stream API started for " + (System.currentTimeMillis() - start) + " millis" );
+        LOGGER.info("Stream API started for {} millis", System.currentTimeMillis() - start);
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        System.out.println("Started Stream API shutdown");
+        LOGGER.info("Started Stream API shutdown");
         try {
             if (server != null) {
                 server.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping server");
+            //TODO: Process error
         }
         try {
             if (curatorClient != null) {
                 curatorClient.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping curator client", t);
+            //TODO: Process error
         }
 
         try {
             if (authManager != null) {
                 authManager.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping auth manager", t);
         }
 
         try {
@@ -82,10 +88,11 @@ public class StreamApiApplication {
                 streamReader.stop();
             }
         }
-        catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+        catch (Throwable t) {
+            LOGGER.error("Error on stopping stream reader", t);
+            //TODO: Process error
         }
 
-        System.out.println("Finished Stream API shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Finished Stream API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 }

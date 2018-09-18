@@ -1,11 +1,17 @@
 package ru.kontur.vostok.hercules.util.args;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Util class provides methods to parse strings into appropriate values
  * <br>
  * @author Gregory Koshelev
  */
 public class ValueParser {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ValueParser.class);
+
     /**
      * Try to parse string to int or return the default value otherwise
      * @param stringValue is the string to be parsed
@@ -20,7 +26,7 @@ public class ValueParser {
         try {
             return Integer.parseInt(stringValue);
         } catch (NumberFormatException ex) {
-            ex.printStackTrace();
+            LOGGER.warn("Wrong int value", ex);
 
             return defaultValue;
         }
@@ -40,7 +46,7 @@ public class ValueParser {
         try {
             return Long.parseLong(stringValue);
         } catch (NumberFormatException ex) {
-            ex.printStackTrace();
+            LOGGER.warn("Wrong long value", ex);
 
             return defaultValue;
         }
@@ -76,7 +82,7 @@ public class ValueParser {
         try {
             return Enum.valueOf(enumType, stringValue);
         } catch (IllegalArgumentException exception) {
-            exception.printStackTrace();
+            LOGGER.warn("Wrong enum value", exception);
 
             return defaultValue;
         }

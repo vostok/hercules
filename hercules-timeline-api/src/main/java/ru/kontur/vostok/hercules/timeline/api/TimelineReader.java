@@ -4,6 +4,8 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
  * Read event timeline from Cassandra cluster
  */
 public class TimelineReader {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TimelineReader.class);
 
     /**
      * Utility class to store shard read offset
@@ -206,8 +210,7 @@ public class TimelineReader {
             SimpleStatement statement = generateStatement(timeline, params, offset, take);
             statement.setFetchSize(Integer.MAX_VALUE); // fetch size defined by 'take' parameter
 
-            // TODO: Change to logging
-            System.out.println("Executing '" + statement.toString() + "'");
+            LOGGER.info("Executing '{}'", statement.toString());
 
             ResultSet rows = session.execute(statement);
             for (Row row : rows) {

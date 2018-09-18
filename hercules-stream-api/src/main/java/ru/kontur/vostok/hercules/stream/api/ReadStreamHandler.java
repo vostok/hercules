@@ -3,6 +3,8 @@ package ru.kontur.vostok.hercules.stream.api;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
@@ -15,6 +17,8 @@ import java.util.Deque;
 import java.util.Map;
 
 public class ReadStreamHandler implements HttpHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReadStreamHandler.class);
 
     private static final StreamReadStateReader stateReader = new StreamReadStateReader();
     private static final ByteStreamContentWriter contentWriter = new ByteStreamContentWriter();
@@ -54,7 +58,7 @@ public class ReadStreamHandler implements HttpHandler {
                     contentWriter.write(encoder, streamContent);
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOGGER.error("Error on processing request", e);
                     exchange.setStatusCode(500);
                     exchange.endExchange();
                 }

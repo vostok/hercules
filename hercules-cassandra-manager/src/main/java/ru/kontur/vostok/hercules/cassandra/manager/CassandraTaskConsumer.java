@@ -6,6 +6,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.management.task.TaskConstants;
 import ru.kontur.vostok.hercules.management.task.cassandra.CassandraTask;
 
@@ -19,6 +21,9 @@ import java.util.concurrent.Executors;
  * @author Gregory Koshelev
  */
 public class CassandraTaskConsumer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraTaskConsumer.class);
+
     private final ExecutorService executor = Executors.newFixedThreadPool(1);
     private final CassandraManager cassandraManager;
     private final KafkaConsumer<Void, byte[]> consumer;
@@ -44,7 +49,7 @@ public class CassandraTaskConsumer {
                         try {
                             task = deserializer.readValue(value);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            LOGGER.error("Error reading value", e);
                             continue;
                         }
 

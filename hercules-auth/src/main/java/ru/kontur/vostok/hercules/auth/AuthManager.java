@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.auth;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.Blacklist;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
@@ -16,6 +18,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Gregory Koshelev
  */
 public final class AuthManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthManager.class);
+
     private final CuratorClient curatorClient;
 
     private final Scheduler scheduler;
@@ -82,7 +87,7 @@ public final class AuthManager {
                 updateTask.renew();
             });//TODO: monitor watcher's event types
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Error on getting rules", e);
             return;
         }
 
