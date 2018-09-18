@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.stream.sink;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
@@ -18,7 +20,8 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class StreamSinkDaemon {
-    private static final Object lock = new Object();
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StreamSinkDaemon.class);
 
     private static CuratorClient curatorClient;
     private static StreamSink streamSink;
@@ -36,7 +39,7 @@ public class StreamSinkDaemon {
 
         //TODO: Validate sinkProperties
         if (!sinkProperties.containsKey("derived")) {
-            System.out.println("Validation fails (sink.properties): 'derived' should be specified");
+            LOGGER.error("Validation fails (sink.properties): 'derived' should be specified");
             return;
         }
 
@@ -58,37 +61,39 @@ public class StreamSinkDaemon {
 
             streamSink = new StreamSink(streamsProperties, (DerivedStream) derived);
             streamSink.start();
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            LOGGER.error("Error on starting stream sink daemon", t);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(StreamSinkDaemon::shutdown));
 
-        System.out.println("Stream Sink Daemon started for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Stream Sink Daemon started for {} millis", System.currentTimeMillis() - start);
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        System.out.println("Prepare Stream Sink Daemon to be shutdown");
+        LOGGER.info("Prepare Stream Sink Daemon to be shutdown");
 
         try {
             if (streamSink != null) {
                 streamSink.stop(5_000, TimeUnit.MILLISECONDS);
             }
-        } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping stream sink", t);
+            //TODO: Process error
         }
 
         try {
             if (curatorClient != null) {
                 curatorClient.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping curator client", t);
+            //TODO: Process error
         }
 
-        System.out.println("Finished Stream Sink Daemon shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Finished Stream Sink Daemon shutdown for {} millis", System.currentTimeMillis() - start);
     }
 }
