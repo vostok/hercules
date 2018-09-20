@@ -22,9 +22,10 @@ public final class BulkResponseHandler {
 
     private final static JsonFactory FACTORY = new JsonFactory();
 
-    // TODO: Replace with a good streaming parser
-    public static void process(HttpEntity httpEntity) {
-        toUnchecked(() -> {
+    // TODO: Replace with a good parser
+    public static int process(HttpEntity httpEntity) {
+        return toUnchecked(() -> {
+            int errorCount = 0;
             JsonParser parser = FACTORY.createParser(httpEntity.getContent());
             ObjectMapper mapper = new ObjectMapper(FACTORY);
 
@@ -37,8 +38,10 @@ public final class BulkResponseHandler {
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
                     processError(mapper.readTree(parser), currentId);
+                    errorCount++;
                 }
             }
+            return errorCount;
         });
     }
 

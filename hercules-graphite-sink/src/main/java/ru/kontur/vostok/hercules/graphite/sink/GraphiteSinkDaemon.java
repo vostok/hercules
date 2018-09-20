@@ -14,7 +14,7 @@ public class GraphiteSinkDaemon extends AbstractBulkSinkDaemon {
 
     @Override
     protected BulkSender<Event> createSender(Properties graphiteProperties) {
-        return new GraphiteEventSender(graphiteProperties);
+        return new GraphiteEventSender(graphiteProperties, this.metricsCollector);
     }
 
     @Override
