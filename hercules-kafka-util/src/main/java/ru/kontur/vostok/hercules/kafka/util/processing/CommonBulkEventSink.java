@@ -4,6 +4,7 @@ import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
@@ -83,12 +84,11 @@ public class CommonBulkEventSink {
     /**
      * Start sink
      */
-    public void start() {
+    public void run() {
         consumer.subscribe(streamPattern.getRegexp());
 
         RecordStorage<UUID, Event> current = new RecordStorage<>(batchSize);
         RecordStorage<UUID, Event> next = new RecordStorage<>(batchSize);
-
 
         /*
          * Try to poll new records from kafka until reached batchSize or timeout expired then process all
@@ -98,31 +98,35 @@ public class CommonBulkEventSink {
         TimeUnit unit = TimeUnit.MICROSECONDS;
         Timer timer = new Timer(unit, pollTimeout);
         while (running) {
-            timer.reset().start();
-            long timeLeft = pollTimeout;
+            try {
+                timer.reset().start();
+                long timeLeft = pollTimeout;
 
-            while (running && current.available() &&  0 <= timeLeft) {
-                ConsumerRecords<UUID, Event> poll = consumer.poll(timeLeft);
-                for (ConsumerRecord<UUID, Event> record : poll) {
-                    if (current.available()) {
-                        current.add(record);
-                    } else {
-                        next.add(record);
+                while (running && current.available() && 0 <= timeLeft) {
+                    ConsumerRecords<UUID, Event> poll = consumer.poll(timeLeft);
+                    for (ConsumerRecord<UUID, Event> record : poll) {
+                        if (current.available()) {
+                            current.add(record);
+                        } else {
+                            next.add(record);
+                        }
                     }
+                    timeLeft = timer.timeLeft();
                 }
-                timeLeft = timer.timeLeft();
+
+                int recordsSize = current.getRecords().size();
+
+                eventSender.accept(current.getRecords());
+                consumer.commitSync(current.getOffsets(null));
+
+                processedEventsMeter.mark(recordsSize);
+                processTimeTimer.update(timer.elapsed(), unit);
+
+                current = next;
+                next = new RecordStorage<>(batchSize);
+            } catch (WakeupException e) {
+                /* Skip for termination */
             }
-
-            int recordsSize = current.getRecords().size();
-
-            eventSender.accept(current.getRecords());
-            consumer.commitSync(current.getOffsets(null));
-
-            processedEventsMeter.mark(recordsSize);
-            processTimeTimer.update(timer.elapsed(), unit);
-
-            current = next;
-            next = new RecordStorage<>(batchSize);
         }
 
         consumer.unsubscribe();
