@@ -54,6 +54,7 @@ public class SentrySinkDaemon {
                     streamsProperties,
                     new PatternMatcher(streamPattern),
                     new SentrySyncProcessor(
+                            sentryProperties,
                             new SentryClientHolder(
                                     new SentryApiClient(sentryUrl, sentryToken)
                             ),
