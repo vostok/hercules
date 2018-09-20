@@ -37,7 +37,9 @@ public class CommonBulkEventSink {
     private final int pollTimeout;
     private final int batchSize;
 
+    private final Meter receivedEventsMeter;
     private final Meter processedEventsMeter;
+    private final Meter droppedEventsMeter;
     private final com.codahale.metrics.Timer processTimeTimer;
 
     private volatile boolean running = true;
@@ -77,8 +79,10 @@ public class CommonBulkEventSink {
         this.eventSender = eventSender;
         this.streamPattern = streamPattern;
 
-        this.processedEventsMeter = metricsCollector.meter("bulkSinkProcessedEvents");
-        this.processTimeTimer = metricsCollector.timer("bulkSinkProcessTime");
+        this.receivedEventsMeter = metricsCollector.meter("receivedEvents");
+        this.processedEventsMeter = metricsCollector.meter("processedEvents");
+        this.droppedEventsMeter = metricsCollector.meter("droppedEvents");
+        this.processTimeTimer = metricsCollector.timer("processTime");
     }
 
     /**
@@ -116,10 +120,12 @@ public class CommonBulkEventSink {
 
                 int recordsSize = current.getRecords().size();
 
-                eventSender.accept(current.getRecords());
+                BulkSenderStat stat = eventSender.process(current.getRecords());
                 consumer.commitSync(current.getOffsets(null));
 
-                processedEventsMeter.mark(recordsSize);
+                receivedEventsMeter.mark(recordsSize);
+                processedEventsMeter.mark(stat.getProcessed());
+                droppedEventsMeter.mark(stat.getDropped());
                 processTimeTimer.update(timer.elapsed(), unit);
 
                 current = next;

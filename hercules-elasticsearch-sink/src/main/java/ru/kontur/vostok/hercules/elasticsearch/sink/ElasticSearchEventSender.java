@@ -10,6 +10,7 @@ import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkSenderStat;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
@@ -48,9 +49,9 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     }
 
     @Override
-    public void accept(Collection<Event> events) {
+    public BulkSenderStat process(Collection<Event> events) {
         if (events.size() == 0) {
-            return;
+            return BulkSenderStat.ZERO;
         }
 
         events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getId()));
@@ -58,6 +59,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
         writeEventRecords(stream, events);
 
+        int errorCount = 0;
         if (0 < stream.size()) {
             long start = System.currentTimeMillis();
             Response response = toUnchecked(() -> restClient.performRequest(
@@ -72,10 +74,11 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 elasticsearchRequestErrorsMeter.mark();
                 throw new RuntimeException("Bad response");
             }
-            BulkResponseHandler.process(response.getEntity());
+            errorCount = BulkResponseHandler.process(response.getEntity());
         }
 
         events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getId()));
+        return new BulkSenderStat(events.size() - errorCount, errorCount);
     }
 
     @Override

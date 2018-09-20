@@ -61,8 +61,7 @@ public class SentryEventConverter {
                 .ifPresent(eventBuilder::withMessage);
 
         ContainerUtil.extract(event.getPayload(), StackTraceTags.LEVEL_TAG)
-                .map(SentryEventConverter::prepareLevel)
-                .flatMap(s -> EnumUtil.parseOptional(Level.class, s))
+                .flatMap(SentryLevelEnumParser::parse)
                 .ifPresent(eventBuilder::withLevel);
 
         ContainerUtil.extract(event.getPayload(), CommonTags.ENVIRONMENT_TAG)
@@ -124,17 +123,5 @@ public class SentryEventConverter {
             return "python";
         }
         return DEFAULT_PLATFORM;
-    }
-
-    /*
-     * C-sharp client use "warn" as level value, so we must adapt it to sentry Level enum
-     */
-    private static String prepareLevel(String original) {
-        if ("warn".equals(original.toLowerCase())) {
-            return "warning";
-        }
-        else {
-            return original;
-        }
     }
 }
