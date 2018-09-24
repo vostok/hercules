@@ -4,8 +4,10 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import ru.kontur.vostok.hercules.kafka.util.processing.RecordStorage;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -15,17 +17,18 @@ import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.protocol.StreamShardReadState;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
+import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -70,41 +73,63 @@ public class StreamReader {
                         .collect(Collectors.toList());
 
                 // TODO: Add partition exist checking
-                Map<TopicPartition, Long> offsets = consumer.beginningOffsets(partitions);
+                Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(partitions);
+                Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
+                Map<TopicPartition, Long> offsetsToRequest = new HashMap<>();
+                Map<TopicPartition, Long> overflowedOffsets = new HashMap<>();
                 for (Map.Entry<TopicPartition, Long> entry : stateToMap(streamName, readState).entrySet()) {
+                    TopicPartition partition = entry.getKey();
+
                     Long requestOffset = entry.getValue();
-                    Long beginningOffset = offsets.get(entry.getKey());
-                    if (beginningOffset < requestOffset) {
-                        offsets.put(entry.getKey(), entry.getValue());
+                    Long beginningOffset = beginningOffsets.get(partition);
+                    Long endOffset = endOffsets.get(partition);
+
+                    // requestOffset < beginningOffset
+                    if (requestOffset < beginningOffset) {
+                        offsetsToRequest.put(partition, beginningOffset);
+                    }
+                    // beginningOffset <= requestOffset && requestOffset < endOffset
+                    else if (requestOffset < endOffset) {
+                        offsetsToRequest.put(partition, requestOffset);
+                    }
+                    // endOffset <= requestOffset
+                    else {
+                        // These offsets will not be polled, but returning them marks these offsets as overflowed
+                        overflowedOffsets.put(partition, requestOffset);
                     }
                 }
 
-                consumer.assign(partitions);
+                RecordStorage<Void, byte[]> poll;
 
-                for (TopicPartition partition : partitions) {
-                    consumer.seek(partition, offsets.get(partition));
+                Set<TopicPartition> partitionsToRequest = offsetsToRequest.keySet();
+                if (!partitionsToRequest.isEmpty()) {
+                    consumer.assign(partitionsToRequest);
+                    for (TopicPartition partition : partitionsToRequest) {
+                        consumer.seek(partition, offsetsToRequest.get(partition));
+                    }
+
+                    poll = pollRecords(consumer, take);
+
+                    Map<TopicPartition, OffsetAndMetadata> polledOffsets = poll.getOffsets(null);
+                    polledOffsets.forEach((topicPartition, offsetAndMetadata) -> {
+                        offsetsToRequest.put(topicPartition, offsetAndMetadata.offset() + 1);
+                    });
+                }
+                else {
+                    poll = new RecordStorage<>(0);
                 }
 
-                ConsumerRecords<Void, byte[]> poll = consumer.poll(pollTimeout);
-
-                Map<Integer, Long> offsetsByPartition = new HashMap<>();
-                List<byte[]> result = new ArrayList<>(poll.count());
-                for (ConsumerRecord<Void, byte[]> record : poll) {
-                    result.add(record.value());
-                    offsetsByPartition.put(record.partition(), record.offset() + 1);
-                }
-                offsetsByPartition.forEach((partition, offset) -> offsets.put(new TopicPartition(streamName, partition), offset));
+                overflowedOffsets.forEach(offsetsToRequest::put);
 
                 return new ByteStreamContent(
-                        stateFromMap(streamName, offsets),
-                        result.toArray(new byte[][]{})
+                        stateFromMap(streamName, offsetsToRequest),
+                        poll.getRecords().toArray(new byte[][]{})
                 );
             } finally {
                 consumer.close();
                 activeConsumers.remove(consumer);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -113,6 +138,29 @@ public class StreamReader {
         activeConsumers.forEach((consumer, v) -> {
             consumer.wakeup();
         });
+    }
+
+    private RecordStorage<Void, byte[]> pollRecords(KafkaConsumer<Void, byte[]> consumer, int maxCount) {
+        RecordStorage<Void, byte[]> result = new RecordStorage<>(maxCount);
+
+        TimeUnit unit = TimeUnit.MICROSECONDS;
+        Timer timer = new Timer(unit, pollTimeout);
+        timer.reset().start();
+        long timeLeft = pollTimeout;
+
+        while (result.available() &&  0 <= timeLeft) {
+            ConsumerRecords<Void, byte[]> poll = consumer.poll(timeLeft);
+            for (ConsumerRecord<Void, byte[]> record : poll) {
+                if (result.available()) {
+                    result.add(record);
+                } else {
+                    return result;
+                }
+            }
+            timeLeft = timer.timeLeft();
+        }
+
+        return result;
     }
 
     private static Map<TopicPartition, Long> stateToMap(String streamName, StreamReadState state) {

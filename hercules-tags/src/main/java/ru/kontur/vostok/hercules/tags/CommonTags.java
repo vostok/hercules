@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.tags;
 
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
-import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
+
+import java.util.Optional;
 
 /**
  * CommonTags collection of common tags
@@ -13,12 +15,18 @@ public final class CommonTags {
     /**
      * Environment tag
      */
-    public static final TagDescription ENVIRONMENT_TAG = TagDescription.create("env", Type.STRING);
+    public static final TagDescription<Optional<String>> ENVIRONMENT_TAG = TagDescriptionBuilder.textual("env")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     /**
      * Project tag
      */
-    public static final TagDescription PROJECT_TAG = TagDescription.create("proj", Type.STRING);
+    public static final TagDescription<Optional<String>> PROJECT_TAG = TagDescriptionBuilder.textual("proj")
+            .convert(Optional::of)
+            .addDefault(Optional::empty)
+            .build();
 
     private CommonTags() {
     }

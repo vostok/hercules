@@ -123,7 +123,7 @@ public class EventPublisher {
             try {
                 eventQueue.put(event);
             } catch (InterruptedException e1) {
-                e1.printStackTrace();
+                LOGGER.error("Interruption", e1);
             }
         }
     }

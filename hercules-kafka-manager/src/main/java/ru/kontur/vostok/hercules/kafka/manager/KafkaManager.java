@@ -6,6 +6,8 @@ import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Properties;
@@ -16,6 +18,9 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class KafkaManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaManager.class);
+
     private final AdminClient adminClient;
     private final short replicationFactor;
 
@@ -31,7 +36,6 @@ public class KafkaManager {
         try {
             future.get();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException("Topic creation fails with exception", e);
         }
     }
@@ -43,7 +47,6 @@ public class KafkaManager {
         try {
             future.get();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException("Increasing of partitions count fails with exception", e);
         }
     }
@@ -54,7 +57,6 @@ public class KafkaManager {
         try {
             future.get();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException("Topic deletion fails with exception", e);
         }
     }

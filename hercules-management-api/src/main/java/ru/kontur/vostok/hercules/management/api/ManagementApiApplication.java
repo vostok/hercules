@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.management.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
@@ -10,6 +13,7 @@ import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
+import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
@@ -22,6 +26,9 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class ManagementApiApplication {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManagementApiApplication.class);
+
     private static HttpServer server;
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
@@ -47,8 +54,9 @@ public class ManagementApiApplication {
             TimelineRepository timelineRepository = new TimelineRepository(curatorClient);
             BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
             RuleRepository ruleRepository = new RuleRepository(curatorClient);
+            SentryProjectRepository sentryProjectRepository = new SentryProjectRepository(curatorClient);
 
-            AdminManager adminManager = new AdminManager(PropertiesExtractor.toSet(properties, "keys"));
+            AdminAuthManager adminAuthManager = new AdminAuthManager(PropertiesExtractor.toSet(properties, "keys"));
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
@@ -56,28 +64,40 @@ public class ManagementApiApplication {
             cassandraTaskQueue = new CassandraTaskQueue(kafkaProperties);
             kafkaTaskQueue = new KafkaTaskQueue(kafkaProperties);
 
-            server = new HttpServer(httpserverProperties, adminManager, authManager, streamRepository, timelineRepository, blacklistRepository, ruleRepository, cassandraTaskQueue, kafkaTaskQueue);
+            server = new HttpServer(
+                    httpserverProperties,
+                    adminAuthManager,
+                    authManager,
+                    streamRepository,
+                    timelineRepository,
+                    blacklistRepository,
+                    ruleRepository,
+                    sentryProjectRepository,
+                    cassandraTaskQueue,
+                    kafkaTaskQueue
+            );
             server.start();
         } catch (Throwable e) {
-            e.printStackTrace();
+            LOGGER.error("Error on starting management api", e);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(ManagementApiApplication::shutdown));
 
-        System.out.println("Management API started for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Management API started for {} millis", System.currentTimeMillis() - start);
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        System.out.println("Started Management API shutdown");
+        LOGGER.info("Started Management API shutdown");
         try {
             if (server != null) {
                 server.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            LOGGER.error("Error on server stopping", e);
+            //TODO: Process error
         }
 
         try {
@@ -85,7 +105,7 @@ public class ManagementApiApplication {
                 authManager.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            LOGGER.error("Error on auth manager stopping", e);
         }
 
         try {
@@ -93,7 +113,8 @@ public class ManagementApiApplication {
                 curatorClient.stop();
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            LOGGER.error("Error on curator client stopping", e);
+            //TODO: Process error
         }
 
         try {
@@ -101,7 +122,8 @@ public class ManagementApiApplication {
                 cassandraTaskQueue.close(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            LOGGER.error("Error on cassandra task queue stopping", e);
+            //TODO: Process error
         }
 
         try {
@@ -109,9 +131,10 @@ public class ManagementApiApplication {
                 kafkaTaskQueue.close(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+            LOGGER.error("Error on kafka task queue stopping", e);
+            //TODO: Process error
         }
 
-        System.out.println("Finished Management API shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Finished Management API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 }

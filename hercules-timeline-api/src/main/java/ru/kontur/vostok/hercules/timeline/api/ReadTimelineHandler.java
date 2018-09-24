@@ -2,6 +2,8 @@ package ru.kontur.vostok.hercules.timeline.api;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
@@ -18,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 
 public class ReadTimelineHandler implements HttpHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReadTimelineHandler.class);
 
     private static final TimelineReadStateReader stateReader = new TimelineReadStateReader();
     private static final TimelineByteContentWriter contentWriter = new TimelineByteContentWriter();
@@ -59,7 +63,7 @@ public class ReadTimelineHandler implements HttpHandler {
 
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOGGER.error("Error on processing request", e);
                     exchange.setStatusCode(500);
                 } finally {
                     exchange.endExchange();

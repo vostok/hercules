@@ -6,6 +6,8 @@ import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.TableMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Properties;
@@ -14,6 +16,9 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class CassandraConnector {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraConnector.class);
+
     private final Properties properties;
     private final String keyspace;
     private volatile Cluster cluster;
@@ -70,14 +75,14 @@ public class CassandraConnector {
                 session.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Error on closing session", e);
         }
         try {
             if (cluster != null) {
                 cluster.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Error on closing cluster", e);
         }
     }
 }

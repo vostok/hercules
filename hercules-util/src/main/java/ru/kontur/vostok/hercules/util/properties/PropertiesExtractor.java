@@ -27,6 +27,16 @@ public class PropertiesExtractor {
                 return null;
             }
         });
+        converters.put(Boolean.class, s -> {
+            if (Objects.isNull(s)) {
+                return null;
+            }
+            switch (s.toLowerCase()) {
+                case "true": return Boolean.TRUE;
+                case "false": return Boolean.FALSE;
+                default: return null;
+            }
+        });
     }
 
     public static short getShort(Properties properties, String name, short defaultValue) {

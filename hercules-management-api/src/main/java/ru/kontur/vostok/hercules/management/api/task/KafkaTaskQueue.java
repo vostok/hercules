@@ -7,6 +7,8 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidSerializer;
 import ru.kontur.vostok.hercules.management.task.TaskConstants;
 import ru.kontur.vostok.hercules.management.task.kafka.CreateTopicKafkaTask;
@@ -24,6 +26,9 @@ import java.util.concurrent.TimeoutException;
  * @author Gregory Koshelev
  */
 public class KafkaTaskQueue {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaTaskQueue.class);
+
     private final KafkaProducer<Void, byte[]> producer;
     private final ObjectWriter serializer;
 
@@ -57,7 +62,7 @@ public class KafkaTaskQueue {
             Future<RecordMetadata> result = producer.send(record);
             result.get(5_000, TimeUnit.MILLISECONDS);
         } catch (JsonProcessingException | InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
+            LOGGER.error("Error on sending task", e);
             throw new RuntimeException("Cannot send task", e);
         }
     }

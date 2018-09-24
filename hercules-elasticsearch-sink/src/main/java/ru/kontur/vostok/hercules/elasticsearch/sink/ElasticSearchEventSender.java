@@ -7,9 +7,13 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.BulkSenderStat;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,6 +27,11 @@ import java.util.concurrent.TimeUnit;
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 public class ElasticSearchEventSender implements BulkSender<Event> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchEventSender.class);
+
+    private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
+    private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
 
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
@@ -40,14 +49,17 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     }
 
     @Override
-    public void accept(Collection<Event> events) {
+    public BulkSenderStat process(Collection<Event> events) {
         if (events.size() == 0) {
-            return;
+            return BulkSenderStat.ZERO;
         }
+
+        events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getId()));
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
         writeEventRecords(stream, events);
 
+        int errorCount = 0;
         if (0 < stream.size()) {
             long start = System.currentTimeMillis();
             Response response = toUnchecked(() -> restClient.performRequest(
@@ -62,8 +74,11 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 elasticsearchRequestErrorsMeter.mark();
                 throw new RuntimeException("Bad response");
             }
-            BulkResponseHandler.process(response.getEntity());
+            errorCount = BulkResponseHandler.process(response.getEntity());
         }
+
+        events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getId()));
+        return new BulkSenderStat(events.size() - errorCount, errorCount);
     }
 
     @Override
@@ -82,8 +97,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     writeNewLine(stream);
                 }
                 else {
-                    // TODO: Add logging
-                    System.out.println(String.format("Cannot process event '%s' because of missing index data", event.getId()));
+                    LOGGER.error(String.format("Cannot process event '%s' because of missing index data", event.getId()));
                 }
             }
         });

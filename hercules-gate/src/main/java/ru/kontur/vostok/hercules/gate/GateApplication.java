@@ -66,15 +66,15 @@ public class GateApplication {
 
             server = new HttpServer(metricsCollector, httpserverProperties, authManager, authValidationManager, eventSender, streamRepository);
             server.start();
-        } catch (Throwable e) {
-            LOGGER.error("Cannot start application due to", e);
+        } catch (Throwable t) {
+            LOGGER.error("Cannot start application due to", t);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(GateApplication::shutdown));
 
-        LOGGER.info("Gateway started for " + (System.currentTimeMillis() - start) + " millis" );
+        LOGGER.info("Gateway started for {} millis", System.currentTimeMillis() - start);
     }
 
     private static void shutdown() {
@@ -84,8 +84,8 @@ public class GateApplication {
             if (server != null) {
                 server.stop();
             }
-        } catch (Throwable e) {
-            LOGGER.error("Error on http server shutdown", e);
+        } catch (Throwable t) {
+            LOGGER.error("Error on http server shutdown", t);
             //TODO: Process error
         }
 
@@ -93,8 +93,8 @@ public class GateApplication {
             if (eventSender != null) {
                 eventSender.stop(5_000, TimeUnit.MILLISECONDS);
             }
-        } catch (Throwable e) {
-            LOGGER.error("Error on event sender shutdown", e);
+        } catch (Throwable t) {
+            LOGGER.error("Error on event sender shutdown", t);
             //TODO: Process error
         }
 
@@ -102,24 +102,24 @@ public class GateApplication {
             if (authManager != null) {
                 authManager.stop();
             }
-        } catch (Throwable e) {
-            LOGGER.error("Error on auth manager shutdown", e);
+        } catch (Throwable t) {
+            LOGGER.error("Error on auth manager shutdown", t);
         }
 
         try {
             if (authValidationManager != null) {
                 authValidationManager.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping auth validation manager", t);
         }
 
         try {
             if (curatorClient != null) {
                 curatorClient.stop();
             }
-        } catch (Throwable e) {
-            LOGGER.error("Error on curator client shutdown", e);
+        } catch (Throwable t) {
+            LOGGER.error("Error on curator client shutdown", t);
             //TODO: Process error
         }
 
@@ -127,11 +127,11 @@ public class GateApplication {
             if (metricsCollector != null) {
                 metricsCollector.stop();
             }
-        } catch (Throwable e) {
-            LOGGER.error("Error on metrics collector shutdown", e);
+        } catch (Throwable t) {
+            LOGGER.error("Error on metrics collector shutdown", t);
             //TODO: Process error
         }
 
-        LOGGER.info("Finished Gateway shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Finished Gateway shutdown for {}  millis", System.currentTimeMillis() - start);
     }
 }

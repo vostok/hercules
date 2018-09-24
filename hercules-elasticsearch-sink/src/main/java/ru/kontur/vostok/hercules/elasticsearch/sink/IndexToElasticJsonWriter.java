@@ -25,12 +25,12 @@ public final class IndexToElasticJsonWriter {
     public static boolean tryWriteIndex(OutputStream stream, Event event) throws IOException {
 
         String indexName;
-        Optional<String> index = ContainerUtil.extractOptional(event.getPayload(), ElasticSearchTags.INDEX_TAG);
+        Optional<String> index = ContainerUtil.extract(event.getPayload(), ElasticSearchTags.INDEX_TAG);
         if (index.isPresent()) {
             indexName = index.get();
         } else {
-            Optional<String> project = ContainerUtil.extractOptional(event.getPayload(), CommonTags.PROJECT_TAG);
-            Optional<String> env = ContainerUtil.extractOptional(event.getPayload(), CommonTags.ENVIRONMENT_TAG);
+            Optional<String> project = ContainerUtil.extract(event.getPayload(), CommonTags.PROJECT_TAG);
+            Optional<String> env = ContainerUtil.extract(event.getPayload(), CommonTags.ENVIRONMENT_TAG);
             if (project.isPresent() && env.isPresent()) {
                 indexName = project.get() + "-" +
                         env.get() + "-" +

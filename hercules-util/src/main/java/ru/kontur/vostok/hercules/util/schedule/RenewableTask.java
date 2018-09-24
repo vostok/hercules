@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.util.schedule;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +14,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Gregory Koshelev
  */
 public class RenewableTask implements Runnable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RenewableTask.class);
+
     private final AtomicLong lastUpdatedTimestamp = new AtomicLong(-1);
     private volatile boolean enabled = true;
     private final Runnable task;
@@ -50,7 +56,7 @@ public class RenewableTask implements Runnable {
             executor.schedule(this, heartbeatMillis * 2, TimeUnit.MILLISECONDS);
             return true;
         } catch (RejectedExecutionException e) {
-            e.printStackTrace();
+            LOGGER.warn("Task was rejected", e);
             return false;
         }
     }

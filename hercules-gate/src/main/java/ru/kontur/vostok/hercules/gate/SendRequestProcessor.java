@@ -13,6 +13,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.ReaderIterator;
 import ru.kontur.vostok.hercules.throttling.RequestProcessor;
 import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,6 +23,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SendRequestProcessor implements RequestProcessor<HttpServerExchange, SendContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SendRequestProcessor.class);
+
+    private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
+    private static final Logger DROPPED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
+    private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
 
     private final EventSender eventSender;
 
@@ -42,7 +47,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                     (exchange, bytes) -> exchange.dispatch(() -> {
                         ReaderIterator<Event> reader;
                         try {
-                            reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.tags));
+                            reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.getTags()));
                         } catch (RuntimeException exception) {
                             ResponseUtil.badRequest(exchange);
                             callback.call();
@@ -79,8 +84,11 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
             Event event;
             try {
                 event = reader.next();
+                RECEIVED_EVENT_LOGGER.trace("{}", event.getId());
                 if (!eventValidator.validate(event)) {
                     //TODO: Metrics are coming!
+                    LOGGER.warn("Invalid event data");
+                    DROPPED_EVENT_LOGGER.trace("{}", event.getId());
                     if (processed.compareAndSet(false, true)) {
                         ResponseUtil.badRequest(exchange);
                         callback.call();
@@ -88,7 +96,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                     return;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LOGGER.error("Exception on validation event", e);
                 //TODO: Metrics are coming!
                 if (processed.compareAndSet(false, true)) {
                     ResponseUtil.badRequest(exchange);
@@ -96,42 +104,46 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                 }
                 return;
             }
-            if (!context.validator.validate(event)) {
+            if (!context.getValidator().validate(event)) {
                 //TODO: should to log filtered events
                 if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
-                    if (!context.async) {
+                    if (!context.isAsync()) {
                         ResponseUtil.ok(exchange);
                     }
                     callback.call();
                 }
+                DROPPED_EVENT_LOGGER.trace("{}", event.getId());
                 continue;
             }
             eventSender.send(
                     event,
                     event.getId(),
-                    context.topic,
-                    context.partitions,
-                    context.shardingKey,
+                    context.getTopic(),
+                    context.getPartitions(),
+                    context.getShardingKey(),
                     () -> {
                         if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
-                            if (!context.async) {
+                            if (!context.isAsync()) {
                                 ResponseUtil.ok(exchange);
                             }
                             callback.call();
                         }
+                        PROCESSED_EVENT_LOGGER.trace("{}", event.getId());
                         sentEventsMeter.mark(1);
                     },
                     () -> {
                         //TODO: Metrics are coming!
                         if (processed.compareAndSet(false, true)) {
-                            if (!context.async) {
+                            if (!context.isAsync()) {
                                 ResponseUtil.unprocessableEntity(exchange);
                             }
                             callback.call();
                         }
-                    });
+                        DROPPED_EVENT_LOGGER.trace("{}", event.getId());
+                    }
+            );
         }
-        if (context.async) {
+        if (context.isAsync()) {
             ResponseUtil.ok(exchange);
         }
     }

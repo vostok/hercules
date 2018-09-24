@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.Scopes;
@@ -13,6 +15,8 @@ import java.util.Map;
 import java.util.Properties;
 
 public class TimelineApiApplication {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TimelineApiApplication.class);
 
     private static HttpServer server;
     private static CuratorClient curatorClient;
@@ -48,57 +52,61 @@ public class TimelineApiApplication {
                     new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader)
             );
             server.start();
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            LOGGER.error("Error on starting timeline api", t);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(TimelineApiApplication::shutdown));
 
-        System.out.println("Stream API started for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Stream API started for {} millis", System.currentTimeMillis() - start);
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        System.out.println("Started Stream API shutdown");
+        LOGGER.info("Started Stream API shutdown");
         try {
             if (server != null) {
                 server.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping server", t);
+            //TODO: Process error
         }
         try {
             if (curatorClient != null) {
                 curatorClient.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping curator client", t);
+            //TODO: Process error
         }
 
         try {
             if (authManager != null) {
                 authManager.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping auth manager", t);
         }
 
         try {
             if (cassandraConnector != null) {
                 cassandraConnector.close();
             }
-        } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping cassandra connector", t);
+            //TODO: Process error
         }
         try {
             if (timelineReader != null) {
                 timelineReader.shutdown();
             }
-        } catch (Throwable e) {
-            e.printStackTrace(); //TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping time line reader", t);
+            //TODO: Process error
         }
-        System.out.println("Finished Stream API shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Finished Stream API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 }
