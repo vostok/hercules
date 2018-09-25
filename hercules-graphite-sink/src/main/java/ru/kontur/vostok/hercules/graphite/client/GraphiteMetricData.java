@@ -5,19 +5,25 @@ package ru.kontur.vostok.hercules.graphite.client;
  */
 public class GraphiteMetricData {
 
-    protected final long timestamp;
-    protected final double value;
+    private String metricName;
+    private long metricUnixTime;
+    private double metricValue;
 
-    public GraphiteMetricData(long timestamp, double value) {
-        this.timestamp = timestamp;
-        this.value = value;
+    public GraphiteMetricData(String metricName, long metricUnixTime, double metricValue) {
+        this.metricName = metricName;
+        this.metricUnixTime = metricUnixTime;
+        this.metricValue = metricValue;
     }
 
-    public long getTimestamp() {
-        return timestamp;
+    public String getMetricName() {
+        return metricName;
     }
 
-    public double getValue() {
-        return value;
+    public long getMetricUnixTime() {
+        return metricUnixTime;
+    }
+
+    public double getMetricValue() {
+        return metricValue;
     }
 }

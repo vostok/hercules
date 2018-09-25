@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.graphite.sink;
 import com.codahale.metrics.Timer;
 import ru.kontur.vostok.hercules.graphite.client.GraphiteClient;
 import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricData;
-import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricStorage;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSenderStat;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
@@ -12,7 +11,9 @@ import ru.kontur.vostok.hercules.tags.MetricsTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -37,23 +38,23 @@ public class GraphiteEventSender implements BulkSender<Event> {
             return BulkSenderStat.ZERO;
         }
 
-        GraphiteMetricStorage storage = new GraphiteMetricStorage();
+        List<GraphiteMetricData> data = new ArrayList<>(events.size());
 
         int processed = 0;
         int dropped = 0;
         for (Event event : events) {
             final long timestamp = TimeUtil.gregorianTicksToUnixTime(event.getId().timestamp()) / 1000;
             Optional<String> name = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_NAME_TAG);
-            Optional<GraphiteMetricData> value = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_VALUE_TAG).map(v -> new GraphiteMetricData(timestamp, v));
+            Optional<Double> value = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_VALUE_TAG);
             if (name.isPresent() && value.isPresent()) {
-                storage.add(name.get(), value.get());
+                data.add(new GraphiteMetricData(name.get(), timestamp, value.get()));
                 processed++;
             } else {
                 dropped++;
             }
         }
 
-        graphiteClientTimer.time(() -> client.send(storage));
+        graphiteClientTimer.time(() -> client.send(data));
         return new BulkSenderStat(processed, dropped);
     }
 
