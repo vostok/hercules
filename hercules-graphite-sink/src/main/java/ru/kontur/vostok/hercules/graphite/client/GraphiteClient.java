@@ -1,14 +1,13 @@
 package ru.kontur.vostok.hercules.graphite.client;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Collection;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
-public class GraphiteClient {
+public class GraphiteClient implements GraphiteMetricDataSender {
 
     private final String server;
     private final int port;
@@ -18,15 +17,16 @@ public class GraphiteClient {
         this.port = port;
     }
 
-    public void send(Collection<GraphiteMetricData> metricData) {
+    @Override
+    public void send(Collection<GraphiteMetricData> data) {
         try (
                 Socket socket = new Socket(server, port);
                 OutputStream stream = socket.getOutputStream();
                 PrintWriter writer = new PrintWriter(stream, true)
         ) {
-            metricData.forEach(data -> writer.printf(Locale.ENGLISH, "%s %f %d\n", data.getMetricName(), data.getMetricValue(), data.getMetricUnixTime()));
+            data.forEach(record -> writer.printf(Locale.ENGLISH, "%s %f %d\n", record.getMetricName(), record.getMetricValue(), record.getMetricUnixTime()));
             writer.flush();
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
