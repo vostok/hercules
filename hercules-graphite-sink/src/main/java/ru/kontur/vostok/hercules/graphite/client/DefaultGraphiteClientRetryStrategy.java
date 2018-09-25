@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.graphite.client;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,8 +14,9 @@ import java.util.Set;
 public class DefaultGraphiteClientRetryStrategy extends SimpleGraphiteClientRetryStrategy {
 
     private static final int DEFAULT_RETRY_COUNT = 3;
-    private static final Set<Class<? extends Exception>> DEFAULT_SUPPRESSED_EXCEPTIONS = new HashSet<>(Arrays.asList(
-            IOException.class
+    private static final Set<Class<? extends Throwable>> DEFAULT_SUPPRESSED_EXCEPTIONS = new HashSet<>(Arrays.asList(
+            IOException.class,
+            ConnectException.class
     ));
 
     public DefaultGraphiteClientRetryStrategy(GraphiteMetricDataSender sender) {

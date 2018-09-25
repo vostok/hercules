@@ -57,7 +57,7 @@ public abstract class AbstractBulkSinkDaemon {
             bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender, metricsCollector);
             bulkEventSink.start();
         } catch (Throwable e) {
-            LOGGER.error("Cannot start " + getDaemonName() + "due to", e);
+            LOGGER.error("Cannot start " + getDaemonName() + " due to", e);
             shutdown();
             return;
         }

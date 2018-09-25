@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.graphite.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.Set;
 
@@ -10,10 +13,12 @@ import java.util.Set;
  */
 public class SimpleGraphiteClientRetryStrategy extends GraphiteClientRetryStrategy {
 
-    private final int retryCount;
-    private final Set<Class<? extends Exception>> suppressedExceptions;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleGraphiteClientRetryStrategy.class);
 
-    public SimpleGraphiteClientRetryStrategy(GraphiteMetricDataSender sender, int retryCount, Set<Class<? extends Exception>> suppressedExceptions) {
+    private final int retryCount;
+    private final Set<Class<? extends Throwable>> suppressedExceptions;
+
+    public SimpleGraphiteClientRetryStrategy(GraphiteMetricDataSender sender, int retryCount, Set<Class<? extends Throwable>> suppressedExceptions) {
         super(sender);
         this.retryCount = retryCount;
         this.suppressedExceptions = suppressedExceptions;
@@ -22,19 +27,34 @@ public class SimpleGraphiteClientRetryStrategy extends GraphiteClientRetryStrate
     @Override
     public void send(Collection<GraphiteMetricData> data) {
         int currentRetryCount = 0;
-        while (currentRetryCount < retryCount) {
+        RuntimeException lastException;
+        do {
             try {
                 sender.send(data);
                 return;
             }
-            catch (Exception e) {
-                if (suppressedExceptions.contains(e.getClass())) {
+            catch (RuntimeException e) {
+                lastException = e;
+                LOGGER.error("Error on sending data to graphite", e);
+                if (suppressedExceptions.contains(unwrapRuntimeException(e).getClass())) {
                     currentRetryCount++;
                 }
                 else {
                     throw e;
                 }
             }
+        } while (currentRetryCount < retryCount);
+        throw lastException;
+    }
+
+    /*
+     * Unwraps runtime exception up to original runtime exception or first not RuntimeException object
+     */
+    private static Throwable unwrapRuntimeException(RuntimeException e) {
+        Throwable t = e;
+        while (t.getClass().equals(RuntimeException.class) && t.getCause() != t) {
+            t = t.getCause();
         }
+        return t;
     }
 }
