@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.graphite.sink.client;
+package ru.kontur.vostok.hercules.graphite.client;
 
 import java.util.HashMap;
 import java.util.LinkedList;

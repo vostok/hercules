@@ -1,9 +1,9 @@
 package ru.kontur.vostok.hercules.graphite.sink;
 
 import com.codahale.metrics.Timer;
-import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteClient;
-import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricData;
-import ru.kontur.vostok.hercules.graphite.sink.client.GraphiteMetricStorage;
+import ru.kontur.vostok.hercules.graphite.client.GraphiteClient;
+import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricData;
+import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricStorage;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSenderStat;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
@@ -15,7 +15,6 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 public class GraphiteEventSender implements BulkSender<Event> {
 
