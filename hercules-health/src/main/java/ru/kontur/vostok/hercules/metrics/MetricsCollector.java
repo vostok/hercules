@@ -108,6 +108,15 @@ public class MetricsCollector {
     }
 
     /**
+     * Register metric by the name with custom function
+     * @param name is the name of the metric
+     * @param supplier is the custom function to provide status handler
+     */
+    public void status(String name, Supplier<IHaveStatusCode> supplier) {
+        registry.register(name, (Gauge<Integer>) () -> supplier.get().getStatusCode());
+    }
+
+    /**
      * Get histogram by the name
      * @param name is the name of the histogram
      * @return requested histogram
