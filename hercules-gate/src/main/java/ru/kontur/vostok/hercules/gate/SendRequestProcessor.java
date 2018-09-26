@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.decoder.ReaderIterator;
+import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
 import ru.kontur.vostok.hercules.throttling.RequestProcessor;
 import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
@@ -52,7 +53,13 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                             ResponseUtil.badRequest(exchange);
                             callback.call();
                             LOGGER.error("Cannot create ReaderIterator", exception);
-                            throw exception;//TODO: Process exception
+                            throw exception; //TODO: Process exception
+                        }
+                        catch (InvalidDataException e) {
+                            ResponseUtil.badRequest(exchange);
+                            callback.call();
+                            LOGGER.error("Cannot create ReaderIterator", e);
+                            throw new RuntimeException(e); //TODO: Process exception
                         }
                         if (reader.getTotal() == 0) {
                             ResponseUtil.ok(exchange);
