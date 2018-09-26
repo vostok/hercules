@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
+import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
+
+import java.nio.BufferUnderflowException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -10,10 +13,15 @@ public class ReaderIterator<T> implements Iterator<T> {
     private final int total;
     private int remaining;
 
-    public ReaderIterator(Decoder decoder, Reader<T> elementReader) {
+    public ReaderIterator(Decoder decoder, Reader<T> elementReader) throws InvalidDataException {
         this.decoder = decoder;
         this.elementReader = elementReader;
-        this.total = decoder.readInteger();
+        try {
+            this.total = decoder.readInteger();
+        }
+        catch (BufferUnderflowException e) {
+            throw new InvalidDataException(e);
+        }
         this.remaining = total;
     }
 
