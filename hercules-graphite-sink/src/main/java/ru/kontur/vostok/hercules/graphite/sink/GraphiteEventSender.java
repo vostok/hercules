@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricData;
 import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricDataSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSenderStat;
-import ru.kontur.vostok.hercules.metrics.MetricsCollector;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.tags.MetricsTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;

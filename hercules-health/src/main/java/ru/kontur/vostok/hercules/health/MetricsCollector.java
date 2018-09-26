@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.metrics;
+package ru.kontur.vostok.hercules.health;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
