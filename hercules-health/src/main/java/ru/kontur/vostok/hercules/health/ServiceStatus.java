@@ -7,7 +7,7 @@ package ru.kontur.vostok.hercules.health;
  */
 public enum ServiceStatus implements IHaveStatusCode {
     OK(0),
-    FAILED(1),
+    SUSPENDED(1),
     ;
 
     private final int statusCode;
