@@ -75,7 +75,7 @@ public class CreateStreamHandler implements HttpHandler {
                 }
 
                 //TODO: Topic creation may fail after successful meta creation (no atomicity at all).
-                kafkaTaskQueue.createTopic(stream.getName(), stream.getPartitions());
+                kafkaTaskQueue.createTopic(stream.getName(), stream.getPartitions(), stream.getTtl());
             } catch (IOException e) {
                 LOGGER.error("Error on processing request", e);
                 ResponseUtil.badRequest(exch);

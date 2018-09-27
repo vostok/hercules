@@ -39,8 +39,8 @@ public class KafkaTaskQueue {
         this.serializer = objectMapper.writerFor(KafkaTask.class);
     }
 
-    public void createTopic(String topic, int partitions) {
-        sendTask(new CreateTopicKafkaTask(topic, partitions));
+    public void createTopic(String topic, int partitions, long ttl) {
+        sendTask(new CreateTopicKafkaTask(topic, partitions, ttl));
     }
 
     public void increasePartitions(String topic, int newPartitions) {
