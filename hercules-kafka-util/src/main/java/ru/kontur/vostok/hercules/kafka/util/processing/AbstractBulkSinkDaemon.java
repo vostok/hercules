@@ -55,7 +55,13 @@ public abstract class AbstractBulkSinkDaemon {
         try {
             sender = createSender(sinkProperties);
             bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender, metricsCollector);
-            bulkEventSink.start();
+
+            Thread worker = new Thread(bulkEventSink::run, "sink-worker");
+            worker.setUncaughtExceptionHandler((t, e) -> {
+                LOGGER.error("Error in worker thread", e);
+                this.shutdown();
+            });
+            worker.start();
         } catch (Throwable e) {
             LOGGER.error("Cannot start " + getDaemonName() + " due to", e);
             shutdown();

@@ -4,6 +4,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -27,7 +28,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DecoderTest {
     @Test
-    public void testSingleEventBatchDecoding() throws IOException, URISyntaxException {
+    public void testSingleEventBatchDecoding() throws IOException, URISyntaxException, InvalidDataException {
         URL resource = getClass().getClassLoader().getResource("v1.event.1.txt");
         Path path = Paths.get(resource.toURI());
         byte[] data = Files.readAllBytes(path);

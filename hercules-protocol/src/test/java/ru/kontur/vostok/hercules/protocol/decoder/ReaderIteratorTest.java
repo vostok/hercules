@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
 import ru.kontur.vostok.hercules.protocol.encoder.ArrayWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
@@ -13,7 +14,7 @@ import static org.junit.Assert.assertArrayEquals;
 public class ReaderIteratorTest {
 
     @Test
-    public void shouldReadWriteIntegerArray() {
+    public void shouldReadWriteIntegerArray() throws InvalidDataException {
         ArrayWriter<Integer> writer = new ArrayWriter<>(Encoder::writeInteger);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
