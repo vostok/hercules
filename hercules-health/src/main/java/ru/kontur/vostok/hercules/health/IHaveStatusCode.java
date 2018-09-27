@@ -7,5 +7,5 @@ package ru.kontur.vostok.hercules.health;
  */
 public interface IHaveStatusCode {
 
-    int getStatusCode();
+    Integer getStatusCode();
 }

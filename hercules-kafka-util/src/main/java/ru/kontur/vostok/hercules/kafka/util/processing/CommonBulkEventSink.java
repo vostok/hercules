@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Serde;
+import ru.kontur.vostok.hercules.health.ServiceStatus;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
@@ -18,6 +19,7 @@ import ru.kontur.vostok.hercules.util.time.Timer;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -42,6 +44,7 @@ public class CommonBulkEventSink {
     private final com.codahale.metrics.Timer processTimeTimer;
 
     private volatile boolean running = true;
+    private final AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.STARTING);
 
     /**
      * @param destinationName data flow destination name, where data must be copied
@@ -82,6 +85,7 @@ public class CommonBulkEventSink {
         this.processedEventsMeter = metricsCollector.meter("processedEvents");
         this.droppedEventsMeter = metricsCollector.meter("droppedEvents");
         this.processTimeTimer = metricsCollector.timer("processTime");
+        metricsCollector.status("status", status::get);
     }
 
     /**
@@ -141,6 +145,10 @@ public class CommonBulkEventSink {
      */
     public void stop(int timeout, TimeUnit timeUnit) {
         running = false;
+        if (!(status.compareAndSet(ServiceStatus.OK, ServiceStatus.STOPPING)
+                || status.compareAndSet(ServiceStatus.SUSPENDED, ServiceStatus.STOPPING))) {
+            throw new IllegalStateException("Cannot stop service");
+        }
         consumer.wakeup();
     }
 }

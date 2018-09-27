@@ -8,16 +8,18 @@ package ru.kontur.vostok.hercules.health;
 public enum ServiceStatus implements IHaveStatusCode {
     OK(0),
     SUSPENDED(1),
+    STARTING(null),
+    STOPPING(null)
     ;
 
-    private final int statusCode;
+    private final Integer statusCode;
 
     @Override
-    public int getStatusCode() {
+    public Integer getStatusCode() {
         return statusCode;
     }
 
-    ServiceStatus(int statusCode) {
+    ServiceStatus(Integer statusCode) {
         this.statusCode = statusCode;
     }
 }
