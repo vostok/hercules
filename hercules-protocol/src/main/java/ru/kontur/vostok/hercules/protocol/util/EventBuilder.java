@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.ContainerWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
@@ -10,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Simple Event build. NOT thread-safe
@@ -20,7 +22,7 @@ public class EventBuilder {
 
     private UUID eventId;
     private int version;
-    private Map<String, Variant> tags = new LinkedHashMap<>();
+    ContainerBuilder containerBuilder = ContainerBuilder.create();
 
     private boolean wasBuild = false;
 
@@ -33,16 +35,11 @@ public class EventBuilder {
     }
 
     public void setTag(String key, Variant value) {
-        tags.put(key, value);
+        containerBuilder.tag(key, value);
     }
 
-    public void setTag(TagDescription tag, Variant value) {
-        if (tag.getType() != value.getType()) {
-            throw new IllegalArgumentException(
-                    String.format("Value type mismatch, expected: %s, actual: %s", tag.getType(), value.getType())
-            );
-        }
-        setTag(tag.getName(), value);
+    public <T> void setTag(TagDescription<T> tag, Variant value) {
+        containerBuilder.tag(tag, value);
     }
 
     public Event build() {
@@ -58,7 +55,7 @@ public class EventBuilder {
         encoder.writeUnsignedByte(version);
         encoder.writeUuid(eventId);
 
-        Container container = new Container(tags);
+        Container container = containerBuilder.build();
         containerWriter.write(encoder, container);
 
         return new Event(stream.toByteArray(), version, eventId, container);

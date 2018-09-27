@@ -6,6 +6,8 @@ import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Arrays;
@@ -19,6 +21,9 @@ import java.util.stream.Collectors;
  * @author Gregory Koshelev
  */
 public class CuratorClient {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CuratorClient.class);
+
     private final CuratorFramework curatorFramework;
 
     public CuratorClient(Properties properties) {
@@ -70,7 +75,7 @@ public class CuratorClient {
         } catch (KeeperException.NodeExistsException ex) {
             return CreationResult.alreadyExist();
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOGGER.error("Error on creating path", ex);
             return CreationResult.unknown();
         }
     }
@@ -82,7 +87,7 @@ public class CuratorClient {
         } catch (KeeperException.NoNodeException ex) {
             return DeletionResult.notExist();
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOGGER.error("Error on deleting path", ex);
             return DeletionResult.unknown();
         }
     }

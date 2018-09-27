@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.cassandra.manager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
@@ -13,6 +15,9 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class CassandraManagerApplication {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraManagerApplication.class);
+
     private static CassandraConnector cassandraConnector;
     private static CassandraTaskConsumer consumer;
 
@@ -31,37 +36,39 @@ public class CassandraManagerApplication {
             Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
             consumer = new CassandraTaskConsumer(consumerProperties, new CassandraManager(cassandraConnector));
             consumer.start();
-        } catch (Throwable e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            LOGGER.error("Error on starting cassandra manager", t);
             shutdown();
             return;
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(CassandraManagerApplication::shutdown));
 
-        System.out.println("Cassandra Manager started for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Cassandra Manager started for {} millis", System.currentTimeMillis() - start);
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        System.out.println("Started Cassandra Manager shutdown");
+        LOGGER.info("Started Cassandra Manager shutdown");
 
         try {
             if (consumer != null) {
                 consumer.stop();
             }
-        } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping consumer", t);
+            //TODO: Process error
         }
 
         try {
             if (cassandraConnector != null) {
                 cassandraConnector.close();
             }
-        } catch (Throwable e) {
-            e.printStackTrace();//TODO: Process error
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping cassandra manager", t);
+            //TODO: Process error
         }
 
-        System.out.println("Finished Cassandra Manager shutdown for " + (System.currentTimeMillis() - start) + " millis");
+        LOGGER.info("Finished Cassandra Manager shutdown for {} millis", System.currentTimeMillis() - start);
     }
 }

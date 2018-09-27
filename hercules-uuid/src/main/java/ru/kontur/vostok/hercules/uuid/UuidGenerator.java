@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.uuid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.net.InetAddress;
@@ -33,6 +35,8 @@ import static ru.kontur.vostok.hercules.uuid.UuidUtil.makeMostSigBits;
  * @author Gregory Koshelev
  */
 public class UuidGenerator {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UuidGenerator.class);
 
     private static final AtomicLong lastTicks = new AtomicLong(0L);
     private static final SecureRandom random = new SecureRandom();
@@ -126,7 +130,7 @@ public class UuidGenerator {
             }
             return 0L;//TODO: IPv6 addresses also are possible.
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            LOGGER.warn("Unknown host", e);
             return 0L;
         }
     }

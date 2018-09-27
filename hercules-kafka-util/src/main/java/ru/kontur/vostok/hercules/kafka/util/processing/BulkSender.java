@@ -8,5 +8,7 @@ import java.util.function.Consumer;
  *
  * @param <Value> Kafka record value type
  */
-public interface BulkSender<Value> extends Consumer<Collection<Value>>, AutoCloseable {
+public interface BulkSender<Value> extends AutoCloseable {
+
+    BulkSenderStat process(Collection<Value> values);
 }

@@ -3,6 +3,8 @@ package ru.kontur.vostok.hercules.sentry.sink;
 import io.sentry.DefaultSentryClientFactory;
 import io.sentry.SentryClient;
 import io.sentry.SentryClientFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.sentry.api.model.DsnInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
@@ -18,6 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * SentryClientHolder
@@ -26,7 +30,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class SentryClientHolder {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SentryClientHolder.class);
+
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
+    private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
     private final AtomicReference<Map<String, SentryClient>> clients = new AtomicReference<>(Collections.emptyMap());
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
@@ -46,8 +53,7 @@ public class SentryClientHolder {
     private void update() {
         Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects();
         if (!projects.isOk()) {
-            // TODO: logging
-            System.out.println(projects.getError());
+            LOGGER.error("Cannot update project info due to: {}", projects.getError());
         }
 
         Map<String, SentryClient> updatedClients = new HashMap<>();
@@ -55,21 +61,26 @@ public class SentryClientHolder {
         for (ProjectInfo projectInfo : projects.get()) {
             Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(projectInfo);
             if (!publicDsn.isOk()) {
-                // TODO: logging
-                System.out.println(publicDsn.getError());
+                LOGGER.error("Cannot get public dns for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
                 return;
             }
 
             Optional<String> dsn = publicDsn.get().stream().findAny().map(KeyInfo::getDsn).map(DsnInfo::getPublicDsn);
             if (dsn.isPresent()) {
-                updatedClients.put(String.format("%s/%s", projectInfo.getOrganization().getSlug(), projectInfo.getSlug()), SentryClientFactory.sentryClient(patchDsn(dsn.get())));
+                updatedClients.put(String.format("%s/%s", projectInfo.getOrganization().getSlug(), projectInfo.getSlug()), SentryClientFactory.sentryClient(applySettings(dsn.get())));
             }
         }
 
         clients.set(updatedClients);
     }
 
-    private String patchDsn(String dsn) {
-        return dsn + "?" + DISABLE_UNCAUGHT_EXCEPTION_HANDLING;
+    /*
+     * Sentry uses dsn to pass properties to client
+     */
+    private String applySettings(String dsn) {
+        return dsn + "?" + String.join("&",
+                DISABLE_UNCAUGHT_EXCEPTION_HANDLING,
+                DISABLE_IN_APP_WARN_MESSAGE
+        );
     }
 }

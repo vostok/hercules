@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.IOException;
@@ -15,8 +16,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public final class EventToElasticJsonWriter {
 
@@ -27,6 +30,11 @@ public final class EventToElasticJsonWriter {
 
     private static final String TIMESTAMP_TAG_NAME = "@timestamp";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME.withZone(ZoneOffset.UTC);
+
+    private static final Set<String> IGNORED_TAGS = new HashSet<>(Arrays.asList(
+            TIMESTAMP_TAG_NAME,
+            ElasticSearchTags.INDEX_TAG.getName()
+    ));
 
     private static final JsonFactory FACTORY = new JsonFactory();
 
@@ -75,7 +83,7 @@ public final class EventToElasticJsonWriter {
             generator.writeStringField(TIMESTAMP_TAG_NAME, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
 
             for (Map.Entry<String, Variant> tag : event.getPayload()) {
-                if (TIMESTAMP_TAG_NAME.equals(tag.getKey())) {
+                if (IGNORED_TAGS.contains(tag.getKey())) {
                     continue;
                 }
                 generator.writeFieldName(tag.getKey());

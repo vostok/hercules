@@ -1,0 +1,31 @@
+package ru.kontur.vostok.hercules.sentry.sink.converters;
+
+import io.sentry.event.Event;
+import ru.kontur.vostok.hercules.util.enumeration.EnumUtil;
+
+import java.util.Optional;
+
+/**
+ * SentryLevelEnumParser
+ *
+ * @author Kirill Sulim
+ */
+public final class SentryLevelEnumParser {
+
+    public static Optional<Event.Level> parse(String value) {
+        value = prepareLevel(value);
+        return EnumUtil.parseOptional(Event.Level.class, value);
+    }
+
+    /*
+     * C-sharp client use "warn" as level value, so we must adapt it to sentry Level enum
+     */
+    private static String prepareLevel(String original) {
+        if ("warn".equals(original.toLowerCase())) {
+            return "warning";
+        }
+        else {
+            return original;
+        }
+    }
+}

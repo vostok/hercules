@@ -18,19 +18,19 @@ public final class IndexToElasticJsonWriter {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd").withZone(ZoneId.of("UTC"));
 
     private static final byte[] START_BYTES = "{\"index\":{\"_index\":\"".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] MIDDLE_BYTES = "\",\"_type\":\"_doc\",\"_id\":\"".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] MIDDLE_BYTES = "\",\"_type\":\"LogEvent\",\"_id\":\"".getBytes(StandardCharsets.UTF_8);
     private static final byte[] END_BYTES = "\"}}".getBytes(StandardCharsets.UTF_8);
 
 
     public static boolean tryWriteIndex(OutputStream stream, Event event) throws IOException {
 
         String indexName;
-        Optional<String> index = ContainerUtil.extractOptional(event.getPayload(), ElasticSearchTags.INDEX_TAG);
+        Optional<String> index = ContainerUtil.extract(event.getPayload(), ElasticSearchTags.INDEX_TAG);
         if (index.isPresent()) {
             indexName = index.get();
         } else {
-            Optional<String> project = ContainerUtil.extractOptional(event.getPayload(), CommonTags.PROJECT_TAG);
-            Optional<String> env = ContainerUtil.extractOptional(event.getPayload(), CommonTags.ENVIRONMENT_TAG);
+            Optional<String> project = ContainerUtil.extract(event.getPayload(), CommonTags.PROJECT_TAG);
+            Optional<String> env = ContainerUtil.extract(event.getPayload(), CommonTags.ENVIRONMENT_TAG);
             if (project.isPresent() && env.isPresent()) {
                 indexName = project.get() + "-" +
                         env.get() + "-" +
