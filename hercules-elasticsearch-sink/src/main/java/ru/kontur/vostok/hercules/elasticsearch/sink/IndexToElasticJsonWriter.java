@@ -18,7 +18,7 @@ public final class IndexToElasticJsonWriter {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd").withZone(ZoneId.of("UTC"));
 
     private static final byte[] START_BYTES = "{\"index\":{\"_index\":\"".getBytes(StandardCharsets.UTF_8);
-    private static final byte[] MIDDLE_BYTES = "\",\"_type\":\"_doc\",\"_id\":\"".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] MIDDLE_BYTES = "\",\"_type\":\"LogEvent\",\"_id\":\"".getBytes(StandardCharsets.UTF_8);
     private static final byte[] END_BYTES = "\"}}".getBytes(StandardCharsets.UTF_8);
 
 
