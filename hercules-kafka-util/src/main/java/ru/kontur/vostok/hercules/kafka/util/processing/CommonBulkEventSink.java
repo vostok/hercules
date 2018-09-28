@@ -6,11 +6,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.common.protocol.types.Field;
 import org.apache.kafka.common.serialization.Serde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.health.ServiceStatus;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
@@ -114,7 +112,7 @@ public class CommonBulkEventSink {
      */
     public void run() {
         if (!status.compareAndSet(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.RUNNING)) {
-            throw new IllegalStateException("Some problems");
+            throw new IllegalStateException("Run was called with no INIT state");
         }
         while (isRunning()) {
             try {
@@ -233,9 +231,10 @@ public class CommonBulkEventSink {
                 markBackendFailed();
             }
         }
-        catch (Exception e) {
-            LOGGER.error("Ping error", e);
-            throw new RuntimeException(e);
+        catch (Throwable e) {
+            LOGGER.error("Ping error should never happen, stopping service", e);
+            System.exit(1);
+            throw e;
         }
     }
 
