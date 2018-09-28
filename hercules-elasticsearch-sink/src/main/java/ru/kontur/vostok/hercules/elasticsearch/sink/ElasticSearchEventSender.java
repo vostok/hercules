@@ -134,10 +134,20 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     }
 
     @Override
+    public boolean ping() {
+        try {
+            Response response = restClient.performRequest("HEAD", "/", Collections.emptyMap());
+            return 200 == response.getStatusLine().getStatusCode();
+        }
+        catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
     public void close() throws Exception {
         restClient.close();
     }
-
 
     private void writeEventRecords(OutputStream stream, Collection<Event> events) {
         toUnchecked(() -> {
