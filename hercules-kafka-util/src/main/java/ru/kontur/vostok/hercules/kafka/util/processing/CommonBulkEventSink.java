@@ -42,6 +42,9 @@ public class CommonBulkEventSink {
 
     private static final String POLL_TIMEOUT = "poll.timeout";
     private static final String BATCH_SIZE = "batch.size";
+    private static final String PING_RATE = "ping.rate";
+
+    private static final int PING_RATE_DEFAULT_VALUE = 1000;
 
     private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
 
@@ -53,6 +56,7 @@ public class CommonBulkEventSink {
     private final PatternMatcher streamPattern;
     private final int pollTimeout;
     private final int batchSize;
+    private final int pingRate;
 
     private final Meter receivedEventsMeter;
     private final Meter processedEventsMeter;
@@ -75,11 +79,10 @@ public class CommonBulkEventSink {
             BulkSender<Event> eventSender,
             MetricsCollector metricsCollector
     ) {
-        this.batchSize = PropertiesExtractor.getAs(streamsProperties, BATCH_SIZE, Integer.class)
-                .orElseThrow(PropertiesExtractor.missingPropertyError(BATCH_SIZE));
-
-        this.pollTimeout = PropertiesExtractor.getAs(streamsProperties, POLL_TIMEOUT, Integer.class)
-                .orElseThrow(PropertiesExtractor.missingPropertyError(POLL_TIMEOUT));
+        // TODO: Should be loaded from separate namespace. (see HERCULES-31)
+        this.batchSize = PropertiesExtractor.getRequiredProperty(streamsProperties, BATCH_SIZE, Integer.class);
+        this.pollTimeout = PropertiesExtractor.getRequiredProperty(streamsProperties, POLL_TIMEOUT, Integer.class);
+        this.pingRate = PropertiesExtractor.getAs(streamsProperties, PING_RATE, Integer.class).orElse(PING_RATE_DEFAULT_VALUE);
 
         if (pollTimeout < 0) {
             throw new IllegalArgumentException("Poll timeout must be greater than 0");
@@ -88,7 +91,6 @@ public class CommonBulkEventSink {
         streamsProperties.put("group.id", String.format(ID_TEMPLATE, destinationName, streamPattern.toString()));
         streamsProperties.put("enable.auto.commit", false);
         streamsProperties.put("max.poll.records", batchSize);
-        streamsProperties.put("max.poll.interval.ms", 1000); // TODO: Find out how normal is this
 
         Serde<UUID> keySerde = new UuidSerde();
         Serde<Event> valueSerde = new EventSerde(new EventSerializer(), EventDeserializer.parseAllTags());
@@ -103,7 +105,7 @@ public class CommonBulkEventSink {
         this.processTimeTimer = metricsCollector.timer("processTime");
         metricsCollector.status("status", status::get);
 
-        this.executor.scheduleAtFixedRate(this::ping, 0, 1000, TimeUnit.MILLISECONDS);
+        this.executor.scheduleAtFixedRate(this::ping, 0, pingRate, TimeUnit.MILLISECONDS);
         this.statusChange = new CountDownLatch(1);
     }
 
