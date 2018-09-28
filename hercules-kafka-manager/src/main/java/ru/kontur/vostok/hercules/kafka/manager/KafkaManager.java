@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -29,8 +31,14 @@ public class KafkaManager {
         this.replicationFactor = replicationFactor;
     }
 
-    public void createTopic(String topic, int partitions) {
-        NewTopic newTopic = new NewTopic(topic, partitions, replicationFactor);//TODO: Replicas assignment should be used
+    public void createTopic(String topic, int partitions, Long ttl) {
+        Map<String, String> configs = new HashMap<>();
+        if (ttl != null) {
+            configs.put("retention.ms", ttl.toString());
+        }
+        //TODO: Replicas assignment should be used
+        NewTopic newTopic = new NewTopic(topic, partitions, replicationFactor)
+                .configs(configs);
         CreateTopicsResult result = adminClient.createTopics(Collections.singletonList(newTopic));
         Future<Void> future = result.values().get(topic);
         try {
