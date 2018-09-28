@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,7 @@ public class CommonBulkEventSink {
     private final com.codahale.metrics.Timer processTimeTimer;
 
     private final AtomicReference<CommonBulkSinkStatus> status = new AtomicReference<>(CommonBulkSinkStatus.INIT);
+    private volatile CountDownLatch statusChange;
 
     /**
      * @param destinationName data flow destination name, where data must be copied
@@ -102,6 +104,7 @@ public class CommonBulkEventSink {
         metricsCollector.status("status", status::get);
 
         this.executor.scheduleAtFixedRate(this::ping, 0, 1000, TimeUnit.MILLISECONDS);
+        this.statusChange = new CountDownLatch(1);
     }
 
     /**
@@ -191,7 +194,7 @@ public class CommonBulkEventSink {
      * @param timeout
      * @param timeUnit
      */
-    public synchronized void stop(int timeout, TimeUnit timeUnit) {
+    public void stop(int timeout, TimeUnit timeUnit) {
         if (!(
                 status.compareAndSet(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT)
                 || status.compareAndSet(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.STOPPING_FROM_RUNNING)
@@ -200,7 +203,7 @@ public class CommonBulkEventSink {
             throw new IllegalStateException(String.format("Cannot start stopping in status %s", status.get()));
         }
         consumer.wakeup();
-        notify();
+        statusChange.countDown();
     }
 
     private boolean isRunning() {
@@ -234,7 +237,7 @@ public class CommonBulkEventSink {
         }
     }
 
-    private synchronized void markBackendAlive() {
+    private void markBackendAlive() {
         if (!(status.compareAndSet(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.RUNNING)
                 || status.compareAndSet(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.RUNNING)
                 || status.compareAndSet(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.INIT)
@@ -244,10 +247,10 @@ public class CommonBulkEventSink {
         )) {
             throw new IllegalStateException(String.format("Cannot mark backend alive for status %s", status.get()));
         }
-        notify();
+        statusChange.countDown();
     }
 
-    private synchronized void markBackendFailed() {
+    private void markBackendFailed() {
         if (!(status.compareAndSet(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.SUSPEND)
                 || status.compareAndSet(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.SUSPEND)
                 || status.compareAndSet(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.INIT)
@@ -257,14 +260,15 @@ public class CommonBulkEventSink {
         )) {
             throw new IllegalStateException(String.format("Cannot mark backend alive for status %s", status.get()));
         }
-        notify();
+        statusChange.countDown();
     }
 
-    private synchronized void waitForStatus(CommonBulkSinkStatus ... statuses) {
+    private void waitForStatus(CommonBulkSinkStatus ... statuses) {
         Set<CommonBulkSinkStatus> statusSet = new HashSet<>(Arrays.asList(statuses));
         while (!statusSet.contains(status.get())) {
             try {
-                wait();
+                statusChange.await();
+                statusChange = new CountDownLatch(1);
             }
             catch (InterruptedException e) {
                 /* skip */
