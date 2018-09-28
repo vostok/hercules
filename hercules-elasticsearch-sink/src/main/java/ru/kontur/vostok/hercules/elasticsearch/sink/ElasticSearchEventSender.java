@@ -10,6 +10,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSenderStat;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -96,7 +97,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     }
 
     @Override
-    public BulkSenderStat process(Collection<Event> events) {
+    public BulkSenderStat process(Collection<Event> events) throws BackendServiceFailedException {
         if (events.size() == 0) {
             return BulkSenderStat.ZERO;
         }
@@ -109,19 +110,23 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         int errorCount = 0;
         if (0 < stream.size()) {
             long start = System.currentTimeMillis();
-            Response response = toUnchecked(() -> restClient.performRequest(
-                    "POST",
-                    "/_bulk",
-                    Collections.emptyMap(),
-                    new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
+            try {
+                Response response = restClient.performRequest(
+                        "POST",
+                        "/_bulk",
+                        Collections.emptyMap(),
+                        new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
 
-            ));
-            elasticsearchRequestTimeTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
-            if (response.getStatusLine().getStatusCode() != 200) {
-                elasticsearchRequestErrorsMeter.mark();
-                throw new RuntimeException("Bad response");
+                );
+                elasticsearchRequestTimeTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    elasticsearchRequestErrorsMeter.mark();
+                    throw new RuntimeException("Bad response");
+                }
+                errorCount = BulkResponseHandler.process(response.getEntity());
+            } catch (Exception e) {
+                throw new BackendServiceFailedException(e);
             }
-            errorCount = BulkResponseHandler.process(response.getEntity());
         }
 
         events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getId()));
