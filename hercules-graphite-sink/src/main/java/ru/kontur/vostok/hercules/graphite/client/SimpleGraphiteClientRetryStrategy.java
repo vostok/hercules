@@ -15,7 +15,14 @@ public class SimpleGraphiteClientRetryStrategy extends GraphiteClientRetryStrate
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleGraphiteClientRetryStrategy.class);
 
+    /**
+     * Maximum retry count
+     */
     private final int retryCount;
+
+    /**
+     * Set of non critical exceptions which can be retried.
+     */
     private final Set<Class<? extends Throwable>> suppressedExceptions;
 
     public SimpleGraphiteClientRetryStrategy(GraphiteMetricDataSender sender, int retryCount, Set<Class<? extends Throwable>> suppressedExceptions) {
