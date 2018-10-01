@@ -21,7 +21,7 @@ public class EventToElasticJsonWriterTest {
         EventBuilder event = new EventBuilder();
 
         event.setVersion(1);
-        event.setEventId(UuidGenerator.getClientInstance().withTicks(137469727200000001L));
+        event.setEventId(UuidGenerator.getClientInstance().withTicks(137469727200000010L));
 
         event.setTag("Byte sample", Variant.ofByte((byte) 127));
         event.setTag("Short sample", Variant.ofShort((short) 10_000));
@@ -37,7 +37,7 @@ public class EventToElasticJsonWriterTest {
 
         assertEquals(
                 "{" +
-                        "\"@timestamp\":\"2018-05-30T11:32:00.0000001Z\"," +
+                        "\"@timestamp\":\"2018-05-30T11:32:00.000001000Z\"," +
                         "\"Byte sample\":127," +
                         "\"Short sample\":10000," +
                         "\"Int sample\":123456789," +
@@ -191,7 +191,7 @@ public class EventToElasticJsonWriterTest {
         builder.setEventId(UuidGenerator.getClientInstance().withTicks(0));
         builder.setTag("v", variant);
 
-        assertEquals("{\"@timestamp\":\"1582-10-15T00:00:00Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
+        assertEquals("{\"@timestamp\":\"1582-10-15T00:00:00.000000000Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
     }
 
     private static String builderToJson(EventBuilder builder) throws Exception {

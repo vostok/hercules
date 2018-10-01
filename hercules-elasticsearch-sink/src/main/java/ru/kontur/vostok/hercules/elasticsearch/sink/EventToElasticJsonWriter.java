@@ -29,7 +29,8 @@ public final class EventToElasticJsonWriter {
     }
 
     private static final String TIMESTAMP_TAG_NAME = "@timestamp";
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME.withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX")
+            .withZone(ZoneOffset.UTC);
 
     private static final Set<String> IGNORED_TAGS = new HashSet<>(Arrays.asList(
             TIMESTAMP_TAG_NAME,
