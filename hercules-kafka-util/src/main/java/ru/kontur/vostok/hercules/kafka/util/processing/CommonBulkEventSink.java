@@ -86,7 +86,10 @@ public class CommonBulkEventSink {
             throw new IllegalArgumentException("Poll timeout must be greater than 0");
         }
 
-        streamsProperties.put("group.id", String.format(ID_TEMPLATE, destinationName, streamPattern.toString()));
+        final String groupId = String.format(ID_TEMPLATE, destinationName, streamPattern.toString())
+                .replaceAll("\\s+", "-");
+
+        streamsProperties.put("group.id", groupId);
         streamsProperties.put("enable.auto.commit", false);
         streamsProperties.put("max.poll.records", batchSize);
 
