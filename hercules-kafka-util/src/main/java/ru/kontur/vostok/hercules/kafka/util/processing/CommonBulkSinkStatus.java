@@ -1,13 +1,14 @@
 package ru.kontur.vostok.hercules.kafka.util.processing;
 
 import ru.kontur.vostok.hercules.health.IHaveStatusCode;
+import ru.kontur.vostok.hercules.util.fsm.State;
 
 /**
  * CommonBulkSinkStatus - finite state machine for CommonBulkEventSink
  *
  * @author Kirill Sulim
  */
-public enum CommonBulkSinkStatus implements IHaveStatusCode {
+public enum CommonBulkSinkStatus implements IHaveStatusCode, State {
     /**
      * Sink in initialization process
      */

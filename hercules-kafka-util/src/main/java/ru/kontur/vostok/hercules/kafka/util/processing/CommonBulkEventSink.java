@@ -9,27 +9,21 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.time.Timer;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
 
 /**
  * CommonBulkEventSink - common class for bulk processing of kafka streams content
@@ -61,8 +55,7 @@ public class CommonBulkEventSink {
     private final Meter droppedEventsMeter;
     private final com.codahale.metrics.Timer processTimeTimer;
 
-    private final AtomicReference<CommonBulkSinkStatus> status = new AtomicReference<>(CommonBulkSinkStatus.INIT);
-    private volatile CountDownLatch statusChange;
+    private final CommonBulkSinkStatusFsm status = new CommonBulkSinkStatusFsm();
 
     /**
      * @param destinationName data flow destination name, where data must be copied
@@ -104,28 +97,25 @@ public class CommonBulkEventSink {
         this.processedEventsMeter = metricsCollector.meter("processedEvents");
         this.droppedEventsMeter = metricsCollector.meter("droppedEvents");
         this.processTimeTimer = metricsCollector.timer("processTime");
-        metricsCollector.status("status", status::get);
+        metricsCollector.status("status", status::getState);
 
         this.executor.scheduleAtFixedRate(this::ping, 0, pingRate, TimeUnit.MILLISECONDS);
-        this.statusChange = new CountDownLatch(1);
     }
 
     /**
      * Start sink
      */
     public void run() {
-        if (!status.compareAndSet(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.RUNNING)) {
-            throw new IllegalStateException("Run was called with no INIT state");
-        }
-        while (isRunning()) {
+        status.markInitCompleted();
+        while (status.isRunning()) {
             try {
-                waitForStatus(
+                status.waitForState(
                         CommonBulkSinkStatus.RUNNING,
                         CommonBulkSinkStatus.STOPPING_FROM_INIT,
                         CommonBulkSinkStatus.STOPPING_FROM_RUNNING,
                         CommonBulkSinkStatus.STOPPING_FROM_SUSPEND
                 );
-                if (!isRunning()) {
+                if (!status.isRunning()) {
                     return;
                 }
 
@@ -141,11 +131,11 @@ public class CommonBulkEventSink {
                  */
                 TimeUnit unit = TimeUnit.MICROSECONDS;
                 Timer timer = new Timer(unit, pollTimeout);
-                while (isRunning()) {
+                while (status.isRunning()) {
                     timer.reset().start();
                     long timeLeft = pollTimeout;
 
-                    while (isRunning() && current.available() && 0 <= timeLeft) {
+                    while (status.isRunning() && current.available() && 0 <= timeLeft) {
                         try {
                             ConsumerRecords<UUID, Event> poll = consumer.poll(timeLeft);
                             for (ConsumerRecord<UUID, Event> record : poll) {
@@ -184,7 +174,10 @@ public class CommonBulkEventSink {
             }
             catch (BackendServiceFailedException e) {
                 LOGGER.error("Backend failed with", e);
-                markBackendFailed();
+                status.markBackendFailed();
+            }
+            catch (InterruptedException e) {
+                LOGGER.error("Waiting was interrupted", e);
             }
             finally {
                 consumer.unsubscribe();
@@ -198,85 +191,23 @@ public class CommonBulkEventSink {
      * @param timeUnit
      */
     public void stop(int timeout, TimeUnit timeUnit) {
-        if (!(
-                status.compareAndSet(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT)
-                || status.compareAndSet(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.STOPPING_FROM_RUNNING)
-                || status.compareAndSet(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND)
-        )) {
-            throw new IllegalStateException(String.format("Cannot start stopping in status %s", status.get()));
-        }
+        status.stop();
         consumer.wakeup();
-        statusChange.countDown();
-    }
-
-    private boolean isRunning() {
-        switch (status.get()) {
-            case INIT:
-            case RUNNING:
-            case SUSPEND:
-                return true;
-            case STOPPING_FROM_INIT:
-            case STOPPING_FROM_RUNNING:
-            case STOPPING_FROM_SUSPEND:
-            case STOPPED:
-                return false;
-            default:
-                throw new IllegalStateException("Unknown status");
-        }
     }
 
     private void ping() {
         try {
             if (eventSender.ping()) {
-                markBackendAlive();
+                status.markBackendAlive();
             }
             else {
-                markBackendFailed();
+                status.markBackendFailed();
             }
         }
         catch (Throwable e) {
             LOGGER.error("Ping error should never happen, stopping service", e);
             System.exit(1);
             throw e;
-        }
-    }
-
-    private void markBackendAlive() {
-        if (!(status.compareAndSet(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.RUNNING)
-                || status.compareAndSet(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.RUNNING)
-                || status.compareAndSet(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.INIT)
-                || status.compareAndSet(CommonBulkSinkStatus.STOPPING_FROM_INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT)
-                || status.compareAndSet(CommonBulkSinkStatus.STOPPING_FROM_RUNNING, CommonBulkSinkStatus.STOPPING_FROM_RUNNING)
-                || status.compareAndSet(CommonBulkSinkStatus.STOPPING_FROM_SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND)
-        )) {
-            throw new IllegalStateException(String.format("Cannot mark backend alive for status %s", status.get()));
-        }
-        statusChange.countDown();
-    }
-
-    private void markBackendFailed() {
-        if (!(status.compareAndSet(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.SUSPEND)
-                || status.compareAndSet(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.SUSPEND)
-                || status.compareAndSet(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.INIT)
-                || status.compareAndSet(CommonBulkSinkStatus.STOPPING_FROM_INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT)
-                || status.compareAndSet(CommonBulkSinkStatus.STOPPING_FROM_RUNNING, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND)
-                || status.compareAndSet(CommonBulkSinkStatus.STOPPING_FROM_SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND)
-        )) {
-            throw new IllegalStateException(String.format("Cannot mark backend alive for status %s", status.get()));
-        }
-        statusChange.countDown();
-    }
-
-    private void waitForStatus(CommonBulkSinkStatus ... statuses) {
-        Set<CommonBulkSinkStatus> statusSet = new HashSet<>(Arrays.asList(statuses));
-        while (!statusSet.contains(status.get())) {
-            try {
-                statusChange.await();
-                statusChange = new CountDownLatch(1);
-            }
-            catch (InterruptedException e) {
-                /* skip */
-            }
         }
     }
 }
