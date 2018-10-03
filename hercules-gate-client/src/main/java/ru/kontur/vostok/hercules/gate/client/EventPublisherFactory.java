@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.gate.client;
 
+import ru.kontur.vostok.hercules.util.Lazy;
 import ru.kontur.vostok.hercules.util.properties.ConfigsUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
@@ -29,7 +30,7 @@ public class EventPublisherFactory {
         return thread;
     };
 
-    private static final EventPublisher INSTANCE;
+    private static final Lazy<EventPublisher> LAZY_INSTANCE;
     private static final String PROJECT;
     private static final String ENVIRONMENT;
 
@@ -37,7 +38,7 @@ public class EventPublisherFactory {
         InputStream inputStream = ConfigsUtil.readConfig(PROPERTY_NAME, DEFAULT_RESOURCE_NAME);
         try {
             Properties properties = loadProperties(inputStream);
-            INSTANCE = createPublisher(properties);
+            LAZY_INSTANCE = new Lazy<>(() -> createPublisher(properties));
             PROJECT = PropertiesExtractor
                     .getAs(properties, PROJECT_PROPERTY, String.class)
                     .orElseThrow(PropertiesExtractor.missingPropertyError(PROJECT_PROPERTY));
@@ -54,7 +55,7 @@ public class EventPublisherFactory {
     }
 
     public static EventPublisher getInstance() {
-        return INSTANCE;
+        return LAZY_INSTANCE.get();
     }
 
     public static String getProject() {
