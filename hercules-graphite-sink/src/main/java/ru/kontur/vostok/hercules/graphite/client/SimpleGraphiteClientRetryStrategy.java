@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.graphite.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -32,18 +33,18 @@ public class SimpleGraphiteClientRetryStrategy extends GraphiteClientRetryStrate
     }
 
     @Override
-    public void send(Collection<GraphiteMetricData> data) {
+    public void send(Collection<GraphiteMetricData> data) throws IOException {
         int currentRetryCount = 0;
-        RuntimeException lastException;
+        IOException lastException;
         do {
             try {
                 sender.send(data);
                 return;
             }
-            catch (RuntimeException e) {
+            catch (IOException e) {
                 lastException = e;
                 LOGGER.error("Error on sending data to graphite", e);
-                if (suppressedExceptions.contains(unwrapRuntimeException(e).getClass())) {
+                if (suppressedExceptions.contains(e.getClass())) {
                     currentRetryCount++;
                 }
                 else {
@@ -52,16 +53,5 @@ public class SimpleGraphiteClientRetryStrategy extends GraphiteClientRetryStrate
             }
         } while (currentRetryCount < retryCount);
         throw lastException;
-    }
-
-    /*
-     * Unwraps runtime exception up to original runtime exception or first not RuntimeException object
-     */
-    private static Throwable unwrapRuntimeException(RuntimeException e) {
-        Throwable t = e;
-        while (t.getClass().equals(RuntimeException.class) && t.getCause() != t) {
-            t = t.getCause();
-        }
-        return t;
     }
 }

@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.graphite.client;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -9,5 +10,5 @@ import java.util.Collection;
  */
 @FunctionalInterface
 public interface GraphiteMetricDataSender {
-    void send(Collection<GraphiteMetricData> data);
+    void send(Collection<GraphiteMetricData> data) throws IOException;
 }

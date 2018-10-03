@@ -18,7 +18,7 @@ public class GraphiteClient implements GraphiteMetricDataSender {
     }
 
     @Override
-    public void send(Collection<GraphiteMetricData> data) {
+    public void send(Collection<GraphiteMetricData> data) throws IOException {
         try (
                 Socket socket = new Socket(server, port);
                 OutputStream stream = socket.getOutputStream();
@@ -26,8 +26,6 @@ public class GraphiteClient implements GraphiteMetricDataSender {
         ) {
             data.forEach(record -> writer.printf(Locale.ENGLISH, "%s %f %d\n", record.getMetricName(), record.getMetricValue(), record.getMetricUnixTime()));
             writer.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 }

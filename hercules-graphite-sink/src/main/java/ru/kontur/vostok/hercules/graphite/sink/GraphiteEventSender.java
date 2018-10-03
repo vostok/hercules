@@ -14,11 +14,13 @@ import ru.kontur.vostok.hercules.tags.MetricsTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 public class GraphiteEventSender implements BulkSender<Event> {
 
@@ -60,9 +62,11 @@ public class GraphiteEventSender implements BulkSender<Event> {
         }
 
         try {
-            graphiteClientTimer.time(() -> sender.send(data));
+            long start = System.currentTimeMillis();
+            sender.send(data);
+            graphiteClientTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
         }
-        catch (RuntimeException e) {
+        catch (IOException e) {
             throw new BackendServiceFailedException(e);
         }
         return new BulkSenderStat(processed, dropped);

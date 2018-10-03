@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.graphite.client;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -16,5 +17,5 @@ public abstract class GraphiteClientRetryStrategy implements GraphiteMetricDataS
     }
 
     @Override
-    public abstract void send(Collection<GraphiteMetricData> data);
+    public abstract void send(Collection<GraphiteMetricData> data) throws IOException;
 }
