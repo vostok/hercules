@@ -59,15 +59,17 @@ public class KafkaTaskConsumer {
                         }
                         if (task instanceof CreateTopicKafkaTask) {
                             CreateTopicKafkaTask createTopicKafkaTask = (CreateTopicKafkaTask) task;
-                            kafkaManager.createTopic(createTopicKafkaTask.getTopic(), createTopicKafkaTask.getPartitions());
+                            kafkaManager.createTopic(createTopicKafkaTask.getTopic(), createTopicKafkaTask.getPartitions(), createTopicKafkaTask.getTtl());
                             continue;
                         }
                         if (task instanceof DeleteTopicKafkaTask) {
                             kafkaManager.deleteTopic(task.getTopic());
+                            continue;
                         }
                         if (task instanceof IncreasePartitionsKafkaTask) {
                             IncreasePartitionsKafkaTask increasePartitionsKafkaTask = (IncreasePartitionsKafkaTask) task;
                             kafkaManager.increasePartitions(increasePartitionsKafkaTask.getTopic(), increasePartitionsKafkaTask.getNewPartitions());
+                            continue;
                         }
                     }
                 }
