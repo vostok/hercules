@@ -21,6 +21,7 @@ import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -178,6 +179,9 @@ public class CommonBulkEventSink {
             }
             catch (InterruptedException e) {
                 LOGGER.error("Waiting was interrupted", e);
+            }
+            catch (ExecutionException e) {
+                LOGGER.error("Execution exception", e);
             }
             finally {
                 consumer.unsubscribe();
