@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.kafka.util.processing;
 
 import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.CommitFailedException;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -16,15 +17,20 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.time.Timer;
 
+import java.util.LinkedList;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * CommonBulkEventSink - common class for bulk processing of kafka streams content
@@ -42,7 +48,7 @@ public class CommonBulkEventSink {
     private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
 
     private final KafkaConsumer<UUID, Event> consumer;
-    private final BulkSender<Event> eventSender;
+    private final SenderPool<UUID, Event> senderPool;
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
@@ -62,13 +68,16 @@ public class CommonBulkEventSink {
      * @param destinationName data flow destination name, where data must be copied
      * @param streamPattern stream which matches pattern will be processed by this sink
      * @param streamsProperties kafka streams properties
-     * @param eventSender instance of bulk messages processor
+     * @param sinkProperties sink properties
+     * @param senderFactory sender creator
+     * @param metricsCollector metrics collector
      */
     public CommonBulkEventSink(
             String destinationName,
             PatternMatcher streamPattern,
             Properties streamsProperties,
-            BulkSender<Event> eventSender,
+            Properties sinkProperties,
+            Supplier<BulkSender<Event>> senderFactory,
             MetricsCollector metricsCollector
     ) {
         // TODO: Should be loaded from separate namespace. (see HERCULES-31)
@@ -83,16 +92,20 @@ public class CommonBulkEventSink {
         final String groupId = String.format(ID_TEMPLATE, destinationName, streamPattern.toString())
                 .replaceAll("\\s+", "-");
 
-        streamsProperties.put("group.id", groupId);
-        streamsProperties.put("enable.auto.commit", false);
-        streamsProperties.put("max.poll.records", batchSize);
+        streamsProperties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        streamsProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        streamsProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, batchSize);
 
         Serde<UUID> keySerde = new UuidSerde();
         Serde<Event> valueSerde = new EventSerde(new EventSerializer(), EventDeserializer.parseAllTags());
 
-        this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
-        this.eventSender = eventSender;
         this.streamPattern = streamPattern;
+        this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
+        this.senderPool = new SenderPool<>(
+                sinkProperties,
+                senderFactory,
+                this.status
+        );
 
         this.receivedEventsMeter = metricsCollector.meter("receivedEvents");
         this.processedEventsMeter = metricsCollector.meter("processedEvents");
@@ -107,6 +120,8 @@ public class CommonBulkEventSink {
      * Start sink
      */
     public void run() {
+        Queue<Future<Result<SenderPool.RunResult<UUID, Event>, BackendServiceFailedException>>> processingStorages = new LinkedList<>();
+
         status.markInitCompleted();
         while (status.isRunning()) {
             try {
@@ -133,6 +148,9 @@ public class CommonBulkEventSink {
                 TimeUnit unit = TimeUnit.MICROSECONDS;
                 Timer timer = new Timer(unit, pollTimeout);
                 while (status.isRunning()) {
+                    /*
+                     * Polling phase
+                     */
                     timer.reset().start();
                     long timeLeft = pollTimeout;
 
@@ -155,15 +173,33 @@ public class CommonBulkEventSink {
                              */
                         }
                     }
+                    int count = current.getRecords().size();
+                    receivedEventsMeter.mark(count);
 
-                    int recordsSize = current.getRecords().size();
+                    if (0 < count) {
+                        processingStorages.add(senderPool.put(current));
+                    }
 
-                    BulkSenderStat stat = eventSender.process(current.getRecords());
-                    consumer.commitSync(current.getOffsets(null));
+                    /*
+                     * Commit phase
+                     */
+                    while (!processingStorages.isEmpty() && (processingStorages.element().isDone() || !status.isRunning())) {
+                        Result<SenderPool.RunResult<UUID, Event>, BackendServiceFailedException> result = processingStorages.remove().get();
 
-                    receivedEventsMeter.mark(recordsSize);
-                    processedEventsMeter.mark(stat.getProcessed());
-                    droppedEventsMeter.mark(stat.getDropped());
+                        if (!result.isOk()) {
+                            throw result.getError();
+                        }
+
+                        BulkSenderStat stat = result.get().getStat();
+                        if(processingStorages.isEmpty() || !processingStorages.element().isDone()) {
+                            RecordStorage<UUID, Event> storage = result.get().getStorage();
+                            consumer.commitSync(storage.getOffsets(null));
+                        }
+
+                        processedEventsMeter.mark(stat.getProcessed());
+                        droppedEventsMeter.mark(stat.getDropped());
+                    }
+
                     processTimeTimer.update(timer.elapsed(), unit);
 
                     current = next;
@@ -184,8 +220,16 @@ public class CommonBulkEventSink {
                 LOGGER.error("Execution exception", e);
             }
             finally {
+                senderPool.reset();
+                processingStorages.clear();
                 consumer.unsubscribe();
             }
+        }
+        try {
+            senderPool.waitWorkers();
+        }
+        catch (InterruptedException e) {
+            LOGGER.error("waitWorkers() interrupted", e);
         }
     }
 
@@ -201,7 +245,7 @@ public class CommonBulkEventSink {
 
     private void ping() {
         try {
-            if (eventSender.ping()) {
+            if (senderPool.ping()) {
                 status.markBackendAlive();
             }
             else {

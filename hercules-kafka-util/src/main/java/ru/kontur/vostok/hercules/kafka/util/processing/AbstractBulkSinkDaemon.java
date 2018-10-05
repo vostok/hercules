@@ -53,8 +53,14 @@ public abstract class AbstractBulkSinkDaemon {
 
         //TODO: Validate sinkProperties
         try {
-            sender = createSender(sinkProperties);
-            bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender, metricsCollector);
+            bulkEventSink = new CommonBulkEventSink(
+                    getDaemonName(),
+                    new PatternMatcher(pattern),
+                    streamProperties,
+                    sinkProperties,
+                    () -> createSender(sinkProperties),
+                    metricsCollector
+            );
 
             Thread worker = new Thread(bulkEventSink::run, "sink-worker");
             worker.setUncaughtExceptionHandler((t, e) -> {
