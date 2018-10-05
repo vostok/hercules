@@ -140,16 +140,15 @@ public class CommonBulkEventSink {
                 RecordStorage<UUID, Event> current = new RecordStorage<>(batchSize);
                 RecordStorage<UUID, Event> next = new RecordStorage<>(batchSize);
 
-                /*
-                 * Try to poll new records from kafka until reached batchSize or timeout expired then process all
-                 * collected data. If the total count of polled records exceeded batchSize after the last poll extra records
-                 * will be saved in next record storage to process these records at the next step of iteration.
-                 */
                 TimeUnit unit = TimeUnit.MICROSECONDS;
                 Timer timer = new Timer(unit, pollTimeout);
                 while (status.isRunning()) {
                     /*
                      * Polling phase
+                     *
+                     * Try to poll new records from kafka until reached batchSize or timeout expired then process all
+                     * collected data. If the total count of polled records exceeded batchSize after the last poll extra records
+                     * will be saved in next record storage to process these records at the next step of iteration.
                      */
                     timer.reset().start();
                     long timeLeft = pollTimeout;
@@ -176,12 +175,19 @@ public class CommonBulkEventSink {
                     int count = current.getRecords().size();
                     receivedEventsMeter.mark(count);
 
+                    /*
+                     * Queuing phase
+                     *
+                     * Put all polled data in sender pool queue and get future for processing result
+                     */
                     if (0 < count) {
                         processingStorages.add(senderPool.put(current));
                     }
 
                     /*
                      * Commit phase
+                     *
+                     * Send statistics of processed data and commit last fully processed offset
                      */
                     while (!processingStorages.isEmpty() && (processingStorages.element().isDone() || !status.isRunning())) {
                         Result<SenderPool.RunResult<UUID, Event>, BackendServiceFailedException> result = processingStorages.remove().get();
