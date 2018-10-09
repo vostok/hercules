@@ -21,9 +21,11 @@ public class CommonBulkEventSink {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonBulkEventSink.class);
 
-    private static final String PING_RATE = "ping.rate";
-
+    private static final String PING_RATE_PARAM = "ping.rate";
     private static final int PING_RATE_DEFAULT_VALUE = 1000;
+
+    private static final String QUEUE_SIZE_PARAM = "queue.size";
+    private static final int QUEUE_SIZE_DEFAULT_VALUE = 64;
 
 
     private final BulkQueue<UUID, Event> queue;
@@ -31,9 +33,9 @@ public class CommonBulkEventSink {
     private final BulkConsumerPool consumerPool;
     private final CommonBulkSinkStatusFsm status = new CommonBulkSinkStatusFsm();
 
+    private final BulkSender<Event> pinger;
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final int pingRate;
-    private final BulkSender<Event> pinger;
 
     /**
      * @param destinationName data flow destination name, where data must be copied
@@ -52,9 +54,13 @@ public class CommonBulkEventSink {
             MetricsCollector metricsCollector
     ) {
 
-        this.pingRate = PropertiesExtractor.getAs(streamsProperties, PING_RATE, Integer.class).orElse(PING_RATE_DEFAULT_VALUE);
+        this.pingRate = PropertiesExtractor.getAs(sinkProperties, PING_RATE_PARAM, Integer.class)
+                .orElse(PING_RATE_DEFAULT_VALUE);
 
-        this.queue = new BulkQueue<>(64);
+        final int queueSize = PropertiesExtractor.getAs(sinkProperties, QUEUE_SIZE_PARAM, Integer.class)
+                .orElse(QUEUE_SIZE_DEFAULT_VALUE);
+
+        this.queue = new BulkQueue<>(queueSize);
 
         this.consumerPool = new BulkConsumerPool(
                 destinationName,
@@ -75,15 +81,17 @@ public class CommonBulkEventSink {
 
         metricsCollector.status("status", status::getState);
         this.pinger = senderFactory.get();
-        this.executor.scheduleAtFixedRate(this::ping, 0, pingRate, TimeUnit.MILLISECONDS);
+
     }
 
     /**
      * Start sink
      */
     public void start() {
+        this.executor.scheduleAtFixedRate(this::ping, 0, pingRate, TimeUnit.MILLISECONDS);
         senderPool.start();
         consumerPool.start();
+        status.markInitCompleted();
     }
 
     /**
@@ -95,6 +103,7 @@ public class CommonBulkEventSink {
         status.stop();
         consumerPool.stop();
         senderPool.stop();
+        executor.shutdown();
     }
 
     private void ping() {

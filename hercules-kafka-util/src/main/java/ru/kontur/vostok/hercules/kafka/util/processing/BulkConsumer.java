@@ -37,25 +37,21 @@ public class BulkConsumer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumer.class);
 
-    private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
-
-    private static final String POLL_TIMEOUT = "poll.timeout";
-    private static final String BATCH_SIZE = "batch.size";
+    private static final String POLL_TIMEOUT_PARAM = "poll.timeout";
+    private static final String BATCH_SIZE_PARAM = "batch.size";
 
     private final KafkaConsumer<UUID, Event> consumer;
-
     private final PatternMatcher streamPattern;
     private final int pollTimeout;
     private final int batchSize;
+
+    private final BulkQueue<UUID, Event> queue;
+    private final CommonBulkSinkStatusFsm status;
 
     private final Meter receivedEventsMeter;
     private final Meter processedEventsMeter;
     private final Meter droppedEventsMeter;
     private final com.codahale.metrics.Timer processTimeTimer;
-
-    private final CommonBulkSinkStatusFsm status;
-
-    private final BulkQueue<UUID, Event> queue;
 
 
     public BulkConsumer(
@@ -70,9 +66,8 @@ public class BulkConsumer {
             com.codahale.metrics.Timer processTimeTimer,
             BulkQueue<UUID, Event> queue
     ) {
-        // TODO: Should be loaded from separate namespace. (see HERCULES-31)
-        this.batchSize = PropertiesExtractor.getRequiredProperty(streamsProperties, BATCH_SIZE, Integer.class);
-        this.pollTimeout = PropertiesExtractor.getRequiredProperty(streamsProperties, POLL_TIMEOUT, Integer.class);
+        this.batchSize = PropertiesExtractor.getRequiredProperty(sinkProperties, BATCH_SIZE_PARAM, Integer.class);
+        this.pollTimeout = PropertiesExtractor.getRequiredProperty(sinkProperties, POLL_TIMEOUT_PARAM, Integer.class);
 
         streamsProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
         streamsProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
@@ -84,20 +79,18 @@ public class BulkConsumer {
         this.streamPattern = streamPattern;
         this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
 
+        this.queue = queue;
         this.status = status;
 
         this.receivedEventsMeter = receivedEventsMeter;
         this.processedEventsMeter = processedEventsMeter;
         this.droppedEventsMeter = droppedEventsMeter;
         this.processTimeTimer = processTimeTimer;
-
-        this.queue = queue;
     }
 
     public void run() {
         Queue<Future<Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException>>> processingStorages = new LinkedList<>();
 
-        status.markInitCompleted();
         while (status.isRunning()) {
             try {
                 status.waitForState(
@@ -156,7 +149,7 @@ public class BulkConsumer {
                      *
                      * Put all polled data in sender pool queue and get future for processing result
                      */
-                    if (0 < count) {
+                    if (0 < count && status.isRunning()) {
                         processingStorages.add(queue.put(current));
                     }
 
@@ -165,7 +158,9 @@ public class BulkConsumer {
                      *
                      * Send statistics of processed data and commit last fully processed offset
                      */
-                    while (!processingStorages.isEmpty() && (processingStorages.element().isDone() || !status.isRunning())) {
+                    int processed = 0;
+                    int dropped = 0;
+                    while (!processingStorages.isEmpty() && processingStorages.element().isDone()) {
                         Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException> result = processingStorages.remove().get();
 
                         if (!result.isOk()) {
@@ -173,15 +168,16 @@ public class BulkConsumer {
                         }
 
                         BulkSenderStat stat = result.get().getStat();
+                        processed += stat.getProcessed();
+                        dropped += stat.getDropped();
+
                         if(processingStorages.isEmpty() || !processingStorages.element().isDone()) {
                             RecordStorage<UUID, Event> storage = result.get().getStorage();
                             consumer.commitSync(storage.getOffsets(null));
                         }
-
-                        processedEventsMeter.mark(stat.getProcessed());
-                        droppedEventsMeter.mark(stat.getDropped());
                     }
-
+                    processedEventsMeter.mark(processed);
+                    droppedEventsMeter.mark(dropped);
                     processTimeTimer.update(timer.elapsed(), unit);
 
                     current = next;
