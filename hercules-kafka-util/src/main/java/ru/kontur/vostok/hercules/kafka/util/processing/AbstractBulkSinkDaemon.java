@@ -45,8 +45,6 @@ public abstract class AbstractBulkSinkDaemon {
 
         ApplicationContextHolder.init("sink." + getDaemonName(), contextProperties);
 
-        String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.pattern", String.class);
-
         metricsCollector = new MetricsCollector(metricsProperties);
         metricsCollector.start();
 
@@ -54,7 +52,6 @@ public abstract class AbstractBulkSinkDaemon {
         try {
             bulkEventSink = new CommonBulkEventSink(
                     getDaemonName(),
-                    new PatternMatcher(pattern),
                     streamProperties,
                     sinkProperties,
                     () -> createSender(sinkProperties),

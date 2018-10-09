@@ -47,7 +47,6 @@ public class CommonBulkEventSink {
      */
     public CommonBulkEventSink(
             String destinationName,
-            PatternMatcher streamPattern,
             Properties streamsProperties,
             Properties sinkProperties,
             Supplier<BulkSender<Event>> senderFactory,
@@ -64,7 +63,6 @@ public class CommonBulkEventSink {
 
         this.consumerPool = new BulkConsumerPool(
                 destinationName,
-                streamPattern,
                 streamsProperties,
                 sinkProperties,
                 status,

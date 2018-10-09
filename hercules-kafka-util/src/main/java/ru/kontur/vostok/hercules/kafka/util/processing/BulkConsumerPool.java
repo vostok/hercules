@@ -26,6 +26,7 @@ public class BulkConsumerPool {
 
     private static final String POOL_SIZE_PARAM = "size";
     private static final int POOL_SIZE_DEFAULT_VALUE = 2;
+    private static final String PATTERN_PARAM = "pattern";
 
     private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
 
@@ -33,7 +34,6 @@ public class BulkConsumerPool {
 
     public BulkConsumerPool(
             String destinationName,
-            PatternMatcher streamPattern,
             Properties consumerProperties,
             Properties sinkProperties,
             CommonBulkSinkStatusFsm status,
@@ -44,6 +44,10 @@ public class BulkConsumerPool {
 
         final int poolSize = PropertiesExtractor.getAs(consumerPoolProperties, POOL_SIZE_PARAM, Integer.class)
                 .orElse(POOL_SIZE_DEFAULT_VALUE);
+
+        final String streamPatternString = PropertiesExtractor.getRequiredProperty(consumerPoolProperties, PATTERN_PARAM, String.class);
+
+        final PatternMatcher streamPattern = new PatternMatcher(streamPatternString);
 
         final String groupId = String.format(ID_TEMPLATE, destinationName, streamPattern.toString())
                 .replaceAll("\\s+", "-");
