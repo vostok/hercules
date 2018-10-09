@@ -5,11 +5,13 @@ import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.metrics.MetricsCollector;
 import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
 import ru.kontur.vostok.hercules.throttling.Throttle;
+import ru.kontur.vostok.hercules.throttling.ThrottlingDefaults;
 import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowRequestWeigher;
 import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowThrottledRequestProcessor;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
@@ -27,12 +29,11 @@ public class HttpServer {
         String host = properties.getProperty("host", "0.0.0.0");
         int port = PropertiesExtractor.get(properties, "port", 6306);
 
-        Properties throttlingProperties = PropertiesUtil.ofScope(properties, "throttling");
+        Properties throttlingProperties = PropertiesUtil.ofScope(properties, Scopes.THROTTLING);
 
         SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(metricsCollector, eventSender);
         this.throttle = new CapacityThrottle<>(
-                PropertiesExtractor.get(throttlingProperties, "capacity", 100_000_000L),
-                PropertiesExtractor.get(throttlingProperties, "requestTimeout", 5_000L),
+                throttlingProperties,
                 new DefaultUndertowRequestWeigher(),
                 sendRequestProcessor,
                 new DefaultUndertowThrottledRequestProcessor()
