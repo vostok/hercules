@@ -89,6 +89,9 @@ public class BulkConsumerPool {
 
     public void stop() throws InterruptedException {
         for (Thread thread : threads) {
+            thread.interrupt();
+        }
+        for (Thread thread : threads) {
             thread.join();
         }
     }

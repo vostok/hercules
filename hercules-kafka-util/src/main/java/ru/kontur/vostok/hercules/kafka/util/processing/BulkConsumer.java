@@ -150,7 +150,12 @@ public class BulkConsumer {
                      * Put all polled data in sender pool queue and get future for processing result
                      */
                     if (0 < count && status.isRunning()) {
-                        processingStorages.add(queue.put(current));
+                        try {
+                            processingStorages.add(queue.put(current));
+                        }
+                        catch (InterruptedException e) {
+                            /* Skip cause this is termination signal */
+                        }
                     }
 
                     /*
