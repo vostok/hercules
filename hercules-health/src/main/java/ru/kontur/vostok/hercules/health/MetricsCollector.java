@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.metrics;
+package ru.kontur.vostok.hercules.health;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
@@ -105,6 +105,15 @@ public class MetricsCollector {
      */
     public <T> void gauge(String name, Supplier<T> supplier) {
         registry.register(name, (Gauge<T>) supplier::get);
+    }
+
+    /**
+     * Register metric by the name with custom function
+     * @param name is the name of the metric
+     * @param supplier is the custom function to provide status handler
+     */
+    public void status(String name, Supplier<IHaveStatusCode> supplier) {
+        registry.register(name, (Gauge<Integer>) () -> supplier.get().getStatusCode());
     }
 
     /**
