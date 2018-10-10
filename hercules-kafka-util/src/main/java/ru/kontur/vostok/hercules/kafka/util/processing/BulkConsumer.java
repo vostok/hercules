@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serde;
 import org.slf4j.Logger;
@@ -198,6 +199,12 @@ public class BulkConsumer {
             }
             catch (InterruptedException e) {
                 LOGGER.error("Waiting was interrupted", e);
+            }
+            catch (InterruptException e) {
+                /*
+                 * Skip cause interrupt exception throws when interrupt happens in kafka consumer code marks that
+                 * process should be stopped
+                 */
             }
             catch (ExecutionException e) {
                 LOGGER.error("Execution exception", e);
