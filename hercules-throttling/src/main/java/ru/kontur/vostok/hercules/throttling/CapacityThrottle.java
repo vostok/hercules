@@ -2,7 +2,9 @@ package ru.kontur.vostok.hercules.throttling;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,19 +29,21 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
     private final Semaphore semaphore;
 
     /**
-     * @param capacity                  total amount of throttled resources
-     * @param requestTimeout            request's timeout. Timeout is measured in milliseconds
+     * @param properties                configuration properties
      * @param weigher                   request's weigher to weigh resources are used to process request
      * @param requestProcessor          processes requests
      * @param throttledRequestProcessor processes throttled (discarded by some reasons) requests
      */
-    public CapacityThrottle(long capacity, long requestTimeout, RequestWeigher<R> weigher, RequestProcessor<R, C> requestProcessor, ThrottledRequestProcessor<R> throttledRequestProcessor) {
+    public CapacityThrottle(Properties properties, RequestWeigher<R> weigher, RequestProcessor<R, C> requestProcessor, ThrottledRequestProcessor<R> throttledRequestProcessor) {
+        long capacity = PropertiesExtractor.get(properties, ThrottlingProperties.CAPACITY, ThrottlingDefaults.DEFAULT_CAPACITY);
+        long requestTimeout = PropertiesExtractor.get(properties, ThrottlingProperties.REQUEST_TIMEOUT, ThrottlingDefaults.DEFAULT_REQUEST_TIMEOUT);
         if (capacity <= 0) {
             throw new IllegalArgumentException("Capacity should be positive");
         }
         if (requestTimeout <= 0) {
             throw new IllegalArgumentException("RequestTimeout should be posititve");
         }
+
         this.capacity = capacity;
         this.requestTimeout = requestTimeout;
 
