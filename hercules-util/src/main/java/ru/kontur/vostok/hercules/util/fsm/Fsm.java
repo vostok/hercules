@@ -48,7 +48,7 @@ public class Fsm<T extends State> {
      * @param transitionMap map of state and corresponding transition
      * @return empty optional if no transition can be performed else new FSM state
      */
-    public Optional<T> makeTransition(Map<T, T> transitionMap) {
+    protected Optional<T> makeTransition(Map<T, T> transitionMap) {
         do {
             StateWithFuture<T> currentStateWithFuture = state.get();
             T newState = transitionMap.get(currentStateWithFuture.state);

@@ -19,8 +19,8 @@ public class TransitionMapBuilder<T extends State> {
         return new TransitionMapBuilder<>();
     }
 
-    public TransitionMapBuilder<T> transition(T from, T to) {
-        map.put(from, to);
+    public TransitionMapBuilder<T> transition(Transition<T> transition) {
+        map.put(transition.getFrom(), transition.getTo());
         return this;
     }
 

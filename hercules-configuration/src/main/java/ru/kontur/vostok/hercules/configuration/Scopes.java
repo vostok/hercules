@@ -11,6 +11,7 @@ public final class Scopes {
     public static final String CURATOR = "curator";
 
     public static final String HTTP_SERVER = "http.server";
+    public static final String THROTTLING = "throttling";
 
     public static final String CONSUMER = "consumer";
     public static final String PRODUCER = "producer";
@@ -21,6 +22,8 @@ public final class Scopes {
     public static final String METRICS = "metrics";
 
     public static final String CONTEXT = "context";
+
+    public static final String GATE_CLIENT = "gate.client";
 
     private Scopes() {
 

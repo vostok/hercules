@@ -77,8 +77,7 @@ public class GateClient implements Closeable {
             throws BadRequestException, UnavailableHostException, HttpProtocolException {
         sendToHost(url, urlParam -> {
             HttpPost httpPost = buildRequest(url, apiKey, SEND_ASYNC, stream, data);
-            client.execute(httpPost);
-            return HttpStatus.SC_OK;
+            return sendRequest(httpPost);
         });
     }
 

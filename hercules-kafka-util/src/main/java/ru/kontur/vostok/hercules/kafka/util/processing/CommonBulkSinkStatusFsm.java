@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.kafka.util.processing;
 
 import ru.kontur.vostok.hercules.util.fsm.Fsm;
+import ru.kontur.vostok.hercules.util.fsm.Transition;
 import ru.kontur.vostok.hercules.util.fsm.TransitionMapBuilder;
 
 import java.util.Map;
@@ -14,31 +15,31 @@ import java.util.Objects;
 public class CommonBulkSinkStatusFsm extends Fsm<CommonBulkSinkStatus> {
 
     private static final Map<CommonBulkSinkStatus, CommonBulkSinkStatus> INIT_COMPLETED_MAP = TransitionMapBuilder.<CommonBulkSinkStatus>start()
-            .transition(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.RUNNING)
+            .transition(Transition.of(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.RUNNING))
             .build();
 
     private static final Map<CommonBulkSinkStatus, CommonBulkSinkStatus> BACKEND_FAILED_MAP = TransitionMapBuilder.<CommonBulkSinkStatus>start()
-            .transition(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.SUSPEND)
-            .transition(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.SUSPEND)
-            .transition(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.INIT)
-            .transition(CommonBulkSinkStatus.STOPPING_FROM_INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT)
-            .transition(CommonBulkSinkStatus.STOPPING_FROM_RUNNING, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND)
-            .transition(CommonBulkSinkStatus.STOPPING_FROM_SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND)
+            .transition(Transition.of(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.SUSPEND))
+            .transition(Transition.of(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.SUSPEND))
+            .transition(Transition.of(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.INIT))
+            .transition(Transition.of(CommonBulkSinkStatus.STOPPING_FROM_INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT))
+            .transition(Transition.of(CommonBulkSinkStatus.STOPPING_FROM_RUNNING, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND))
+            .transition(Transition.of(CommonBulkSinkStatus.STOPPING_FROM_SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND))
             .build();
 
     private static final Map<CommonBulkSinkStatus, CommonBulkSinkStatus> BACKEND_BACK_MAP = TransitionMapBuilder.<CommonBulkSinkStatus>start()
-            .transition(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.RUNNING)
-            .transition(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.RUNNING)
-            .transition(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.INIT)
-            .transition(CommonBulkSinkStatus.STOPPING_FROM_INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT)
-            .transition(CommonBulkSinkStatus.STOPPING_FROM_RUNNING, CommonBulkSinkStatus.STOPPING_FROM_RUNNING)
-            .transition(CommonBulkSinkStatus.STOPPING_FROM_SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND)
+            .transition(Transition.of(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.RUNNING))
+            .transition(Transition.of(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.RUNNING))
+            .transition(Transition.of(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.INIT))
+            .transition(Transition.of(CommonBulkSinkStatus.STOPPING_FROM_INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT))
+            .transition(Transition.of(CommonBulkSinkStatus.STOPPING_FROM_RUNNING, CommonBulkSinkStatus.STOPPING_FROM_RUNNING))
+            .transition(Transition.of(CommonBulkSinkStatus.STOPPING_FROM_SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND))
             .build();
 
     private static final Map<CommonBulkSinkStatus, CommonBulkSinkStatus> STOP_MAP = TransitionMapBuilder.<CommonBulkSinkStatus>start()
-            .transition(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT)
-            .transition(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.STOPPING_FROM_RUNNING)
-            .transition(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND)
+            .transition(Transition.of(CommonBulkSinkStatus.INIT, CommonBulkSinkStatus.STOPPING_FROM_INIT))
+            .transition(Transition.of(CommonBulkSinkStatus.RUNNING, CommonBulkSinkStatus.STOPPING_FROM_RUNNING))
+            .transition(Transition.of(CommonBulkSinkStatus.SUSPEND, CommonBulkSinkStatus.STOPPING_FROM_SUSPEND))
             .build();
 
     public CommonBulkSinkStatusFsm() {
