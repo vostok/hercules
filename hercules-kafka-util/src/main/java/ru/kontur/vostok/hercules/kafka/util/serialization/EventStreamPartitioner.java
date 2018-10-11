@@ -21,7 +21,7 @@ public class EventStreamPartitioner implements StreamPartitioner<UUID, Event> {
     }
 
     @Override
-    public Integer partition(UUID key, Event value, int numPartitions) {
+    public Integer partition(String topic, UUID key, Event value, int numPartitions) {
         return (shardingKey != null && shardingKey.length > 0) ? partitioner.partition(value, shardingKey, partitions) : null;
     }
 }
