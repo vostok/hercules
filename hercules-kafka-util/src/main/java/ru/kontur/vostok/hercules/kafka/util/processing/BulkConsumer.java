@@ -16,18 +16,14 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
-import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.time.Timer;
 
-import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Properties;
-import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 /**
@@ -111,8 +107,6 @@ public class BulkConsumer implements Runnable {
     public void run() {
         senderPool.start();
 
-        Queue<Future<Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException>>> commitQueue = new LinkedList<>();
-
         while (status.isRunning()) {
             try {
                 try {
@@ -177,7 +171,7 @@ public class BulkConsumer implements Runnable {
                      * Put all polled data in sender pool queue and get future for processing result
                      */
                     if (0 < count) {
-                        commitQueue.add(queue.put(current));
+                        queue.put(current);
                     }
 
                     /*
@@ -185,38 +179,22 @@ public class BulkConsumer implements Runnable {
                      *
                      * Send statistics of processed data and commit last fully processed offset
                      */
-                    int processed = 0;
-                    int dropped = 0;
-                    while (status.isRunning() && !commitQueue.isEmpty() && commitQueue.element().isDone()) {
-                        Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException> result;
+                    BulkQueue.RunResult<UUID, Event> lastCommitOrNull = queue.getLastCommitOrNull();
+
+                    if (Objects.nonNull(lastCommitOrNull)) {
+                        RecordStorage<UUID, Event> storage = lastCommitOrNull.getStorage();
                         try {
-                            result = commitQueue.remove().get(0, TimeUnit.MILLISECONDS);
-                        }
-                        catch (InterruptedException | TimeoutException | ExecutionException e) {
-                            throw new RuntimeException("Should never happened", e);
-                        }
-
-                        if (!result.isOk()) {
-                            throw result.getError();
+                            consumer.commitSync(storage.getOffsets(null));
+                        } catch (WakeupException e) {
+                            /* Ignore cause this is termination signal */
                         }
 
-                        BulkSenderStat stat = result.get().getStat();
-                        processed += stat.getProcessed();
-                        dropped += stat.getDropped();
+                        BulkSenderStat stat = lastCommitOrNull.getStat();
 
-                        if(commitQueue.isEmpty() || !commitQueue.element().isDone()) {
-                            RecordStorage<UUID, Event> storage = result.get().getStorage();
-                            try {
-                                consumer.commitSync(storage.getOffsets(null));
-                            }
-                            catch (WakeupException e) {
-                                /* Ignore cause this is termination signal */
-                            }
-                        }
+                        processedEventsMeter.mark(stat.getProcessed());
+                        droppedEventsMeter.mark(stat.getDropped());
+                        processTimeTimer.update(timer.elapsed(), unit);
                     }
-                    processedEventsMeter.mark(processed);
-                    droppedEventsMeter.mark(dropped);
-                    processTimeTimer.update(timer.elapsed(), unit);
 
                     current = next;
                     next = new RecordStorage<>(batchSize);

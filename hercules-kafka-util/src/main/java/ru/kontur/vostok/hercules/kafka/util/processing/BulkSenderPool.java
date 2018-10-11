@@ -67,7 +67,7 @@ public class BulkSenderPool<Key, Value> {
     }
 
     public void stop() throws InterruptedException {
-        pool.shutdownNow();
+        pool.shutdown();
         if (!pool.awaitTermination(shutdownTimeoutMs, TimeUnit.MILLISECONDS)) {
             LOGGER.warn("Sender pool was terminated by force");
         }
