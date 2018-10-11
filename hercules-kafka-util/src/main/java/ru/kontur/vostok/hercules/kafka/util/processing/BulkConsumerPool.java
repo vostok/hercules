@@ -13,15 +13,10 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
@@ -45,6 +40,8 @@ public class BulkConsumerPool {
 
     private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
 
+    private final AtomicLong id = new AtomicLong(0);
+
     private final int poolSize;
     private final int shutdownTimeoutMs;
 
@@ -58,7 +55,7 @@ public class BulkConsumerPool {
             Properties sinkProperties,
             CommonBulkSinkStatusFsm status,
             MetricsCollector metricsCollector,
-            BulkQueue<UUID, Event> queue
+            Supplier<BulkSender<Event>> senderSupplier
     ) {
         final Properties consumerPoolProperties = PropertiesUtil.ofScope(sinkProperties, CONSUMER_POOL_SCOPE);
 
@@ -84,16 +81,17 @@ public class BulkConsumerPool {
         this.pool = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory("consumer-pool"));
         this.consumers = new ArrayList<>(poolSize);
         this.bulkConsumerSupplier = () -> new BulkConsumer(
+                String.valueOf(id.getAndIncrement()),
                 consumerProperties,
                 sinkProperties,
                 streamPattern,
                 groupId,
                 status,
+                senderSupplier,
                 receivedEventsMeter,
                 processedEventsMeter,
                 droppedEventsMeter,
-                processTimeTimer,
-                queue
+                processTimeTimer
         );
     }
 

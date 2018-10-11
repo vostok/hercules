@@ -4,11 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -24,12 +22,6 @@ public class CommonBulkEventSink {
     private static final String PING_RATE_PARAM = "ping.rate";
     private static final int PING_RATE_DEFAULT_VALUE = 1000;
 
-    private static final String QUEUE_SIZE_PARAM = "queue.size";
-    private static final int QUEUE_SIZE_DEFAULT_VALUE = 64;
-
-
-    private final BulkQueue<UUID, Event> queue;
-    private final BulkSenderPool<UUID, Event> senderPool;
     private final BulkConsumerPool consumerPool;
     private final CommonBulkSinkStatusFsm status = new CommonBulkSinkStatusFsm();
 
@@ -55,30 +47,17 @@ public class CommonBulkEventSink {
         this.pingRate = PropertiesExtractor.getAs(sinkProperties, PING_RATE_PARAM, Integer.class)
                 .orElse(PING_RATE_DEFAULT_VALUE);
 
-        final int queueSize = PropertiesExtractor.getAs(sinkProperties, QUEUE_SIZE_PARAM, Integer.class)
-                .orElse(QUEUE_SIZE_DEFAULT_VALUE);
-
-        this.queue = new BulkQueue<>(queueSize, status);
-
         this.consumerPool = new BulkConsumerPool(
                 destinationName,
                 streamsProperties,
                 sinkProperties,
                 status,
                 metricsCollector,
-                queue
-        );
-
-        this.senderPool = new BulkSenderPool<>(
-                sinkProperties,
-                queue,
-                senderFactory,
-                status
+                senderFactory
         );
 
         metricsCollector.status("status", status::getState);
         this.pinger = senderFactory.get();
-
     }
 
     /**
@@ -86,7 +65,6 @@ public class CommonBulkEventSink {
      */
     public void start() {
         this.executor.scheduleAtFixedRate(this::ping, 0, pingRate, TimeUnit.MILLISECONDS);
-        senderPool.start();
         consumerPool.start();
         status.markInitCompleted();
     }
@@ -99,7 +77,6 @@ public class CommonBulkEventSink {
     public void stop(int timeout, TimeUnit timeUnit) throws InterruptedException {
         status.stop();
         consumerPool.stop();
-        senderPool.stop();
         executor.shutdown();
     }
 

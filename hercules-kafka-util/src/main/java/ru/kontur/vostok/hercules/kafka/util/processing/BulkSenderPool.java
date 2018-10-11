@@ -38,6 +38,7 @@ public class BulkSenderPool<Key, Value> {
 
 
     public BulkSenderPool(
+            final String id,
             final Properties sinkProperties,
             final BulkQueue<Key, Value> queue,
             final Supplier<BulkSender<Value>> senderFactory,
@@ -52,7 +53,7 @@ public class BulkSenderPool<Key, Value> {
                 .orElse(SHUTDOWN_TIMEOUT_MS_DEFAULT_VALUE);
 
 
-        this.pool = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory("sender-pool"));
+        this.pool = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory(id + "-sender-pool"));
 
         this.senderFactory = senderFactory;
         this.queue = queue;

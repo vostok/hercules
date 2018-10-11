@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 /**
  * BulkConsumer
@@ -41,13 +42,17 @@ public class BulkConsumer implements Runnable {
     private static final String POLL_TIMEOUT_PARAM = "poll.timeout";
     private static final String BATCH_SIZE_PARAM = "batch.size";
 
+    private static final String QUEUE_SIZE_PARAM = "queue.size";
+    private static final int QUEUE_SIZE_DEFAULT_VALUE = 64;
+
     private final KafkaConsumer<UUID, Event> consumer;
     private final PatternMatcher streamPattern;
     private final int pollTimeout;
     private final int batchSize;
 
-    private final BulkQueue<UUID, Event> queue;
     private final CommonBulkSinkStatusFsm status;
+    private final BulkQueue<UUID, Event> queue;
+    private final BulkSenderPool<UUID, Event> senderPool;
 
     private final Meter receivedEventsMeter;
     private final Meter processedEventsMeter;
@@ -56,16 +61,17 @@ public class BulkConsumer implements Runnable {
 
 
     public BulkConsumer(
+            String id,
             Properties streamsProperties,
             Properties sinkProperties,
             PatternMatcher streamPattern,
             String consumerGroupId,
             CommonBulkSinkStatusFsm status,
+            Supplier<BulkSender<Event>> senderFactory,
             Meter receivedEventsMeter,
             Meter processedEventsMeter,
             Meter droppedEventsMeter,
-            com.codahale.metrics.Timer processTimeTimer,
-            BulkQueue<UUID, Event> queue
+            com.codahale.metrics.Timer processTimeTimer
     ) {
         this.batchSize = PropertiesExtractor.getRequiredProperty(sinkProperties, BATCH_SIZE_PARAM, Integer.class);
         this.pollTimeout = PropertiesExtractor.getRequiredProperty(sinkProperties, POLL_TIMEOUT_PARAM, Integer.class);
@@ -80,8 +86,20 @@ public class BulkConsumer implements Runnable {
         this.streamPattern = streamPattern;
         this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
 
-        this.queue = queue;
         this.status = status;
+
+        final int queueSize = PropertiesExtractor.getAs(sinkProperties, QUEUE_SIZE_PARAM, Integer.class)
+                .orElse(QUEUE_SIZE_DEFAULT_VALUE);
+
+        this.queue = new BulkQueue<>(queueSize, status);
+
+        this.senderPool = new BulkSenderPool<>(
+                id,
+                sinkProperties,
+                queue,
+                senderFactory,
+                status
+        );
 
         this.receivedEventsMeter = receivedEventsMeter;
         this.processedEventsMeter = processedEventsMeter;
@@ -91,6 +109,8 @@ public class BulkConsumer implements Runnable {
 
     @Override
     public void run() {
+        senderPool.start();
+
         Queue<Future<Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException>>> commitQueue = new LinkedList<>();
 
         while (status.isRunning()) {
@@ -212,6 +232,12 @@ public class BulkConsumer implements Runnable {
             finally {
                 consumer.unsubscribe();
             }
+        }
+        try {
+            senderPool.stop();
+        }
+        catch (InterruptedException e) {
+            throw new RuntimeException("Should never happened", e);
         }
     }
 
