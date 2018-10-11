@@ -2,6 +2,8 @@ package ru.kontur.vostok.hercules.kafka.util.processing;
 
 import ru.kontur.vostok.hercules.util.functional.Result;
 
+import java.util.Objects;
+
 /**
  * BulkSenderRunnable
  *
@@ -26,21 +28,14 @@ public class BulkSenderRunnable<Key, Value> implements Runnable {
     @Override
     public void run() {
         while (status.isRunning()) {
+            BulkQueue.RunUnit<Key, Value> take = queue.take();
             try {
-                BulkQueue.RunUnit<Key, Value> take = queue.take();
-                try {
-                    if (!take.getFuture().isCancelled()) {
-                        BulkSenderStat stat = sender.process(take.getStorage().getRecords());
-                        take.getFuture().complete(Result.ok(new BulkQueue.RunResult<>(take.getStorage(), stat)));
-                    }
-                } catch (BackendServiceFailedException e) {
-                    take.getFuture().complete(Result.error(e));
+                if (Objects.nonNull(take)) {
+                    BulkSenderStat stat = sender.process(take.getStorage().getRecords());
+                    take.getFuture().complete(Result.ok(new BulkQueue.RunResult<>(take.getStorage(), stat)));
                 }
-            } catch (InterruptedException e) {
-                /*
-                 * InterruptedException thrown from queue.take marks that processing stopped
-                 */
-                break;
+            } catch (BackendServiceFailedException e) {
+                take.getFuture().complete(Result.error(e));
             }
         }
     }

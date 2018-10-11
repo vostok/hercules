@@ -6,7 +6,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serde;
 import org.slf4j.Logger;
@@ -28,13 +27,14 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * BulkConsumer
  *
  * @author Kirill Sulim
  */
-public class BulkConsumer {
+public class BulkConsumer implements Runnable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumer.class);
 
@@ -89,17 +89,23 @@ public class BulkConsumer {
         this.processTimeTimer = processTimeTimer;
     }
 
+    @Override
     public void run() {
-        Queue<Future<Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException>>> processingStorages = new LinkedList<>();
+        Queue<Future<Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException>>> commitQueue = new LinkedList<>();
 
         while (status.isRunning()) {
             try {
-                status.waitForState(
-                        CommonBulkSinkStatus.RUNNING,
-                        CommonBulkSinkStatus.STOPPING_FROM_INIT,
-                        CommonBulkSinkStatus.STOPPING_FROM_RUNNING,
-                        CommonBulkSinkStatus.STOPPING_FROM_SUSPEND
-                );
+                try {
+                    status.waitForState(
+                            CommonBulkSinkStatus.RUNNING,
+                            CommonBulkSinkStatus.STOPPING_FROM_INIT,
+                            CommonBulkSinkStatus.STOPPING_FROM_RUNNING,
+                            CommonBulkSinkStatus.STOPPING_FROM_SUSPEND
+                    );
+                }
+                catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException("Should never happened", e);
+                }
                 if (!status.isRunning()) {
                     return;
                 }
@@ -150,13 +156,8 @@ public class BulkConsumer {
                      *
                      * Put all polled data in sender pool queue and get future for processing result
                      */
-                    if (0 < count && status.isRunning()) {
-                        try {
-                            processingStorages.add(queue.put(current));
-                        }
-                        catch (InterruptedException e) {
-                            /* Skip cause this is termination signal */
-                        }
+                    if (0 < count) {
+                        commitQueue.add(queue.put(current));
                     }
 
                     /*
@@ -166,8 +167,14 @@ public class BulkConsumer {
                      */
                     int processed = 0;
                     int dropped = 0;
-                    while (!processingStorages.isEmpty() && processingStorages.element().isDone()) {
-                        Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException> result = processingStorages.remove().get();
+                    while (status.isRunning() && !commitQueue.isEmpty() && commitQueue.element().isDone()) {
+                        Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException> result;
+                        try {
+                            result = commitQueue.remove().get(0, TimeUnit.MILLISECONDS);
+                        }
+                        catch (InterruptedException | TimeoutException | ExecutionException e) {
+                            throw new RuntimeException("Should never happened", e);
+                        }
 
                         if (!result.isOk()) {
                             throw result.getError();
@@ -177,9 +184,14 @@ public class BulkConsumer {
                         processed += stat.getProcessed();
                         dropped += stat.getDropped();
 
-                        if(processingStorages.isEmpty() || !processingStorages.element().isDone()) {
+                        if(commitQueue.isEmpty() || !commitQueue.element().isDone()) {
                             RecordStorage<UUID, Event> storage = result.get().getStorage();
-                            consumer.commitSync(storage.getOffsets(null));
+                            try {
+                                consumer.commitSync(storage.getOffsets(null));
+                            }
+                            catch (WakeupException e) {
+                                /* Ignore cause this is termination signal */
+                            }
                         }
                     }
                     processedEventsMeter.mark(processed);
@@ -197,25 +209,13 @@ public class BulkConsumer {
                 LOGGER.error("Backend failed with", e);
                 status.markBackendFailed();
             }
-            catch (InterruptedException e) {
-                LOGGER.error("Waiting was interrupted", e);
-            }
-            catch (InterruptException e) {
-                /*
-                 * Skip cause interrupt exception throws when interrupt happens in kafka consumer code marks that
-                 * process should be stopped
-                 */
-            }
-            catch (ExecutionException e) {
-                LOGGER.error("Execution exception", e);
-            }
             finally {
                 consumer.unsubscribe();
-                while (!processingStorages.isEmpty()) {
-                    Future<Result<BulkQueue.RunResult<UUID, Event>, BackendServiceFailedException>> removed = processingStorages.remove();
-                    removed.cancel(false);
-                }
             }
         }
+    }
+
+    public void wakeup() {
+        consumer.wakeup();
     }
 }

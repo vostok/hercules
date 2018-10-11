@@ -39,7 +39,6 @@ public class CommonBulkEventSink {
 
     /**
      * @param destinationName data flow destination name, where data must be copied
-     * @param streamPattern stream which matches pattern will be processed by this sink
      * @param streamsProperties kafka streams properties
      * @param sinkProperties sink properties
      * @param senderFactory sender creator
@@ -59,7 +58,7 @@ public class CommonBulkEventSink {
         final int queueSize = PropertiesExtractor.getAs(sinkProperties, QUEUE_SIZE_PARAM, Integer.class)
                 .orElse(QUEUE_SIZE_DEFAULT_VALUE);
 
-        this.queue = new BulkQueue<>(queueSize);
+        this.queue = new BulkQueue<>(queueSize, status);
 
         this.consumerPool = new BulkConsumerPool(
                 destinationName,
@@ -74,7 +73,7 @@ public class CommonBulkEventSink {
                 sinkProperties,
                 queue,
                 senderFactory,
-                this.status
+                status
         );
 
         metricsCollector.status("status", status::getState);

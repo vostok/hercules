@@ -10,8 +10,19 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * BulkConsumerPool
@@ -26,11 +37,20 @@ public class BulkConsumerPool {
 
     private static final String POOL_SIZE_PARAM = "size";
     private static final int POOL_SIZE_DEFAULT_VALUE = 2;
+
+    private static final String SHUTDOWN_TIMEOUT_MS_PARAM = "shutdownTimeoutMs";
+    private static final int SHUTDOWN_TIMEOUT_MS_DEFAULT_VALUE = 5_000;
+
     private static final String PATTERN_PARAM = "pattern";
 
     private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
 
-    private final Thread[] threads;
+    private final int poolSize;
+    private final int shutdownTimeoutMs;
+
+    private final ExecutorService pool;
+    private final Supplier<BulkConsumer> bulkConsumerSupplier;
+    private final List<BulkConsumer> consumers;
 
     public BulkConsumerPool(
             String destinationName,
@@ -42,8 +62,11 @@ public class BulkConsumerPool {
     ) {
         final Properties consumerPoolProperties = PropertiesUtil.ofScope(sinkProperties, CONSUMER_POOL_SCOPE);
 
-        final int poolSize = PropertiesExtractor.getAs(consumerPoolProperties, POOL_SIZE_PARAM, Integer.class)
+        this.poolSize = PropertiesExtractor.getAs(consumerPoolProperties, POOL_SIZE_PARAM, Integer.class)
                 .orElse(POOL_SIZE_DEFAULT_VALUE);
+
+        this.shutdownTimeoutMs = PropertiesExtractor.getAs(consumerPoolProperties, SHUTDOWN_TIMEOUT_MS_PARAM, Integer.class)
+                .orElse(SHUTDOWN_TIMEOUT_MS_DEFAULT_VALUE);
 
         final String streamPatternString = PropertiesExtractor.getRequiredProperty(consumerPoolProperties, PATTERN_PARAM, String.class);
 
@@ -58,41 +81,35 @@ public class BulkConsumerPool {
         final Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
         final Timer processTimeTimer = metricsCollector.timer("processTime");
 
-        this.threads = new Thread[poolSize];
-        for (int i = 0; i < threads.length; ++i) {
-            Thread thread = new Thread(() -> {
-                BulkConsumer bulkConsumer = new BulkConsumer(
-                        consumerProperties,
-                        sinkProperties,
-                        streamPattern,
-                        groupId,
-                        status,
-                        receivedEventsMeter,
-                        processedEventsMeter,
-                        droppedEventsMeter,
-                        processTimeTimer,
-                        queue
-                );
-                bulkConsumer.run();
-            });
-            thread.setName(String.format("consumer-pool-%d", i));
-            thread.setUncaughtExceptionHandler(ExitOnThrowableHandler.INSTANCE);
-            threads[i] = thread;
-        }
+        this.pool = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory("consumer-pool"));
+        this.consumers = new ArrayList<>(poolSize);
+        this.bulkConsumerSupplier = () -> new BulkConsumer(
+                consumerProperties,
+                sinkProperties,
+                streamPattern,
+                groupId,
+                status,
+                receivedEventsMeter,
+                processedEventsMeter,
+                droppedEventsMeter,
+                processTimeTimer,
+                queue
+        );
     }
 
     public void start() {
-        for (Thread thread : threads) {
-            thread.start();
+        for (int i = 0; i < poolSize; ++i) {
+            BulkConsumer consumer = bulkConsumerSupplier.get();
+            consumers.add(consumer);
+            pool.execute(consumer);
         }
     }
 
     public void stop() throws InterruptedException {
-        for (Thread thread : threads) {
-            thread.interrupt();
-        }
-        for (Thread thread : threads) {
-            thread.join();
+        consumers.forEach(BulkConsumer::wakeup);
+        pool.shutdown();
+        if (!pool.awaitTermination(shutdownTimeoutMs, TimeUnit.MILLISECONDS)) {
+            LOGGER.warn("Consumer pool was terminated by force");
         }
     }
 }

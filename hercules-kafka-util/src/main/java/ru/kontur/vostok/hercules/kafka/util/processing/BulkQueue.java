@@ -2,10 +2,12 @@ package ru.kontur.vostok.hercules.kafka.util.processing;
 
 import ru.kontur.vostok.hercules.util.functional.Result;
 
+import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * BulkQueue
@@ -56,19 +58,41 @@ public class BulkQueue<Key, Value> {
         }
     }
 
-    private final BlockingQueue<BulkQueue.RunUnit<Key, Value>> queue;
+    private static final int STOPPED_CHECK_TIMEOUT_MS = 10;
 
-    public BulkQueue(int queueSize) {
+    private final BlockingQueue<BulkQueue.RunUnit<Key, Value>> queue;
+    private final CommonBulkSinkStatusFsm status;
+
+    public BulkQueue(int queueSize, CommonBulkSinkStatusFsm status) {
         this.queue = new ArrayBlockingQueue<>(queueSize);
+        this.status = status;
     }
 
-    public Future<Result<BulkQueue.RunResult<Key, Value>, BackendServiceFailedException>> put(RecordStorage<Key, Value> storage) throws InterruptedException {
+    public Future<Result<BulkQueue.RunResult<Key, Value>, BackendServiceFailedException>> put(RecordStorage<Key, Value> storage) {
         CompletableFuture<Result<BulkQueue.RunResult<Key, Value>, BackendServiceFailedException>> future = new CompletableFuture<>();
-        queue.put(new BulkQueue.RunUnit<>(storage, future));
+        RunUnit<Key, Value> unit = new RunUnit<>(storage, future);
+
+        try {
+            while (status.isRunning() && !queue.offer(unit, STOPPED_CHECK_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {/* empty */}
+        }
+        catch (InterruptedException e) {
+            throw new RuntimeException("Should never happened", e);
+        }
         return future;
     }
 
-    public RunUnit<Key, Value> take() throws InterruptedException {
-         return queue.take();
+    public RunUnit<Key, Value> take() {
+        RunUnit<Key, Value> result;
+        try {
+
+            do {
+                result = queue.poll(STOPPED_CHECK_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } while (status.isRunning() && Objects.isNull(result));
+        }
+        catch (InterruptedException e) {
+            throw new RuntimeException("Should never happened", e);
+        }
+
+        return result;
     }
 }
