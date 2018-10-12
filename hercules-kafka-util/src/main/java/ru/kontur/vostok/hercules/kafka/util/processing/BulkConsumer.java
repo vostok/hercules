@@ -15,6 +15,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.time.Timer;
@@ -51,6 +52,7 @@ public class BulkConsumer implements Runnable {
     private final BulkSenderPool<UUID, Event> senderPool;
 
     private final Meter receivedEventsMeter;
+    private final Meter receivedEventsSizeMeter;
     private final Meter processedEventsMeter;
     private final Meter droppedEventsMeter;
     private final com.codahale.metrics.Timer processTimeTimer;
@@ -65,6 +67,7 @@ public class BulkConsumer implements Runnable {
             CommonBulkSinkStatusFsm status,
             Supplier<BulkSender<Event>> senderFactory,
             Meter receivedEventsMeter,
+            Meter receivedEventsSizeMeter,
             Meter processedEventsMeter,
             Meter droppedEventsMeter,
             com.codahale.metrics.Timer processTimeTimer
@@ -98,6 +101,7 @@ public class BulkConsumer implements Runnable {
         );
 
         this.receivedEventsMeter = receivedEventsMeter;
+        this.receivedEventsSizeMeter = receivedEventsSizeMeter;
         this.processedEventsMeter = processedEventsMeter;
         this.droppedEventsMeter = droppedEventsMeter;
         this.processTimeTimer = processTimeTimer;
@@ -164,6 +168,7 @@ public class BulkConsumer implements Runnable {
                     }
                     int count = current.getRecords().size();
                     receivedEventsMeter.mark(count);
+                    receivedEventsSizeMeter.mark(EventUtil.getByteSize(current.getRecords()));
 
                     /*
                      * Queuing phase
