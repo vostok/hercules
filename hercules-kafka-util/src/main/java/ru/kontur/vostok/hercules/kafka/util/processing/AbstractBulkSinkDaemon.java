@@ -26,7 +26,6 @@ public abstract class AbstractBulkSinkDaemon {
 
     private CommonBulkEventSink bulkEventSink;
     protected MetricsCollector metricsCollector;
-    private BulkSender sender;
 
     /**
      * Start daemon
@@ -46,22 +45,20 @@ public abstract class AbstractBulkSinkDaemon {
 
         ApplicationContextHolder.init("sink." + getDaemonName(), contextProperties);
 
-        String pattern = PropertiesExtractor.getRequiredProperty(streamProperties, "stream.pattern", String.class);
-
         metricsCollector = new MetricsCollector(metricsProperties);
         metricsCollector.start();
 
         //TODO: Validate sinkProperties
         try {
-            sender = createSender(sinkProperties);
-            bulkEventSink = new CommonBulkEventSink(getDaemonName(), new PatternMatcher(pattern), streamProperties, sender, metricsCollector);
+            bulkEventSink = new CommonBulkEventSink(
+                    getDaemonName(),
+                    streamProperties,
+                    sinkProperties,
+                    () -> createSender(sinkProperties),
+                    metricsCollector
+            );
 
-            Thread worker = new Thread(bulkEventSink::run, "sink-worker");
-            worker.setUncaughtExceptionHandler((t, e) -> {
-                LOGGER.error("Error in worker thread", e);
-                this.shutdown();
-            });
-            worker.start();
+            bulkEventSink.start();
         } catch (Throwable e) {
             LOGGER.error("Cannot start " + getDaemonName() + " due to", e);
             shutdown();
@@ -105,15 +102,6 @@ public abstract class AbstractBulkSinkDaemon {
             }
         } catch (Throwable e) {
             LOGGER.error("Error on stopping bulk event sink", e);
-            //TODO: Process error
-        }
-
-        try {
-            if (Objects.nonNull(sender)) {
-                sender.close();
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on stopping " + getDaemonName(), e);
             //TODO: Process error
         }
 
