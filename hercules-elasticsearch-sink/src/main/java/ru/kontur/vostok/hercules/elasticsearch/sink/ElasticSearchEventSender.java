@@ -20,7 +20,6 @@ import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validator;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.io.ByteArrayOutputStream;
@@ -37,7 +36,8 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
 
     private static class ElasticsearchProperties {
 
-        static final PropertyDescription<HttpHost[]> HOSTS = PropertyDescriptions.ofType("elasticsearch.hosts", HttpHost[].class)
+        static final PropertyDescription<HttpHost[]> HOSTS = PropertyDescriptions
+                .propertyOfType(HttpHost[].class, "elasticsearch.hosts")
                 .withParser(Parsers.parseArray(HttpHost.class, s -> {
                     try {
                         return Result.ok(HttpHost.create(s));

@@ -25,7 +25,7 @@ public final class PropertyDescriptions {
         return PropertyDescriptionBuilder.start(name, Boolean.class, Parsers::parseBoolean);
     }
 
-    public static <T> PropertyDescriptionBuilder<T> ofType(String name, Class<T> clazz) {
+    public static <T> PropertyDescriptionBuilder<T> propertyOfType(Class<T> clazz, String name) {
         return PropertyDescriptionBuilder.start(name, clazz, null);
     }
 }
