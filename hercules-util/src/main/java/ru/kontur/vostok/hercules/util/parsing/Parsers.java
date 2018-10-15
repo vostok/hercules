@@ -2,6 +2,9 @@ package ru.kontur.vostok.hercules.util.parsing;
 
 import ru.kontur.vostok.hercules.util.functional.Result;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Parsers
  *
@@ -41,6 +44,25 @@ public final class Parsers {
         }
 
         return Result.error(String.format("Invalid boolean '%s'", s));
+    }
+
+    public static <T> Parser<List<T>> parseList(Parser<T> parser, String regexp) {
+        return s -> {
+            String[] split = s.split(regexp);
+            List<T> values = new ArrayList<>(split.length);
+
+            for (int i = 0; i < split.length; ++i) {
+                Result<T, String> parsed = parser.parse(split[i]);
+                if (parsed.isOk()) {
+                    values.add(parsed.get());
+                }
+                else {
+                    return Result.error(String.format("Error at index '%d': %s", i, parsed.getError()));
+                }
+            }
+
+            return Result.ok(values);
+        };
     }
 
     private Parsers() {
