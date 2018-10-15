@@ -20,6 +20,8 @@ import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validator;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,31 +50,37 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
 
         static final PropertyDescription<Integer> MAX_CONNECTIONS = PropertyDescriptions
                 .integerProperty("elasticsearch.maxConnections")
+                .withValidator(Validators.greaterThan(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL)
                 .build();
 
         static final PropertyDescription<Integer> MAX_CONNECTIONS_PER_ROUTE = PropertyDescriptions
                 .integerProperty("elasticsearch.maxConnectionsPerRoute")
+                .withValidator(Validators.greaterThan(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE)
                 .build();
 
         static final PropertyDescription<Integer> RETRY_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("elasticsearch.retryTimeoutMs")
+                .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("elasticsearch.connectionTimeoutMs")
+                .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> CONNECTION_REQUEST_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("elasticsearch.connectionRequestTimeoutMs")
+                .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> SOCKET_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("elasticsearch.socketTimeoutMs")
+                .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
                 .build();
     }
