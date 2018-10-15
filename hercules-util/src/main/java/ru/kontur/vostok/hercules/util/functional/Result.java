@@ -35,7 +35,12 @@ public class Result<R, E> {
     }
 
     public <R1, E1> Result<R1, E1> map(Function<R, R1> converter, Function<E, E1> errorConverter) {
-        return new Result<>(converter.apply(result), errorConverter.apply(error));
+        if (isOk()) {
+            return Result.ok(converter.apply(result));
+        }
+        else {
+            return Result.error(errorConverter.apply(error));
+        }
     }
 
     public <E1> Result<R, E1> mapError(Function<E, E1> errorConverter) {

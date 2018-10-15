@@ -3,11 +3,11 @@ package ru.kontur.vostok.hercules.util.properties;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
 
 /**
- * Properties
+ * PropertyDescriptions
  *
  * @author Kirill Sulim
  */
-public final class Properties {
+public final class PropertyDescriptions {
 
     public static PropertyDescriptionBuilder<Integer> integerProperty(String name) {
         return PropertyDescriptionBuilder.start(name, Integer.class, Parsers::parseInteger);

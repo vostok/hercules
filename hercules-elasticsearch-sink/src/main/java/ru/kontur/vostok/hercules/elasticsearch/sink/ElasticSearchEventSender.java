@@ -15,13 +15,15 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.BulkSenderStat;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
@@ -31,16 +33,48 @@ import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked
 
 public class ElasticSearchEventSender implements BulkSender<Event> {
 
-    private static class ElasticsearchProps {
-        static final String HOSTS = "elasticsearch.hosts";
+    private static class ElasticsearchProperties {
 
-        static final String MAX_CONNECTIONS = "elasticsearch.maxConnections";
-        static final String MAX_CONNECTIONS_PER_ROUTE = "elasticsearch.maxConnectionsPerRoute";
+        static final PropertyDescription<HttpHost[]> HOSTS = PropertyDescriptions.ofType("elasticsearch.hosts", HttpHost[].class)
+                .withParser(Parsers.parseArray(HttpHost.class, s -> {
+                    try {
+                        return Result.ok(HttpHost.create(s));
+                    }
+                    catch (IllegalArgumentException e) {
+                        return Result.error(e.getMessage());
+                    }
+                }))
+                .build();
 
-        static final String RETRY_TIMEOUT_MS = "elasticsearch.retryTimeoutMs";
-        static final String CONNECTION_TIMEOUT_MS = "elasticsearch.connectionTimeoutMs";
-        static final String CONNECTION_REQUEST_TIMEOUT_MS = "elasticsearch.connectionRequestTimeoutMs";
-        static final String SOCKET_TIMEOUT_MS = "elasticsearch.socketTimeoutMs";
+        static final PropertyDescription<Integer> MAX_CONNECTIONS = PropertyDescriptions
+                .integerProperty("elasticsearch.maxConnections")
+                .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL)
+                .build();
+
+        static final PropertyDescription<Integer> MAX_CONNECTIONS_PER_ROUTE = PropertyDescriptions
+                .integerProperty("elasticsearch.maxConnectionsPerRoute")
+                .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE)
+                .build();
+
+        static final PropertyDescription<Integer> RETRY_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("elasticsearch.retryTimeoutMs")
+                .withDefaultValue(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS)
+                .build();
+
+        static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("elasticsearch.connectionTimeoutMs")
+                .withDefaultValue(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS)
+                .build();
+
+        static final PropertyDescription<Integer> CONNECTION_REQUEST_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("elasticsearch.connectionRequestTimeoutMs")
+                .withDefaultValue(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
+                .build();
+
+        static final PropertyDescription<Integer> SOCKET_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("elasticsearch.socketTimeoutMs")
+                .withDefaultValue(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
+                .build();
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchEventSender.class);
@@ -59,25 +93,13 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             Properties elasticsearchProperties,
             MetricsCollector metricsCollector
     ) {
-        HttpHost[] hosts = parseHosts(PropertiesExtractor.getRequiredProperty(elasticsearchProperties, ElasticsearchProps.HOSTS, String.class));
-
-        int maxConnections = PropertiesExtractor.getAs(elasticsearchProperties, ElasticsearchProps.MAX_CONNECTIONS, Integer.class)
-                .orElse(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL);
-
-        int maxConnectionsPerRoute = PropertiesExtractor.getAs(elasticsearchProperties, ElasticsearchProps.MAX_CONNECTIONS_PER_ROUTE, Integer.class)
-                .orElse(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE);
-
-        int retryTimeoutMs = PropertiesExtractor.getAs(elasticsearchProperties, ElasticsearchProps.RETRY_TIMEOUT_MS, Integer.class)
-                .orElse(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS);
-
-        int connectionTimeout = PropertiesExtractor.getAs(elasticsearchProperties, ElasticsearchProps.CONNECTION_TIMEOUT_MS, Integer.class)
-                .orElse(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS);
-
-        int connectionRequestTimeout = PropertiesExtractor.getAs(elasticsearchProperties, ElasticsearchProps.CONNECTION_REQUEST_TIMEOUT_MS, Integer.class)
-                .orElse(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
-
-        int socketTimeout = PropertiesExtractor.getAs(elasticsearchProperties, ElasticsearchProps.SOCKET_TIMEOUT_MS, Integer.class)
-                .orElse(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS);
+        HttpHost[] hosts = ElasticsearchProperties.HOSTS.extract(elasticsearchProperties);
+        int maxConnections = ElasticsearchProperties.MAX_CONNECTIONS.extract(elasticsearchProperties);
+        int maxConnectionsPerRoute = ElasticsearchProperties.MAX_CONNECTIONS_PER_ROUTE.extract(elasticsearchProperties);
+        int retryTimeoutMs = ElasticsearchProperties.RETRY_TIMEOUT_MS.extract(elasticsearchProperties);
+        int connectionTimeout = ElasticsearchProperties.CONNECTION_TIMEOUT_MS.extract(elasticsearchProperties);
+        int connectionRequestTimeout = ElasticsearchProperties.CONNECTION_REQUEST_TIMEOUT_MS.extract(elasticsearchProperties);
+        int socketTimeout = ElasticsearchProperties.SOCKET_TIMEOUT_MS.extract(elasticsearchProperties);
 
         this.restClient = RestClient.builder(hosts)
                 .setMaxRetryTimeoutMillis(retryTimeoutMs)
@@ -167,11 +189,5 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
 
     private static void writeNewLine(OutputStream stream) throws IOException {
         stream.write('\n');
-    }
-
-    private static HttpHost[] parseHosts(String server) {
-        return Arrays.stream(server.split(","))
-                .map(HttpHost::create)
-                .toArray(HttpHost[]::new);
     }
 }
