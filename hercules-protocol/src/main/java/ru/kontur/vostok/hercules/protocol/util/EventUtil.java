@@ -11,7 +11,7 @@ import java.util.Collection;
  */
 public final class EventUtil {
 
-    public static int getByteSize(Collection<Event> events) {
+    public static int getSizeInBytes(Collection<Event> events) {
         int size = 0;
         for (Event event : events) {
             size += event.getBytes().length;

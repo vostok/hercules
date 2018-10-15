@@ -168,7 +168,7 @@ public class BulkConsumer implements Runnable {
                     }
                     int count = current.getRecords().size();
                     receivedEventsMeter.mark(count);
-                    receivedEventsSizeMeter.mark(EventUtil.getByteSize(current.getRecords()));
+                    receivedEventsSizeMeter.mark(EventUtil.getSizeInBytes(current.getRecords()));
 
                     /*
                      * Queuing phase
