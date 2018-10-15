@@ -7,9 +7,10 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
@@ -57,6 +58,7 @@ public class GateApplication {
             curatorClient.start();
 
             StreamRepository streamRepository = new StreamRepository(curatorClient);
+            StreamStorage streamStorage = new StreamStorage(streamRepository);
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
@@ -64,7 +66,7 @@ public class GateApplication {
             authValidationManager = new AuthValidationManager(curatorClient);
             authValidationManager.start();
 
-            server = new HttpServer(metricsCollector, httpserverProperties, authManager, authValidationManager, eventSender, streamRepository);
+            server = new HttpServer(metricsCollector, httpserverProperties, authManager, authValidationManager, eventSender, streamStorage);
             server.start();
         } catch (Throwable t) {
             LOGGER.error("Cannot start application due to", t);
