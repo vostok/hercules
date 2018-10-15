@@ -6,10 +6,12 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 
 import java.util.Map;
@@ -27,6 +29,7 @@ public class SentrySinkDaemon {
     private static SentrySink sentrySink;
     private static CuratorClient curatorClient;
     private static SentryProjectRegistry sentryProjectRegistry;
+    private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -38,6 +41,10 @@ public class SentrySinkDaemon {
         Properties streamsProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
         Properties sentryProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
         Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+        Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
+        Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+
+        ApplicationContextHolder.init("sink.sentry", contextProperties);
 
         try {
             String streamPattern = PropertiesExtractor.getRequiredProperty(streamsProperties, "stream.pattern", String.class);
@@ -50,6 +57,9 @@ public class SentrySinkDaemon {
             sentryProjectRegistry = new SentryProjectRegistry(new SentryProjectRepository(curatorClient));
             sentryProjectRegistry.start();
 
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+
             sentrySink = new SentrySink(
                     streamsProperties,
                     new PatternMatcher(streamPattern),
@@ -58,7 +68,8 @@ public class SentrySinkDaemon {
                             new SentryClientHolder(
                                     new SentryApiClient(sentryUrl, sentryToken)
                             ),
-                            sentryProjectRegistry
+                            sentryProjectRegistry,
+                            metricsCollector
                     )
             );
             sentrySink.start();
@@ -83,6 +94,13 @@ public class SentrySinkDaemon {
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping sentry sink ", t);
+        }
+        try {
+            if (Objects.nonNull(metricsCollector)) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping metrics collector", t);
         }
         try {
             if (Objects.nonNull(sentryProjectRegistry)) {
