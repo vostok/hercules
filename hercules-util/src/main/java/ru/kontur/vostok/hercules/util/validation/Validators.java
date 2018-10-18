@@ -22,46 +22,46 @@ public final class Validators {
         };
     }
 
-    public static  <T extends Comparable<T>> Validator<T> greaterThan(T lowerExclusiveBond) {
+    public static  <T extends Comparable<T>> Validator<T> greaterThan(T lowerExclusiveBound) {
         return value -> {
-            if (lowerExclusiveBond.compareTo(value) < 0) {
+            if (lowerExclusiveBound.compareTo(value) < 0) {
                 return Optional.empty();
             }
             else {
-                return Optional.of(String.format("Value must be greater than '%s' but was '%s'", lowerExclusiveBond, value));
+                return Optional.of(String.format("Value must be greater than '%s' but was '%s'", lowerExclusiveBound, value));
             }
         };
     }
 
-    public static  <T extends Comparable<T>> Validator<T> greaterOrEquals(T lowerInclusiveBond) {
+    public static  <T extends Comparable<T>> Validator<T> greaterOrEquals(T lowerInclusiveBound) {
         return value -> {
-            if (lowerInclusiveBond.compareTo(value) <= 0) {
+            if (lowerInclusiveBound.compareTo(value) <= 0) {
                 return Optional.empty();
             }
             else {
-                return Optional.of(String.format("Value must be greater or equals '%s' but was '%s'", lowerInclusiveBond, value));
+                return Optional.of(String.format("Value must be greater or equals '%s' but was '%s'", lowerInclusiveBound, value));
             }
         };
     }
 
-    public static  <T extends Comparable<T>> Validator<T> lesserThan(T upperExclusiveBond) {
+    public static  <T extends Comparable<T>> Validator<T> lesserThan(T upperExclusiveBound) {
         return value -> {
-            if (0 < upperExclusiveBond.compareTo(value)) {
+            if (0 < upperExclusiveBound.compareTo(value)) {
                 return Optional.empty();
             }
             else {
-                return Optional.of(String.format("Value must be lesser than '%s' but was '%s'", upperExclusiveBond, value));
+                return Optional.of(String.format("Value must be lesser than '%s' but was '%s'", upperExclusiveBound, value));
             }
         };
     }
 
-    public static  <T extends Comparable<T>> Validator<T> lesserOrEquals(T upperInclusiveBond) {
+    public static  <T extends Comparable<T>> Validator<T> lesserOrEquals(T upperInclusiveBound) {
         return value -> {
-            if (0 <= upperInclusiveBond.compareTo(value)) {
+            if (0 <= upperInclusiveBound.compareTo(value)) {
                 return Optional.empty();
             }
             else {
-                return Optional.of(String.format("Value must be lesser or equals '%s' but was '%s'", upperInclusiveBond, value));
+                return Optional.of(String.format("Value must be lesser or equals '%s' but was '%s'", upperInclusiveBound, value));
             }
         };
     }
