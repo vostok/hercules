@@ -74,6 +74,7 @@ public class BulkConsumerPool {
 
 
         final Meter receivedEventsMeter = metricsCollector.meter("receivedEvents");
+        final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSize");
         final Meter processedEventsMeter = metricsCollector.meter("processedEvents");
         final Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
         final Timer processTimeTimer = metricsCollector.timer("processTime");
@@ -89,6 +90,7 @@ public class BulkConsumerPool {
                 status,
                 senderSupplier,
                 receivedEventsMeter,
+                receivedEventsSizeMeter,
                 processedEventsMeter,
                 droppedEventsMeter,
                 processTimeTimer
