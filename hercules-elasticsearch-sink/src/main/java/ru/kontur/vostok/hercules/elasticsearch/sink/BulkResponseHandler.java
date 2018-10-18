@@ -11,12 +11,41 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 public final class BulkResponseHandler {
+
+    public static class Result {
+
+        public static final Result OK = new Result(0, false);
+
+        private final int errorCount;
+        private final boolean hasRetryableErrors;
+
+        public Result(int errorCount, boolean hasRetryableErrors) {
+            this.errorCount = errorCount;
+            this.hasRetryableErrors = hasRetryableErrors;
+        }
+
+        public int getErrorCount() {
+            return errorCount;
+        }
+
+        public boolean hasRetryableErrors() {
+            return hasRetryableErrors;
+        }
+    }
+
+    private static final Set<String> RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
+            "process_cluster_event_timeout_exception",
+            "es_rejected_execution_exception"
+    ));
 
     private final static Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
 
@@ -24,9 +53,10 @@ public final class BulkResponseHandler {
     private final static ObjectMapper mapper = new ObjectMapper(factory);
 
     // TODO: Replace with a good parser
-    public static int process(HttpEntity httpEntity) {
+    public static Result process(HttpEntity httpEntity) {
         return toUnchecked(() -> {
             int errorCount = 0;
+            boolean hasRetryableErrors = false;
             JsonParser parser = factory.createParser(httpEntity.getContent());
 
             String currentId = "";
@@ -38,7 +68,7 @@ public final class BulkResponseHandler {
                  */
                 if ("errors".equals(parser.getCurrentName())) {
                     if (Boolean.FALSE.equals(parser.nextBooleanValue())) {
-                        return 0;
+                        return Result.OK;
                     }
                 }
 
@@ -50,20 +80,31 @@ public final class BulkResponseHandler {
                 }
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
-                    processError(mapper.readTree(parser), currentId, currentIndex);
+                    if (processError(mapper.readTree(parser), currentId, currentIndex)) {
+                        hasRetryableErrors = true;
+                    }
                     errorCount++;
                 }
             }
-            return errorCount;
+            return new Result(errorCount, hasRetryableErrors);
         });
     }
 
-    private static void processError(TreeNode errorNode, String id, String index) throws IOException {
+    /**
+     * Process error JSON node
+     *
+     * @param errorNode JSON node with error data
+     * @param id event id
+     * @param index index
+     * @return is error retryable
+     * @throws IOException
+     */
+    private static boolean processError(TreeNode errorNode, String id, String index) throws IOException {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
             JsonNode nestedError = error.get("caused_by");
             if (Objects.nonNull(nestedError)) {
-                processError(nestedError, id, index);
+                return processError(nestedError, id, index);
             } else {
                 String type = Optional.ofNullable(error.get("type")).map(JsonNode::asText).orElse("");
                 String reason = Optional.ofNullable(error.get("reason")).map(JsonNode::asText).orElse("");
@@ -74,10 +115,13 @@ public final class BulkResponseHandler {
                         type,
                         reason.replaceAll("[\\r\\n]+", " "))
                 );
+                return RETRYABLE_ERRORS_CODES.contains(type);
             }
         }
+        return false;
     }
 
     private BulkResponseHandler() {
+        /* static class */
     }
 }
