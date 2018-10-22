@@ -136,16 +136,22 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
         writeEventRecords(stream, events);
+        if (stream.size() == 0) {
+            return BulkSenderStat.ZERO;
+        }
 
-        int errorCount = 0;
-        if (0 < stream.size()) {
-            long start = System.currentTimeMillis();
-            try {
+        BulkResponseHandler.Result result;
+        try {
+            ByteArrayEntity body = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
+
+            int retryCount = 3;
+            do {
+                long start = System.currentTimeMillis();
                 Response response = restClient.performRequest(
                         "POST",
                         "/_bulk",
                         Collections.emptyMap(),
-                        new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON)
+                        body
 
                 );
                 elasticsearchRequestTimeTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
@@ -153,14 +159,17 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     elasticsearchRequestErrorsMeter.mark();
                     throw new RuntimeException("Bad response");
                 }
-                errorCount = BulkResponseHandler.process(response.getEntity());
-            } catch (Exception e) {
-                throw new BackendServiceFailedException(e);
+                result = BulkResponseHandler.process(response.getEntity());
+            } while (result.hasRetryableErrors() && 0 < retryCount--);
+            if (result.hasRetryableErrors()) {
+                throw new Exception("Have retryable errors in elasticsearch response");
             }
+        } catch (Exception e) {
+            throw new BackendServiceFailedException(e);
         }
 
         events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getId()));
-        return new BulkSenderStat(events.size() - errorCount, errorCount);
+        return new BulkSenderStat(events.size() - result.getErrorCount(), result.getErrorCount());
     }
 
     @Override
