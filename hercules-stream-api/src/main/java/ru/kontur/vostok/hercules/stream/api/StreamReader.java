@@ -44,7 +44,7 @@ public class StreamReader {
 
     public StreamReader(Properties properties, StreamRepository streamRepository) {
         this.streamRepository = streamRepository;
-        this.servers = properties.getProperty("bootstrap.servers");
+        this.servers = properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
         this.pollTimeout = PropertiesExtractor.get(properties, "poll.timeout", 1000);
     }
 
