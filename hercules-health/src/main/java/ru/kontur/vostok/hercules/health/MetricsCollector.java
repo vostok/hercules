@@ -124,4 +124,13 @@ public class MetricsCollector {
     public Histogram histogram(String name) {
         return registry.histogram(name);
     }
+
+    /**
+     * Create HttpMetrics aggregation object
+     * @param name handler name
+     * @return HttpMetrics object
+     */
+    public HttpMetrics httpMetrics(String name) {
+        return new HttpMetrics(name, this);
+    }
 }

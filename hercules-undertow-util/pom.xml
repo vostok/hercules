@@ -16,6 +16,10 @@
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-throttling</artifactId>
         </dependency>
         <dependency>
