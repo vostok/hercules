@@ -10,6 +10,8 @@ import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +22,12 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class TimelineSinkDaemon {
+
+    private static class Props {
+        static final PropertyDescription<String> TIMELINE = PropertyDescriptions
+                .stringProperty("timeline")
+                .build();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TimelineSinkDaemon.class);
 
@@ -40,10 +48,7 @@ public class TimelineSinkDaemon {
         Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
 
         //TODO: Validate sinkProperties
-        if (!sinkProperties.containsKey("timeline")) {
-            LOGGER.error("Validation fails (sink.properties): 'timeline' should be specified");
-            return;
-        }
+        final String timelineName = Props.TIMELINE.extract(sinkProperties);
 
         try {
             curatorClient = new CuratorClient(curatorProperties);
@@ -54,7 +59,6 @@ public class TimelineSinkDaemon {
 
             TimelineRepository timelineRepository = new TimelineRepository(curatorClient);
 
-            String timelineName = sinkProperties.getProperty("timeline");
             Optional<Timeline> timelineOptional = timelineRepository.read(timelineName);
             if (!timelineOptional.isPresent()) {
                 throw new IllegalArgumentException("Unknown timeline");
