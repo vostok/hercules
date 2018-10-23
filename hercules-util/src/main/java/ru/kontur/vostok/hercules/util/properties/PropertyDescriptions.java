@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.util.properties;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * PropertyDescriptions
@@ -41,6 +42,14 @@ public final class PropertyDescriptions {
         @SuppressWarnings("unchecked")
         Class<List<String>> clazz = (Class<List<String>>)(Class<?>)List.class;
         return PropertyDescriptionBuilder.start(name, clazz, Parsers.parseList(Parsers::parseString));
+    }
+
+    public static PropertyDescriptionBuilder<Set<String>> setOfStringsProperty(String name) {
+        // Trick to work-around type erasure
+        // https://stackoverflow.com/a/30754982/2535153
+        @SuppressWarnings("unchecked")
+        Class<Set<String>> clazz = (Class<Set<String>>)(Class<?>)Set.class;
+        return PropertyDescriptionBuilder.start(name, clazz, Parsers.parseSet(Parsers::parseString));
     }
 
     public static PropertyDescriptionBuilder<String[]> arrayOfStringsProperty(String name) {

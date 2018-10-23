@@ -7,7 +7,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 /**
  * Parsers
@@ -15,6 +20,8 @@ import java.util.List;
  * @author Kirill Sulim
  */
 public final class Parsers {
+
+    private static final String DEFAULT_SEPARATOR = ",";
 
     public static Result<String, String> parseString(String s) {
         return Result.ok(s);
@@ -64,13 +71,25 @@ public final class Parsers {
     }
 
     public static <T> Parser<List<T>> parseList(Parser<T> parser) {
-        return parseList(parser, ",");
+        return parseList(parser, DEFAULT_SEPARATOR);
     }
 
     public static <T> Parser<List<T>> parseList(Parser<T> parser, String regexp) {
+        return parseCollection(parser, ArrayList::new, regexp);
+    }
+
+    public static <T> Parser<Set<T>> parseSet(Parser<T> parser) {
+        return parseSet(parser, DEFAULT_SEPARATOR);
+    }
+
+    public static <T> Parser<Set<T>> parseSet(Parser<T> parser, String regexp) {
+        return parseCollection(parser, HashSet::new, regexp);
+    }
+
+    public static <T, C extends Collection<T>> Parser<C> parseCollection(Parser<T> parser, IntFunction<? extends C> collectionSupplier, String regexp) {
         return s -> {
             String[] split = s.split(regexp);
-            List<T> values = new ArrayList<>(split.length);
+            C values = collectionSupplier.apply(split.length);
 
             for (int i = 0; i < split.length; ++i) {
                 Result<T, String> parsed = parser.parse(split[i]);
@@ -87,7 +106,7 @@ public final class Parsers {
     }
 
     public static <T> Parser<T[]> parseArray(Class<T> clazz, Parser<T> parser) {
-        return parseArray(clazz, parser, ",");
+        return parseArray(clazz, parser, DEFAULT_SEPARATOR);
     }
 
     public static <T> Parser<T[]> parseArray(Class<T> clazz, Parser<T> parser, String regexp) {
