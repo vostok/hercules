@@ -10,6 +10,8 @@ import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +22,12 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class StreamSinkDaemon {
+
+    private static class Props {
+        static final PropertyDescription<String> DERIVED = PropertyDescriptions
+                .stringProperty("derived")
+                .build();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamSinkDaemon.class);
 
@@ -38,10 +46,7 @@ public class StreamSinkDaemon {
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
         //TODO: Validate sinkProperties
-        if (!sinkProperties.containsKey("derived")) {
-            LOGGER.error("Validation fails (sink.properties): 'derived' should be specified");
-            return;
-        }
+        final String derivedName = Props.DERIVED.extract(sinkProperties);
 
         try {
             curatorClient = new CuratorClient(curatorProperties);
@@ -49,7 +54,6 @@ public class StreamSinkDaemon {
 
             StreamRepository streamRepository = new StreamRepository(curatorClient);
 
-            String derivedName = sinkProperties.getProperty("derived");
             Optional<Stream> derivedOptional = streamRepository.read(derivedName);
             if (!derivedOptional.isPresent()) {
                 throw new IllegalArgumentException("Unknown derived stream");
