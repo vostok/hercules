@@ -20,6 +20,16 @@ public final class Parsers {
         return Result.ok(s);
     }
 
+    public static Result<Short, String> parseShort(String s) {
+        s = s.trim();
+        try {
+            return Result.ok(Short.parseShort(s));
+        }
+        catch (NumberFormatException e) {
+            return Result.error(String.format("Invalid short '%s'", s));
+        }
+    }
+
     public static Result<Integer, String> parseInteger(String s) {
         s = s.trim();
         try {

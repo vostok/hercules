@@ -11,6 +11,10 @@ import java.util.List;
  */
 public final class PropertyDescriptions {
 
+    public static PropertyDescriptionBuilder<Short> shortProperty(String name) {
+        return PropertyDescriptionBuilder.start(name, Short.class, Parsers::parseShort);
+    }
+
     public static PropertyDescriptionBuilder<Integer> integerProperty(String name) {
         return PropertyDescriptionBuilder.start(name, Integer.class, Parsers::parseInteger);
     }
