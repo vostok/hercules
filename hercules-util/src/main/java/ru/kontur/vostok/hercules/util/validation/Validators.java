@@ -66,6 +66,22 @@ public final class Validators {
         };
     }
 
+    public static <T extends Comparable<T>> Validator<T> interval(T lowerInclusiveBound, T upperExclusiveBound) {
+        return value -> {
+            if (lowerInclusiveBound.compareTo(value) <=0 && 0 < upperExclusiveBound.compareTo(value)) {
+                return Optional.empty();
+            }
+            else {
+                return Optional.of(String.format(
+                        "Value must be between '%s' (inclusive) and '%s' (exclusive), but was '%s'",
+                        lowerInclusiveBound,
+                        upperExclusiveBound,
+                        value
+                ));
+            }
+        };
+    }
+
     public static Validator<String> notEmpty() {
         return value -> {
             if (Objects.nonNull(value) && !value.isEmpty()) {
@@ -75,6 +91,10 @@ public final class Validators {
                 return Optional.of("String is empty");
             }
         };
+    }
+
+    public static Validator<Integer> portValidator() {
+        return interval(0, 65_536);
     }
 
     private Validators() {
