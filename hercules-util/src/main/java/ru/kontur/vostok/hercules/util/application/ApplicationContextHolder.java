@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.util.application;
 
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Objects;
 import java.util.Properties;
@@ -11,6 +12,16 @@ import java.util.Properties;
  * @author Kirill Sulim
  */
 public class ApplicationContextHolder {
+
+    private static class Props {
+        static final PropertyDescription<String> ENVIRONMENT = PropertyDescriptions
+                .stringProperty("environment")
+                .build();
+
+        static final PropertyDescription<String> INSTANCE_ID = PropertyDescriptions
+                .stringProperty("instance.id")
+                .build();
+    }
 
     private static volatile ApplicationContext applicationContext;
 
@@ -24,8 +35,8 @@ public class ApplicationContextHolder {
     public static void init(String applicationName, Properties contextProperties) {
         applicationContext = new ApplicationContext(
                 applicationName,
-                PropertiesExtractor.getRequiredProperty(contextProperties, "environment", String.class),
-                PropertiesExtractor.getRequiredProperty(contextProperties, "instance.id", String.class)
+                Props.ENVIRONMENT.extract(contextProperties),
+                Props.INSTANCE_ID.extract(contextProperties)
         );
     }
 
