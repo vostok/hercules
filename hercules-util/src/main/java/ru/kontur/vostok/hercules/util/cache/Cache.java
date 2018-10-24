@@ -11,7 +11,7 @@ import java.util.function.Function;
 public class Cache<K, V> {
     private final long lifetime;
 
-    private final ConcurrentHashMap<K, CacheElement<V>> cache;
+    private final ConcurrentHashMap<K, Cached<V>> cache;
 
     public Cache(long lifetime) {
         this.lifetime = lifetime;
@@ -20,23 +20,25 @@ public class Cache<K, V> {
     }
 
     public final Cached<V> cacheAndGet(K key, Function<K, V> provider) {
-        CacheElement<V> element = cache.get(key);
+        Cached<V> element = cache.get(key);
         if (element == null) {
             V value = provider.apply(key);
             if (value != null) {
-                cache.put(key, new CacheElement<>(value));
-                return Cached.of(value);
+                Cached<V> cached = Cached.of(value, lifetime);
+                cache.put(key, cached);
+                return cached;
             } else {
                 return Cached.none();
             }
         }
-        if (isAlive(element)) {
-            return Cached.of(element.value);
+        if (element.isAlive()) {
+            return element;
         }
         V value = provider.apply(key);
         if (value != null) {
-            cache.put(key, new CacheElement<>(value));
-            return Cached.of(value);
+            Cached<V> cached = Cached.of(value, lifetime);
+            cache.put(key, cached);
+            return cached;
         } else {
             cache.remove(key, element);
             return Cached.none();
@@ -44,17 +46,15 @@ public class Cache<K, V> {
     }
 
     public final Cached<V> get(K key) {
-        CacheElement<V> element = cache.get(key);
+        Cached<V> element = cache.get(key);
         if (element == null) {
             return Cached.none();
         }
-        return isAlive(element)
-                ? Cached.of(element.value)
-                : Cached.expired(element.value);
+        return element;
     }
 
     public final void put(K key, V value) {
-        cache.put(key, new CacheElement<>(value));
+        cache.put(key, Cached.of(value, lifetime));
     }
 
     public final boolean remove(K key) {
@@ -63,19 +63,5 @@ public class Cache<K, V> {
 
     public final void clear() {
         cache.clear();
-    }
-
-    private boolean isAlive(CacheElement<V> element) {
-        return System.currentTimeMillis() <= element.timestamp + lifetime;
-    }
-
-    private static class CacheElement<V> {
-        private final V value;
-        private final long timestamp;
-
-        CacheElement(V value) {
-            this.value = value;
-            this.timestamp = System.currentTimeMillis();
-        }
     }
 }

@@ -7,18 +7,18 @@ import java.util.NoSuchElementException;
  */
 public final class Cached<T> {
     private final T value;
-    private final boolean expired;
+    private final long expirationTimestamp;
 
     private static final Cached<?> NONE = new Cached<>();
 
-    private Cached(T value, boolean expired) {
+    public Cached(T value, long expirationTimestamp) {
         this.value = value;
-        this.expired = expired;
+        this.expirationTimestamp = expirationTimestamp;
     }
 
     private Cached() {
         this.value = null;
-        this.expired = false;
+        this.expirationTimestamp = Long.MAX_VALUE;
     }
 
     public boolean isCached() {
@@ -26,7 +26,7 @@ public final class Cached<T> {
     }
 
     public boolean isExpired() {
-        return expired;
+        return System.currentTimeMillis() > expirationTimestamp;
     }
 
     public boolean isAlive() {
@@ -41,12 +41,8 @@ public final class Cached<T> {
         return value;
     }
 
-    public static <T> Cached<T> of(T value) {
-        return new Cached<>(value, false);
-    }
-
-    public static <T> Cached<T> expired(T value) {
-        return new Cached<>(value, true);
+    public static <T> Cached<T> of(T value, long lifetime) {
+        return new Cached<>(value, System.currentTimeMillis() + lifetime);
     }
 
     public static <T> Cached<T> none() {
