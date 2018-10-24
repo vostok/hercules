@@ -11,10 +11,10 @@ import ru.kontur.vostok.hercules.util.functional.Result;
 public interface Parser<T> {
 
     /**
-     * Parse string
+     * Parse value from string
      *
      * @param s string to parse
-     * @return
+     * @return Result of parsed value or string with description of parsing error
      */
     Result<T, String> parse(String s);
 }
