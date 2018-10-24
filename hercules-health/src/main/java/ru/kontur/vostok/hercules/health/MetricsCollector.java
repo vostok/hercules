@@ -11,6 +11,7 @@ import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import ru.kontur.vostok.hercules.util.application.ApplicationContext;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.Validators;

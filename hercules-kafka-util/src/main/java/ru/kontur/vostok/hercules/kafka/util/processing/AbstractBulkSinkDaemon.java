@@ -7,7 +7,9 @@ import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.time.SimpleTimer;
 
 import java.util.Map;
