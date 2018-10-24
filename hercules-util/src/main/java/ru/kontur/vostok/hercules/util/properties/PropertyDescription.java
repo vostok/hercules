@@ -17,14 +17,40 @@ import java.util.Properties;
  */
 public class PropertyDescription<T> {
 
+    /**
+     * Property name
+     */
     private final String name;
+
+    /**
+     * Property parser
+     */
     private final Parser<T> parser;
 
+    /**
+     * List of validator of parsed value
+     */
     private final List<Validator<T>> validators;
 
+    /**
+     * Required flag
+     */
     private final boolean required;
+
+    /**
+     * Default property value
+     */
     private final T defaultValue;
 
+    /**
+     * Create property description
+     *
+     * @param name property name
+     * @param parser value parser
+     * @param validators list of value validators
+     * @param required required flag
+     * @param defaultValue default value
+     */
     public PropertyDescription(String name, Parser<T> parser, List<Validator<T>> validators, boolean required, T defaultValue) {
         this.name = name;
         this.parser = parser;

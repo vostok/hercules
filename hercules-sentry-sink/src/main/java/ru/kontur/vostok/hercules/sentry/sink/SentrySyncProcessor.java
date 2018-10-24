@@ -14,7 +14,8 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.StackTraceTags;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -25,7 +26,13 @@ import java.util.UUID;
  */
 public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
 
-    private static final Level DEFAULT_REQUIRED_LEVEL = Level.WARNING;
+    private static class Props {
+        static final PropertyDescription<Level> REQUIRED_LEVEL = PropertyDescriptions
+                .propertyOfType(Level.class, "sentry.level")
+                .withParser(SentryLevelEnumParser::parseAsResult)
+                .withDefaultValue(Level.WARNING)
+                .build();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
@@ -48,9 +55,7 @@ public class SentrySyncProcessor extends AbstractProcessor<UUID, Event> {
             SentryProjectRegistry sentryProjectRegistry,
             MetricsCollector metricsCollector
     ) {
-        this.requiredLevel = PropertiesExtractor.getAs(properties, "sentry.level", String.class)
-                .flatMap(SentryLevelEnumParser::parse)
-                .orElse(DEFAULT_REQUIRED_LEVEL);
+        this.requiredLevel = Props.REQUIRED_LEVEL.extract(properties);
         this.sentryClientHolder = sentryClientHolder;
         this.sentryProjectRegistry = sentryProjectRegistry;
 

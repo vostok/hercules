@@ -3,7 +3,9 @@ package ru.kontur.vostok.hercules.kafka.util.processing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -18,13 +20,21 @@ import java.util.function.Supplier;
  */
 public class BulkSenderPool<Key, Value> {
 
-    private static final String SENDER_POOL_SCOPE = "senderPool";
+    private static class Props {
+        static final String SENDER_POOL_SCOPE = "senderPool";
 
-    private static final String POOL_SIZE_PARAM = "size";
-    private static final int POOL_SIZE_DEFAULT_VALUE = 4;
+        static final PropertyDescription<Integer> POOL_SIZE = PropertyDescriptions
+                .integerProperty("size")
+                .withDefaultValue(4)
+                .withValidator(Validators.greaterThan(0))
+                .build();
 
-    private static final String SHUTDOWN_TIMEOUT_MS_PARAM = "shutdownTimeoutMs";
-    private static final int SHUTDOWN_TIMEOUT_MS_DEFAULT_VALUE = 5_000;
+        static final PropertyDescription<Integer> SHUTDOWN_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("shutdownTimeoutMs")
+                .withDefaultValue(5_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkSenderPool.class);
 
@@ -44,14 +54,10 @@ public class BulkSenderPool<Key, Value> {
             final Supplier<BulkSender<Value>> senderFactory,
             final CommonBulkSinkStatusFsm status
     ) {
-        final Properties senderPoolProperties = PropertiesUtil.ofScope(sinkProperties, SENDER_POOL_SCOPE);
+        final Properties senderPoolProperties = PropertiesUtil.ofScope(sinkProperties, Props.SENDER_POOL_SCOPE);
 
-        this.poolSize = PropertiesExtractor.getAs(senderPoolProperties, POOL_SIZE_PARAM, Integer.class)
-                .orElse(POOL_SIZE_DEFAULT_VALUE);
-
-        this.shutdownTimeoutMs = PropertiesExtractor.getAs(senderPoolProperties, SHUTDOWN_TIMEOUT_MS_PARAM, Integer.class)
-                .orElse(SHUTDOWN_TIMEOUT_MS_DEFAULT_VALUE);
-
+        this.poolSize = Props.POOL_SIZE.extract(senderPoolProperties);
+        this.shutdownTimeoutMs = Props.SHUTDOWN_TIMEOUT_MS.extract(senderPoolProperties);
 
         this.pool = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory(id + "-sender-pool"));
 

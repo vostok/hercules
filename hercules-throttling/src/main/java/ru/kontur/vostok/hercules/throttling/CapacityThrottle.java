@@ -2,21 +2,33 @@ package ru.kontur.vostok.hercules.throttling;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
  */
 public class CapacityThrottle<R, C> implements Throttle<R, C> {
+
+    private static class Props {
+        static final PropertyDescription<Long> CAPACITY = PropertyDescriptions
+                .longProperty(ThrottlingProperties.CAPACITY)
+                .withDefaultValue(ThrottlingDefaults.DEFAULT_CAPACITY)
+                .withValidator(Validators.greaterThan(0L))
+                .build();
+
+        static final PropertyDescription<Long> REQUEST_TIMEOUT_MS = PropertyDescriptions
+                .longProperty(ThrottlingProperties.REQUEST_TIMEOUT)
+                .withDefaultValue(ThrottlingDefaults.DEFAULT_REQUEST_TIMEOUT)
+                .withValidator(Validators.greaterThan(0L))
+                .build();
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityThrottle.class);
 
     private final long capacity;
@@ -35,17 +47,8 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
      * @param throttledRequestProcessor processes throttled (discarded by some reasons) requests
      */
     public CapacityThrottle(Properties properties, RequestWeigher<R> weigher, RequestProcessor<R, C> requestProcessor, ThrottledRequestProcessor<R> throttledRequestProcessor) {
-        long capacity = PropertiesExtractor.get(properties, ThrottlingProperties.CAPACITY, ThrottlingDefaults.DEFAULT_CAPACITY);
-        long requestTimeout = PropertiesExtractor.get(properties, ThrottlingProperties.REQUEST_TIMEOUT, ThrottlingDefaults.DEFAULT_REQUEST_TIMEOUT);
-        if (capacity <= 0) {
-            throw new IllegalArgumentException("Capacity should be positive");
-        }
-        if (requestTimeout <= 0) {
-            throw new IllegalArgumentException("RequestTimeout should be posititve");
-        }
-
-        this.capacity = capacity;
-        this.requestTimeout = requestTimeout;
+        this.capacity = Props.CAPACITY.extract(properties);
+        this.requestTimeout = Props.REQUEST_TIMEOUT_MS.extract(properties);
 
         this.weigher = weigher;
         this.requestProcessor = requestProcessor;

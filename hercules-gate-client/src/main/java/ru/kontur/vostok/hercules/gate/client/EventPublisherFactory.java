@@ -2,7 +2,8 @@ package ru.kontur.vostok.hercules.gate.client;
 
 import ru.kontur.vostok.hercules.util.Lazy;
 import ru.kontur.vostok.hercules.util.properties.ConfigsUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,15 +16,33 @@ import java.util.concurrent.ThreadFactory;
  * @author Daniil Zhenikhov
  */
 public class EventPublisherFactory {
-    private static final String URLS_PROPERTY = "urls";
-    private static final String THREADS_PROPERTY = "threads";
-    private static final String API_KEY_PROPERTY = "apiKey";
-    private static final String PROJECT_PROPERTY = "project";
-    private static final String ENVIRONMENT_PROPERTY = "env";
+
+    private static class Props {
+        static final PropertyDescription<Integer> THREAD_COUNT = PropertyDescriptions
+                .integerProperty("threads")
+                .withDefaultValue(3)
+                .build();
+
+        static final PropertyDescription<String[]> URLS = PropertyDescriptions
+                .arrayOfStringsProperty("urls")
+                .build();
+
+        static final PropertyDescription<String> API_KEY = PropertyDescriptions
+                .stringProperty("apiKey")
+                .build();
+
+        static final PropertyDescription<String> PROJECT = PropertyDescriptions
+                .stringProperty("project")
+                .build();
+
+        static final PropertyDescription<String> ENVIRONMENT = PropertyDescriptions
+                .stringProperty("env")
+                .build();
+    }
 
     private static final String DEFAULT_RESOURCE_NAME = "hercules-gate-client.properties";
     private static final String PROPERTY_NAME = "hercules.gate.client.config";
-    private static final int DEFAULT_THREADS_COUNT = 3;
+
     private static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
         thread.setDaemon(true);
@@ -38,13 +57,11 @@ public class EventPublisherFactory {
         InputStream inputStream = ConfigsUtil.readConfig(PROPERTY_NAME, DEFAULT_RESOURCE_NAME);
         try {
             Properties properties = loadProperties(inputStream);
+
             LAZY_INSTANCE = new Lazy<>(() -> createPublisher(properties));
-            PROJECT = PropertiesExtractor
-                    .getAs(properties, PROJECT_PROPERTY, String.class)
-                    .orElseThrow(PropertiesExtractor.missingPropertyError(PROJECT_PROPERTY));
-            ENVIRONMENT = PropertiesExtractor
-                    .getAs(properties, ENVIRONMENT_PROPERTY, String.class)
-                    .orElseThrow(PropertiesExtractor.missingPropertyError(ENVIRONMENT_PROPERTY));
+
+            PROJECT = Props.PROJECT.extract(properties);
+            ENVIRONMENT = Props.ENVIRONMENT.extract(properties);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -67,15 +84,9 @@ public class EventPublisherFactory {
     }
 
     private static EventPublisher createPublisher(Properties properties) {
-        int threads = PropertiesExtractor.get(properties, THREADS_PROPERTY, DEFAULT_THREADS_COUNT);
-        String[] url = PropertiesExtractor
-                .getAs(properties, URLS_PROPERTY, String.class)
-                .orElseThrow(PropertiesExtractor.missingPropertyError(URLS_PROPERTY))
-                .split("\\s*,\\s*");
-        String apiKey = PropertiesExtractor
-                .getAs(properties, API_KEY_PROPERTY, String.class)
-                .orElseThrow(PropertiesExtractor.missingPropertyError(API_KEY_PROPERTY));
-
+        final int threads = Props.THREAD_COUNT.extract(properties);
+        final String[] url = Props.URLS.extract(properties);
+        final String apiKey = Props.API_KEY.extract(properties);
 
         return new EventPublisher(
                 threads,

@@ -12,7 +12,10 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.tags.MetricsTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +27,17 @@ import java.util.concurrent.TimeUnit;
 
 public class GraphiteEventSender implements BulkSender<Event> {
 
+    private static class Props {
+        static final PropertyDescription<String> GRAPHITE_HOST = PropertyDescriptions
+                .stringProperty("server.host")
+                .build();
+
+        static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
+                .integerProperty("server.port")
+                .withValidator(Validators.portValidator())
+                .build();
+    }
+
     private final GraphiteMetricDataSender sender;
     private final Timer graphiteClientTimer;
 
@@ -31,10 +45,10 @@ public class GraphiteEventSender implements BulkSender<Event> {
             Properties graphiteProperties,
             MetricsCollector metricsCollector
     ) {
-        String[] server = graphiteProperties.getProperty("server").split(":", 2);
-        this.sender = new DefaultGraphiteClientRetryStrategy(
-                new GraphiteClient(server[0], Integer.valueOf(server[1]))
-        );
+        final String graphiteHost = Props.GRAPHITE_HOST.extract(graphiteProperties);
+        final int graphitePort = Props.GRAPHITE_PORT.extract(graphiteProperties);
+
+        this.sender = new DefaultGraphiteClientRetryStrategy(new GraphiteClient(graphiteHost, graphitePort));
 
         graphiteClientTimer = metricsCollector.timer("graphiteClient");
     }

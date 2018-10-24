@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Properties;
 import java.util.concurrent.Executors;
@@ -17,10 +19,15 @@ import java.util.function.Supplier;
  */
 public class CommonBulkEventSink {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommonBulkEventSink.class);
+    private static class Props {
+        static final PropertyDescription<Integer> PING_RATE_MS = PropertyDescriptions
+                .integerProperty("ping.rate")
+                .withDefaultValue(1_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+    }
 
-    private static final String PING_RATE_PARAM = "ping.rate";
-    private static final int PING_RATE_DEFAULT_VALUE = 1000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommonBulkEventSink.class);
 
     private final BulkConsumerPool consumerPool;
     private final CommonBulkSinkStatusFsm status = new CommonBulkSinkStatusFsm();
@@ -44,8 +51,7 @@ public class CommonBulkEventSink {
             MetricsCollector metricsCollector
     ) {
 
-        this.pingRate = PropertiesExtractor.getAs(sinkProperties, PING_RATE_PARAM, Integer.class)
-                .orElse(PING_RATE_DEFAULT_VALUE);
+        this.pingRate = Props.PING_RATE_MS.extract(sinkProperties);
 
         this.consumerPool = new BulkConsumerPool(
                 destinationName,
