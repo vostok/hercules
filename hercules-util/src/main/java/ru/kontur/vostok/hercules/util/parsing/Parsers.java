@@ -208,6 +208,13 @@ public final class Parsers {
         };
     }
 
+    /**
+     * Use {@code defaultValue} if string is null or enmpty
+     *
+     * @param parser value parser
+     * @param defaultValue default value
+     * @return Parser with default value
+     */
     public static <T> Parser<T> withDefaultValue(Parser<T> parser, T defaultValue) {
         return s -> {
             if (Objects.isNull(s) || s.isEmpty()) {
@@ -219,6 +226,12 @@ public final class Parsers {
         };
     }
 
+    /**
+     * Create parser of enum pf type {@code clazz}
+     *
+     * @param clazz type of enum
+     * @return enum parser
+     */
     public static <T extends Enum<T>> Parser<T> enumParser(Class<T> clazz) {
         return s -> {
             try {
