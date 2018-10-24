@@ -7,14 +7,16 @@ import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowRequestWeigher;
 import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowThrottledRequestProcessor;
+import ru.kontur.vostok.hercules.util.bytes.SizeUnit;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.LongValidators;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Properties;
@@ -23,20 +25,6 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class HttpServer {
-
-    private static class Props {
-        static final PropertyDescription<String> HOST = PropertyDescriptions
-                .stringProperty("host")
-                .withDefaultValue("0.0.0.0")
-                .build();
-
-        static final PropertyDescription<Integer> PORT = PropertyDescriptions
-                .integerProperty("port")
-                .withDefaultValue(6306)
-                .withValidator(Validators.portValidator())
-                .build();
-    }
-
     private final Undertow undertow;
     private final Throttle<HttpServerExchange, SendContext> throttle;
 
@@ -54,8 +42,10 @@ public class HttpServer {
                 new DefaultUndertowThrottledRequestProcessor()
         );
 
-        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, true);
-        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, false);
+        long maxContentLength = Props.MAX_CONTENT_LENGTH.extract(properties);
+
+        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, true, maxContentLength);
+        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, false, maxContentLength);
 
         HttpHandler handler = Handlers.routing()
                 .get("/ping", exchange -> {
@@ -78,5 +68,24 @@ public class HttpServer {
 
     public void stop() {
         undertow.stop();
+    }
+
+    private static class Props {
+        static final PropertyDescription<String> HOST = PropertyDescriptions
+                .stringProperty("host")
+                .withDefaultValue(GateDefaults.DEFAULT_HOST)
+                .build();
+
+        static final PropertyDescription<Integer> PORT = PropertyDescriptions
+                .integerProperty("port")
+                .withDefaultValue(GateDefaults.DEFAULT_PORT)
+                .withValidator(Validators.portValidator())
+                .build();
+
+        static final PropertyDescription<Long> MAX_CONTENT_LENGTH = PropertyDescriptions
+                .longProperty("maxContentLength")
+                .withDefaultValue(GateDefaults.MAX_CONTENT_LENGTH)
+                .withValidator(LongValidators.positive())
+                .build();
     }
 }

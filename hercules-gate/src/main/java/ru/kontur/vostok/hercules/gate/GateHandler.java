@@ -5,15 +5,14 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.uuid.Marker;
-import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -31,9 +30,8 @@ public class GateHandler implements HttpHandler {
     private final StreamRepository streamRepository;
     private final AuthValidationManager authValidationManager;
 
-    private final UuidGenerator uuidGenerator;
-
     private final boolean async;
+    private final long maxContentLength;
 
     private final Meter requestMeter;
     private final Meter requestSizeMeter;
@@ -44,7 +42,8 @@ public class GateHandler implements HttpHandler {
             Throttle<HttpServerExchange, SendContext> throttle,
             AuthValidationManager authValidationManager,
             StreamRepository streamRepository,
-            boolean async
+            boolean async,
+            long maxContentLength
     ) {
         this.metricsCollector = metricsCollector;
 
@@ -52,9 +51,9 @@ public class GateHandler implements HttpHandler {
         this.throttle = throttle;
         this.authValidationManager = authValidationManager;
         this.streamRepository = streamRepository;
-        this.uuidGenerator = UuidGenerator.getInternalInstance();
 
         this.async = async;
+        this.maxContentLength = maxContentLength;
 
         this.requestMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".request");
         this.requestSizeMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".request_size");
@@ -84,10 +83,15 @@ public class GateHandler implements HttpHandler {
 
         // Check content length
         int contentLength = ExchangeUtil.extractContentLength(exchange);
-        if (contentLength < 0 || contentLength > (1 << 21)) {
+        if (contentLength < 0) {
             ResponseUtil.badRequest(exchange);
             return;
         }
+        if (contentLength > maxContentLength) {
+            ResponseUtil.requestEntityTooLarge(exchange);
+            return;
+        }
+
         requestSizeMeter.mark(contentLength);
 
         Optional<Stream> optionalBaseStream = streamRepository.read(stream);

@@ -36,6 +36,11 @@ public class ResponseUtil {
         exchange.endExchange();
     }
 
+    public static void requestEntityTooLarge(HttpServerExchange exchange) {
+        exchange.setStatusCode(413);
+        exchange.endExchange();
+    }
+
     public static void unprocessableEntity(HttpServerExchange exchange) {
         exchange.setStatusCode(422);
         exchange.endExchange();
