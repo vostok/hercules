@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.util.functional.Result;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Set;
 
 public class ParsersTest {
 
@@ -52,6 +53,17 @@ public class ParsersTest {
     }
 
     @Test
+    public void shouldParseSet() throws Exception {
+        Result<Set<Integer>, String> result = Parsers.parseSet(Parsers::parseInteger).parse("1, 2, 1");
+        Assert.assertTrue(result.isOk());
+        Assert.assertThat(result.get(), CoreMatchers.hasItems(1, 2));
+
+        result = Parsers.parseSet(Parsers::parseInteger).parse("1, abc, 3");
+        Assert.assertFalse(result.isOk());
+        Assert.assertEquals("Error at index '1': Invalid integer 'abc'", result.getError());
+    }
+
+    @Test
     public void shouldParseArray() throws Exception {
         Result<Integer[], String> result = Parsers.parseArray(Integer.class, Parsers::parseInteger).parse("1, 2, 3");
         Assert.assertTrue(result.isOk());
@@ -74,5 +86,36 @@ public class ParsersTest {
         }).parse("http://test.com");
 
         Assert.assertTrue(result.isOk());
+    }
+
+    enum TestEnum { A }
+
+    @Test
+    public void shouldParseEnum() throws Exception {
+        Result<TestEnum, String> parsed = Parsers.enumParser(TestEnum.class).parse("a");
+        Assert.assertTrue(parsed.isOk());
+        Assert.assertEquals(TestEnum.A, parsed.get());
+
+        parsed = Parsers.enumParser(TestEnum.class).parse("wrong");
+        Assert.assertFalse(parsed.isOk());
+        Assert.assertEquals(
+                "Cannot parse 'wrong' as enum of class ru.kontur.vostok.hercules.util.parsing.ParsersTest.TestEnum",
+                parsed.getError()
+        );
+    }
+
+    @Test
+    public void shouldParseDefaultValue() throws Exception {
+        Result<Integer, String> parsed = Parsers.withDefaultValue(Parsers::parseInteger, 100).parse("123");
+        Assert.assertTrue(parsed.isOk());
+        Assert.assertEquals(123, (int) parsed.get());
+
+        parsed = Parsers.withDefaultValue(Parsers::parseInteger, 100).parse("");
+        Assert.assertTrue(parsed.isOk());
+        Assert.assertEquals(100, (int) parsed.get());
+
+        parsed = Parsers.withDefaultValue(Parsers::parseInteger, 100).parse("not integer");
+        Assert.assertFalse(parsed.isOk());
+        Assert.assertEquals("Invalid integer 'not integer'", parsed.getError());
     }
 }

@@ -27,7 +27,8 @@ import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Properties;
 
@@ -35,6 +36,19 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class HttpServer {
+
+    private static class Props {
+        static final PropertyDescription<String> HOST = PropertyDescriptions
+                .stringProperty("host")
+                .withDefaultValue("0.0.0.0")
+                .build();
+
+        static final PropertyDescription<Integer> PORT = PropertyDescriptions
+                .integerProperty("port")
+                .withDefaultValue(6309)
+                .build();
+    }
+
     private final Undertow undertow;
 
     public HttpServer(
@@ -49,8 +63,8 @@ public class HttpServer {
             CassandraTaskQueue cassandraTaskQueue,
             KafkaTaskQueue kafkaTaskQueue
     ) {
-        String host = properties.getProperty("host", "0.0.0.0");
-        int port = PropertiesExtractor.get(properties, "port", 6309);
+        final String host = Props.HOST.extract(properties);
+        final int port = Props.PORT.extract(properties);
 
         AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
 

@@ -6,7 +6,9 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Map;
 import java.util.Properties;
@@ -16,6 +18,14 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class KafkaManagerApplication {
+
+    private static class Props {
+        static final PropertyDescription<Short> REPLICATION_FACTOR = PropertyDescriptions
+                .shortProperty("replicationFactor")
+                .withDefaultValue((short) 1)
+                .withValidator(Validators.greaterThan((short) 0))
+                .build();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaManagerApplication.class);
 
@@ -32,7 +42,9 @@ public class KafkaManagerApplication {
             Properties kafkaProperties = PropertiesUtil.ofScope(properties, Scopes.KAFKA);
             Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
 
-            kafkaManager = new KafkaManager(kafkaProperties, PropertiesExtractor.getShort(properties, "replicationFactor", (short) 1));
+            final short replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
+
+            kafkaManager = new KafkaManager(kafkaProperties, replicationFactor);
 
             consumer = new KafkaTaskConsumer(consumerProperties, kafkaManager);
             consumer.start();
