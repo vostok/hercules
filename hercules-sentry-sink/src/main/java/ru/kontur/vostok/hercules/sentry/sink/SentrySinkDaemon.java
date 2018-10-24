@@ -12,7 +12,8 @@ import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Map;
 import java.util.Objects;
@@ -23,6 +24,21 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class SentrySinkDaemon {
+
+    private static class Props {
+
+        static final PropertyDescription<String> STREAM_PATTERN = PropertyDescriptions
+                .stringProperty("stream.pattern")
+                .build();
+
+        static final PropertyDescription<String> SENTRY_URL = PropertyDescriptions
+                .stringProperty("sentry.url")
+                .build();
+
+        static final PropertyDescription<String> SENTRY_TOKEN = PropertyDescriptions
+                .stringProperty("sentry.token")
+                .build();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySinkDaemon.class);
 
@@ -47,9 +63,9 @@ public class SentrySinkDaemon {
         ApplicationContextHolder.init("sink.sentry", contextProperties);
 
         try {
-            String streamPattern = PropertiesExtractor.getRequiredProperty(streamsProperties, "stream.pattern", String.class);
-            String sentryUrl = PropertiesExtractor.getRequiredProperty(sentryProperties, "sentry.url", String.class);
-            String sentryToken = PropertiesExtractor.getRequiredProperty(sentryProperties, "sentry.token", String.class);
+            final String streamPattern = Props.STREAM_PATTERN.extract(streamsProperties);
+            final String sentryUrl = Props.SENTRY_URL.extract(sentryProperties);
+            final String sentryToken = Props.SENTRY_TOKEN.extract(sentryProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
