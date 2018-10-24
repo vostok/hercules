@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.cache.Cache;
 import ru.kontur.vostok.hercules.util.cache.Cached;
+import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.Optional;
 
@@ -24,29 +25,25 @@ public class StreamStorage {
     }
 
     /**
-     * Get Stream from local cache if it doesn't expired. Otherwise read it from repository and persist it to cache.<br>
+     * Get Stream from local cache if possible or read from repository.<br>
      * If repository throws exception then return expired cached value or empty if it doesn't exist.
      *
      * @param name of the Stream
      * @return Optional of the found Stream or empty otherwise
      */
     public Optional<Stream> read(String name) {
-        Cached<Stream> streamCached = cache.get(name);
-        if (streamCached.isAlive()) {
-            return Optional.of(streamCached.get());
-        }
-        Optional<Stream> stream;
-        try {
-            stream = repository.read(name);
-        } catch (Exception e) {
-            LOGGER.warn("Cannot read from repository", e);
-            return streamCached.isCached() ? Optional.of(streamCached.get()) : Optional.empty();
-        }
-        if (stream.isPresent()) {
-            cache.put(name, stream.get());
-        } else {
-            cache.remove(name);
-        }
-        return stream;
+        Cached<Stream> streamCached = cache.cacheAndGet(name, key -> {
+            try {
+                Optional<Stream> stream = repository.read(key);
+                if (stream.isPresent()) {
+                    return Result.ok(stream.get());
+                }
+                return Result.ok(null);
+            } catch (Exception e) {
+                LOGGER.warn("Cannot read from repository", e);
+                return Result.error("Cannot read from repository");
+            }
+        });
+        return streamCached.isCached() ? Optional.of(streamCached.get()) : Optional.empty();
     }
 }

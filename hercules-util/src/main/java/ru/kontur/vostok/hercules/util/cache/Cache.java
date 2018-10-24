@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.util.cache;
 
+import ru.kontur.vostok.hercules.util.functional.Result;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -19,10 +21,14 @@ public class Cache<K, V> {
         this.cache = new ConcurrentHashMap<>();
     }
 
-    public final Cached<V> cacheAndGet(K key, Function<K, V> provider) {
+    public final <E> Cached<V> cacheAndGet(K key, Function<K, Result<V, E>> provider) {
         Cached<V> element = cache.get(key);
         if (element == null) {
-            V value = provider.apply(key);
+            Result<V, E> result = provider.apply(key);
+            if (!result.isOk()) {
+                return Cached.none();
+            }
+            V value = result.get();
             if (value != null) {
                 Cached<V> cached = Cached.of(value, lifetime);
                 cache.put(key, cached);
@@ -31,10 +37,16 @@ public class Cache<K, V> {
                 return Cached.none();
             }
         }
+
         if (element.isAlive()) {
             return element;
         }
-        V value = provider.apply(key);
+
+        Result<V, E> result = provider.apply(key);
+        if (!result.isOk()) {
+            return Cached.none();
+        }
+        V value = result.get();
         if (value != null) {
             Cached<V> cached = Cached.of(value, lifetime);
             cache.put(key, cached);
