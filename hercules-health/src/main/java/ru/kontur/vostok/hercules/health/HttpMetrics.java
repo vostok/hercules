@@ -25,7 +25,7 @@ public class HttpMetrics {
             503
     };
 
-    private final String metricsName;
+    private final String metricNameTemplate;
     private final MetricsCollector metricsCollector;
 
     /**
@@ -55,13 +55,13 @@ public class HttpMetrics {
      * @param metricsCollector metrics collector instance
      */
     public HttpMetrics(String handlerName, MetricsCollector metricsCollector) {
-        this.metricsName = "http.handlers." + handlerName + ".status.";
+        this.metricNameTemplate = "http.handlers." + handlerName + ".status.";
         this.metricsCollector = metricsCollector;
 
-        this.total = metricsCollector.timer(metricsName + "total");
-        this.r2XX = metricsCollector.timer(metricsName + "2XX");
-        this.r4XX = metricsCollector.timer(metricsName + "4XX");
-        this.r5XX = metricsCollector.timer(metricsName + "5XX");
+        this.total = metricsCollector.timer(metricNameTemplate + "total");
+        this.r2XX = metricsCollector.timer(metricNameTemplate + "2XX");
+        this.r4XX = metricsCollector.timer(metricNameTemplate + "4XX");
+        this.r5XX = metricsCollector.timer(metricNameTemplate + "5XX");
 
         for (int code : ALWAYS_REPORTED_CODES) {
             statusMeters.computeIfAbsent(code, this::createTimerForCode);
@@ -95,6 +95,6 @@ public class HttpMetrics {
     }
 
     private Timer createTimerForCode(int code) {
-        return metricsCollector.timer(metricsName + String.valueOf(code));
+        return metricsCollector.timer(metricNameTemplate + String.valueOf(code));
     }
 }
