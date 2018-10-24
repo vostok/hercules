@@ -66,15 +66,15 @@
         </triggeringPolicy>
     </appender>
 
-    <logger name="RECEIVED_EVENTS" level="trace" additivity="false">
+    <logger name="RECEIVED_EVENTS" level="off" additivity="false">
         <appender-ref ref="RECEIVED_EVENTS_FILE" />
     </logger>
 
-    <logger name="PROCESSED_EVENTS" level="trace" additivity="false">
+    <logger name="PROCESSED_EVENTS" level="off" additivity="false">
         <appender-ref ref="PROCESSED_EVENTS_FILE" />
     </logger>
 
-    <logger name="DROPPED_EVENTS" level="trace" additivity="false">
+    <logger name="DROPPED_EVENTS" level="off" additivity="false">
         <appender-ref ref="DROPPED_EVENTS_FILE" />
     </logger>
 
