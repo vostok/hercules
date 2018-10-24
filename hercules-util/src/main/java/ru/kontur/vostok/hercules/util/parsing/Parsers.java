@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntFunction;
 
@@ -204,6 +205,28 @@ public final class Parsers {
             }
 
             return Result.ok(values);
+        };
+    }
+
+    public static <T> Parser<T> withDefaultValue(Parser<T> parser, T defaultValue) {
+        return s -> {
+            if (Objects.isNull(s) || s.isEmpty()) {
+                return Result.ok(defaultValue);
+            }
+            else {
+                return parser.parse(s);
+            }
+        };
+    }
+
+    public static <T extends Enum<T>> Parser<T> enumParser(Class<T> clazz) {
+        return s -> {
+            try {
+                return Result.ok(Enum.valueOf(clazz, s.trim().toUpperCase()));
+            }
+            catch (IllegalArgumentException e) {
+                return Result.error(String.format("Cannot parse '%s' as enum of class %s", s, clazz.getCanonicalName()));
+            }
         };
     }
 

@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.util.args;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.util.parsing.Parser;
 
 /**
  * Util class provides methods to parse strings into appropriate values
@@ -85,7 +86,11 @@ public class ValueParser {
      * @param enumType is instance of Class for enum type
      * @param <T> is type of enum
      * @return parsed enum value or the default one otherwise
+     *
+     * @deprecated Use {@link ru.kontur.vostok.hercules.util.parsing.Parsers#enumParser(Class)} and
+     * {@link ru.kontur.vostok.hercules.util.parsing.Parsers#withDefaultValue(Parser, Object)}
      */
+    @Deprecated
     public static <T extends Enum<T>> T tryParseEnum(String stringValue, T defaultValue, Class<T> enumType) {
         if (stringValue == null || stringValue.isEmpty()) {
             return defaultValue;

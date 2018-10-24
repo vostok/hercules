@@ -87,4 +87,35 @@ public class ParsersTest {
 
         Assert.assertTrue(result.isOk());
     }
+
+    enum TestEnum { A }
+
+    @Test
+    public void shouldParseEnum() throws Exception {
+        Result<TestEnum, String> parsed = Parsers.enumParser(TestEnum.class).parse("a");
+        Assert.assertTrue(parsed.isOk());
+        Assert.assertEquals(TestEnum.A, parsed.get());
+
+        parsed = Parsers.enumParser(TestEnum.class).parse("wrong");
+        Assert.assertFalse(parsed.isOk());
+        Assert.assertEquals(
+                "Cannot parse 'wrong' as enum of class ru.kontur.vostok.hercules.util.parsing.ParsersTest.TestEnum",
+                parsed.getError()
+        );
+    }
+
+    @Test
+    public void shouldParseDefaultValue() throws Exception {
+        Result<Integer, String> parsed = Parsers.withDefaultValue(Parsers::parseInteger, 100).parse("123");
+        Assert.assertTrue(parsed.isOk());
+        Assert.assertEquals(123, (int) parsed.get());
+
+        parsed = Parsers.withDefaultValue(Parsers::parseInteger, 100).parse("");
+        Assert.assertTrue(parsed.isOk());
+        Assert.assertEquals(100, (int) parsed.get());
+
+        parsed = Parsers.withDefaultValue(Parsers::parseInteger, 100).parse("not integer");
+        Assert.assertFalse(parsed.isOk());
+        Assert.assertEquals("Invalid integer 'not integer'", parsed.getError());
+    }
 }
