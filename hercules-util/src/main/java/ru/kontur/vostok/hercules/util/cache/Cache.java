@@ -21,6 +21,15 @@ public class Cache<K, V> {
         this.cache = new ConcurrentHashMap<>();
     }
 
+    /**
+     * Try to cache value by key from provider if value doesn't exist or expired. Get last cached value.<br>
+     * Use old cached valued if provider returns error.
+     *
+     * @param key      of value
+     * @param provider provides values by key
+     * @param <E>      is error object
+     * @return last cached value
+     */
     public final <E> Cached<V> cacheAndGet(K key, Function<K, Result<V, E>> provider) {
         Cached<V> element = cache.get(key);
         if (element == null) {
@@ -44,7 +53,7 @@ public class Cache<K, V> {
 
         Result<V, E> result = provider.apply(key);
         if (!result.isOk()) {
-            return Cached.none();
+            return element;
         }
         V value = result.get();
         if (value != null) {
@@ -57,6 +66,12 @@ public class Cache<K, V> {
         }
     }
 
+    /**
+     * Get last cached value or none if it doesn't exist
+     *
+     * @param key of value
+     * @return cached value
+     */
     public final Cached<V> get(K key) {
         Cached<V> element = cache.get(key);
         if (element == null) {
@@ -65,14 +80,29 @@ public class Cache<K, V> {
         return element;
     }
 
+    /**
+     * Put value by key
+     *
+     * @param key   of value
+     * @param value to be cached
+     */
     public final void put(K key, V value) {
         cache.put(key, Cached.of(value, lifetime));
     }
 
+    /**
+     * Remove value by key from cache
+     *
+     * @param key of value
+     * @return true if value was removed
+     */
     public final boolean remove(K key) {
         return cache.remove(key) != null;
     }
 
+    /**
+     * Clear cache
+     */
     public final void clear() {
         cache.clear();
     }
