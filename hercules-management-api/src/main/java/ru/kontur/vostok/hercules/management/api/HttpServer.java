@@ -27,7 +27,6 @@ import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
