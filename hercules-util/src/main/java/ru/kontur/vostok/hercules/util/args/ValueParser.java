@@ -7,7 +7,10 @@ import org.slf4j.LoggerFactory;
  * Util class provides methods to parse strings into appropriate values
  * <br>
  * @author Gregory Koshelev
+ *
+ * @deprecated Use {@link ru.kontur.vostok.hercules.util.parsing.Parser}
  */
+@Deprecated
 public class ValueParser {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValueParser.class);
@@ -17,7 +20,10 @@ public class ValueParser {
      * @param stringValue is the string to be parsed
      * @param defaultValue is the default value
      * @return parsed int or the default one otherwise
+     *
+     * @deprecated Use {@link ru.kontur.vostok.hercules.util.parsing.Parsers#parseInteger(String)}
      */
+    @Deprecated
     public static int tryParseInt(String stringValue, int defaultValue) {
         if (stringValue == null || stringValue.isEmpty()) {
             return defaultValue;
@@ -37,7 +43,10 @@ public class ValueParser {
      * @param stringValue is the string to be parsed
      * @param defaultValue is the default value
      * @return parsed long or the default one otherwise
+     *
+     * @deprecated Use {@link ru.kontur.vostok.hercules.util.parsing.Parsers#parseLong(String)}
      */
+    @Deprecated
     public static long tryParseLong(String stringValue, long defaultValue) {
         if (stringValue == null || stringValue.isEmpty()) {
             return defaultValue;
@@ -57,7 +66,10 @@ public class ValueParser {
      * @param stringValue is the string to be parsed
      * @param defaultValue is the default value
      * @return parsed boolean or the default one otherwise
+     *
+     * @deprecated Use {@link ru.kontur.vostok.hercules.util.parsing.Parsers#parseBoolean(String)}
      */
+    @Deprecated
     public static boolean tryParseBool(String stringValue, boolean defaultValue) {
         if (stringValue == null || stringValue.isEmpty()) {
             return defaultValue;
