@@ -18,10 +18,10 @@ public class StreamStorage {
 
     private final Cache<String, Stream> cache;
 
-    public StreamStorage(StreamRepository repository) {
+    public StreamStorage(StreamRepository repository, long cacheLifetime) {
         this.repository = repository;
 
-        this.cache = new Cache<>(30_000L /* TODO: for test usages; It should be moved to configuration */);
+        this.cache = new Cache<>(cacheLifetime);
     }
 
     /**

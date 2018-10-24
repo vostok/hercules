@@ -58,7 +58,7 @@ public class GateApplication {
             curatorClient.start();
 
             StreamRepository streamRepository = new StreamRepository(curatorClient);
-            StreamStorage streamStorage = new StreamStorage(streamRepository);
+            StreamStorage streamStorage = new StreamStorage(streamRepository, 30_000L /* TODO: for test usages; It should be moved to configuration */);
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
