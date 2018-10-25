@@ -159,6 +159,7 @@ public class CuratorClient {
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime);
 
         CuratorFramework curatorFramework = CuratorFrameworkFactory.builder()
+                .zk34CompatibilityMode(true)
                 .connectString(connectString)
                 .connectionTimeoutMs(connectionTimeout)
                 .sessionTimeoutMs(sessionTimeout)
