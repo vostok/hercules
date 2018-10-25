@@ -11,7 +11,9 @@ import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import ru.kontur.vostok.hercules.util.application.ApplicationContext;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.net.InetSocketAddress;
 import java.util.Properties;
@@ -22,6 +24,30 @@ import java.util.function.Supplier;
  * @author Gregory Koshelev
  */
 public class MetricsCollector {
+
+    private static class Props {
+        static final PropertyDescription<String> GRAPHITE_SERVER = PropertyDescriptions
+                .stringProperty("graphite.server.addr")
+                .withDefaultValue("localhost")
+                .build();
+
+        static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
+                .integerProperty("graphite.server.port")
+                .withDefaultValue(2003)
+                .withValidator(Validators.portValidator())
+                .build();
+
+        static final PropertyDescription<String> GRAPHITE_PREFIX = PropertyDescriptions
+                .stringProperty("graphite.prefix")
+                .build();
+
+        static final PropertyDescription<Integer> REPORT_PERIOD_SECONDS = PropertyDescriptions
+                .integerProperty("period")
+                .withDefaultValue(60)
+                .withValidator(Validators.greaterThan(0))
+                .build();
+    }
+
     private MetricRegistry registry = new MetricRegistry();
 
     private final long period;
@@ -33,19 +59,18 @@ public class MetricsCollector {
      *
      */
     public MetricsCollector(Properties properties) {
-        String graphiteServerAddr = properties.getProperty("graphite.server.addr", "localhost");
-        int graphiteServerPort = PropertiesExtractor.get(properties, "graphite.server.port", 2003);
+        String graphiteServerAddr = Props.GRAPHITE_SERVER.extract(properties);
+        int graphiteServerPort = Props.GRAPHITE_PORT.extract(properties);
 
         ApplicationContext applicationContext = ApplicationContextHolder.get();
         String prefix = String.join(".",
-                properties.getProperty("graphite.prefix"),
+                Props.GRAPHITE_PREFIX.extract(properties),
                 applicationContext.getName(),
                 applicationContext.getEnvironment(),
                 applicationContext.getInstanceId()
         );
-        long period = PropertiesExtractor.get(properties, "period", 60);
 
-        this.period = period;
+        this.period = Props.REPORT_PERIOD_SECONDS.extract(properties);
 
         graphite = new Graphite(new InetSocketAddress(graphiteServerAddr, graphiteServerPort));
         graphiteReporter = GraphiteReporter.forRegistry(registry)
@@ -123,5 +148,14 @@ public class MetricsCollector {
      */
     public Histogram histogram(String name) {
         return registry.histogram(name);
+    }
+
+    /**
+     * Create HttpMetrics aggregation object
+     * @param name handler name
+     * @return HttpMetrics object
+     */
+    public HttpMetrics httpMetrics(String name) {
+        return new HttpMetrics(name, this);
     }
 }

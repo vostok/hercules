@@ -8,7 +8,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +23,44 @@ import java.util.stream.Collectors;
  * @author Gregory Koshelev
  */
 public class CuratorClient {
+
+    private static class Props {
+
+        static final PropertyDescription<String> CONNECT_STRING = PropertyDescriptions
+                .stringProperty("connectString")
+                .withDefaultValue("localhost:2181")
+                .build();
+
+        static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("connectionTimeout")
+                .withDefaultValue(10_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> SESSION_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("sessionTimeout")
+                .withDefaultValue(30_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> BASE_SLEEP_TIME_MS = PropertyDescriptions
+                .integerProperty("retryPolicy.baseSleepTime")
+                .withDefaultValue(1_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> MAX_RETRIES = PropertyDescriptions
+                .integerProperty("retryPolicy.maxRetries")
+                .withDefaultValue(5)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> MAX_SLEEP_TIME_MS = PropertyDescriptions
+                .integerProperty("retryPolicy.maxSleepTime")
+                .withDefaultValue(8_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CuratorClient.class);
 
@@ -109,16 +149,17 @@ public class CuratorClient {
     }
 
     private static CuratorFramework build(Properties properties) {
-        String connectString = properties.getProperty("connectString", "localhost:2181");
-        int connectionTimeout = PropertiesExtractor.get(properties, "connectionTimeout", 10_000);
-        int sessionTimeout = PropertiesExtractor.get(properties, "sessionTimeout", 30_000);
-        int baseSleepTime = PropertiesExtractor.get(properties, "retryPolicy.baseSleepTime", 1_000);
-        int maxRetries = PropertiesExtractor.get(properties, "retryPolicy.maxRetries", 5);
-        int maxSleepTime = PropertiesExtractor.get(properties, "retryPolicy.maxSleepTime", 8_000);
+        final String connectString = Props.CONNECT_STRING.extract(properties);
+        final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
+        final int sessionTimeout = Props.SESSION_TIMEOUT_MS.extract(properties);
+        final int baseSleepTime = Props.BASE_SLEEP_TIME_MS.extract(properties);
+        final int maxRetries = Props.MAX_RETRIES.extract(properties);
+        final int maxSleepTime = Props.BASE_SLEEP_TIME_MS.extract(properties);
 
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime);
 
         CuratorFramework curatorFramework = CuratorFrameworkFactory.builder()
+                .zk34CompatibilityMode(true)
                 .connectString(connectString)
                 .connectionTimeoutMs(connectionTimeout)
                 .sessionTimeoutMs(sessionTimeout)

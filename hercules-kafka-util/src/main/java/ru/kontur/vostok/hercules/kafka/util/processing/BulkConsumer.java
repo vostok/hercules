@@ -15,9 +15,12 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.Timer;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Objects;
 import java.util.Properties;
@@ -33,13 +36,23 @@ import java.util.function.Supplier;
  */
 public class BulkConsumer implements Runnable {
 
+    private static class Props {
+        static final PropertyDescription<Integer> BATCH_SIZE = PropertyDescriptions
+                .integerProperty("batch.size")
+                .build();
+
+        static final PropertyDescription<Integer> POLL_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("poll.timeout")
+                .build();
+
+        static final PropertyDescription<Integer> QUEUE_SIZE = PropertyDescriptions
+                .integerProperty("queue.size")
+                .withDefaultValue(64)
+                .withValidator(Validators.greaterThan(0))
+                .build();
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumer.class);
-
-    private static final String POLL_TIMEOUT_PARAM = "poll.timeout";
-    private static final String BATCH_SIZE_PARAM = "batch.size";
-
-    private static final String QUEUE_SIZE_PARAM = "queue.size";
-    private static final int QUEUE_SIZE_DEFAULT_VALUE = 64;
 
     private final KafkaConsumer<UUID, Event> consumer;
     private final PatternMatcher streamPattern;
@@ -51,6 +64,7 @@ public class BulkConsumer implements Runnable {
     private final BulkSenderPool<UUID, Event> senderPool;
 
     private final Meter receivedEventsMeter;
+    private final Meter receivedEventsSizeMeter;
     private final Meter processedEventsMeter;
     private final Meter droppedEventsMeter;
     private final com.codahale.metrics.Timer processTimeTimer;
@@ -65,12 +79,13 @@ public class BulkConsumer implements Runnable {
             CommonBulkSinkStatusFsm status,
             Supplier<BulkSender<Event>> senderFactory,
             Meter receivedEventsMeter,
+            Meter receivedEventsSizeMeter,
             Meter processedEventsMeter,
             Meter droppedEventsMeter,
             com.codahale.metrics.Timer processTimeTimer
     ) {
-        this.batchSize = PropertiesExtractor.getRequiredProperty(sinkProperties, BATCH_SIZE_PARAM, Integer.class);
-        this.pollTimeout = PropertiesExtractor.getRequiredProperty(sinkProperties, POLL_TIMEOUT_PARAM, Integer.class);
+        this.batchSize = Props.BATCH_SIZE.extract(sinkProperties);
+        this.pollTimeout = Props.POLL_TIMEOUT_MS.extract(sinkProperties);
 
         streamsProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
         streamsProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
@@ -84,9 +99,7 @@ public class BulkConsumer implements Runnable {
 
         this.status = status;
 
-        final int queueSize = PropertiesExtractor.getAs(sinkProperties, QUEUE_SIZE_PARAM, Integer.class)
-                .orElse(QUEUE_SIZE_DEFAULT_VALUE);
-
+        final int queueSize = Props.QUEUE_SIZE.extract(sinkProperties);
         this.queue = new BulkQueue<>(queueSize, status);
 
         this.senderPool = new BulkSenderPool<>(
@@ -98,6 +111,7 @@ public class BulkConsumer implements Runnable {
         );
 
         this.receivedEventsMeter = receivedEventsMeter;
+        this.receivedEventsSizeMeter = receivedEventsSizeMeter;
         this.processedEventsMeter = processedEventsMeter;
         this.droppedEventsMeter = droppedEventsMeter;
         this.processTimeTimer = processTimeTimer;
@@ -164,6 +178,7 @@ public class BulkConsumer implements Runnable {
                     }
                     int count = current.getRecords().size();
                     receivedEventsMeter.mark(count);
+                    receivedEventsSizeMeter.mark(EventUtil.getSizeInBytes(current.getRecords()));
 
                     /*
                      * Queuing phase

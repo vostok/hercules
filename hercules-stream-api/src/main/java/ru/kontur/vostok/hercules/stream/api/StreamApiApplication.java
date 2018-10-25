@@ -7,8 +7,10 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.util.Map;
 import java.util.Properties;
@@ -22,6 +24,7 @@ public class StreamApiApplication {
     private static CuratorClient curatorClient;
     private static StreamReader streamReader;
     private static AuthManager authManager;
+    private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -34,6 +37,10 @@ public class StreamApiApplication {
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
+            Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+
+            ApplicationContextHolder.init("stream-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -42,7 +49,10 @@ public class StreamApiApplication {
 
             authManager = new AuthManager(curatorClient);
 
-            server = new HttpServer(httpServerProperties, authManager, new ReadStreamHandler(streamReader));
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+
+            server = new HttpServer(httpServerProperties, authManager, new ReadStreamHandler(streamReader), metricsCollector);
             server.start();
         } catch (Throwable t) {
             LOGGER.error("Error on starting stream API", t);
@@ -64,6 +74,14 @@ public class StreamApiApplication {
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping server");
+            //TODO: Process error
+        }
+        try {
+            if (metricsCollector != null) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping metrics collector");
             //TODO: Process error
         }
         try {

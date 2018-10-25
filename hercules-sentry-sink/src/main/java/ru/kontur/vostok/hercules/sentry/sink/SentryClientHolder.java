@@ -11,6 +11,8 @@ import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -51,27 +53,41 @@ public class SentryClientHolder {
     }
 
     private void update() {
-        Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects();
-        if (!projects.isOk()) {
-            LOGGER.error("Cannot update project info due to: {}", projects.getError());
-        }
-
-        Map<String, SentryClient> updatedClients = new HashMap<>();
-
-        for (ProjectInfo projectInfo : projects.get()) {
-            Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(projectInfo);
-            if (!publicDsn.isOk()) {
-                LOGGER.error("Cannot get public dns for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
+        try {
+            Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects();
+            if (!projects.isOk()) {
+                LOGGER.error("Cannot update project info due to: {}", projects.getError());
                 return;
             }
 
-            Optional<String> dsn = publicDsn.get().stream().findAny().map(KeyInfo::getDsn).map(DsnInfo::getPublicDsn);
-            if (dsn.isPresent()) {
-                updatedClients.put(String.format("%s/%s", projectInfo.getOrganization().getSlug(), projectInfo.getSlug()), SentryClientFactory.sentryClient(applySettings(dsn.get())));
-            }
-        }
+            Map<String, SentryClient> updatedClients = new HashMap<>();
 
-        clients.set(updatedClients);
+            for (ProjectInfo projectInfo : projects.get()) {
+                Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(projectInfo);
+                if (!publicDsn.isOk()) {
+                    LOGGER.error("Cannot get public dns for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
+                    return;
+                }
+
+                Optional<String> dsn = publicDsn.get().stream().findAny().map(KeyInfo::getDsn).map(DsnInfo::getPublicDsn);
+                if (dsn.isPresent()) {
+                    String dsnString = dsn.get();
+                    try {
+                        new URL(dsnString);
+                    }
+                    catch (MalformedURLException e) {
+                        throw new Exception(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
+                    }
+                    updatedClients.put(String.format("%s/%s", projectInfo.getOrganization().getSlug(), projectInfo.getSlug()), SentryClientFactory.sentryClient(applySettings(dsnString)));
+                }
+            }
+
+            clients.set(updatedClients);
+        }
+        catch (Throwable t) {
+            LOGGER.error("Error in scheduled thread", t);
+            System.exit(1);
+        }
     }
 
     /*

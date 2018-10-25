@@ -15,9 +15,11 @@ import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.protocol.StreamShardReadState;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 import ru.kontur.vostok.hercules.util.time.Timer;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.net.InetAddress;
 import java.util.Arrays;
@@ -34,6 +36,18 @@ import java.util.stream.Collectors;
 
 public class StreamReader {
 
+    private static class Props {
+        static final PropertyDescription<String> SERVERS = PropertyDescriptions
+                .stringProperty("bootstrap.servers")
+                .build();
+
+        static final PropertyDescription<Integer> POLL_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("poll.timeout")
+                .withDefaultValue(1_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+    }
+
     private static final Object DUMMY = new Object();
 
     private final StreamRepository streamRepository;
@@ -44,8 +58,8 @@ public class StreamReader {
 
     public StreamReader(Properties properties, StreamRepository streamRepository) {
         this.streamRepository = streamRepository;
-        this.servers = properties.getProperty("bootstrap.servers");
-        this.pollTimeout = PropertiesExtractor.get(properties, "poll.timeout", 1000);
+        this.servers = Props.SERVERS.extract(properties);
+        this.pollTimeout = Props.POLL_TIMEOUT_MS.extract(properties);
     }
 
     // TODO: Probably we can use output streams to reduce memory consumption
@@ -119,7 +133,7 @@ public class StreamReader {
                     poll = new RecordStorage<>(0);
                 }
 
-                overflowedOffsets.forEach(offsetsToRequest::put);
+                offsetsToRequest.putAll(overflowedOffsets);
 
                 return new ByteStreamContent(
                         stateFromMap(streamName, offsetsToRequest),

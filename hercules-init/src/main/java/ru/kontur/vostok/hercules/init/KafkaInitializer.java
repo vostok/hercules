@@ -5,7 +5,9 @@ import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import ru.kontur.vostok.hercules.kafka.util.KafkaDefaults;
 import ru.kontur.vostok.hercules.management.task.TaskConstants;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -14,14 +16,24 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class KafkaInitializer {
+
+    private static class Props {
+        static final PropertyDescription<Short> REPLICATION_FACTOR = PropertyDescriptions
+                .shortProperty("replication.factor")
+                .withDefaultValue(KafkaDefaults.DEFAULT_REPLICATION_FACTOR)
+                .withValidator(Validators.greaterThan((short) 0))
+                .build();
+    }
+
     private final Properties kafkaProperties;
+    private final short replicationFactor;
 
     public KafkaInitializer(Properties properties) {
         this.kafkaProperties = properties;
+        this.replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
     }
 
     public void init() {
-        final short replicationFactor = PropertiesExtractor.getShort(kafkaProperties, "replication.factor", KafkaDefaults.DEFAULT_REPLICATION_FACTOR);
         try (AdminClient adminClient = AdminClient.create(kafkaProperties)) {
             CreateTopicsResult result = adminClient.createTopics(
                     Arrays.asList(

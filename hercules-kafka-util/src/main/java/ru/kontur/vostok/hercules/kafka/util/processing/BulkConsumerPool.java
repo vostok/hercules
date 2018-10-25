@@ -8,7 +8,9 @@ import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
-import ru.kontur.vostok.hercules.util.properties.PropertiesExtractor;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,17 +28,27 @@ import java.util.function.Supplier;
  */
 public class BulkConsumerPool {
 
+    private static class Props {
+        static final String CONSUMER_POOL_SCOPE = "consumerPool";
+
+        static final PropertyDescription<Integer> POOL_SIZE = PropertyDescriptions
+                .integerProperty("size")
+                .withDefaultValue(2)
+                .withValidator(Validators.greaterThan(0))
+                .build();
+
+        static final PropertyDescription<Integer> SHUTDOWN_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("shutdownTimeoutMs")
+                .withDefaultValue(5_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<String> PATTERN = PropertyDescriptions
+                .stringProperty("pattern")
+                .build();
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumerPool.class);
-
-    private static final String CONSUMER_POOL_SCOPE = "consumerPool";
-
-    private static final String POOL_SIZE_PARAM = "size";
-    private static final int POOL_SIZE_DEFAULT_VALUE = 2;
-
-    private static final String SHUTDOWN_TIMEOUT_MS_PARAM = "shutdownTimeoutMs";
-    private static final int SHUTDOWN_TIMEOUT_MS_DEFAULT_VALUE = 5_000;
-
-    private static final String PATTERN_PARAM = "pattern";
 
     private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
 
@@ -57,23 +69,19 @@ public class BulkConsumerPool {
             MetricsCollector metricsCollector,
             Supplier<BulkSender<Event>> senderSupplier
     ) {
-        final Properties consumerPoolProperties = PropertiesUtil.ofScope(sinkProperties, CONSUMER_POOL_SCOPE);
+        final Properties consumerPoolProperties = PropertiesUtil.ofScope(sinkProperties, Props.CONSUMER_POOL_SCOPE);
 
-        this.poolSize = PropertiesExtractor.getAs(consumerPoolProperties, POOL_SIZE_PARAM, Integer.class)
-                .orElse(POOL_SIZE_DEFAULT_VALUE);
+        this.poolSize = Props.POOL_SIZE.extract(consumerPoolProperties);
+        this.shutdownTimeoutMs = Props.SHUTDOWN_TIMEOUT_MS.extract(consumerPoolProperties);
 
-        this.shutdownTimeoutMs = PropertiesExtractor.getAs(consumerPoolProperties, SHUTDOWN_TIMEOUT_MS_PARAM, Integer.class)
-                .orElse(SHUTDOWN_TIMEOUT_MS_DEFAULT_VALUE);
-
-        final String streamPatternString = PropertiesExtractor.getRequiredProperty(consumerPoolProperties, PATTERN_PARAM, String.class);
-
-        final PatternMatcher streamPattern = new PatternMatcher(streamPatternString);
+        final PatternMatcher streamPattern = new PatternMatcher(Props.PATTERN.extract(consumerPoolProperties));
 
         final String groupId = String.format(ID_TEMPLATE, destinationName, streamPattern.toString())
                 .replaceAll("\\s+", "-");
 
 
         final Meter receivedEventsMeter = metricsCollector.meter("receivedEvents");
+        final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSize");
         final Meter processedEventsMeter = metricsCollector.meter("processedEvents");
         final Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
         final Timer processTimeTimer = metricsCollector.timer("processTime");
@@ -89,6 +97,7 @@ public class BulkConsumerPool {
                 status,
                 senderSupplier,
                 receivedEventsMeter,
+                receivedEventsSizeMeter,
                 processedEventsMeter,
                 droppedEventsMeter,
                 processTimeTimer
