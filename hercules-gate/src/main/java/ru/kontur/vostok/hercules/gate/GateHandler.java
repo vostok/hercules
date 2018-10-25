@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
@@ -27,7 +27,7 @@ public class GateHandler implements HttpHandler {
 
     private final AuthManager authManager;
     private final Throttle<HttpServerExchange, SendContext> throttle;
-    private final StreamRepository streamRepository;
+    private final StreamStorage streamStorage;
     private final AuthValidationManager authValidationManager;
 
     private final boolean async;
@@ -41,7 +41,7 @@ public class GateHandler implements HttpHandler {
             AuthManager authManager,
             Throttle<HttpServerExchange, SendContext> throttle,
             AuthValidationManager authValidationManager,
-            StreamRepository streamRepository,
+            StreamStorage streamStorage,
             boolean async,
             long maxContentLength
     ) {
@@ -50,7 +50,7 @@ public class GateHandler implements HttpHandler {
         this.authManager = authManager;
         this.throttle = throttle;
         this.authValidationManager = authValidationManager;
-        this.streamRepository = streamRepository;
+        this.streamStorage = streamStorage;
 
         this.async = async;
         this.maxContentLength = maxContentLength;
@@ -60,7 +60,7 @@ public class GateHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
+    public void handleRequest(HttpServerExchange exchange) {
         requestMeter.mark(1);
 
         Optional<String> optionalStream = ExchangeUtil.extractQueryParam(exchange, "stream");
@@ -94,7 +94,7 @@ public class GateHandler implements HttpHandler {
 
         requestSizeMeter.mark(contentLength);
 
-        Optional<Stream> optionalBaseStream = streamRepository.read(stream);
+        Optional<Stream> optionalBaseStream = streamStorage.read(stream);
         if (!optionalBaseStream.isPresent()) {
             ResponseUtil.notFound(exchange);
             return;

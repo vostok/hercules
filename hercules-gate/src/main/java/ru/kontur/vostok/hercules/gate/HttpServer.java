@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowRequestWeigher;
@@ -28,7 +28,7 @@ public class HttpServer {
     private final Undertow undertow;
     private final Throttle<HttpServerExchange, SendContext> throttle;
 
-    public HttpServer(MetricsCollector metricsCollector, Properties properties, AuthManager authManager, AuthValidationManager authValidationManager, EventSender eventSender, StreamRepository streamRepository) {
+    public HttpServer(MetricsCollector metricsCollector, Properties properties, AuthManager authManager, AuthValidationManager authValidationManager, EventSender eventSender, StreamStorage streamStorage) {
         String host = Props.HOST.extract(properties);
         int port = Props.PORT.extract(properties);
 
