@@ -44,8 +44,8 @@ public class HttpServer {
 
         long maxContentLength = Props.MAX_CONTENT_LENGTH.extract(properties);
 
-        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, true, maxContentLength);
-        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamRepository, false, maxContentLength);
+        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, true, maxContentLength);
+        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, false, maxContentLength);
 
         HttpHandler handler = Handlers.routing()
                 .get("/ping", exchange -> {
