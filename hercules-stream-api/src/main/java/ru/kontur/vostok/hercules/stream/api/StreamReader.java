@@ -133,7 +133,7 @@ public class StreamReader {
                     poll = new RecordStorage<>(0);
                 }
 
-                overflowedOffsets.forEach(offsetsToRequest::put);
+                offsetsToRequest.putAll(overflowedOffsets);
 
                 return new ByteStreamContent(
                         stateFromMap(streamName, offsetsToRequest),
