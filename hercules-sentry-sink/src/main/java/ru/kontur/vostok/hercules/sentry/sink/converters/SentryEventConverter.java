@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.sentry.sink.converters;
 
-import io.sentry.event.Event.Level;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.Sdk;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -13,7 +12,8 @@ import ru.kontur.vostok.hercules.tags.StackTraceTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
-import ru.kontur.vostok.hercules.util.enumeration.EnumUtil;
+import ru.kontur.vostok.hercules.util.Lazy;
+import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Arrays;
@@ -31,11 +31,11 @@ import java.util.stream.Stream;
  */
 public class SentryEventConverter {
 
-    private static final String SDK_NAME = "hercules-sentry-sink";
-
-    // TODO: Extract actual version
-    private static final String SDK_VERSION = "UNKNOWN";
-    private static final Sdk SDK = new Sdk(SDK_NAME, SDK_VERSION, null);
+    private static final Lazy<Sdk> SDK = new Lazy<>(() -> new Sdk(
+            "hercules-sentry-sink",
+            ApplicationContextHolder.get().getVersion(),
+            null
+    ));
 
     private static final Set<String> IGNORED_TAGS = Stream.of(
             StackTraceTags.EXCEPTIONS_TAG,
@@ -83,7 +83,7 @@ public class SentryEventConverter {
         eventBuilder.withPlatform(SentryEventConverter.extractPlatform(event));
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
-        sentryEvent.setSdk(SDK);
+        sentryEvent.setSdk(SDK.get());
 
         return sentryEvent;
     }
