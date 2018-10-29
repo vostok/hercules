@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.undertow.util.servers.MinimalStatusServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.time.SimpleTimer;
 
@@ -23,6 +24,7 @@ public abstract class AbstractBulkSinkDaemon {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBulkSinkDaemon.class);
 
     private CommonBulkEventSink bulkEventSink;
+    private MinimalStatusServer minimalStatusServer;
     protected MetricsCollector metricsCollector;
 
     /**
@@ -40,11 +42,15 @@ public abstract class AbstractBulkSinkDaemon {
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+        Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
         ApplicationContextHolder.init("sink." + getDaemonName(), contextProperties);
 
         metricsCollector = new MetricsCollector(metricsProperties);
         metricsCollector.start();
+
+        minimalStatusServer = new MinimalStatusServer(httpServerProperties);
+        minimalStatusServer.start();
 
         //TODO: Validate sinkProperties
         try {
@@ -92,6 +98,14 @@ public abstract class AbstractBulkSinkDaemon {
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping metrics collector", t);
+        }
+
+        try {
+            if (Objects.nonNull(minimalStatusServer)) {
+                minimalStatusServer.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping minimal status server", t);
         }
 
         try {

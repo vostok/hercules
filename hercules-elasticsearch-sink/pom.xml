@@ -25,6 +25,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-tags</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-undertow-util</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -69,6 +73,10 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
