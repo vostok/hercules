@@ -210,7 +210,7 @@ public class GateClient implements Closeable {
                 sender.send(urls[i]);
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
-                LOGGER.warn(e.getMessage());
+                LOGGER.warn("Send fails", e);
             }
         }
 
