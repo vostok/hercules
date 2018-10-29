@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.application.ApplicationContext;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.net.LocalhostResolver;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
@@ -61,7 +62,8 @@ public class AboutHandler implements HttpHandler {
                 version,
                 commitHash,
                 applicationContext.getEnvironment(),
-                applicationContext.getInstanceId()
+                applicationContext.getInstanceId(),
+                LocalhostResolver.getLocalHostName()
         );
 
         ObjectMapper objectMapper = new ObjectMapper();

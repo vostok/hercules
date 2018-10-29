@@ -12,13 +12,15 @@ public class AboutInfo {
     private final String commitHash;
     private final String environment;
     private final String instanceId;
+    private final String hostName;
 
-    public AboutInfo(String serviceName, String version, String commitHash, String environment, String instanceId) {
+    public AboutInfo(String serviceName, String version, String commitHash, String environment, String instanceId, String hostName) {
         this.serviceName = serviceName;
         this.version = version;
         this.commitHash = commitHash;
         this.environment = environment;
         this.instanceId = instanceId;
+        this.hostName = hostName;
     }
 
     public String getServiceName() {
@@ -39,5 +41,9 @@ public class AboutInfo {
 
     public String getInstanceId() {
         return instanceId;
+    }
+
+    public String getHostName() {
+        return hostName;
     }
 }
