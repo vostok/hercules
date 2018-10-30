@@ -47,7 +47,7 @@ public class GateApplication {
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
 
-            ApplicationContextHolder.init("gate", contextProperties);
+            ApplicationContextHolder.init("Hercules Gate", "gate", contextProperties);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();

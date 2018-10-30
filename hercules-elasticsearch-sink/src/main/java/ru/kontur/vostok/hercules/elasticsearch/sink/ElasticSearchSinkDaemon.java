@@ -18,6 +18,11 @@ public class ElasticSearchSinkDaemon extends AbstractBulkSinkDaemon {
 
     @Override
     protected String getDaemonName() {
-        return "elasticsearch";
+        return "Hercules elasticserch sink";
+    }
+
+    @Override
+    protected String getDaemonId() {
+        return "sink.elasticsearch";
     }
 }

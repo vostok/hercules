@@ -50,10 +50,15 @@ public class ApplicationContextHolder {
      * Init application context. Must be called on startup if some parts of application uses this context
      * (such as MetricsCollector).
      *
-     * @param applicationName application name
+     * @param applicationName human readable application name
+     * @param applicationId application id without spaces and special symbols
      * @param contextProperties context properties
      */
-    public static void init(String applicationName, Properties contextProperties) {
+    public static void init(
+            String applicationName,
+            String applicationId,
+            Properties contextProperties
+    ) {
 
         // Load git properties
         Properties gitProperties = new Properties();
@@ -81,6 +86,7 @@ public class ApplicationContextHolder {
         applicationContext = new ApplicationContext(
                 hostname,
                 applicationName,
+                applicationId,
                 environment,
                 instanceId,
                 version,

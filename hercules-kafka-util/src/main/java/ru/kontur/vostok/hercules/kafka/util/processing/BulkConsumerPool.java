@@ -50,7 +50,7 @@ public class BulkConsumerPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumerPool.class);
 
-    private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
+    private static final String ID_TEMPLATE = "hercules.%s.%s";
 
     private final AtomicLong id = new AtomicLong(0);
 

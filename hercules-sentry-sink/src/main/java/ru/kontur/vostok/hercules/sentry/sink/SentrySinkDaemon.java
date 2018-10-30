@@ -60,7 +60,7 @@ public class SentrySinkDaemon {
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
 
-        ApplicationContextHolder.init("sink.sentry", contextProperties);
+        ApplicationContextHolder.init("Hercules sentry sink", "sink.sentry", contextProperties);
 
         try {
             final String streamPattern = Props.STREAM_PATTERN.extract(streamsProperties);

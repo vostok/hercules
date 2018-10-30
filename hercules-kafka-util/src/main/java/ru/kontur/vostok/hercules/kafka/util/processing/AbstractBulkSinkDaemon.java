@@ -44,7 +44,11 @@ public abstract class AbstractBulkSinkDaemon {
         Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
         Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
-        ApplicationContextHolder.init("sink." + getDaemonName(), contextProperties);
+        final String daemonId = getDaemonId();
+        if (!daemonId.startsWith("sink.")) {
+            throw new IllegalStateException(String.format("Daemon id must starts with 'sink.' but was '%s'", daemonId));
+        }
+        ApplicationContextHolder.init(getDaemonName(), daemonId, contextProperties);
 
         metricsCollector = new MetricsCollector(metricsProperties);
         metricsCollector.start();
@@ -55,7 +59,7 @@ public abstract class AbstractBulkSinkDaemon {
         //TODO: Validate sinkProperties
         try {
             bulkEventSink = new CommonBulkEventSink(
-                    getDaemonName(),
+                    daemonId,
                     streamProperties,
                     sinkProperties,
                     () -> createSender(sinkProperties),
@@ -71,7 +75,7 @@ public abstract class AbstractBulkSinkDaemon {
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 
-        LOGGER.info(String.format("%s sink daemon started for %d millis", getDaemonName(), timer.elapsed()));
+        LOGGER.info(String.format("%s daemon started for %d millis", getDaemonName(), timer.elapsed()));
     }
 
     /**
@@ -84,13 +88,18 @@ public abstract class AbstractBulkSinkDaemon {
     protected abstract BulkSender createSender(Properties sinkProperties);
 
     /**
-     * @return daemon name for logging, building consumer group name etc.
+     * @return human readable daemon name
      */
     protected abstract String getDaemonName();
 
+    /**
+     * @return daemon id for metrics, logging etc.
+     */
+    protected abstract String getDaemonId();
+
     private void shutdown() {
         SimpleTimer timer = new SimpleTimer();
-        LOGGER.info(String.format("Prepare %s sink daemon to be shutdown", getDaemonName()));
+        LOGGER.info(String.format("Prepare %s daemon to be shutdown", getDaemonName()));
 
         try {
             if (Objects.nonNull(metricsCollector)) {
@@ -117,6 +126,6 @@ public abstract class AbstractBulkSinkDaemon {
             //TODO: Process error
         }
 
-        LOGGER.info(String.format("Finished %s sink daemon shutdown for %d millis", getDaemonName(), timer.elapsed()));
+        LOGGER.info(String.format("Finished %s daemon shutdown for %d millis", getDaemonName(), timer.elapsed()));
     }
 }

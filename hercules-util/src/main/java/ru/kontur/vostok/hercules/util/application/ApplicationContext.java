@@ -10,6 +10,7 @@ public class ApplicationContext {
     private final String hostName;
 
     private final String name;
+    private final String id;
     private final String environment;
     private final String instanceId;
 
@@ -20,6 +21,7 @@ public class ApplicationContext {
     public ApplicationContext(
             String hostName,
             String name,
+            String id,
             String environment,
             String instanceId,
             String version,
@@ -27,6 +29,7 @@ public class ApplicationContext {
     ) {
         this.hostName = hostName;
         this.name = name;
+        this.id = id;
         this.environment = environment;
         this.instanceId = instanceId;
         this.version = version;
@@ -39,6 +42,10 @@ public class ApplicationContext {
 
     public String getName() {
         return name;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getEnvironment() {
