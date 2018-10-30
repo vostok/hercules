@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import ru.kontur.vostok.hercules.health.IHaveStatusCode;
 import ru.kontur.vostok.hercules.util.fsm.State;

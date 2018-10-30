@@ -1,5 +1,7 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
+import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
+import ru.kontur.vostok.hercules.kafka.util.processing.RecordStorage;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.LinkedList;

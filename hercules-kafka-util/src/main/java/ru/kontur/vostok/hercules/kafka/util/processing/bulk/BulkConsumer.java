@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.CommitFailedException;
@@ -10,6 +10,8 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
+import ru.kontur.vostok.hercules.kafka.util.processing.RecordStorage;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;

@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

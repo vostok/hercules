@@ -1,5 +1,6 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
+import ru.kontur.vostok.hercules.kafka.util.processing.bulk.CommonBulkSinkStatus;
 import ru.kontur.vostok.hercules.util.fsm.Fsm;
 import ru.kontur.vostok.hercules.util.fsm.Transition;
 import ru.kontur.vostok.hercules.util.fsm.TransitionMapBuilder;
