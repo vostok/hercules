@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
-import ru.kontur.vostok.hercules.kafka.util.processing.RecordStorage;
+import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.LinkedList;
@@ -68,9 +68,9 @@ public class BulkQueue<Key, Value> {
 
     private final BlockingQueue<BulkQueue.RunUnit<Key, Value>> queue;
     private final Queue<Future<Result<RunResult<Key, Value>, BackendServiceFailedException>>> commitQueue = new LinkedList<>();
-    private final CommonBulkSinkStatusFsm status;
+    private final SinkStatusFsm status;
 
-    public BulkQueue(int queueSize, CommonBulkSinkStatusFsm status) {
+    public BulkQueue(int queueSize, SinkStatusFsm status) {
         this.queue = new ArrayBlockingQueue<>(queueSize);
         this.status = status;
     }

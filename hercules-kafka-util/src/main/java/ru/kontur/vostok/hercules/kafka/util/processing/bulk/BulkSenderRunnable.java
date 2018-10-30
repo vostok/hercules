@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
+import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.Objects;
@@ -14,12 +15,12 @@ public class BulkSenderRunnable<Key, Value> implements Runnable {
 
     private final BulkSender<Value> sender;
     private final BulkQueue<Key, Value> queue;
-    private final CommonBulkSinkStatusFsm status;
+    private final SinkStatusFsm status;
 
     public BulkSenderRunnable(
             BulkSender<Value> sender,
             BulkQueue<Key, Value> queue,
-            CommonBulkSinkStatusFsm status
+            SinkStatusFsm status
     ) {
         this.sender = sender;
         this.queue = queue;
