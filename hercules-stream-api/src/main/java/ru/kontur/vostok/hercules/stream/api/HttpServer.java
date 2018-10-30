@@ -5,6 +5,7 @@ import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
 import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
 import ru.kontur.vostok.hercules.undertow.util.metrics.MetricsHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
@@ -43,6 +44,10 @@ public class HttpServer {
                 .get(
                         "/ping",
                         new MetricsHandler(PingHandler.INSTANCE, "ping", metricsCollector)
+                )
+                .get(
+                        "/about",
+                        new MetricsHandler(AboutHandler.INSTANCE, "about", metricsCollector)
                 )
                 .post(
                         "/stream/read",
