@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
+import ru.kontur.vostok.hercules.undertow.util.servers.MinimalStatusServer;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
@@ -46,6 +47,7 @@ public class SentrySinkDaemon {
     private static CuratorClient curatorClient;
     private static SentryProjectRegistry sentryProjectRegistry;
     private static MetricsCollector metricsCollector;
+    private static MinimalStatusServer minimalStatusServer;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -59,6 +61,7 @@ public class SentrySinkDaemon {
         Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+        Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
         ApplicationContextHolder.init("Hercules sentry sink", "sink.sentry", contextProperties);
 
@@ -66,6 +69,9 @@ public class SentrySinkDaemon {
             final String streamPattern = Props.STREAM_PATTERN.extract(streamsProperties);
             final String sentryUrl = Props.SENTRY_URL.extract(sentryProperties);
             final String sentryToken = Props.SENTRY_TOKEN.extract(sentryProperties);
+
+            minimalStatusServer = new MinimalStatusServer(statusServerProperties);
+            minimalStatusServer.start();
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -131,6 +137,14 @@ public class SentrySinkDaemon {
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping curator client", t);
+        }
+
+        try {
+            if (Objects.nonNull(minimalStatusServer)) {
+                minimalStatusServer.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping minimal status server", t);
         }
 
         LOGGER.info("Finished Timeline Sink Daemon shutdown for {} millis", System.currentTimeMillis() - start);
