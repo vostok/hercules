@@ -16,6 +16,7 @@ import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -54,6 +55,9 @@ public class ManagementApiApplication {
             Properties httpserverProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties kafkaProperties = PropertiesUtil.ofScope(properties, Scopes.KAFKA);
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+
+            ApplicationContextHolder.init("Hercules management API", "management-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

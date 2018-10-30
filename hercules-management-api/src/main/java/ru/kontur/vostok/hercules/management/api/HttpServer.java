@@ -27,6 +27,8 @@ import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
+import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
+import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -88,10 +90,8 @@ public class HttpServer {
         HttpHandler sentryRegistryDeleteHandler = adminAuthManagerWrapper.wrap(new DeleteProjectHandler(sentryProjectRepository));
 
         HttpHandler handler = Handlers.routing()
-                .get("/ping", exchange -> {
-                    exchange.setStatusCode(200);
-                    exchange.endExchange();
-                })
+                .get("/ping", PingHandler.INSTANCE)
+                .get("/about", AboutHandler.INSTANCE)
                 .post("/streams/create", createStreamHandler)
                 .post("/streams/delete", deleteStreamHandler)
                 .get("/streams/list", listStreamHandler)
