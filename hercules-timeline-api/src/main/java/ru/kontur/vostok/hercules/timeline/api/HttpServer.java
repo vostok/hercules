@@ -4,6 +4,8 @@ import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
+import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.Validators;
@@ -32,10 +34,8 @@ public class HttpServer {
         final int port = Props.PORT.extract(properties);
 
         HttpHandler handler = Handlers.routing()
-                .get("/ping", exchange -> {
-                    exchange.setStatusCode(200);
-                    exchange.endExchange();
-                })
+                .get("/ping", PingHandler.INSTANCE)
+                .get("/about", AboutHandler.INSTANCE)
                 .post("/timeline/read", readTimelineHandler);
 
         undertow = Undertow
