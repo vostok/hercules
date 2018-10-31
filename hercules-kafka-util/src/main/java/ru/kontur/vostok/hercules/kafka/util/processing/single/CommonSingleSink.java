@@ -34,7 +34,7 @@ public class CommonSingleSink {
     private static class StreamProps {
 
         static final PropertyDescription<PatternMatcher> PATTERN = PropertyDescriptions
-                .propertyOfType(PatternMatcher.class, "pattern")
+                .propertyOfType(PatternMatcher.class, "stream.pattern")
                 .withParser(s -> {
                     try {
                         return Result.ok(new PatternMatcher(s));
@@ -60,7 +60,6 @@ public class CommonSingleSink {
             Supplier<SingleSender<UUID, Event>> senderSupplier,
             MetricsCollector metricsCollector
     ) {
-
         final PatternMatcher patternMatcher = StreamProps.PATTERN.extract(streamProperties);
 
         streamProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, String.format(GROUP_ID_PATTERN, daemonId, patternMatcher.toString()));

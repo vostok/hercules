@@ -45,13 +45,9 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
     }
 
     @Override
-    protected SingleSender<UUID, Event> createSender(Properties properties) {
-        Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
-
-
+    protected SingleSender<UUID, Event> createSender(Properties sinkProperties) {
         final String sentryUrl = Props.SENTRY_URL.extract(sinkProperties);
         final String sentryToken = Props.SENTRY_TOKEN.extract(sinkProperties);
-
 
         return new SentrySyncProcessor(
                 sinkProperties,
