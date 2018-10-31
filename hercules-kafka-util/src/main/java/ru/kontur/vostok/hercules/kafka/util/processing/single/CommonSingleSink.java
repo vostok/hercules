@@ -74,6 +74,7 @@ public class CommonSingleSink {
         final Meter processedEventsMeter = metricsCollector.meter("processedEventsMeter");
         final Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
         final Timer processTimeTimer = metricsCollector.timer("processTime");
+        metricsCollector.status("status", status::getState);
 
         StreamsBuilder builder = new StreamsBuilder();
         builder.stream(patternMatcher.getRegexp(), Consumed.with(keySerde, valueSerde)).process(() ->
