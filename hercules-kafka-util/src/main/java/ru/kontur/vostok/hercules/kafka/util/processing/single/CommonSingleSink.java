@@ -7,7 +7,10 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.kafka.util.processing.ServicePinger;
 import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
@@ -18,9 +21,12 @@ import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -38,19 +44,32 @@ public class CommonSingleSink {
                 .withParser(s -> {
                     try {
                         return Result.ok(new PatternMatcher(s));
-                    }
-                    catch (IllegalArgumentException e) {
+                    } catch (IllegalArgumentException e) {
                         return Result.error(e.getMessage());
                     }
                 })
                 .build();
-
     }
+
+    private static class SinkProps {
+
+        static final PropertyDescription<Integer> PING_RATE_MS = PropertyDescriptions
+                .integerProperty("ping.rate")
+                .withDefaultValue(1_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+    }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommonSingleSink.class);
 
     private static final String GROUP_ID_PATTERN = "hercules.%s.%s";
 
     private final KafkaStreams kafkaStreams;
     private final SinkStatusFsm status = new SinkStatusFsm();
+
+    private final ServicePinger pinger;
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final int pingRate;
 
 
     public CommonSingleSink(
@@ -58,6 +77,7 @@ public class CommonSingleSink {
             Properties streamProperties,
             Properties sinkProperties,
             Supplier<SingleSender<UUID, Event>> senderSupplier,
+            Supplier<ServicePinger> pingerSupplier,
             MetricsCollector metricsCollector
     ) {
         final PatternMatcher patternMatcher = StreamProps.PATTERN.extract(streamProperties);
@@ -89,16 +109,37 @@ public class CommonSingleSink {
             )
         );
 
-        kafkaStreams = new KafkaStreams(builder.build(), streamProperties);
+        this.kafkaStreams = new KafkaStreams(builder.build(), streamProperties);
+
+        this.pingRate = SinkProps.PING_RATE_MS.extract(sinkProperties);
+        this.pinger = pingerSupplier.get();
     }
 
     public void start() {
+        executor.scheduleAtFixedRate(this::ping, 0, pingRate, TimeUnit.MILLISECONDS);
         kafkaStreams.start();
         status.markInitCompleted();
     }
 
     public void stop() {
-        kafkaStreams.close(5_000, TimeUnit.MILLISECONDS);
         status.stop();
+        kafkaStreams.close(5_000, TimeUnit.MILLISECONDS);
+        executor.shutdown();
+    }
+
+    private void ping() {
+        try {
+            if (pinger.ping()) {
+                status.markBackendAlive();
+            }
+            else {
+                status.markBackendFailed();
+            }
+        }
+        catch (Throwable e) {
+            LOGGER.error("Ping error should never happen, stopping service", e);
+            System.exit(1);
+            throw e;
+        }
     }
 }

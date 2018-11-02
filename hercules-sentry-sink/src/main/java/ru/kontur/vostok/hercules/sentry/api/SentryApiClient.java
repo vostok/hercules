@@ -10,6 +10,7 @@ import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -57,6 +58,10 @@ public class SentryApiClient {
                 .addInterceptorFirst(new BearerAuthHttpInterceptor(token))
                 .setRetryHandler(new StandardHttpRequestRetryHandler())
                 .build();
+    }
+
+    public Result<Void, String> ping() {
+        return request(new HttpHead(API_URL), new TypeReference<Void>() {});
     }
 
     public Result<List<ProjectInfo>, String> getProjects() {

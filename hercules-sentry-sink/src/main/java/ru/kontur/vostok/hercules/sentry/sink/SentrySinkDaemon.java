@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.kafka.util.processing.ServicePinger;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.AbstractSingleSinkDaemon;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.SingleSender;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
@@ -56,6 +57,16 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
                 ),
                 sentryProjectRegistry
         );
+    }
+
+    @Override
+    protected ServicePinger createPinger(Properties sinkProperties) {
+        final String sentryUrl = Props.SENTRY_URL.extract(sinkProperties);
+        final String sentryToken = Props.SENTRY_TOKEN.extract(sinkProperties);
+
+        SentryApiClient sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
+
+        return () -> sentryApiClient.ping().isOk();
     }
 
     @Override
