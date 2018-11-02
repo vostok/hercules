@@ -15,7 +15,7 @@ public class ApplicationContext {
     private final String instanceId;
 
     private final String version;
-    private final String commitHash;
+    private final String commitId;
 
 
     public ApplicationContext(
@@ -25,7 +25,7 @@ public class ApplicationContext {
             String environment,
             String instanceId,
             String version,
-            String commitHash
+            String commitId
     ) {
         this.hostName = hostName;
         this.name = name;
@@ -33,7 +33,7 @@ public class ApplicationContext {
         this.environment = environment;
         this.instanceId = instanceId;
         this.version = version;
-        this.commitHash = commitHash;
+        this.commitId = commitId;
     }
 
     public String getHostName() {
@@ -60,7 +60,7 @@ public class ApplicationContext {
         return version;
     }
 
-    public String getCommitHash() {
-        return commitHash;
+    public String getCommitId() {
+        return commitId;
     }
 }

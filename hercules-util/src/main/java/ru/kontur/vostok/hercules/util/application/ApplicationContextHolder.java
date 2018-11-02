@@ -19,7 +19,7 @@ import java.util.Properties;
 public class ApplicationContextHolder {
 
     private static class GitProps {
-        static final PropertyDescription<String> COMMIT_HASH = PropertyDescriptions
+        static final PropertyDescription<String> COMMIT_ID = PropertyDescriptions
                 .stringProperty("git.commit.id")
                 .withDefaultValue("unknown")
                 .build();
@@ -73,7 +73,7 @@ public class ApplicationContextHolder {
         catch (IOException e) {
             LOGGER.warn("Cannot load '{}' file", GIT_PROPERTIES, e);
         }
-        final String commitHash = GitProps.COMMIT_HASH.extract(gitProperties);
+        final String commitId = GitProps.COMMIT_ID.extract(gitProperties);
         final String version = GitProps.VERSION.extract(gitProperties);
 
         // Load context properties
@@ -90,7 +90,7 @@ public class ApplicationContextHolder {
                 environment,
                 instanceId,
                 version,
-                commitHash
+                commitId
         );
     }
 
