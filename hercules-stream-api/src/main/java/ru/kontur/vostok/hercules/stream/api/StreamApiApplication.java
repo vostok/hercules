@@ -40,7 +40,7 @@ public class StreamApiApplication {
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
 
-            ApplicationContextHolder.init("stream-api", contextProperties);
+            ApplicationContextHolder.init("Hercules stream API", "stream-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

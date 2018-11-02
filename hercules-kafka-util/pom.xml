@@ -35,5 +35,9 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-streams</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-undertow-util</artifactId>
+        </dependency>
     </dependencies>
 </project>

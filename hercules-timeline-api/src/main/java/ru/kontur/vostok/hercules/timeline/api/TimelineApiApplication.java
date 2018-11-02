@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.util.Map;
 import java.util.Properties;
@@ -35,6 +36,9 @@ public class TimelineApiApplication {
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+
+            ApplicationContextHolder.init("Hercules timeline API", "timeline-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

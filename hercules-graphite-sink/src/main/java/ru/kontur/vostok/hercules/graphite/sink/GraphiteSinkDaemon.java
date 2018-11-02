@@ -19,6 +19,11 @@ public class GraphiteSinkDaemon extends AbstractBulkSinkDaemon {
 
     @Override
     protected String getDaemonName() {
-        return "graphite sink";
+        return "Hercules graphite sink";
+    }
+
+    @Override
+    protected String getDaemonId() {
+        return "sink.graphite";
     }
 }
