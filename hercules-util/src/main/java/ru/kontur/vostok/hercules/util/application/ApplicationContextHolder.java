@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.net.LocalhostResolver;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.Properties;
@@ -19,7 +19,7 @@ import java.util.Properties;
 public class ApplicationContextHolder {
 
     private static class GitProps {
-        static final PropertyDescription<String> COMMIT_HASH = PropertyDescriptions
+        static final PropertyDescription<String> COMMIT_ID = PropertyDescriptions
                 .stringProperty("git.commit.id")
                 .withDefaultValue("unknown")
                 .build();
@@ -61,19 +61,8 @@ public class ApplicationContextHolder {
     ) {
 
         // Load git properties
-        Properties gitProperties = new Properties();
-        try {
-            InputStream resourceAsStream = ApplicationContextHolder.class.getClassLoader().getResourceAsStream(GIT_PROPERTIES);
-            if (Objects.isNull(resourceAsStream)) {
-                throw new IOException(String.format("Missing '%s' file", GIT_PROPERTIES));
-            }
-
-            gitProperties.load(resourceAsStream);
-        }
-        catch (IOException e) {
-            LOGGER.warn("Cannot load '{}' file", GIT_PROPERTIES, e);
-        }
-        final String commitHash = GitProps.COMMIT_HASH.extract(gitProperties);
+        Properties gitProperties = loadGitProperties();
+        final String commitId = GitProps.COMMIT_ID.extract(gitProperties);
         final String version = GitProps.VERSION.extract(gitProperties);
 
         // Load context properties
@@ -90,7 +79,7 @@ public class ApplicationContextHolder {
                 environment,
                 instanceId,
                 version,
-                commitHash
+                commitId
         );
     }
 
@@ -104,5 +93,17 @@ public class ApplicationContextHolder {
             throw new IllegalStateException("Context is not initialized");
         }
         return applicationContext;
+    }
+
+    private static Properties loadGitProperties() {
+        Properties gitProperties = new Properties();
+        InputStream resourceAsStream = ApplicationContextHolder.class.getClassLoader().getResourceAsStream(GIT_PROPERTIES);
+        if (Objects.nonNull(resourceAsStream)) {
+            ThrowableUtil.toUnchecked(() -> gitProperties.load(resourceAsStream));
+        }
+        else {
+            LOGGER.warn("Cannot load '{}' file", GIT_PROPERTIES);
+        }
+        return gitProperties;
     }
 }

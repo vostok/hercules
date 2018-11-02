@@ -382,6 +382,7 @@
                             <includeOnlyProperty>^git.commit.id$</includeOnlyProperty>
                         </includeOnlyProperties>
                         <useNativeGit>false</useNativeGit>
+                        <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     </configuration>
                 </plugin>
             </plugins>

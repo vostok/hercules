@@ -12,11 +12,11 @@ import ru.kontur.vostok.hercules.util.validation.Validators;
 import java.util.Properties;
 
 /**
- * MinimalStatusServer
+ * ApplicationStatusHttpServer - minimal HTTP server with base information about application
  *
  * @author Kirill Sulim
  */
-public class MinimalStatusServer {
+public class ApplicationStatusHttpServer {
 
     private static class Props {
         static final PropertyDescription<String> HOST = PropertyDescriptions
@@ -32,7 +32,7 @@ public class MinimalStatusServer {
 
     private final Undertow undertow;
 
-    public MinimalStatusServer(Properties statusServerProperties) {
+    public ApplicationStatusHttpServer(Properties statusServerProperties) {
 
         final String host = Props.HOST.extract(statusServerProperties);
         final int port = Props.PORT.extract(statusServerProperties);

@@ -1,8 +1,11 @@
 package ru.kontur.vostok.hercules.util.net;
 
+import ru.kontur.vostok.hercules.util.EnvironmentUtil;
+import ru.kontur.vostok.hercules.util.ObjectUtil;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Objects;
 
 /**
  * LocalhostResolver
@@ -11,26 +14,27 @@ import java.util.Objects;
  */
 public final class LocalhostResolver {
 
+    private static final String COMPUTERNAME_ENV = "COMPUTERNAME";
+    private static final String HOSTNAME_ENV = "HOSTNAME";
+
+
     public static String getLocalHostName() {
-        String host = null;
+        return ObjectUtil.firstNonNull(
+                getLocalHostNameViaInetAddress(),
+                EnvironmentUtil.getEnvSafe(COMPUTERNAME_ENV),
+                EnvironmentUtil.getEnvSafe(HOSTNAME_ENV)
+        );
+    }
+
+    private static String getLocalHostNameViaInetAddress() {
         try {
-            host = InetAddress.getLocalHost().getHostName();
-            if (Objects.nonNull(host) && !host.isEmpty()) {
+            String host = InetAddress.getLocalHost().getHostName();
+            if (!StringUtil.isNullOrEmpty(host)) {
                 return host;
             }
         } catch (UnknownHostException e) {
             /* use alternate ways */
         }
-
-        host = System.getenv("COMPUTERNAME");
-        if (Objects.nonNull(host)) {
-            return host;
-        }
-        host = System.getenv("HOSTNAME");
-        if (Objects.nonNull(host)) {
-            return host;
-        }
-
         return null;
     }
 

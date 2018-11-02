@@ -32,7 +32,7 @@ public class GateClient implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GateClient.class);
     private static final Random RANDOM = new Random();
 
-    private static final int TIMEOUT = 3000;
+    private static final int TIMEOUT = 30_000;
     private static final int CONNECTION_COUNT = 1000;
 
     private static final String PING = "/ping";
@@ -210,7 +210,7 @@ public class GateClient implements Closeable {
                 sender.send(urls[i]);
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
-                LOGGER.warn(e.getMessage());
+                LOGGER.warn("Send fails", e);
             }
         }
 
