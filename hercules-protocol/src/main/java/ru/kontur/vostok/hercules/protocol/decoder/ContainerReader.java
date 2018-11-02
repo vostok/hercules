@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.util.Maps;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +32,7 @@ public class ContainerReader implements Reader<Container> {
     @Override
     public Container read(Decoder decoder) {
         short length = decoder.readShort();
-        Map<String, Variant> variantMap = new HashMap<>(length);
+        Map<String, Variant> variantMap = new HashMap<>(Maps.effectiveHashMapCapacity(length));
         while (0 <= --length) {
             String tagName = decoder.readString();
             if (Objects.isNull(tags) || tags.contains(tagName)) {

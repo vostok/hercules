@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.configuration.util;
 
+import ru.kontur.vostok.hercules.util.Maps;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +17,7 @@ public class ArgsParser {
      * @return map with parsed arguments
      */
     public static Map<String, String> parse(String[] args) {
-        Map<String, String> parameters = new HashMap<>(args.length);
+        Map<String, String> parameters = new HashMap<>(Maps.effectiveHashMapCapacity(args.length));
         for (String arg : args) {
             int indexOfEqual = arg.indexOf('=');
             if (indexOfEqual == -1 || indexOfEqual == 0 || indexOfEqual == arg.length() - 1) {
