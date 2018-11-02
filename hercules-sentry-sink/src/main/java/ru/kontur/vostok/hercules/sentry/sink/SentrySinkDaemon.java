@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
-import ru.kontur.vostok.hercules.undertow.util.servers.MinimalStatusServer;
+import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
@@ -47,7 +47,7 @@ public class SentrySinkDaemon {
     private static CuratorClient curatorClient;
     private static SentryProjectRegistry sentryProjectRegistry;
     private static MetricsCollector metricsCollector;
-    private static MinimalStatusServer minimalStatusServer;
+    private static ApplicationStatusHttpServer applicationStatusHttpServer;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -70,8 +70,8 @@ public class SentrySinkDaemon {
             final String sentryUrl = Props.SENTRY_URL.extract(sentryProperties);
             final String sentryToken = Props.SENTRY_TOKEN.extract(sentryProperties);
 
-            minimalStatusServer = new MinimalStatusServer(statusServerProperties);
-            minimalStatusServer.start();
+            applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
+            applicationStatusHttpServer.start();
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -140,8 +140,8 @@ public class SentrySinkDaemon {
         }
 
         try {
-            if (Objects.nonNull(minimalStatusServer)) {
-                minimalStatusServer.stop();
+            if (Objects.nonNull(applicationStatusHttpServer)) {
+                applicationStatusHttpServer.stop();
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping minimal status server", t);

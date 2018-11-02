@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.undertow.util.servers.MinimalStatusServer;
+import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
@@ -34,7 +34,7 @@ public class KafkaManagerApplication {
 
     private static KafkaManager kafkaManager;
     private static KafkaTaskConsumer consumer;
-    private static MinimalStatusServer minimalStatusServer;
+    private static ApplicationStatusHttpServer applicationStatusHttpServer;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -57,8 +57,8 @@ public class KafkaManagerApplication {
             consumer = new KafkaTaskConsumer(consumerProperties, kafkaManager);
             consumer.start();
 
-            minimalStatusServer = new MinimalStatusServer(statusServerProperties);
-            minimalStatusServer.start();
+            applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
+            applicationStatusHttpServer.start();
         } catch (Throwable t) {
             LOGGER.error("Error on starting kafka manager", t);
             shutdown();
@@ -74,8 +74,8 @@ public class KafkaManagerApplication {
         long start = System.currentTimeMillis();
         LOGGER.info("Started Kafka Manager shutdown");
         try {
-            if (Objects.nonNull(minimalStatusServer)) {
-                minimalStatusServer.stop();
+            if (Objects.nonNull(applicationStatusHttpServer)) {
+                applicationStatusHttpServer.stop();
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping kafka manager", t);

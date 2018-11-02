@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.undertow.util.servers.MinimalStatusServer;
+import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
@@ -37,7 +37,7 @@ public class TimelineSinkDaemon {
     private static CuratorClient curatorClient;
     private static CassandraConnector cassandraConnector;
     private static TimelineSink timelineSink;
-    private static MinimalStatusServer minimalStatusServer;
+    private static ApplicationStatusHttpServer applicationStatusHttpServer;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -59,8 +59,8 @@ public class TimelineSinkDaemon {
         final String timelineName = Props.TIMELINE.extract(sinkProperties);
 
         try {
-            minimalStatusServer = new MinimalStatusServer(statusServerProperties);
-            minimalStatusServer.start();
+            applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
+            applicationStatusHttpServer.start();
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -112,8 +112,8 @@ public class TimelineSinkDaemon {
         }
 
         try {
-            if (Objects.nonNull(minimalStatusServer)) {
-                minimalStatusServer.stop();
+            if (Objects.nonNull(applicationStatusHttpServer)) {
+                applicationStatusHttpServer.stop();
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping status server", t);

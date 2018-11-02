@@ -10,8 +10,7 @@ import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.undertow.util.servers.MinimalStatusServer;
-import ru.kontur.vostok.hercules.util.application.ApplicationContext;
+import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
@@ -37,7 +36,7 @@ public class StreamSinkDaemon {
 
     private static CuratorClient curatorClient;
     private static StreamSink streamSink;
-    private static MinimalStatusServer minimalStatusServer;
+    private static ApplicationStatusHttpServer applicationStatusHttpServer;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -58,8 +57,8 @@ public class StreamSinkDaemon {
         final String derivedName = Props.DERIVED.extract(sinkProperties);
 
         try {
-            minimalStatusServer = new MinimalStatusServer(statusServerProperties);
-            minimalStatusServer.start();
+            applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
+            applicationStatusHttpServer.start();
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -111,8 +110,8 @@ public class StreamSinkDaemon {
         }
 
         try {
-            if (Objects.nonNull(minimalStatusServer)) {
-                minimalStatusServer.stop();
+            if (Objects.nonNull(applicationStatusHttpServer)) {
+                applicationStatusHttpServer.stop();
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping minimal status server", t);
