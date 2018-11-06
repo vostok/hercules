@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -96,10 +97,12 @@ public class SentryApiClient {
             if (isErrorResponse(response)) {
                 return Result.error(extractErrorMessage(response));
             }
-            return Result.ok(objectMapper.readValue(
-                    response.getEntity().getContent(),
-                    typeReference
-            ));
+            T value = null;
+            Optional<HttpEntity> entity = Optional.ofNullable(response.getEntity());
+            if (entity.isPresent()) {
+                value = objectMapper.readValue(entity.get().getContent(), typeReference);
+            }
+            return Result.ok(value);
         }
         catch (Exception e) {
             LOGGER.error("Error on request", e);
