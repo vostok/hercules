@@ -1,8 +1,9 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
@@ -30,7 +31,7 @@ public class CommonBulkEventSink {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonBulkEventSink.class);
 
     private final BulkConsumerPool consumerPool;
-    private final CommonBulkSinkStatusFsm status = new CommonBulkSinkStatusFsm();
+    private final SinkStatusFsm status = new SinkStatusFsm();
 
     private final BulkSender<Event> pinger;
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();

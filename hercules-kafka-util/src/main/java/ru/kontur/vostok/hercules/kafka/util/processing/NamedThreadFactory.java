@@ -4,7 +4,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * NamedThreadFactory
+ * NamedThreadFactory - thread factory that names each thread with prefix and id
  *
  * @author Kirill Sulim
  */

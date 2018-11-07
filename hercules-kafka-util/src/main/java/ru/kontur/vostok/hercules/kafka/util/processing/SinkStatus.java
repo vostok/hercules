@@ -4,11 +4,11 @@ import ru.kontur.vostok.hercules.health.IHaveStatusCode;
 import ru.kontur.vostok.hercules.util.fsm.State;
 
 /**
- * CommonBulkSinkStatus - finite state machine for CommonBulkEventSink
+ * SinkStatus - finite state machine for common sink
  *
  * @author Kirill Sulim
  */
-public enum CommonBulkSinkStatus implements IHaveStatusCode, State {
+public enum SinkStatus implements IHaveStatusCode, State {
     /**
      * Sink in initialization process
      */
@@ -47,7 +47,7 @@ public enum CommonBulkSinkStatus implements IHaveStatusCode, State {
 
     private final Integer statusCode;
 
-    CommonBulkSinkStatus(Integer statusCode) {
+    SinkStatus(Integer statusCode) {
         this.statusCode = statusCode;
     }
 

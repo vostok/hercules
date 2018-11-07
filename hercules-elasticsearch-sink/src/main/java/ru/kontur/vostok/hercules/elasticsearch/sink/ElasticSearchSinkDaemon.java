@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
-import ru.kontur.vostok.hercules.kafka.util.processing.AbstractBulkSinkDaemon;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.bulk.AbstractBulkSinkDaemon;
+import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSender;
 
 import java.util.Properties;
 

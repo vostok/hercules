@@ -1,8 +1,10 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.kafka.util.processing.NamedThreadFactory;
+import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.Validators;
@@ -44,7 +46,7 @@ public class BulkSenderPool<Key, Value> {
     private final ExecutorService pool;
     private final Supplier<BulkSender<Value>> senderFactory;
     private final BulkQueue<Key, Value> queue;
-    private final CommonBulkSinkStatusFsm status;
+    private final SinkStatusFsm status;
 
 
     public BulkSenderPool(
@@ -52,7 +54,7 @@ public class BulkSenderPool<Key, Value> {
             final Properties sinkProperties,
             final BulkQueue<Key, Value> queue,
             final Supplier<BulkSender<Value>> senderFactory,
-            final CommonBulkSinkStatusFsm status
+            final SinkStatusFsm status
     ) {
         final Properties senderPoolProperties = PropertiesUtil.ofScope(sinkProperties, Props.SENDER_POOL_SCOPE);
 

@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Assert;
 import org.junit.Test;
+import ru.kontur.vostok.hercules.kafka.util.processing.bulk.RecordStorage;
 
 import java.util.Map;
 
