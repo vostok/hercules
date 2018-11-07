@@ -91,9 +91,9 @@ public class CommonSingleSink {
 
         final Meter receivedEventsMeter = metricsCollector.meter("receivedEvents");
         final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSize");
-        final Meter processedEventsMeter = metricsCollector.meter("processedEventsMeter");
+        final Meter processedEventsMeter = metricsCollector.meter("processedEvents");
         final Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
-        final Timer processTimeTimer = metricsCollector.timer("processTime");
+        final Timer processTimeTimer = metricsCollector.timer("processTimeMs");
         metricsCollector.status("status", status::getState);
 
         StreamsBuilder builder = new StreamsBuilder();

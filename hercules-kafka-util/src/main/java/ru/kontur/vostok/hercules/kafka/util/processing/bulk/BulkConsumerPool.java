@@ -86,7 +86,7 @@ public class BulkConsumerPool {
         final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSize");
         final Meter processedEventsMeter = metricsCollector.meter("processedEvents");
         final Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
-        final Timer processTimeTimer = metricsCollector.timer("processTime");
+        final Timer processTimeTimer = metricsCollector.timer("processTimeMs");
 
         this.pool = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory("consumer-pool"));
         this.consumers = new ArrayList<>(poolSize);

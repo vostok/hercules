@@ -35,6 +35,10 @@ public class ApplicationContextHolder {
                 .stringProperty("environment")
                 .build();
 
+        static final PropertyDescription<String> DATACENTER = PropertyDescriptions
+                .stringProperty("datacenter")
+                .build();
+
         static final PropertyDescription<String> INSTANCE_ID = PropertyDescriptions
                 .stringProperty("instance.id")
                 .build();
@@ -59,7 +63,6 @@ public class ApplicationContextHolder {
             String applicationId,
             Properties contextProperties
     ) {
-
         // Load git properties
         Properties gitProperties = loadGitProperties();
         final String commitId = GitProps.COMMIT_ID.extract(gitProperties);
@@ -67,19 +70,21 @@ public class ApplicationContextHolder {
 
         // Load context properties
         final String environment = ContextProps.ENVIRONMENT.extract(contextProperties);
+        final String dataCenter = ContextProps.DATACENTER.extract(contextProperties);
         final String instanceId = ContextProps.INSTANCE_ID.extract(contextProperties);
 
         // Load hostname
         final String hostname = LocalhostResolver.getLocalHostName();
 
         applicationContext = new ApplicationContext(
-                hostname,
                 applicationName,
                 applicationId,
-                environment,
-                instanceId,
                 version,
-                commitId
+                commitId,
+                environment,
+                dataCenter,
+                hostname,
+                instanceId
         );
     }
 

@@ -55,8 +55,8 @@ public class GateHandler implements HttpHandler {
         this.async = async;
         this.maxContentLength = maxContentLength;
 
-        this.requestMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".request");
-        this.requestSizeMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".request_size");
+        this.requestMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".requests");
+        this.requestSizeMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".requestBytes");
     }
 
     @Override
