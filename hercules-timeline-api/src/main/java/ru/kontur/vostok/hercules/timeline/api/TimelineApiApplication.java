@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
@@ -24,6 +25,7 @@ public class TimelineApiApplication {
     private static TimelineReader timelineReader;
     private static CassandraConnector cassandraConnector;
     private static AuthManager authManager;
+    private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -37,6 +39,7 @@ public class TimelineApiApplication {
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+            Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
             ApplicationContextHolder.init("Hercules timeline API", "timeline-api", contextProperties);
 
@@ -50,10 +53,14 @@ public class TimelineApiApplication {
 
             authManager = new AuthManager(curatorClient);
 
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+
             server = new HttpServer(
                     httpServerProperties,
                     authManager,
-                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader)
+                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader),
+                    metricsCollector
             );
             server.start();
         } catch (Throwable t) {
@@ -78,6 +85,16 @@ public class TimelineApiApplication {
             LOGGER.error("Error on stopping server", t);
             //TODO: Process error
         }
+
+        try {
+            if (metricsCollector != null) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on metrics collector shutdown", t);
+            //TODO: Process error
+        }
+
         try {
             if (curatorClient != null) {
                 curatorClient.stop();
