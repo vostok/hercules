@@ -83,7 +83,7 @@ public class BulkConsumerPool {
 
 
         final Meter receivedEventsMeter = metricsCollector.meter("receivedEvents");
-        final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSize");
+        final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSizeBytes");
         final Meter processedEventsMeter = metricsCollector.meter("processedEvents");
         final Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
         final Timer processTimeTimer = metricsCollector.timer("processTimeMs");
