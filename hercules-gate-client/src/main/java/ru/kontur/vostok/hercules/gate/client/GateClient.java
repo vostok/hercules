@@ -20,6 +20,7 @@ import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterExcepti
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -306,12 +307,14 @@ public class GateClient implements Closeable {
                 PropertyDescriptions
                         .integerProperty("timeout")
                         .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
+                        .withValidator(IntegerValidators.positive())
                         .build();
 
         static final PropertyDescription<Integer> CONNECTION_COUNT =
                 PropertyDescriptions
                         .integerProperty("connectionCount")
                         .withDefaultValue(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
+                        .withValidator(IntegerValidators.positive())
                         .build();
     }
 }

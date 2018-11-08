@@ -11,6 +11,9 @@ import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.ArrayValidators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -233,11 +236,13 @@ public class EventPublisher {
                 PropertyDescriptions
                         .integerProperty("threads")
                         .withDefaultValue(3)
+                        .withValidator(IntegerValidators.positive())
                         .build();
 
         static final PropertyDescription<String[]> URLS =
                 PropertyDescriptions
                         .arrayOfStringsProperty("urls")
+                        .withValidator(ArrayValidators.notEmpty())
                         .build();
 
         static final PropertyDescription<String> API_KEY =
