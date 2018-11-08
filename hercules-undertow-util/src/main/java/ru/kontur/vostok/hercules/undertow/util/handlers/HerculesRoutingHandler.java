@@ -5,6 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.RoutingHandler;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 
 /**
  * HerculesRoutingHandler
@@ -26,21 +27,21 @@ public class HerculesRoutingHandler implements HttpHandler {
     public HerculesRoutingHandler get(final String template, final HttpHandler handler) {
         routingHandler.get(
                 template,
-                new MetricsHandler(handler, makeMetricsName("GET", template), metricsCollector)
+                new MetricsHandler(handler, createMetricName("GET", template), metricsCollector)
         );
         return this;
     }
 
     public HerculesRoutingHandler post(final String template, final HttpHandler handler) {
         routingHandler.post(
-                template, new MetricsHandler(handler, makeMetricsName("POST", template), metricsCollector)
+                template, new MetricsHandler(handler, createMetricName("POST", template), metricsCollector)
         );
         return this;
     }
 
     public HerculesRoutingHandler delete(final String template, final HttpHandler handler) {
         routingHandler.delete(
-                template, new MetricsHandler(handler, makeMetricsName("DELETE", template), metricsCollector)
+                template, new MetricsHandler(handler, createMetricName("DELETE", template), metricsCollector)
         );
         return this;
     }
@@ -50,10 +51,10 @@ public class HerculesRoutingHandler implements HttpHandler {
         routingHandler.handleRequest(exchange);
     }
 
-    private static String makeMetricsName(final String httpMethodName, String template) {
+    private static String createMetricName(final String httpMethodName, String template) {
         if (template.startsWith("/")) {
             template = template.substring(1);
         }
-        return httpMethodName + "_" + template.replaceAll("[^A-Za-z0-9_]", "_");
+        return httpMethodName + "_" + GraphiteMetricsUtil.sanitizeMetricName(template);
     }
 }
