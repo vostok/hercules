@@ -47,10 +47,11 @@ public class GateClient implements Closeable {
     }
 
     public GateClient(Properties properties) {
-        int timeout = Props.TIMEOUT.extract(properties);
-        int connectionCount = Props.CONNECTION_COUNT.extract(properties);
+        final int requestTimeout = Props.REQUEST_TIMEOUT.extract(properties);
+        final int connectionTimeout = Props.CONNECTION_TIMEOUT.extract(properties);
+        final int connectionCount = Props.CONNECTION_COUNT.extract(properties);
 
-        this.client = createHttpClient(timeout, connectionCount);
+        this.client = createHttpClient(requestTimeout, connectionTimeout, connectionCount);
     }
 
     /**
@@ -273,15 +274,16 @@ public class GateClient implements Closeable {
     /**
      * Tuning of {@link CloseableHttpClient}
      *
-     * @param timeout socket and connect timeout(in millis)
+     * @param requestTimeout request timeout aka socket timeout (in millis)
+     * @param connectionTimeout connection timeout (in millis)
      * @param connectionCount maximum client connections
      * @return Customized http client
      */
-    private static CloseableHttpClient createHttpClient(int timeout, int connectionCount) {
+    private static CloseableHttpClient createHttpClient(int requestTimeout, int connectionTimeout, int connectionCount) {
         RequestConfig requestConfig = RequestConfig
                 .custom()
-                .setSocketTimeout(timeout)
-                .setConnectTimeout(timeout)
+                .setSocketTimeout(requestTimeout)
+                .setConnectTimeout(connectionTimeout)
                 .build();
 
         return HttpClientBuilder
@@ -303,9 +305,16 @@ public class GateClient implements Closeable {
     }
 
     private static class Props {
-        static final PropertyDescription<Integer> TIMEOUT =
+        static final PropertyDescription<Integer> REQUEST_TIMEOUT =
                 PropertyDescriptions
-                        .integerProperty("timeout")
+                        .integerProperty("requestTimeout")
+                        .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
+                        .withValidator(IntegerValidators.positive())
+                        .build();
+
+        static final PropertyDescription<Integer> CONNECTION_TIMEOUT =
+                PropertyDescriptions
+                        .integerProperty("connectionTimeout")
                         .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
                         .withValidator(IntegerValidators.positive())
                         .build();
