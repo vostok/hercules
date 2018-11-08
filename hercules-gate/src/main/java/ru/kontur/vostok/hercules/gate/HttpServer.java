@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.gate;
 
-import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -13,9 +12,7 @@ import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowRequestWeigher;
 import ru.kontur.vostok.hercules.undertow.util.DefaultUndertowThrottledRequestProcessor;
-import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
-import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
-import ru.kontur.vostok.hercules.util.bytes.SizeUnit;
+import ru.kontur.vostok.hercules.undertow.util.handlers.HerculesRoutingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
@@ -56,9 +53,7 @@ public class HttpServer {
         HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, true, maxContentLength);
         HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, false, maxContentLength);
 
-        HttpHandler handler = Handlers.routing()
-                .get("/ping", PingHandler.INSTANCE)
-                .get("/about", new AboutHandler())
+        HttpHandler handler = new HerculesRoutingHandler(metricsCollector)
                 .post("/stream/sendAsync", sendAsyncHandler)
                 .post("/stream/send", sendHandler);
 

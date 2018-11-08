@@ -122,7 +122,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 )
                 .build();
 
-        this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTime");
+        this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
     }
 

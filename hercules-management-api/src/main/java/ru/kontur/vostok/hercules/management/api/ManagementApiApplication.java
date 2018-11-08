@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
 import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
@@ -43,6 +44,7 @@ public class ManagementApiApplication {
     private static AuthManager authManager;
     private static CassandraTaskQueue cassandraTaskQueue;
     private static KafkaTaskQueue kafkaTaskQueue;
+    private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -56,6 +58,7 @@ public class ManagementApiApplication {
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties kafkaProperties = PropertiesUtil.ofScope(properties, Scopes.KAFKA);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+            Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
             ApplicationContextHolder.init("Hercules management API", "management-api", contextProperties);
 
@@ -76,6 +79,9 @@ public class ManagementApiApplication {
             cassandraTaskQueue = new CassandraTaskQueue(kafkaProperties);
             kafkaTaskQueue = new KafkaTaskQueue(kafkaProperties);
 
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+
             server = new HttpServer(
                     httpserverProperties,
                     adminAuthManager,
@@ -86,7 +92,8 @@ public class ManagementApiApplication {
                     ruleRepository,
                     sentryProjectRepository,
                     cassandraTaskQueue,
-                    kafkaTaskQueue
+                    kafkaTaskQueue,
+                    metricsCollector
             );
             server.start();
         } catch (Throwable e) {
@@ -110,6 +117,14 @@ public class ManagementApiApplication {
         } catch (Throwable e) {
             LOGGER.error("Error on server stopping", e);
             //TODO: Process error
+        }
+
+        try {
+            if (metricsCollector != null) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Error on metrics collector stopping", e);
         }
 
         try {

@@ -53,6 +53,7 @@ public class SentryEventConverterTest {
         Properties testProperties = new Properties();
         testProperties.setProperty("environment", "test");
         testProperties.setProperty("instance.id", "test");
+        testProperties.setProperty("datacenter", "test");
         ApplicationContextHolder.init("test","test", testProperties);
     }
 

@@ -7,53 +7,89 @@ package ru.kontur.vostok.hercules.util.application;
  */
 public class ApplicationContext {
 
+    /**
+     * Human readable application name
+     */
+    private final String applicationName;
+
+    /**
+     * Robot readable application name
+     */
+    private final String applicationId;
+
+    /**
+     * Application version (semver preffered)
+     */
+    private final String version;
+
+    /**
+     * Commit id
+     */
+    private final String commitId;
+
+    /**
+     * Environment in which service is running (production, testing etc.)
+     */
+    private final String environment;
+
+    /**
+     * Datacenter in which instance is located
+     */
+    private final String dataCenter;
+
+    /**
+     * Server host name
+     */
     private final String hostName;
 
-    private final String name;
-    private final String id;
-    private final String environment;
+    /**
+     * Instance identifier
+     */
     private final String instanceId;
-
-    private final String version;
-    private final String commitId;
 
 
     public ApplicationContext(
-            String hostName,
-            String name,
-            String id,
-            String environment,
-            String instanceId,
+            String applicationName,
+            String applicationId,
             String version,
-            String commitId
+            String commitId,
+            String environment,
+            String dataCenter,
+            String hostName,
+            String instanceId
     ) {
-        this.hostName = hostName;
-        this.name = name;
-        this.id = id;
-        this.environment = environment;
-        this.instanceId = instanceId;
+        this.applicationName = applicationName;
+        this.applicationId = applicationId;
         this.version = version;
         this.commitId = commitId;
-    }
-
-    public String getHostName() {
-        return hostName;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getId() {
-        return id;
+        this.environment = environment;
+        this.dataCenter = dataCenter;
+        this.hostName = hostName;
+        this.instanceId = instanceId;
     }
 
     public String getEnvironment() {
         return environment;
     }
 
+    public String getDataCenter() {
+        return dataCenter;
+    }
+
     public String getInstanceId() {
         return instanceId;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public String getApplicationName() {
+        return applicationName;
+    }
+
+    public String getApplicationId() {
+        return applicationId;
     }
 
     public String getVersion() {
