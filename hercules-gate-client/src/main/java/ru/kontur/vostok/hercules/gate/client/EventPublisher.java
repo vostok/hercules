@@ -2,11 +2,15 @@ package ru.kontur.vostok.hercules.gate.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +31,7 @@ public class EventPublisher {
 
     private final Object monitor = new Object();
     private final Map<String, EventQueue> queueMap = new HashMap<>();
-    private final GateClient gateClient = new GateClient();
+    private final GateClient gateClient;
 
     private final ScheduledThreadPoolExecutor executor;
     private final String[] urls;
@@ -35,29 +40,27 @@ public class EventPublisher {
     /**
      * Note that <code>threadFactory</code> should create daemon-thread. It's needing for correct stopping.
      *
-     * @param threads       count of worker-threads
+     * @param properties    configuration properties
      * @param threadFactory factory for worker-threads
-     * @param urls          urls where events should be sent
-     * @param apiKey        api key for sending events
+     * @param queues        event queues
      */
-    public EventPublisher(int threads,
+    public EventPublisher(Properties properties,
                           ThreadFactory threadFactory,
-                          List<EventQueue> queues,
-                          String[] urls,
-                          String apiKey) {
-        registerAll(queues);
+                          List<EventQueue> queues) {
+        final int threads = Props.THREAD_COUNT.extract(properties);
+        final String[] urls = Props.URLS.extract(properties);
+        final String apiKey = Props.API_KEY.extract(properties);
+        final Properties gateClientProperties = PropertiesUtil.ofScope(properties, Scopes.GATE_CLIENT);
 
         this.urls = urls;
         this.apiKey = apiKey;
         this.executor = new ScheduledThreadPoolExecutor(threads, threadFactory);
-    }
 
-    public EventPublisher(int threads,
-                          ThreadFactory threadFactory,
-                          List<EventQueue> queues,
-                          String url,
-                          String apiKey) {
-        this(threads, threadFactory, queues, new String[]{url}, apiKey);
+        this.gateClient = new GateClient(gateClientProperties);
+
+        registerAll(queues);
+
+
     }
 
     public void start() {
@@ -223,5 +226,23 @@ public class EventPublisher {
                 eventQueue.getPeriodMillis(),
                 TimeUnit.MILLISECONDS
         );
+    }
+
+    private static class Props {
+        static final PropertyDescription<Integer> THREAD_COUNT =
+                PropertyDescriptions
+                        .integerProperty("threads")
+                        .withDefaultValue(3)
+                        .build();
+
+        static final PropertyDescription<String[]> URLS =
+                PropertyDescriptions
+                        .arrayOfStringsProperty("urls")
+                        .build();
+
+        static final PropertyDescription<String> API_KEY =
+                PropertyDescriptions
+                        .stringProperty("apiKey")
+                        .build();
     }
 }
