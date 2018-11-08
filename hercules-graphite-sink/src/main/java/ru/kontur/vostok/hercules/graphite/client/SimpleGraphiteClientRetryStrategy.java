@@ -40,14 +40,12 @@ public class SimpleGraphiteClientRetryStrategy extends GraphiteClientRetryStrate
             try {
                 sender.send(data);
                 return;
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 lastException = e;
                 LOGGER.error("Error on sending data to graphite", e);
                 if (suppressedExceptions.contains(e.getClass())) {
                     currentRetryCount++;
-                }
-                else {
+                } else {
                     throw e;
                 }
             }

@@ -27,13 +27,13 @@ public class NaiveHasher implements Hasher {
             value -> (Byte) value,/* BYTE */
             value -> (Short) value,/* SHORT */
             value -> (Integer) value,/* INTEGER */
-            value -> {/* LONG */
+            value -> { /* LONG */
                 long v = (Long) value;
                 return (int) (v ^ (v >> 32));
             },
             value -> ((Boolean) value) ? 2029 : 2027,/* FLAG */
             value -> Float.floatToIntBits((Float) value),/* FLOAT */
-            value -> {/* DOUBLE */
+            value -> { /* DOUBLE */
                 long result = Double.doubleToLongBits((Double) value);
                 return (int) (result ^ (result >> 32));
             },

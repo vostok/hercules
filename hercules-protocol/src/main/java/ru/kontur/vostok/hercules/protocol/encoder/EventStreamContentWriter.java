@@ -6,11 +6,11 @@ import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 
 public class EventStreamContentWriter implements Writer<EventStreamContent> {
 
-    private static final StreamReadStateWriter stateWriter = new StreamReadStateWriter();
-    private static final ArrayWriter<Event> arrayWriter = new ArrayWriter<>(new EventWriter());
+    private static final StreamReadStateWriter STATE_WRITER = new StreamReadStateWriter();
+    private static final ArrayWriter<Event> ARRAY_WRITER = new ArrayWriter<>(new EventWriter());
 
     public void write(Encoder encoder, EventStreamContent content) {
-        stateWriter.write(encoder, content.getState());
-        arrayWriter.write(encoder, content.getEvents());
+        STATE_WRITER.write(encoder, content.getState());
+        ARRAY_WRITER.write(encoder, content.getEvents());
     }
 }

@@ -41,8 +41,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 .withParser(Parsers.parseArray(HttpHost.class, s -> {
                     try {
                         return Result.ok(HttpHost.create(s));
-                    }
-                    catch (IllegalArgumentException e) {
+                    } catch (IllegalArgumentException e) {
                         return Result.error(e.getMessage());
                     }
                 }))
@@ -177,8 +176,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         try {
             Response response = restClient.performRequest("HEAD", "/", Collections.emptyMap());
             return 200 == response.getStatusLine().getStatusCode();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return false;
         }
     }
@@ -196,8 +194,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     writeNewLine(stream);
                     EventToElasticJsonWriter.writeEvent(stream, event);
                     writeNewLine(stream);
-                }
-                else {
+                } else {
                     LOGGER.error(String.format("Cannot process event '%s' because of missing index data", event.getId()));
                 }
             }

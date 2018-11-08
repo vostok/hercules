@@ -103,8 +103,7 @@ public class SentryApiClient {
                 value = objectMapper.readValue(entity.get().getContent(), typeReference);
             }
             return Result.ok(value);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOGGER.error("Error on request", e);
             return Result.error(e.getMessage());
         }
@@ -120,7 +119,7 @@ public class SentryApiClient {
                     request.getParams().removeParameter("cursor");
                     request.getParams().setParameter("cursor", cursorValue);
                 });
-                try(CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
+                try (CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
                     if (isErrorResponse(response)) {
                         return Result.error(extractErrorMessage(response));
                     }
@@ -129,8 +128,7 @@ public class SentryApiClient {
                 }
             } while (nextCursor.isPresent());
             return Result.ok(resultList);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOGGER.error("Error on paged request", e);
             return Result.error(e.getMessage());
         }

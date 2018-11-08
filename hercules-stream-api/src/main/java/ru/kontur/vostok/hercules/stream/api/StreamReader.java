@@ -98,16 +98,11 @@ public class StreamReader {
                     Long beginningOffset = beginningOffsets.get(partition);
                     Long endOffset = endOffsets.get(partition);
 
-                    // requestOffset < beginningOffset
                     if (requestOffset < beginningOffset) {
                         offsetsToRequest.put(partition, beginningOffset);
-                    }
-                    // beginningOffset <= requestOffset && requestOffset < endOffset
-                    else if (requestOffset < endOffset) {
+                    } else if (requestOffset < endOffset) {
                         offsetsToRequest.put(partition, requestOffset);
-                    }
-                    // endOffset <= requestOffset
-                    else {
+                    } else {
                         // These offsets will not be polled, but returning them marks these offsets as overflowed
                         overflowedOffsets.put(partition, requestOffset);
                     }
@@ -128,8 +123,7 @@ public class StreamReader {
                     polledOffsets.forEach((topicPartition, offsetAndMetadata) -> {
                         offsetsToRequest.put(topicPartition, offsetAndMetadata.offset() + 1);
                     });
-                }
-                else {
+                } else {
                     poll = new RecordStorage<>(0);
                 }
 

@@ -133,8 +133,7 @@ public class BulkConsumer implements Runnable {
                             SinkStatus.STOPPING_FROM_RUNNING,
                             SinkStatus.STOPPING_FROM_SUSPEND
                     );
-                }
-                catch (InterruptedException | ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException("Should never happened", e);
                 }
                 if (!status.isRunning()) {
@@ -170,8 +169,7 @@ public class BulkConsumer implements Runnable {
                                 }
                             }
                             timeLeft = timer.timeLeft();
-                        }
-                        catch (WakeupException e) {
+                        } catch (WakeupException e) {
                             /*
                              * Skip wakeup exception as it is termination signal,
                              * then process already polled data
@@ -217,22 +215,18 @@ public class BulkConsumer implements Runnable {
                     current = next;
                     next = new RecordStorage<>(batchSize);
                 }
-            }
-            catch (CommitFailedException e) {
+            } catch (CommitFailedException e) {
                 LOGGER.warn("Consumer was kicked by timeout");
-            }
-            catch (BackendServiceFailedException e) {
+            } catch (BackendServiceFailedException e) {
                 LOGGER.error("Backend failed with", e);
                 status.markBackendFailed();
-            }
-            finally {
+            } finally {
                 consumer.unsubscribe();
             }
         }
         try {
             senderPool.stop();
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new RuntimeException("Should never happened", e);
         }
     }

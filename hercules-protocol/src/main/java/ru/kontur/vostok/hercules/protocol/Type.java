@@ -45,18 +45,18 @@ public enum Type {
     }
 
     public static Type valueOf(byte code) {
-        return codes[code & 0xFF];
+        return CODES[code & 0xFF];
     }
 
-    private final static Type[] codes = new Type[256];
+    private final static Type[] CODES = new Type[256];
     static {
-        Arrays.fill(codes, RESERVED);
+        Arrays.fill(CODES, RESERVED);
 
         for (Type type : values()) {
             if (RESERVED == type) {
                 continue; // Skip RESERVED cause it has special code
             }
-            codes[type.code] = type;
+            CODES[type.code] = type;
         }
     }
 }

@@ -49,15 +49,15 @@ public final class BulkResponseHandler {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
 
-    private final static JsonFactory factory = new JsonFactory();
-    private final static ObjectMapper mapper = new ObjectMapper(factory);
+    private final static JsonFactory FACTORY = new JsonFactory();
+    private final static ObjectMapper MAPPER = new ObjectMapper(FACTORY);
 
     // TODO: Replace with a good parser
     public static Result process(HttpEntity httpEntity) {
         return toUnchecked(() -> {
             int errorCount = 0;
             boolean hasRetryableErrors = false;
-            JsonParser parser = factory.createParser(httpEntity.getContent());
+            JsonParser parser = FACTORY.createParser(httpEntity.getContent());
 
             String currentId = "";
             String currentIndex = "";
@@ -80,7 +80,7 @@ public final class BulkResponseHandler {
                 }
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
-                    if (processError(mapper.readTree(parser), currentId, currentIndex)) {
+                    if (processError(MAPPER.readTree(parser), currentId, currentIndex)) {
                         hasRetryableErrors = true;
                     }
                     errorCount++;

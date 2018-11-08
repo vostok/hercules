@@ -52,7 +52,7 @@ public class CassandraTaskQueue {
     private void sendTask(CassandraTask task) {
         try {
             byte[] value = serializer.writeValueAsBytes(task);
-            ProducerRecord<Void, byte[]> record = new ProducerRecord<>(TaskConstants.cassandraTaskTopic, value);
+            ProducerRecord<Void, byte[]> record = new ProducerRecord<>(TaskConstants.CASSANDRA_TASK_TOPIC, value);
             Future<RecordMetadata> result = producer.send(record);
             result.get(5_000, TimeUnit.MILLISECONDS);
         } catch (JsonProcessingException | InterruptedException | ExecutionException | TimeoutException e) {

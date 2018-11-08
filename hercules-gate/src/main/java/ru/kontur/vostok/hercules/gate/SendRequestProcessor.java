@@ -54,8 +54,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                             callback.call();
                             LOGGER.error("Cannot create ReaderIterator", exception);
                             throw exception; //TODO: Process exception
-                        }
-                        catch (InvalidDataException e) {
+                        } catch (InvalidDataException e) {
                             ResponseUtil.badRequest(exchange);
                             callback.call();
                             LOGGER.error("Cannot create ReaderIterator", e);

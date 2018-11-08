@@ -166,8 +166,9 @@ public class EventPublisher {
         int lastUnprocessedIndex = 0;
 
         for (int index = 0; index < events.size(); index++) {
-            if (events.get(index).getBytes().length >= CommonConstants.MAX_MESSAGE_SIZE)
+            if (events.get(index).getBytes().length >= CommonConstants.MAX_MESSAGE_SIZE) {
                 continue;
+            }
 
             if (size + events.get(index).getBytes().length >= CommonConstants.MAX_MESSAGE_SIZE) {
                 sendSliceEvents(events, eventQueue.getStream(), size, lastUnprocessedIndex, index);

@@ -80,15 +80,13 @@ public class CommonSingleSinkProcessor extends AbstractProcessor<UUID, Event> {
                 boolean processed = sender.process(key, value);
                 if (processed) {
                     markProcessedEvent(value);
-                }
-                else {
+                } else {
                     markDroppedEvent(value);
                 }
                 long elapsed = System.currentTimeMillis() - start;
                 processTimeTimer.update(elapsed, TimeUnit.MILLISECONDS);
                 dataSent = true;
-            }
-            catch (BackendServiceFailedException e) {
+            } catch (BackendServiceFailedException e) {
                 status.markBackendFailed();
             }
         } while (!dataSent);

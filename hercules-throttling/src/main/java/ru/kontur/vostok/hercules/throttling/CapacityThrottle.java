@@ -46,7 +46,12 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
      * @param requestProcessor          processes requests
      * @param throttledRequestProcessor processes throttled (discarded by some reasons) requests
      */
-    public CapacityThrottle(Properties properties, RequestWeigher<R> weigher, RequestProcessor<R, C> requestProcessor, ThrottledRequestProcessor<R> throttledRequestProcessor) {
+    public CapacityThrottle(
+            Properties properties,
+            RequestWeigher<R> weigher,
+            RequestProcessor<R, C> requestProcessor,
+            ThrottledRequestProcessor<R> throttledRequestProcessor
+    ) {
         this.capacity = Props.CAPACITY.extract(properties);
         this.requestTimeout = Props.REQUEST_TIMEOUT_MS.extract(properties);
 

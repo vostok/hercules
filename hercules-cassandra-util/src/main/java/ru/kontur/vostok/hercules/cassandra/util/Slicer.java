@@ -20,6 +20,8 @@ public class Slicer {
     }
 
     public int slice(Event event) {
-        return (shardingKey != null && shardingKey.length > 0) ? partitioner.partition(event, shardingKey, slices) : defaultPartitioner.partition(event, shardingKey, slices);
+        return (shardingKey != null && shardingKey.length > 0)
+                ? partitioner.partition(event, shardingKey, slices)
+                : defaultPartitioner.partition(event, shardingKey, slices);
     }
 }

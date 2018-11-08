@@ -38,9 +38,9 @@ public class UuidGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UuidGenerator.class);
 
-    private static final AtomicLong lastTicks = new AtomicLong(0L);
-    private static final SecureRandom random = new SecureRandom();
-    private static final long variantRnd = makeVariantRnd();
+    private static final AtomicLong LAST_TICKS = new AtomicLong(0L);
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final long VARIANT_RND = makeVariantRnd();
 
     private static final UuidGenerator CLIENT_GENERATOR_INSTANCE = new UuidGenerator(Type.CLIENT);
     private static final UuidGenerator INTERNAL_GENERATOR_INSTANCE = new UuidGenerator(Type.INTERNAL);
@@ -77,11 +77,11 @@ public class UuidGenerator {
     }
 
     private static long makeLeastSigBits(Type type) {
-        return variantRnd | (type.get() << 61);
+        return VARIANT_RND | (type.get() << 61);
     }
 
     private static long makeVariantRnd() {
-        long rnd = random.nextLong();
+        long rnd = RANDOM.nextLong();
         return 0x8000000000000000L// variant
                 | ((rnd & 0x0000FFFFFFFFFFFFL) << 13)// rnd
                 ;
@@ -92,15 +92,15 @@ public class UuidGenerator {
             long nowMillis = System.currentTimeMillis();
             long nowTicks = TimeUtil.unixTimeToGregorianTicks(nowMillis);
             long highTicks = TimeUtil.unixTimeToGregorianTicks(nowMillis + 1);
-            long lastTicks = UuidGenerator.lastTicks.get();
+            long lastTicks = UuidGenerator.LAST_TICKS.get();
             if (nowTicks > lastTicks) {
-                if (UuidGenerator.lastTicks.compareAndSet(lastTicks, nowTicks)) {
+                if (UuidGenerator.LAST_TICKS.compareAndSet(lastTicks, nowTicks)) {
                     return nowTicks;
                 }
                 // Someone else jumped to another millisecond: go to next spin
             } else {
                 if (highTicks > lastTicks) {
-                    return UuidGenerator.lastTicks.incrementAndGet();
+                    return UuidGenerator.LAST_TICKS.incrementAndGet();
                 }
                 // Run far ahead to next millisecond: go to next spin
             }
@@ -121,7 +121,9 @@ public class UuidGenerator {
         return Long.valueOf(pidString);
     }
 
-    private static long addr() {//TODO: Find lowest IPv4 addr except 127.0.0.1; Otherwise use hash of lowest IPv6 addr; Also, it's possible to compute hash of all available addresses;
+    private static long addr() {
+        /* TODO: Find lowest IPv4 addr except 127.0.0.1; Otherwise use hash of lowest IPv6 addr;
+        Also, it's possible to compute hash of all available addresses; */
         try {
             InetAddress addr = InetAddress.getLocalHost();
             byte[] bytes = addr.getAddress();

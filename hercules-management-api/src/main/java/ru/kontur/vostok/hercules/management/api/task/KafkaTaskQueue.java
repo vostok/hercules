@@ -58,7 +58,7 @@ public class KafkaTaskQueue {
     private void sendTask(KafkaTask task) {
         try {
             byte[] value = serializer.writeValueAsBytes(task);
-            ProducerRecord<Void, byte[]> record = new ProducerRecord<>(TaskConstants.kafkaTaskTopic, value);
+            ProducerRecord<Void, byte[]> record = new ProducerRecord<>(TaskConstants.KAFKA_TASK_TOPIC, value);
             Future<RecordMetadata> result = producer.send(record);
             result.get(5_000, TimeUnit.MILLISECONDS);
         } catch (JsonProcessingException | InterruptedException | ExecutionException | TimeoutException e) {

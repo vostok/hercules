@@ -54,11 +54,11 @@ public class PatternMatcher {
                 continue;
             }
             if (c == '*') {
-                sb.append(alphanumeric).append('*');
+                sb.append(ALPHANUMERIC).append('*');
                 continue;
             }
             if (c == '?') {
-                sb.append(alphanumeric);
+                sb.append(ALPHANUMERIC);
                 continue;
             }
             // Otherwise pattern is invalid thus throw illegal argument exception
@@ -68,5 +68,5 @@ public class PatternMatcher {
         return sb.toString();
     }
 
-    private static final String alphanumeric = "[a-z0-9_]";
+    private static final String ALPHANUMERIC = "[a-z0-9_]";
 }

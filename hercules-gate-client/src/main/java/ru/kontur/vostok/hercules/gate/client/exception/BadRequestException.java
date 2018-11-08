@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.gate.client.exception;
 /**
  * @author Daniil Zhenikhov
  */
-public class BadRequestException extends HerculesGateClientException{
+public class BadRequestException extends HerculesGateClientException {
     private static final String MESSAGE = "Bad request from client";
     private static final String STATUS_CODE_TEMPLATE = "Response was taken with status code %d";
 

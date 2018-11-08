@@ -131,12 +131,10 @@ public class CommonSingleSink {
         try {
             if (pinger.ping()) {
                 status.markBackendAlive();
-            }
-            else {
+            } else {
                 status.markBackendFailed();
             }
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             LOGGER.error("Ping error should never happen, stopping service", e);
             System.exit(1);
             throw e;

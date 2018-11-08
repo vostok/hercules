@@ -22,8 +22,7 @@ public final class Validators {
         return value -> {
             if (predicate.test(value)) {
                 return Optional.empty();
-            }
-            else {
+            } else {
                 return Optional.of(errorMessage);
             }
         };
@@ -39,8 +38,7 @@ public final class Validators {
         return value -> {
             if (lowerExclusiveBound.compareTo(value) < 0) {
                 return Optional.empty();
-            }
-            else {
+            } else {
                 return Optional.of(String.format("Value must be greater than '%s' but was '%s'", lowerExclusiveBound, value));
             }
         };
@@ -56,8 +54,7 @@ public final class Validators {
         return value -> {
             if (lowerInclusiveBound.compareTo(value) <= 0) {
                 return Optional.empty();
-            }
-            else {
+            } else {
                 return Optional.of(String.format("Value must be greater or equals '%s' but was '%s'", lowerInclusiveBound, value));
             }
         };
@@ -73,8 +70,7 @@ public final class Validators {
         return value -> {
             if (0 < upperExclusiveBound.compareTo(value)) {
                 return Optional.empty();
-            }
-            else {
+            } else {
                 return Optional.of(String.format("Value must be lesser than '%s' but was '%s'", upperExclusiveBound, value));
             }
         };
@@ -90,8 +86,7 @@ public final class Validators {
         return value -> {
             if (0 <= upperInclusiveBound.compareTo(value)) {
                 return Optional.empty();
-            }
-            else {
+            } else {
                 return Optional.of(String.format("Value must be lesser or equals '%s' but was '%s'", upperInclusiveBound, value));
             }
         };
@@ -106,10 +101,9 @@ public final class Validators {
      */
     public static <T extends Comparable<T>> Validator<T> interval(T lowerInclusiveBound, T upperExclusiveBound) {
         return value -> {
-            if (lowerInclusiveBound.compareTo(value) <=0 && 0 < upperExclusiveBound.compareTo(value)) {
+            if (lowerInclusiveBound.compareTo(value) <= 0 && 0 < upperExclusiveBound.compareTo(value)) {
                 return Optional.empty();
-            }
-            else {
+            } else {
                 return Optional.of(String.format(
                         "Value must be between '%s' (inclusive) and '%s' (exclusive), but was '%s'",
                         lowerInclusiveBound,
@@ -129,8 +123,7 @@ public final class Validators {
         return value -> {
             if (Objects.nonNull(value) && !value.isEmpty()) {
                 return Optional.empty();
-            }
-            else {
+            } else {
                 return Optional.of("String is empty");
             }
         };

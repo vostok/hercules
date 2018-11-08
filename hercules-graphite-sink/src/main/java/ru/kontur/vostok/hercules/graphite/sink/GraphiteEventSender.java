@@ -79,8 +79,7 @@ public class GraphiteEventSender implements BulkSender<Event> {
             long start = System.currentTimeMillis();
             sender.send(data);
             graphiteClientTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new BackendServiceFailedException(e);
         }
         return new BulkSenderStat(processed, dropped);
