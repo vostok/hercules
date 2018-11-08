@@ -27,21 +27,21 @@ public class HerculesRoutingHandler implements HttpHandler {
     public HerculesRoutingHandler get(final String template, final HttpHandler handler) {
         routingHandler.get(
                 template,
-                new MetricsHandler(handler, createMetricName("GET", template), metricsCollector)
+                new MetricsHandler(handler, createTemplateMetricName("GET", template), metricsCollector)
         );
         return this;
     }
 
     public HerculesRoutingHandler post(final String template, final HttpHandler handler) {
         routingHandler.post(
-                template, new MetricsHandler(handler, createMetricName("POST", template), metricsCollector)
+                template, new MetricsHandler(handler, createTemplateMetricName("POST", template), metricsCollector)
         );
         return this;
     }
 
     public HerculesRoutingHandler delete(final String template, final HttpHandler handler) {
         routingHandler.delete(
-                template, new MetricsHandler(handler, createMetricName("DELETE", template), metricsCollector)
+                template, new MetricsHandler(handler, createTemplateMetricName("DELETE", template), metricsCollector)
         );
         return this;
     }
@@ -51,7 +51,7 @@ public class HerculesRoutingHandler implements HttpHandler {
         routingHandler.handleRequest(exchange);
     }
 
-    private static String createMetricName(final String httpMethodName, String template) {
+    private static String createTemplateMetricName(final String httpMethodName, String template) {
         if (template.startsWith("/")) {
             template = template.substring(1);
         }
