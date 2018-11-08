@@ -52,10 +52,10 @@ public class HerculesRoutingHandler implements HttpHandler {
         routingHandler.handleRequest(exchange);
     }
 
-    private static String makeMetricsName(final String httpMethodCode, String template) {
+    private static String makeMetricsName(final String httpMethodName, String template) {
         if (template.startsWith("/")) {
             template = template.substring(1);
         }
-        return httpMethodCode + "_" + template.replaceAll("[^A-Za-z0-9_]", "_");
+        return httpMethodName + "_" + template.replaceAll("[^A-Za-z0-9_]", "_");
     }
 }
