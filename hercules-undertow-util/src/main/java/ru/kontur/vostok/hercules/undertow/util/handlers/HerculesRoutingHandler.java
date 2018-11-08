@@ -1,12 +1,10 @@
-package ru.kontur.vostok.hercules.undertow.util.metrics;
+package ru.kontur.vostok.hercules.undertow.util.handlers;
 
 import io.undertow.Handlers;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.RoutingHandler;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
-import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
 
 /**
  * HerculesRoutingHandler

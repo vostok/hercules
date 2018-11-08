@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.management.api;
 
-import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AdminAuthManager;
@@ -28,9 +27,7 @@ import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
-import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
-import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
-import ru.kontur.vostok.hercules.undertow.util.metrics.HerculesRoutingHandler;
+import ru.kontur.vostok.hercules.undertow.util.handlers.HerculesRoutingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 

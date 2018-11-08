@@ -1,14 +1,10 @@
 package ru.kontur.vostok.hercules.stream.api;
 
-import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
-import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
-import ru.kontur.vostok.hercules.undertow.util.metrics.HerculesRoutingHandler;
-import ru.kontur.vostok.hercules.undertow.util.metrics.MetricsHandler;
+import ru.kontur.vostok.hercules.undertow.util.handlers.HerculesRoutingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.Validators;
