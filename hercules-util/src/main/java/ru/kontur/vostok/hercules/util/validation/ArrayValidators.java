@@ -5,17 +5,17 @@ import java.util.Optional;
 /**
  * @author Gregory Koshelev
  */
-public final class LongValidators {
-    public static Validator<Long> positive() {
+public final class ArrayValidators {
+    public static <T> Validator<T[]> notEmpty() {
         return value -> {
-            if (value > 0) {
+            if (value.length > 0) {
                 return Optional.empty();
             }
-            return Optional.of("Value should be positive long but was " + value);
+            return Optional.of("Value should be non empty array");
         };
     }
 
-    private LongValidators() {
+    private ArrayValidators() {
         /* static class */
     }
 }

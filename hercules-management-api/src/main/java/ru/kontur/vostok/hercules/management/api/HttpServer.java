@@ -1,10 +1,10 @@
 package ru.kontur.vostok.hercules.management.api;
 
-import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
@@ -27,8 +27,7 @@ import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
-import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
-import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
+import ru.kontur.vostok.hercules.undertow.util.handlers.HerculesRoutingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -63,7 +62,8 @@ public class HttpServer {
             RuleRepository ruleRepository,
             SentryProjectRepository sentryProjectRepository,
             CassandraTaskQueue cassandraTaskQueue,
-            KafkaTaskQueue kafkaTaskQueue
+            KafkaTaskQueue kafkaTaskQueue,
+            MetricsCollector metricsCollector
     ) {
         final String host = Props.HOST.extract(properties);
         final int port = Props.PORT.extract(properties);
@@ -89,9 +89,7 @@ public class HttpServer {
         HttpHandler sentryRegistrySetHandler = adminAuthManagerWrapper.wrap(new SetProjectHandler(sentryProjectRepository));
         HttpHandler sentryRegistryDeleteHandler = adminAuthManagerWrapper.wrap(new DeleteProjectHandler(sentryProjectRepository));
 
-        HttpHandler handler = Handlers.routing()
-                .get("/ping", PingHandler.INSTANCE)
-                .get("/about", AboutHandler.INSTANCE)
+        HttpHandler handler = new HerculesRoutingHandler(metricsCollector)
                 .post("/streams/create", createStreamHandler)
                 .post("/streams/delete", deleteStreamHandler)
                 .get("/streams/list", listStreamHandler)

@@ -38,7 +38,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
     public SendRequestProcessor(MetricsCollector metricsCollector, EventSender eventSender) {
         this.eventSender = eventSender;
 
-        this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sent_events");
+        this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sentEvents");
     }
 
     @Override

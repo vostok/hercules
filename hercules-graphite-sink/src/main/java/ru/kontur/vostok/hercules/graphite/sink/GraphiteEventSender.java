@@ -50,7 +50,7 @@ public class GraphiteEventSender implements BulkSender<Event> {
 
         this.sender = new DefaultGraphiteClientRetryStrategy(new GraphiteClient(graphiteHost, graphitePort));
 
-        graphiteClientTimer = metricsCollector.timer("graphiteClient");
+        graphiteClientTimer = metricsCollector.timer("graphiteClientRequestTimeMs");
     }
 
     @Override
