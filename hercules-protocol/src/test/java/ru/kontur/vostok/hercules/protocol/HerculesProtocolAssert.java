@@ -13,42 +13,42 @@ import java.util.stream.StreamSupport;
 
 public class HerculesProtocolAssert {
 
-    private static final BiConsumer<Variant, Variant>[] asserters = new BiConsumer[256];
+    private static final BiConsumer<Variant, Variant>[] ASSERTERS = new BiConsumer[256];
 
     static {
-        Arrays.setAll(asserters, idx -> (expected, actual) -> Assert.assertEquals(expected.getValue(), actual.getValue()));
+        Arrays.setAll(ASSERTERS, idx -> (expected, actual) -> Assert.assertEquals(expected.getValue(), actual.getValue()));
 
-        asserters[Type.CONTAINER.code] = (expected, actual) -> assertEquals((Container) expected.getValue(), (Container) actual.getValue());
-        asserters[Type.STRING.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
-        asserters[Type.TEXT.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
+        ASSERTERS[Type.CONTAINER.code] = (expected, actual) -> assertEquals((Container) expected.getValue(), (Container) actual.getValue());
+        ASSERTERS[Type.STRING.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
+        ASSERTERS[Type.TEXT.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
 
-        asserters[Type.CONTAINER_VECTOR.code] = (expected, actual) -> assertArrayEquals(
+        ASSERTERS[Type.CONTAINER_VECTOR.code] = (expected, actual) -> assertArrayEquals(
                 (Container[]) expected.getValue(),
                 (Container[]) actual.getValue(),
                 HerculesProtocolAssert::assertEquals);
-        asserters[Type.BYTE_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
-        asserters[Type.SHORT_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((short[]) expected.getValue(), (short[]) actual.getValue());
-        asserters[Type.INTEGER_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((int[]) expected.getValue(), (int[]) actual.getValue());
-        asserters[Type.LONG_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((long[]) expected.getValue(), (long[]) actual.getValue());
-        asserters[Type.FLAG_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((boolean[]) expected.getValue(), (boolean[]) actual.getValue());
-        asserters[Type.FLOAT_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((float[]) expected.getValue(), (float[]) actual.getValue(), 0);
-        asserters[Type.DOUBLE_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((double[]) expected.getValue(), (double[]) actual.getValue(), 0);
-        asserters[Type.STRING_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
-        asserters[Type.TEXT_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
+        ASSERTERS[Type.BYTE_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
+        ASSERTERS[Type.SHORT_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((short[]) expected.getValue(), (short[]) actual.getValue());
+        ASSERTERS[Type.INTEGER_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((int[]) expected.getValue(), (int[]) actual.getValue());
+        ASSERTERS[Type.LONG_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((long[]) expected.getValue(), (long[]) actual.getValue());
+        ASSERTERS[Type.FLAG_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((boolean[]) expected.getValue(), (boolean[]) actual.getValue());
+        ASSERTERS[Type.FLOAT_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((float[]) expected.getValue(), (float[]) actual.getValue(), 0);
+        ASSERTERS[Type.DOUBLE_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((double[]) expected.getValue(), (double[]) actual.getValue(), 0);
+        ASSERTERS[Type.STRING_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
+        ASSERTERS[Type.TEXT_VECTOR.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
 
-        asserters[Type.CONTAINER_ARRAY.code] = (expected, actual) -> assertArrayEquals(
+        ASSERTERS[Type.CONTAINER_ARRAY.code] = (expected, actual) -> assertArrayEquals(
                 (Container[]) expected.getValue(),
                 (Container[]) actual.getValue(),
                 HerculesProtocolAssert::assertEquals);
-        asserters[Type.BYTE_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
-        asserters[Type.SHORT_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((short[]) expected.getValue(), (short[]) actual.getValue());
-        asserters[Type.INTEGER_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((int[]) expected.getValue(), (int[]) actual.getValue());
-        asserters[Type.LONG_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((long[]) expected.getValue(), (long[]) actual.getValue());
-        asserters[Type.FLAG_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((boolean[]) expected.getValue(), (boolean[]) actual.getValue());
-        asserters[Type.FLOAT_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((float[]) expected.getValue(), (float[]) actual.getValue(), 0);
-        asserters[Type.DOUBLE_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((double[]) expected.getValue(), (double[]) actual.getValue(), 0);
-        asserters[Type.STRING_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
-        asserters[Type.TEXT_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
+        ASSERTERS[Type.BYTE_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((byte[]) expected.getValue(), (byte[]) actual.getValue());
+        ASSERTERS[Type.SHORT_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((short[]) expected.getValue(), (short[]) actual.getValue());
+        ASSERTERS[Type.INTEGER_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((int[]) expected.getValue(), (int[]) actual.getValue());
+        ASSERTERS[Type.LONG_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((long[]) expected.getValue(), (long[]) actual.getValue());
+        ASSERTERS[Type.FLAG_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((boolean[]) expected.getValue(), (boolean[]) actual.getValue());
+        ASSERTERS[Type.FLOAT_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((float[]) expected.getValue(), (float[]) actual.getValue(), 0);
+        ASSERTERS[Type.DOUBLE_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((double[]) expected.getValue(), (double[]) actual.getValue(), 0);
+        ASSERTERS[Type.STRING_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
+        ASSERTERS[Type.TEXT_ARRAY.code] = (expected, actual) -> Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
     }
 
     public static <T> void assertArrayEquals(T[] expected, T[] actual, BiConsumer<T, T> asserter) {
@@ -109,7 +109,7 @@ public class HerculesProtocolAssert {
 
     public static void assertEquals(Variant expected, Variant actual) {
         Assert.assertEquals(expected.getType(), actual.getType());
-        asserters[expected.getType().code].accept(expected, actual);
+        ASSERTERS[expected.getType().code].accept(expected, actual);
     }
 
     public static void assertEquals(Container expected, Container actual) {

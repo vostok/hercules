@@ -37,8 +37,8 @@ public class KafkaInitializer {
         try (AdminClient adminClient = AdminClient.create(kafkaProperties)) {
             CreateTopicsResult result = adminClient.createTopics(
                     Arrays.asList(
-                            new NewTopic(TaskConstants.kafkaTaskTopic, 1, replicationFactor),
-                            new NewTopic(TaskConstants.cassandraTaskTopic, 1, replicationFactor)));
+                            new NewTopic(TaskConstants.KAFKA_TASK_TOPIC, 1, replicationFactor),
+                            new NewTopic(TaskConstants.CASSANDRA_TASK_TOPIC, 1, replicationFactor)));
             result.all();
         }
     }

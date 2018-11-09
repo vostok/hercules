@@ -11,7 +11,7 @@ import java.io.ByteArrayOutputStream;
  * @author Daniil Zhenikhov
  */
 public class EventWriterUtil {
-    private static final ArrayWriter<Event> arrayWriter = new ArrayWriter<>(new EventWriter());
+    private static final ArrayWriter<Event> ARRAY_WRITER = new ArrayWriter<>(new EventWriter());
 
     /**
      * Convert array of events to byte array
@@ -23,7 +23,7 @@ public class EventWriterUtil {
     public static byte[] toBytes(int size, Event[] events) {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream(size);
         Encoder encoder = new Encoder(byteStream);
-        arrayWriter.write(encoder, events);
+        ARRAY_WRITER.write(encoder, events);
 
         return byteStream.toByteArray();
     }

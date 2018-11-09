@@ -18,8 +18,7 @@ public class ReaderIterator<T> implements Iterator<T> {
         this.elementReader = elementReader;
         try {
             this.total = decoder.readInteger();
-        }
-        catch (BufferUnderflowException e) {
+        } catch (BufferUnderflowException e) {
             throw new InvalidDataException(e);
         }
         this.remaining = total;

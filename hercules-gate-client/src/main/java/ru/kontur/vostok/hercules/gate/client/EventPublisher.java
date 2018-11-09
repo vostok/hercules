@@ -160,6 +160,7 @@ public class EventPublisher {
      * @param eventQueue EventQueue should be processing
      * @return actual count of events which has been processed
      */
+    // FIXME: review this method
     private int process(EventQueue eventQueue) {
         List<Event> events = new ArrayList<>(eventQueue.getBatchSize());
         int actualBatchSize = eventQueue.drainTo(events, eventQueue.getBatchSize());
@@ -172,8 +173,9 @@ public class EventPublisher {
         int lastUnprocessedIndex = 0;
 
         for (int index = 0; index < events.size(); index++) {
-            if (events.get(index).getBytes().length >= CommonConstants.MAX_MESSAGE_SIZE)
+            if (events.get(index).getBytes().length >= CommonConstants.MAX_MESSAGE_SIZE) {
                 continue;
+            }
 
             if (size + events.get(index).getBytes().length >= CommonConstants.MAX_MESSAGE_SIZE) {
                 sendSliceEvents(events, eventQueue.getStream(), size, lastUnprocessedIndex, index);

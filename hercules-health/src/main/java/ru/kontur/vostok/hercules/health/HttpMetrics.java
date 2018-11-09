@@ -76,14 +76,11 @@ public class HttpMetrics {
     public void mark(int statusCode, long duration) {
         if (200 <= statusCode && statusCode < 400) {
             r2XX.update(duration, TimeUnit.MILLISECONDS);
-        }
-        else if (400 <= statusCode && statusCode < 500) {
+        } else if (400 <= statusCode && statusCode < 500) {
             r4XX.update(duration, TimeUnit.MILLISECONDS);
-        }
-        else if (500 <= statusCode && statusCode < 600) {
+        } else if (500 <= statusCode && statusCode < 600) {
             r5XX.update(duration, TimeUnit.MILLISECONDS);
-        }
-        else {
+        } else {
             LOGGER.error("Unsupported HTTP status code {}", statusCode);
             return;
         }

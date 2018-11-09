@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.gate.client.exception;
 /**
  * @author Daniil Zhenikhov
  */
-public class UnavailableHostException extends HerculesGateClientException{
+public class UnavailableHostException extends HerculesGateClientException {
     private static final String MESSAGE = "Host is unavailable";
     private static final String MESSAGE_TEMPLATE = "Host[%s] is unavailable";
 

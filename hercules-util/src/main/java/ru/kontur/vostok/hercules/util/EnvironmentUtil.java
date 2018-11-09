@@ -16,8 +16,7 @@ public final class EnvironmentUtil {
         String envValue = null;
         try {
             envValue = System.getenv(envName);
-        }
-        catch (SecurityException e) {
+        } catch (SecurityException e) {
             LOGGER.warn("Cannot get access to '{}' env", envName, e);
         }
         return envValue;

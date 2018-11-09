@@ -24,7 +24,7 @@ public class LogicalPartitioner {
                 return new int[]{};
             }
         } else {
-            int[] res = new int[(totalPartitions - k - 1)/ n + 1];
+            int[] res = new int[(totalPartitions - k - 1) / n + 1];
             for (int i = 0; i < res.length; ++i ) {
                 res[i] = k + i * n;
             }

@@ -74,17 +74,18 @@ public class SentryClientHolder {
                     String dsnString = dsn.get();
                     try {
                         new URL(dsnString);
-                    }
-                    catch (MalformedURLException e) {
+                    } catch (MalformedURLException e) {
                         throw new Exception(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
                     }
-                    updatedClients.put(String.format("%s/%s", projectInfo.getOrganization().getSlug(), projectInfo.getSlug()), SentryClientFactory.sentryClient(applySettings(dsnString)));
+                    updatedClients.put(
+                            String.format("%s/%s", projectInfo.getOrganization().getSlug(), projectInfo.getSlug()),
+                            SentryClientFactory.sentryClient(applySettings(dsnString))
+                    );
                 }
             }
 
             clients.set(updatedClients);
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             LOGGER.error("Error in scheduled thread", t);
             System.exit(1);
         }

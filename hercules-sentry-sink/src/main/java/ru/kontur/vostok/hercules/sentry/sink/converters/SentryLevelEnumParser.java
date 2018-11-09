@@ -30,8 +30,7 @@ public final class SentryLevelEnumParser {
     private static String prepareLevel(String original) {
         if ("warn".equals(original.toLowerCase())) {
             return "warning";
-        }
-        else {
+        } else {
             return original;
         }
     }

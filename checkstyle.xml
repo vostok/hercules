@@ -61,5 +61,6 @@
             <property name="allowEmptyTypes" value="true"/>
             <property name="allowEmptyLoops" value="true"/>
         </module>
+        <module name="ModifierOrder"/>
     </module>
 </module>

@@ -21,8 +21,7 @@ public class ContainerUtil {
         Function<Object, ? extends T> extractor = tag.getExtractors().get(type);
         if (Objects.isNull(extractor)) {
             throw new IllegalArgumentException(String.format("Tag '%s' cannot contain value of type '%s'", tag.getName(),  type));
-        }
-        else {
+        } else {
             Object value = Optional.ofNullable(variant).map(Variant::getValue).orElse(null);
             return extractor.apply(value);
         }

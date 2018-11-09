@@ -105,8 +105,7 @@ public class ApplicationContextHolder {
         InputStream resourceAsStream = ApplicationContextHolder.class.getClassLoader().getResourceAsStream(GIT_PROPERTIES);
         if (Objects.nonNull(resourceAsStream)) {
             ThrowableUtil.toUnchecked(() -> gitProperties.load(resourceAsStream));
-        }
-        else {
+        } else {
             LOGGER.warn("Cannot load '{}' file", GIT_PROPERTIES);
         }
         return gitProperties;

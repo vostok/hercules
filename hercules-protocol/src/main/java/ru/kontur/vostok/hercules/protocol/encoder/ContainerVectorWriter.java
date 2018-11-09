@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 public class ContainerVectorWriter implements Writer<Container[]> {
     public static final ContainerVectorWriter INSTANCE = new ContainerVectorWriter();
 
-    private static final ContainerWriter containerWriter = ContainerWriter.INSTANCE;
+    private static final ContainerWriter CONTAINER_WRITER = ContainerWriter.INSTANCE;
 
     /**
      * Write containers' array with encoder.
@@ -23,7 +23,7 @@ public class ContainerVectorWriter implements Writer<Container[]> {
         encoder.writeVectorLength(value.length);
 
         for (Container container : value) {
-            containerWriter.write(encoder, container);
+            CONTAINER_WRITER.write(encoder, container);
         }
     }
 }

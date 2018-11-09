@@ -24,7 +24,16 @@ public class IndexToElasticJsonWriterTest {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         IndexToElasticJsonWriter.tryWriteIndex(stream, event);
 
-        assertEquals("{\"index\":{\"_index\":\"just-some-index-value\",\"_type\":\"LogEvent\",\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"}}", stream.toString());
+        assertEquals(
+                "{" +
+                        "\"index\":{" +
+                        "\"_index\":\"just-some-index-value\"," +
+                        "\"_type\":\"LogEvent\"," +
+                        "\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"" +
+                        "}" +
+                        "}",
+                stream.toString()
+        );
     }
 
     @Test
@@ -38,7 +47,16 @@ public class IndexToElasticJsonWriterTest {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         IndexToElasticJsonWriter.tryWriteIndex(stream, event);
 
-        assertEquals("{\"index\":{\"_index\":\"awesome-project-production-1582.10.15\",\"_type\":\"LogEvent\",\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"}}", stream.toString());
+        assertEquals(
+                "{" +
+                        "\"index\":{" +
+                        "\"_index\":\"awesome-project-production-1582.10.15\"," +
+                        "\"_type\":\"LogEvent\"," +
+                        "\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"" +
+                        "}" +
+                        "}",
+                stream.toString()
+        );
     }
 
     @Test

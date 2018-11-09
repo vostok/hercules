@@ -2,23 +2,19 @@ package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.encoder.ContainerWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
 import java.io.ByteArrayOutputStream;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Simple Event build. NOT thread-safe
  */
 public class EventBuilder {
 
-    private static final ContainerWriter containerWriter = new ContainerWriter();
+    private static final ContainerWriter CONTAINER_WRITER = new ContainerWriter();
 
     private UUID eventId;
     private int version;
@@ -56,7 +52,7 @@ public class EventBuilder {
         encoder.writeUuid(eventId);
 
         Container container = containerBuilder.build();
-        containerWriter.write(encoder, container);
+        CONTAINER_WRITER.write(encoder, container);
 
         return new Event(stream.toByteArray(), version, eventId, container);
     }

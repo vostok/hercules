@@ -142,8 +142,7 @@ public abstract class AbstractSingleSinkDaemon {
 
         try {
             shutdownSink();
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             LOGGER.error("Should never happen, all throwables must be catched and processed inside shutdownSink method", t);
         }
 

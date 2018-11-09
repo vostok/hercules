@@ -105,8 +105,7 @@ public class StreamApiApplication {
             if (streamReader != null) {
                 streamReader.stop();
             }
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             LOGGER.error("Error on stopping stream reader", t);
             //TODO: Process error
         }
