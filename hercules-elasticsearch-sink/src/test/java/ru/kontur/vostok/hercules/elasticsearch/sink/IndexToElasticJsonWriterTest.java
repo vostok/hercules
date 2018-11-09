@@ -26,11 +26,11 @@ public class IndexToElasticJsonWriterTest {
 
         assertEquals(
                 "{" +
-                          "\"index\":{" +
-                            "\"_index\":\"just-some-index-value\"," +
-                            "\"_type\":\"LogEvent\"," +
-                            "\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"" +
-                          "}" +
+                        "\"index\":{" +
+                        "\"_index\":\"just-some-index-value\"," +
+                        "\"_type\":\"LogEvent\"," +
+                        "\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"" +
+                        "}" +
                         "}",
                 stream.toString()
         );
@@ -49,11 +49,11 @@ public class IndexToElasticJsonWriterTest {
 
         assertEquals(
                 "{" +
-                          "\"index\":{" +
-                            "\"_index\":\"awesome-project-production-1582.10.15\"," +
-                            "\"_type\":\"LogEvent\"," +
-                            "\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"" +
-                          "}" +
+                        "\"index\":{" +
+                        "\"_index\":\"awesome-project-production-1582.10.15\"," +
+                        "\"_type\":\"LogEvent\"," +
+                        "\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"" +
+                        "}" +
                         "}",
                 stream.toString()
         );
