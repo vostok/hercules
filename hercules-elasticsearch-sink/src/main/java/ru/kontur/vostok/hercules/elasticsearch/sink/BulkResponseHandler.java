@@ -47,10 +47,10 @@ public final class BulkResponseHandler {
             "es_rejected_execution_exception"
     ));
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
 
-    private final static JsonFactory FACTORY = new JsonFactory();
-    private final static ObjectMapper MAPPER = new ObjectMapper(FACTORY);
+    private static final JsonFactory FACTORY = new JsonFactory();
+    private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
 
     // TODO: Replace with a good parser
     public static Result process(HttpEntity httpEntity) {

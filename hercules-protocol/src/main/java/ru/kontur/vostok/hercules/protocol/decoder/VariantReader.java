@@ -16,11 +16,11 @@ public class VariantReader implements Reader<Variant> {
     /**
      * Type decoders
      */
-    private final static ObjectReader[] DECODERS = new ObjectReader[256];
+    private static final ObjectReader[] DECODERS = new ObjectReader[256];
     /**
      * Skip methods
      */
-    private final static ObjectSkipper[] SKIPPERS = new ObjectSkipper[256];
+    private static final ObjectSkipper[] SKIPPERS = new ObjectSkipper[256];
 
     static {
         Arrays.setAll(DECODERS, idx -> decoder -> {

@@ -48,7 +48,7 @@ public enum Type {
         return CODES[code & 0xFF];
     }
 
-    private final static Type[] CODES = new Type[256];
+    private static final Type[] CODES = new Type[256];
     static {
         Arrays.fill(CODES, RESERVED);
 

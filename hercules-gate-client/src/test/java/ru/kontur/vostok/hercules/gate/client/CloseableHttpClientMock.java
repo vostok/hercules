@@ -24,9 +24,9 @@ public class CloseableHttpClientMock extends CloseableHttpClient {
     private static final String CLIENT_PROTOCOL_EXC_ADDR = "error_client_2" + PING_METHOD;
     private static final String IOEXC_ADDR = "error_host_3" + PING_METHOD;
 
-    private final static CloseableHttpResponse ERROR_4XX;
-    private final static CloseableHttpResponse ERROR_5XX;
-    private final static CloseableHttpResponse ERROR_503;
+    private static final CloseableHttpResponse ERROR_4XX;
+    private static final CloseableHttpResponse ERROR_5XX;
+    private static final CloseableHttpResponse ERROR_503;
 
     static {
         ERROR_4XX = Mockito.mock(CloseableHttpResponse.class);
