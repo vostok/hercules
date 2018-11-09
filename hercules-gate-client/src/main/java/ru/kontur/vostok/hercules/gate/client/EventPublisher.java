@@ -154,6 +154,7 @@ public class EventPublisher {
      * @param eventQueue EventQueue should be processing
      * @return actual count of events which has been processed
      */
+    // FIXME: review this method
     private int process(EventQueue eventQueue) {
         List<Event> events = new ArrayList<>(eventQueue.getBatchSize());
         int actualBatchSize = eventQueue.drainTo(events, eventQueue.getBatchSize());
