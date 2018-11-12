@@ -13,6 +13,7 @@ public final class CommonMetrics {
         metricsCollector.gauge("gc.freeMemoryBytes", runtime::freeMemory);
         metricsCollector.gauge("gc.usedMemoryBytes", () -> runtime.totalMemory() - runtime.freeMemory());
         metricsCollector.gauge("gc.maxMemoryBytes", runtime::maxMemory);
+        metricsCollector.gauge("gc.totalFreeMemoryBytes", () -> runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory());
     }
 
     private CommonMetrics() {
