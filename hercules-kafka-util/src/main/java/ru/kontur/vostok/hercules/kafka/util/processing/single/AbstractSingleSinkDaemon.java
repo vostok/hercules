@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.ServicePinger;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -57,6 +58,7 @@ public abstract class AbstractSingleSinkDaemon {
         try {
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
+            CommonMetrics.registerMemoryMetrics(metricsCollector);
 
             applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
             applicationStatusHttpServer.start();
