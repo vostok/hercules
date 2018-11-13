@@ -82,7 +82,7 @@ public class ManagementApiApplication {
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
-            CommonMetrics.registerMemoryMetrics(metricsCollector);
+            CommonMetrics.registerCommonMetrics(metricsCollector);
 
             server = new HttpServer(
                     httpserverProperties,

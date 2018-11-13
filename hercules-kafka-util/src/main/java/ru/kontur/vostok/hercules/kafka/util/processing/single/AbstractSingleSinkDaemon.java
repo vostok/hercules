@@ -58,7 +58,7 @@ public abstract class AbstractSingleSinkDaemon {
         try {
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
-            CommonMetrics.registerMemoryMetrics(metricsCollector);
+            CommonMetrics.registerCommonMetrics(metricsCollector);
 
             applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
             applicationStatusHttpServer.start();

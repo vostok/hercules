@@ -52,7 +52,7 @@ public class StreamApiApplication {
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
-            CommonMetrics.registerMemoryMetrics(metricsCollector);
+            CommonMetrics.registerCommonMetrics(metricsCollector);
 
             server = new HttpServer(httpServerProperties, authManager, new ReadStreamHandler(streamReader), metricsCollector);
             server.start();

@@ -56,7 +56,7 @@ public class TimelineApiApplication {
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
-            CommonMetrics.registerMemoryMetrics(metricsCollector);
+            CommonMetrics.registerCommonMetrics(metricsCollector);
 
             server = new HttpServer(
                     httpServerProperties,

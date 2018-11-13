@@ -53,7 +53,13 @@ public abstract class AbstractBulkSinkDaemon {
 
         metricsCollector = new MetricsCollector(metricsProperties);
         metricsCollector.start();
-        CommonMetrics.registerMemoryMetrics(metricsCollector);
+        CommonMetrics.registerCommonMetrics(
+                metricsCollector,
+                "consumer-pool-\\d+",
+                "I/O dispatcher \\d+",
+                "\\d+-sender-pool-\\d+",
+                "XNIO-1 I/O-\\d+"
+        );
 
         applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
         applicationStatusHttpServer.start();
