@@ -10,6 +10,8 @@ import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.SimpleTimer;
 
 import java.util.Map;
@@ -21,6 +23,13 @@ import java.util.concurrent.TimeUnit;
  * Abstract sink daemon implementation
  */
 public abstract class AbstractBulkSinkDaemon {
+
+    private static class MetricsProps {
+        static final PropertyDescription<String[]> THREAD_GROUP_REGEXP = PropertyDescriptions
+                .arrayOfStringsProperty("thread.group.regexp")
+                .withDefaultValue(new String[]{})
+                .build();
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBulkSinkDaemon.class);
 
@@ -55,10 +64,7 @@ public abstract class AbstractBulkSinkDaemon {
         metricsCollector.start();
         CommonMetrics.registerCommonMetrics(
                 metricsCollector,
-                "consumer-pool-\\d+",
-                "I/O dispatcher \\d+",
-                "\\d+-sender-pool-\\d+",
-                "XNIO-1 I/O-\\d+"
+                MetricsProps.THREAD_GROUP_REGEXP.extract(metricsProperties)
         );
 
         applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
