@@ -1,4 +1,6 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
+
+import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 
 import java.util.Collection;
 

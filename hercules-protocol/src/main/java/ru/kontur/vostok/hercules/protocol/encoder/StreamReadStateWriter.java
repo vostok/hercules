@@ -5,10 +5,10 @@ import ru.kontur.vostok.hercules.protocol.StreamReadState;
 
 public class StreamReadStateWriter implements Writer<StreamReadState> {
 
-    private static final ArrayWriter<StreamShardReadState> arrayWriter = new ArrayWriter<>(new StreamShardReadStateWriter());
+    private static final ArrayWriter<StreamShardReadState> ARRAY_WRITER = new ArrayWriter<>(new StreamShardReadStateWriter());
 
     @Override
     public void write(Encoder encoder, StreamReadState streamReadState) {
-        arrayWriter.write(encoder, streamReadState.getShardStates());
+        ARRAY_WRITER.write(encoder, streamReadState.getShardStates());
     }
 }

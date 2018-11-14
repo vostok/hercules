@@ -1,5 +1,7 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
+import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
+import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.LinkedList;
@@ -66,9 +68,9 @@ public class BulkQueue<Key, Value> {
 
     private final BlockingQueue<BulkQueue.RunUnit<Key, Value>> queue;
     private final Queue<Future<Result<RunResult<Key, Value>, BackendServiceFailedException>>> commitQueue = new LinkedList<>();
-    private final CommonBulkSinkStatusFsm status;
+    private final SinkStatusFsm status;
 
-    public BulkQueue(int queueSize, CommonBulkSinkStatusFsm status) {
+    public BulkQueue(int queueSize, SinkStatusFsm status) {
         this.queue = new ArrayBlockingQueue<>(queueSize);
         this.status = status;
     }
@@ -79,8 +81,7 @@ public class BulkQueue<Key, Value> {
 
         try {
             while (status.isRunning() && !queue.offer(unit, STOPPED_CHECK_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {/* empty */}
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new RuntimeException("Should never happened", e);
         }
         commitQueue.add(future);
@@ -93,8 +94,7 @@ public class BulkQueue<Key, Value> {
             do {
                 result = queue.poll(STOPPED_CHECK_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             } while (status.isRunning() && Objects.isNull(result));
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new RuntimeException("Should never happened", e);
         }
 
@@ -122,8 +122,7 @@ public class BulkQueue<Key, Value> {
         }
         if (Objects.isNull(result.get())) {
             return null;
-        }
-        else {
+        } else {
             return new RunResult<>(result.get().storage, new BulkSenderStat(processed, dropped));
         }
     }

@@ -8,5 +8,5 @@ public final class KafkaDefaults {
 
     }
 
-    public static short DEFAULT_REPLICATION_FACTOR = 3;
+    public static final short DEFAULT_REPLICATION_FACTOR = 3;
 }

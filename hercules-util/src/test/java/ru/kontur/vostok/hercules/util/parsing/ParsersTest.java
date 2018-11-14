@@ -79,8 +79,7 @@ public class ParsersTest {
         Result<URL[], String> result = Parsers.parseArray(URL.class, s -> {
             try {
                 return Result.ok(new URL(s));
-            }
-            catch (MalformedURLException e) {
+            } catch (MalformedURLException e) {
                 return Result.error("dummy");
             }
         }).parse("http://test.com");

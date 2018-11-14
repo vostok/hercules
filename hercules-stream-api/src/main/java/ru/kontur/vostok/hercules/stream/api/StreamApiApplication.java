@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -40,7 +41,7 @@ public class StreamApiApplication {
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
 
-            ApplicationContextHolder.init("stream-api", contextProperties);
+            ApplicationContextHolder.init("Hercules stream API", "stream-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -51,6 +52,7 @@ public class StreamApiApplication {
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
+            CommonMetrics.registerCommonMetrics(metricsCollector);
 
             server = new HttpServer(httpServerProperties, authManager, new ReadStreamHandler(streamReader), metricsCollector);
             server.start();
@@ -105,8 +107,7 @@ public class StreamApiApplication {
             if (streamReader != null) {
                 streamReader.stop();
             }
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             LOGGER.error("Error on stopping stream reader", t);
             //TODO: Process error
         }

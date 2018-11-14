@@ -6,8 +6,8 @@ import ru.kontur.vostok.hercules.graphite.client.GraphiteClient;
 import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricData;
 import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricDataSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkSenderStat;
+import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSenderStat;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.tags.MetricsTags;
@@ -50,7 +50,7 @@ public class GraphiteEventSender implements BulkSender<Event> {
 
         this.sender = new DefaultGraphiteClientRetryStrategy(new GraphiteClient(graphiteHost, graphitePort));
 
-        graphiteClientTimer = metricsCollector.timer("graphiteClient");
+        graphiteClientTimer = metricsCollector.timer("graphiteClientRequestTimeMs");
     }
 
     @Override
@@ -79,8 +79,7 @@ public class GraphiteEventSender implements BulkSender<Event> {
             long start = System.currentTimeMillis();
             sender.send(data);
             graphiteClientTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new BackendServiceFailedException(e);
         }
         return new BulkSenderStat(processed, dropped);

@@ -44,9 +44,9 @@ public class KafkaTaskConsumer {
 
         executor.submit(() -> {
             try {
-                consumer.subscribe(Collections.singletonList(TaskConstants.kafkaTaskTopic));
+                consumer.subscribe(Collections.singletonList(TaskConstants.KAFKA_TASK_TOPIC));
 
-                while(true) {
+                while (true) {
                     ConsumerRecords<Void, byte[]> records = consumer.poll(Long.MAX_VALUE);
                     for (ConsumerRecord<Void, byte[]> record : records) {
                         byte[] value = record.value();

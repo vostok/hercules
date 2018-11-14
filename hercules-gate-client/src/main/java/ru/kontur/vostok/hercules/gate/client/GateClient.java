@@ -18,9 +18,13 @@ import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Properties;
 import java.util.Random;
 
 /**
@@ -32,9 +36,6 @@ public class GateClient implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GateClient.class);
     private static final Random RANDOM = new Random();
 
-    private static final int TIMEOUT = 30_000;
-    private static final int CONNECTION_COUNT = 1000;
-
     private static final String PING = "/ping";
     private static final String SEND_ACK = "/stream/send";
     private static final String SEND_ASYNC = "/stream/sendAsync";
@@ -45,8 +46,12 @@ public class GateClient implements Closeable {
         this.client = client;
     }
 
-    public GateClient() {
-        this.client = createHttpClient();
+    public GateClient(Properties properties) {
+        final int requestTimeout = Props.REQUEST_TIMEOUT.extract(properties);
+        final int connectionTimeout = Props.CONNECTION_TIMEOUT.extract(properties);
+        final int connectionCount = Props.CONNECTION_COUNT.extract(properties);
+
+        this.client = createHttpClient(requestTimeout, connectionTimeout, connectionCount);
     }
 
     /**
@@ -210,7 +215,9 @@ public class GateClient implements Closeable {
                 sender.send(urls[i]);
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
-                LOGGER.warn("Send fails", e);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Send fails", e);
+                }
             }
         }
 
@@ -269,20 +276,23 @@ public class GateClient implements Closeable {
     /**
      * Tuning of {@link CloseableHttpClient}
      *
+     * @param requestTimeout request timeout aka socket timeout (in millis)
+     * @param connectionTimeout connection timeout (in millis)
+     * @param connectionCount maximum client connections
      * @return Customized http client
      */
-    private CloseableHttpClient createHttpClient() {
+    private static CloseableHttpClient createHttpClient(int requestTimeout, int connectionTimeout, int connectionCount) {
         RequestConfig requestConfig = RequestConfig
                 .custom()
-                .setSocketTimeout(TIMEOUT)
-                .setConnectTimeout(TIMEOUT)
+                .setSocketTimeout(requestTimeout)
+                .setConnectTimeout(connectionTimeout)
                 .build();
 
         return HttpClientBuilder
                 .create()
                 .setDefaultRequestConfig(requestConfig)
-                .setMaxConnPerRoute(CONNECTION_COUNT)
-                .setMaxConnTotal(CONNECTION_COUNT)
+                .setMaxConnPerRoute(connectionCount)
+                .setMaxConnTotal(connectionCount)
                 .build();
     }
 
@@ -294,5 +304,28 @@ public class GateClient implements Closeable {
     @FunctionalInterface
     private interface HerculesRequestSender {
         void send(String url) throws BadRequestException, UnavailableHostException, HttpProtocolException;
+    }
+
+    private static class Props {
+        static final PropertyDescription<Integer> REQUEST_TIMEOUT =
+                PropertyDescriptions
+                        .integerProperty("requestTimeout")
+                        .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
+                        .withValidator(IntegerValidators.positive())
+                        .build();
+
+        static final PropertyDescription<Integer> CONNECTION_TIMEOUT =
+                PropertyDescriptions
+                        .integerProperty("connectionTimeout")
+                        .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
+                        .withValidator(IntegerValidators.positive())
+                        .build();
+
+        static final PropertyDescription<Integer> CONNECTION_COUNT =
+                PropertyDescriptions
+                        .integerProperty("connectionCount")
+                        .withDefaultValue(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
+                        .withValidator(IntegerValidators.positive())
+                        .build();
     }
 }

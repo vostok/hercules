@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.undertow.util;
+package ru.kontur.vostok.hercules.undertow.util.handlers;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;

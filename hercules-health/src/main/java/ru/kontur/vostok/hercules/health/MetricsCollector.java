@@ -65,8 +65,9 @@ public class MetricsCollector {
         ApplicationContext applicationContext = ApplicationContextHolder.get();
         String prefix = String.join(".",
                 Props.GRAPHITE_PREFIX.extract(properties),
-                applicationContext.getName(),
+                applicationContext.getApplicationId(),
                 applicationContext.getEnvironment(),
+                applicationContext.getDataCenter(),
                 applicationContext.getInstanceId()
         );
 

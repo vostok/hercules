@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.CommitFailedException;
@@ -10,6 +10,9 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.Serde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
+import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatus;
+import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
@@ -59,7 +62,7 @@ public class BulkConsumer implements Runnable {
     private final int pollTimeout;
     private final int batchSize;
 
-    private final CommonBulkSinkStatusFsm status;
+    private final SinkStatusFsm status;
     private final BulkQueue<UUID, Event> queue;
     private final BulkSenderPool<UUID, Event> senderPool;
 
@@ -76,7 +79,7 @@ public class BulkConsumer implements Runnable {
             Properties sinkProperties,
             PatternMatcher streamPattern,
             String consumerGroupId,
-            CommonBulkSinkStatusFsm status,
+            SinkStatusFsm status,
             Supplier<BulkSender<Event>> senderFactory,
             Meter receivedEventsMeter,
             Meter receivedEventsSizeMeter,
@@ -125,13 +128,12 @@ public class BulkConsumer implements Runnable {
             try {
                 try {
                     status.waitForState(
-                            CommonBulkSinkStatus.RUNNING,
-                            CommonBulkSinkStatus.STOPPING_FROM_INIT,
-                            CommonBulkSinkStatus.STOPPING_FROM_RUNNING,
-                            CommonBulkSinkStatus.STOPPING_FROM_SUSPEND
+                            SinkStatus.RUNNING,
+                            SinkStatus.STOPPING_FROM_INIT,
+                            SinkStatus.STOPPING_FROM_RUNNING,
+                            SinkStatus.STOPPING_FROM_SUSPEND
                     );
-                }
-                catch (InterruptedException | ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException("Should never happened", e);
                 }
                 if (!status.isRunning()) {
@@ -167,8 +169,7 @@ public class BulkConsumer implements Runnable {
                                 }
                             }
                             timeLeft = timer.timeLeft();
-                        }
-                        catch (WakeupException e) {
+                        } catch (WakeupException e) {
                             /*
                              * Skip wakeup exception as it is termination signal,
                              * then process already polled data
@@ -214,22 +215,18 @@ public class BulkConsumer implements Runnable {
                     current = next;
                     next = new RecordStorage<>(batchSize);
                 }
-            }
-            catch (CommitFailedException e) {
+            } catch (CommitFailedException e) {
                 LOGGER.warn("Consumer was kicked by timeout");
-            }
-            catch (BackendServiceFailedException e) {
+            } catch (BackendServiceFailedException e) {
                 LOGGER.error("Backend failed with", e);
                 status.markBackendFailed();
-            }
-            finally {
+            } finally {
                 consumer.unsubscribe();
             }
         }
         try {
             senderPool.stop();
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new RuntimeException("Should never happened", e);
         }
     }
