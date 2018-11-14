@@ -44,6 +44,8 @@ public class ApplicationStatusHttpServer {
         undertow = Undertow.builder()
                 .addHttpListener(port, host)
                 .setHandler(handler)
+                .setIoThreads(2)
+                .setWorkerThreads(1)
                 .build();
     }
 
