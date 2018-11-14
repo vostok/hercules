@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
@@ -55,6 +56,7 @@ public class TimelineApiApplication {
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
+            CommonMetrics.registerCommonMetrics(metricsCollector);
 
             server = new HttpServer(
                     httpServerProperties,
