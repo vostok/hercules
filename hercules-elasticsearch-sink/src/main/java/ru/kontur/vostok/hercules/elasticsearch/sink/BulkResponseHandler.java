@@ -108,14 +108,20 @@ public final class BulkResponseHandler {
             } else {
                 String type = Optional.ofNullable(error.get("type")).map(JsonNode::asText).orElse("");
                 String reason = Optional.ofNullable(error.get("reason")).map(JsonNode::asText).orElse("");
-                LOGGER.error(String.format(
-                        "Bulk processing error: index=%s, id=%s, type=%s, reason=%s",
-                        index,
-                        id,
-                        type,
-                        reason.replaceAll("[\\r\\n]+", " "))
-                );
-                return RETRYABLE_ERRORS_CODES.contains(type);
+
+                if (RETRYABLE_ERRORS_CODES.contains(type)) {
+                    /* do not write error to log in case of retryable error */
+                    return true;
+                } else {
+                    LOGGER.error(String.format(
+                            "Bulk processing error: index=%s, id=%s, type=%s, reason=%s",
+                            index,
+                            id,
+                            type,
+                            reason.replaceAll("[\\r\\n]+", " "))
+                    );
+                    return false;
+                }
             }
         }
         return false;
