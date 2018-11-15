@@ -67,7 +67,7 @@ public class MetricsCollector {
                 Props.GRAPHITE_PREFIX.extract(properties),
                 applicationContext.getApplicationId(),
                 applicationContext.getEnvironment(),
-                applicationContext.getDataCenter(),
+                applicationContext.getZone(),
                 applicationContext.getInstanceId()
         );
 
