@@ -35,7 +35,7 @@ public class ApplicationContext {
     /**
      * Datacenter in which instance is located
      */
-    private final String dataCenter;
+    private final String zone;
 
     /**
      * Server host name
@@ -54,7 +54,7 @@ public class ApplicationContext {
             String version,
             String commitId,
             String environment,
-            String dataCenter,
+            String zone,
             String hostName,
             String instanceId
     ) {
@@ -63,7 +63,7 @@ public class ApplicationContext {
         this.version = version;
         this.commitId = commitId;
         this.environment = environment;
-        this.dataCenter = dataCenter;
+        this.zone = zone;
         this.hostName = hostName;
         this.instanceId = instanceId;
     }
@@ -72,8 +72,8 @@ public class ApplicationContext {
         return environment;
     }
 
-    public String getDataCenter() {
-        return dataCenter;
+    public String getZone() {
+        return zone;
     }
 
     public String getInstanceId() {
