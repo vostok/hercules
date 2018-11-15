@@ -35,8 +35,8 @@ public class ApplicationContextHolder {
                 .stringProperty("environment")
                 .build();
 
-        static final PropertyDescription<String> DATACENTER = PropertyDescriptions
-                .stringProperty("datacenter")
+        static final PropertyDescription<String> ZONE = PropertyDescriptions
+                .stringProperty("zone")
                 .build();
 
         static final PropertyDescription<String> INSTANCE_ID = PropertyDescriptions
@@ -70,7 +70,7 @@ public class ApplicationContextHolder {
 
         // Load context properties
         final String environment = ContextProps.ENVIRONMENT.extract(contextProperties);
-        final String dataCenter = ContextProps.DATACENTER.extract(contextProperties);
+        final String zone = ContextProps.ZONE.extract(contextProperties);
         final String instanceId = ContextProps.INSTANCE_ID.extract(contextProperties);
 
         // Load hostname
@@ -82,7 +82,7 @@ public class ApplicationContextHolder {
                 version,
                 commitId,
                 environment,
-                dataCenter,
+                zone,
                 hostname,
                 instanceId
         );
