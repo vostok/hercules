@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -102,6 +103,10 @@ public class StreamReader {
                     Long beginningOffset = beginningOffsets.get(partition);
                     Long endOffset = endOffsets.get(partition);
 
+                    if (Objects.isNull(beginningOffset) || Objects.isNull(endOffset)) {
+                        throw new IllegalArgumentException("Read state contains partitions that should not be requested");
+                    }
+
                     if (requestOffset < beginningOffset) {
                         offsetsToRequest.put(partition, beginningOffset);
                     } else if (requestOffset < endOffset) {
@@ -142,6 +147,8 @@ public class StreamReader {
                 consumer.close();
                 activeConsumers.remove(consumer);
             }
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
