@@ -10,6 +10,8 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
+import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
+import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -57,11 +59,11 @@ public class ReadStreamHandler implements HttpHandler {
                     Encoder encoder = new Encoder(stream);
                     CONTENT_WRITER.write(encoder, streamContent);
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
+                } catch (IllegalArgumentException e) {
+                    ResponseUtil.badRequest(exchange);
                 } catch (Exception e) {
                     LOGGER.error("Error on processing request", e);
-                    exchange.setStatusCode(500);
-                    exchange.endExchange();
-                } finally {
+                    ResponseUtil.internalServerError(exchange);
                 }
             });
         });

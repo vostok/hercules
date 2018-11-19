@@ -7,6 +7,8 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.processing.bulk.RecordStorage;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
@@ -26,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +50,8 @@ public class StreamReader {
                 .withValidator(Validators.greaterOrEquals(0))
                 .build();
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StreamReader.class);
 
     private static final Object DUMMY = new Object();
 
@@ -89,7 +94,7 @@ public class StreamReader {
                 // TODO: Add partition exist checking
                 Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(partitions);
                 Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
-                Map<TopicPartition, Long> offsetsToRequest = new HashMap<>();
+                Map<TopicPartition, Long> offsetsToRequest = new HashMap<>(beginningOffsets);
                 Map<TopicPartition, Long> overflowedOffsets = new HashMap<>();
                 for (Map.Entry<TopicPartition, Long> entry : stateToMap(streamName, readState).entrySet()) {
                     TopicPartition partition = entry.getKey();
@@ -98,12 +103,17 @@ public class StreamReader {
                     Long beginningOffset = beginningOffsets.get(partition);
                     Long endOffset = endOffsets.get(partition);
 
+                    if (Objects.isNull(beginningOffset) || Objects.isNull(endOffset)) {
+                        throw new IllegalArgumentException("Read state contains partitions that should not be requested");
+                    }
+
                     if (requestOffset < beginningOffset) {
                         offsetsToRequest.put(partition, beginningOffset);
                     } else if (requestOffset < endOffset) {
                         offsetsToRequest.put(partition, requestOffset);
                     } else {
                         // These offsets will not be polled, but returning them marks these offsets as overflowed
+                        offsetsToRequest.remove(partition);
                         overflowedOffsets.put(partition, requestOffset);
                     }
                 }
@@ -137,6 +147,8 @@ public class StreamReader {
                 consumer.close();
                 activeConsumers.remove(consumer);
             }
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -151,7 +163,7 @@ public class StreamReader {
     private RecordStorage<Void, byte[]> pollRecords(KafkaConsumer<Void, byte[]> consumer, int maxCount) {
         RecordStorage<Void, byte[]> result = new RecordStorage<>(maxCount);
 
-        TimeUnit unit = TimeUnit.MICROSECONDS;
+        TimeUnit unit = TimeUnit.MILLISECONDS;
         Timer timer = new Timer(unit, pollTimeout);
         timer.reset().start();
         long timeLeft = pollTimeout;
@@ -166,6 +178,9 @@ public class StreamReader {
                 }
             }
             timeLeft = timer.timeLeft();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Polled {} records, time left {}", poll.count(), timeLeft);
+            }
         }
 
         return result;
