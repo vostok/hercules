@@ -63,6 +63,7 @@
         <module>hercules-tags</module>
         <module>hercules-http</module>
         <module>hercules-http-jetty</module>
+        <module>hercules-client</module>
     </modules>
 
     <dependencyManagement>
