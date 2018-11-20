@@ -22,20 +22,24 @@ public class EventBuilder {
 
     private boolean wasBuild = false;
 
-    public void setEventId(UUID eventId) {
+    public EventBuilder setEventId(UUID eventId) {
         this.eventId = eventId;
+        return this;
     }
 
-    public void setVersion(int version) {
+    public EventBuilder setVersion(int version) {
         this.version = version;
+        return this;
     }
 
-    public void setTag(String key, Variant value) {
-        containerBuilder.tag(key, value);
+    public EventBuilder setTag(String key, Variant value) {
+        this.containerBuilder.tag(key, value);
+        return this;
     }
 
-    public <T> void setTag(TagDescription<T> tag, Variant value) {
-        containerBuilder.tag(tag, value);
+    public <T> EventBuilder setTag(TagDescription<T> tag, Variant value) {
+        this.containerBuilder.tag(tag, value);
+        return this;
     }
 
     public Event build() {
