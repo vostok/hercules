@@ -4,25 +4,21 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.client.LogicalShardState;
 import ru.kontur.vostok.hercules.client.test.util.TestUtil;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.EventStreamContent;
-import ru.kontur.vostok.hercules.protocol.StreamReadState;
-import ru.kontur.vostok.hercules.protocol.StreamShardReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
-import ru.kontur.vostok.hercules.protocol.encoder.EventStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 
 import java.net.URI;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
