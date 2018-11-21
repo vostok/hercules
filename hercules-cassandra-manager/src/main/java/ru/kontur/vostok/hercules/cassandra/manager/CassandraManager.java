@@ -19,12 +19,11 @@ public class CassandraManager {
         //TODO: What if table already exists?
         // Create table if it doesn't exist
         session.execute("CREATE TABLE IF NOT EXISTS " + table + " ("
-                + "slice_id varchar,"
+                + "slice int,"
                 + "tt_offset bigint,"
-                + "event_timestamp bigint,"
-                + "event_id bigint,"
+                + "event_id timeuuid,"
                 + "payload blob,"
-                + "PRIMARY KEY ((slice_id, tt_offset), event_timestamp, event_id))");
+                + "PRIMARY KEY ((slice, tt_offset), event_id))");
     }
 
     public void deleteTable(String table) {

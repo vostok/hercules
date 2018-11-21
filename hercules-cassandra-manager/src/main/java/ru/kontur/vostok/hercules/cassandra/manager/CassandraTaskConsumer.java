@@ -6,8 +6,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.management.task.TaskConstants;
 import ru.kontur.vostok.hercules.management.task.cassandra.CassandraTask;
 
@@ -30,7 +32,7 @@ public class CassandraTaskConsumer {
 
     public CassandraTaskConsumer(Properties properties, CassandraManager cassandraManager) {
         this.cassandraManager = cassandraManager;
-        this.consumer = new KafkaConsumer<>(properties);
+        this.consumer = new KafkaConsumer<>(properties, new VoidDeserializer(), new ByteArrayDeserializer());
     }
 
     public void start() {
@@ -56,15 +58,19 @@ public class CassandraTaskConsumer {
                         switch (task.getType()) {
                             case CREATE:
                                 cassandraManager.createTable(task.getTable());
+                                LOGGER.info("Created table '{}'", task.getTable());
                                 break;
                             case DELETE:
                                 cassandraManager.deleteTable(task.getTable());
+                                LOGGER.info("Deleted table '{}'", task.getTable());
                                 break;
                         }
                     }
                 }
             } catch (WakeupException e) {
                 // ignore for shutdown
+            } catch (Exception e) {
+                LOGGER.error("Error on processing tasks", e);
             } finally {
                 consumer.close();
             }
