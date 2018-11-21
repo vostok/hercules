@@ -83,9 +83,7 @@ public final class AuthManager {
     private void update() {
         List<String> rules;
         try {
-            rules = curatorClient.children("/hercules/auth/rules", e -> {
-                updateTask.renew();
-            });//TODO: monitor watcher's event types
+            rules = curatorClient.children("/hercules/auth/rules");
         } catch (Exception e) {
             LOGGER.error("Error on getting rules", e);
             return;
