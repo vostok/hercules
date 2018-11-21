@@ -1,10 +1,9 @@
 package ru.kontur.vostok.hercules.meta.curator;
 
-import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.CuratorWatcher;
-import org.apache.curator.retry.RetryOneTime;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -44,9 +43,21 @@ public class CuratorClient {
                 .withValidator(Validators.greaterOrEquals(0))
                 .build();
 
-        static final PropertyDescription<Integer> SLEEP_TIME = PropertyDescriptions
-                .integerProperty("retryPolicy.sleepTime")
-                .withDefaultValue(500)
+        static final PropertyDescription<Integer> BASE_SLEEP_TIME_MS = PropertyDescriptions
+                .integerProperty("retryPolicy.baseSleepTime")
+                .withDefaultValue(1_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> MAX_RETRIES = PropertyDescriptions
+                .integerProperty("retryPolicy.maxRetries")
+                .withDefaultValue(5)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> MAX_SLEEP_TIME_MS = PropertyDescriptions
+                .integerProperty("retryPolicy.maxSleepTime")
+                .withDefaultValue(8_000)
                 .withValidator(Validators.greaterOrEquals(0))
                 .build();
     }
@@ -141,9 +152,11 @@ public class CuratorClient {
         final String connectString = Props.CONNECT_STRING.extract(properties);
         final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
         final int sessionTimeout = Props.SESSION_TIMEOUT_MS.extract(properties);
-        final int sleepTime = Props.SLEEP_TIME.extract(properties);
+        final int baseSleepTime = Props.BASE_SLEEP_TIME_MS.extract(properties);
+        final int maxRetries = Props.MAX_RETRIES.extract(properties);
+        final int maxSleepTime = Props.BASE_SLEEP_TIME_MS.extract(properties);
 
-        RetryPolicy retryPolicy = new RetryOneTime(sleepTime);
+        ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime);
 
         CuratorFramework curatorFramework = CuratorFrameworkFactory.builder()
                 .zk34CompatibilityMode(true)
