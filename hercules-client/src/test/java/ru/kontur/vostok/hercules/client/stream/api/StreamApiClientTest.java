@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.client.api.stream;
+package ru.kontur.vostok.hercules.client.stream.api;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;

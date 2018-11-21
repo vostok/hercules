@@ -1,14 +1,12 @@
-package ru.kontur.vostok.hercules.client.api.stream;
+package ru.kontur.vostok.hercules.client.stream.api;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import ru.kontur.vostok.hercules.client.LogicalShardState;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
@@ -19,7 +17,6 @@ import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -32,54 +29,12 @@ import java.util.function.Supplier;
  */
 public class StreamApiClient {
 
-    private static class Resources {
-        /**
-         *
-         */
-        static final URI STREAM_READ = URI.create("./stream/read");
-
-        /**
-         *
-         */
-        static final URI PING = URI.create("./ping");
-    }
-
-    private static class Headers {
-        /**
-         *
-         */
-        static final String API_KEY = "apiKey";
-    }
-
-    private static class Parameters {
-        /**
-         *
-         */
-        static final String STREAM_PATTERN = "stream";
-
-        /**
-         *
-         */
-        static final String LOGICAL_SHARD_ID = "k";
-
-        /**
-         *
-         */
-        static final String LOGICAL_SHARD_COUNT = "n";
-
-        /**
-         *
-         */
-        static final String RESPONSE_EVENTS_COUNT = "take";
-    }
-
     private static final StreamReadStateWriter STATE_WRITER = new StreamReadStateWriter();
     private static final EventStreamContentReader CONTENT_READER = new EventStreamContentReader();
 
     private final URI server;
     private final LogicalShardState shardState;
     private final String apiKey;
-
     private final CloseableHttpClient httpClient;
 
     public StreamApiClient(
@@ -133,5 +88,46 @@ public class StreamApiClient {
 
     private static int calculateReadStateSize(int shardCount) {
         return SizeOf.VECTOR_LENGTH + shardCount * (SizeOf.INTEGER + SizeOf.LONG);
+    }
+
+    private static class Resources {
+        /**
+         * Get stream content
+         */
+        static final URI STREAM_READ = URI.create("./stream/read");
+
+        /**
+         * Ping stream API
+         */
+        static final URI PING = URI.create("./ping");
+    }
+
+    private static class Headers {
+        /**
+         * Authorization key
+         */
+        static final String API_KEY = "apiKey";
+    }
+
+    private static class Parameters {
+        /**
+         * Stream pattern
+         */
+        static final String STREAM_PATTERN = "stream";
+
+        /**
+         * Logical shard id
+         */
+        static final String LOGICAL_SHARD_ID = "k";
+
+        /**
+         * Logical shard count
+         */
+        static final String LOGICAL_SHARD_COUNT = "n";
+
+        /**
+         * Event count
+         */
+        static final String RESPONSE_EVENTS_COUNT = "take";
     }
 }
