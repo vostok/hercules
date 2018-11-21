@@ -7,6 +7,9 @@ public class CassandraTask {
     private String table;
     private CassandraTaskType type;
 
+    public CassandraTask() {
+    }
+
     public CassandraTask(String table, CassandraTaskType type) {
         this.table = table;
         this.type = type;
