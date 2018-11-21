@@ -61,9 +61,9 @@ public class AuthResult {
         return new AuthResult(AuthStatus.ERROR, message);
     }
 
-    private static AuthResult OK = new AuthResult(AuthStatus.SUCCESS, "");
-    private static AuthResult UNKNOWN = new AuthResult(AuthStatus.UNKNOWN, "Unknown apiKey");
-    private static AuthResult DENIED = new AuthResult(AuthStatus.DENIED, "Access is denied (check if apiKey has appropriate access rights)");
+    private static final AuthResult OK = new AuthResult(AuthStatus.SUCCESS, "");
+    private static final AuthResult UNKNOWN = new AuthResult(AuthStatus.UNKNOWN, "Unknown apiKey");
+    private static final AuthResult DENIED = new AuthResult(AuthStatus.DENIED, "Access is denied (check if apiKey has appropriate access rights)");
 
     private enum AuthStatus {
         SUCCESS,

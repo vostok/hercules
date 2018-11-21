@@ -39,7 +39,7 @@ public class CassandraTaskConsumer {
 
         executor.submit(() -> {
             try {
-                consumer.subscribe(Collections.singletonList(TaskConstants.cassandraTaskTopic));
+                consumer.subscribe(Collections.singletonList(TaskConstants.CASSANDRA_TASK_TOPIC));
 
                 while (true) {
                     ConsumerRecords<Void, byte[]> records = consumer.poll(Long.MAX_VALUE);

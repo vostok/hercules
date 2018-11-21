@@ -85,8 +85,7 @@ public class PropertyDescription<T> {
         if (Objects.isNull(stringValue)) {
             if (required) {
                 throw new PropertyException(String.format("Missing required property '%s'", name));
-            }
-            else {
+            } else {
                 return defaultValue;
             }
         }

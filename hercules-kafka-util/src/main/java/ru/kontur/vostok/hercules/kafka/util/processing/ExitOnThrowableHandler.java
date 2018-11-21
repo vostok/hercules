@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * ExitOnThrowableHandler
+ * ExitOnThrowableHandler - calls System.exit(1) on uncaught exception
  *
  * @author Kirill Sulim
  */

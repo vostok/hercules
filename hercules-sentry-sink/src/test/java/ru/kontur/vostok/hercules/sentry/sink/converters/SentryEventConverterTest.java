@@ -5,13 +5,16 @@ import io.sentry.event.interfaces.ExceptionInterface;
 import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
 public class SentryEventConverterTest {
@@ -43,6 +46,15 @@ public class SentryEventConverterTest {
         exceptionMap.put("mod", Variant.ofText("com.example.test.exceptions"));
 
         return new Container(exceptionMap);
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        Properties testProperties = new Properties();
+        testProperties.setProperty("environment", "test");
+        testProperties.setProperty("instance.id", "test");
+        testProperties.setProperty("zone", "test");
+        ApplicationContextHolder.init("test","test", testProperties);
     }
 
     @Test

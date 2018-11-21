@@ -61,7 +61,13 @@ public class CassandraInitializer {
 
         try (Cluster cluster = builder.build(); Session session = cluster.connect()) {
             // Create keyspace if it doesn't exist
-            session.execute("CREATE KEYSPACE IF NOT EXISTS " + keyspace + " WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : " + replicationFactor + " };");
+            session.execute(
+                    "CREATE KEYSPACE IF NOT EXISTS " + keyspace +
+                            " WITH REPLICATION = { " +
+                            "  'class' : 'SimpleStrategy', " +
+                            "  'replication_factor' : " + replicationFactor +
+                            "};"
+            );
         }
     }
 }

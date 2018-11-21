@@ -23,8 +23,8 @@ public class ReadTimelineHandler implements HttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadTimelineHandler.class);
 
-    private static final TimelineReadStateReader stateReader = new TimelineReadStateReader();
-    private static final TimelineByteContentWriter contentWriter = new TimelineByteContentWriter();
+    private static final TimelineReadStateReader STATE_READER = new TimelineReadStateReader();
+    private static final TimelineByteContentWriter CONTENT_WRITER = new TimelineByteContentWriter();
 
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
@@ -53,13 +53,13 @@ public class ReadTimelineHandler implements HttpHandler {
                         return;
                     }
 
-                    TimelineReadState readState = stateReader.read(new Decoder(message));
+                    TimelineReadState readState = STATE_READER.read(new Decoder(message));
 
                     TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, k, n, take, from, to);
 
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     Encoder encoder = new Encoder(stream);
-                    contentWriter.write(encoder, byteContent);
+                    CONTENT_WRITER.write(encoder, byteContent);
 
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
                 } catch (Exception e) {

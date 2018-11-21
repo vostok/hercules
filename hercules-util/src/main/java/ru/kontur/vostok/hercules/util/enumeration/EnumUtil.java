@@ -16,8 +16,7 @@ public final class EnumUtil {
     public static <T extends Enum<T>> Optional<T> parseOptional(Class<T> clazz, String s) {
         try {
             return Optional.of(parse(clazz, s));
-        }
-        catch (NullPointerException | IllegalArgumentException e) {
+        } catch (NullPointerException | IllegalArgumentException e) {
             return Optional.empty();
         }
     }

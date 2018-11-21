@@ -47,17 +47,17 @@ public final class BulkResponseHandler {
             "es_rejected_execution_exception"
     ));
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
 
-    private final static JsonFactory factory = new JsonFactory();
-    private final static ObjectMapper mapper = new ObjectMapper(factory);
+    private static final JsonFactory FACTORY = new JsonFactory();
+    private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
 
     // TODO: Replace with a good parser
     public static Result process(HttpEntity httpEntity) {
         return toUnchecked(() -> {
             int errorCount = 0;
             boolean hasRetryableErrors = false;
-            JsonParser parser = factory.createParser(httpEntity.getContent());
+            JsonParser parser = FACTORY.createParser(httpEntity.getContent());
 
             String currentId = "";
             String currentIndex = "";
@@ -80,7 +80,7 @@ public final class BulkResponseHandler {
                 }
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
-                    if (processError(mapper.readTree(parser), currentId, currentIndex)) {
+                    if (processError(MAPPER.readTree(parser), currentId, currentIndex)) {
                         hasRetryableErrors = true;
                     }
                     errorCount++;
@@ -108,14 +108,20 @@ public final class BulkResponseHandler {
             } else {
                 String type = Optional.ofNullable(error.get("type")).map(JsonNode::asText).orElse("");
                 String reason = Optional.ofNullable(error.get("reason")).map(JsonNode::asText).orElse("");
-                LOGGER.error(String.format(
-                        "Bulk processing error: index=%s, id=%s, type=%s, reason=%s",
-                        index,
-                        id,
-                        type,
-                        reason.replaceAll("[\\r\\n]+", " "))
-                );
-                return RETRYABLE_ERRORS_CODES.contains(type);
+
+                if (RETRYABLE_ERRORS_CODES.contains(type)) {
+                    /* do not write error to log in case of retryable error */
+                    return true;
+                } else {
+                    LOGGER.error(String.format(
+                            "Bulk processing error: index=%s, id=%s, type=%s, reason=%s",
+                            index,
+                            id,
+                            type,
+                            reason.replaceAll("[\\r\\n]+", " "))
+                    );
+                    return false;
+                }
             }
         }
         return false;

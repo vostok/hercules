@@ -9,7 +9,7 @@ public class ContainerWriter implements Writer<Container> {
 
     public static final ContainerWriter INSTANCE = new ContainerWriter();
 
-    private static final VariantWriter variantWriter = VariantWriter.INSTANCE;
+    private static final VariantWriter VARIANT_WRITER = VariantWriter.INSTANCE;
 
     @Override
     public void write(Encoder encoder, Container value) {
@@ -20,7 +20,7 @@ public class ContainerWriter implements Writer<Container> {
         encoder.writeShort((short) value.size());
         for (Map.Entry<String, Variant> entry : value) {
             encoder.writeString(entry.getKey());
-            variantWriter.write(encoder, entry.getValue());
+            VARIANT_WRITER.write(encoder, entry.getValue());
         }
     }
 }

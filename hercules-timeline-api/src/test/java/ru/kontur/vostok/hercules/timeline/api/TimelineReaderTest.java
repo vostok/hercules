@@ -140,7 +140,7 @@ public class TimelineReaderTest {
         } else {
             // build boolean array for hasNext()
             Boolean[] hasNextResponses = new Boolean[values.length];
-            for (int i = 0; i < hasNextResponses.length -1 ; i++) {
+            for (int i = 0; i < hasNextResponses.length - 1; i++) {
                 hasNextResponses[i] = true;
             }
             hasNextResponses[hasNextResponses.length - 1] = false;

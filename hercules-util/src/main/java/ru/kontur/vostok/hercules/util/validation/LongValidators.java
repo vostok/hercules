@@ -11,7 +11,11 @@ public final class LongValidators {
             if (value > 0) {
                 return Optional.empty();
             }
-            return Optional.of("Value should be positive but was " + value);
+            return Optional.of("Value should be positive long but was " + value);
         };
+    }
+
+    private LongValidators() {
+        /* static class */
     }
 }

@@ -12,7 +12,7 @@ public class ContainerReader implements Reader<Container> {
 
     public static final ContainerReader INSTANCE = readAllTags();
 
-    private static final VariantReader variantReader = VariantReader.INSTANCE;
+    private static final VariantReader VARIANT_READER = VariantReader.INSTANCE;
 
     private final Set<String> tags;
 
@@ -35,10 +35,10 @@ public class ContainerReader implements Reader<Container> {
         while (0 <= --length) {
             String tagName = decoder.readString();
             if (Objects.isNull(tags) || tags.contains(tagName)) {
-                Variant variant = variantReader.read(decoder);
+                Variant variant = VARIANT_READER.read(decoder);
                 variantMap.put(tagName, variant);
             } else {
-                variantReader.skip(decoder);
+                VARIANT_READER.skip(decoder);
             }
         }
         return new Container(variantMap);
@@ -51,7 +51,7 @@ public class ContainerReader implements Reader<Container> {
         skipped += SizeOf.SHORT;
         while (0 <= --length) {
             skipped += decoder.skipString();
-            skipped += variantReader.skip(decoder);
+            skipped += VARIANT_READER.skip(decoder);
         }
         return skipped;
     }

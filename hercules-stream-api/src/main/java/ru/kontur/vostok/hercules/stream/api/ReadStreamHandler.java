@@ -10,6 +10,8 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
+import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
+import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -20,8 +22,8 @@ public class ReadStreamHandler implements HttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadStreamHandler.class);
 
-    private static final StreamReadStateReader stateReader = new StreamReadStateReader();
-    private static final ByteStreamContentWriter contentWriter = new ByteStreamContentWriter();
+    private static final StreamReadStateReader STATE_READER = new StreamReadStateReader();
+    private static final ByteStreamContentWriter CONTENT_WRITER = new ByteStreamContentWriter();
 
     private static final String OCTET_STREAM = "application/octet-stream";
 
@@ -45,7 +47,7 @@ public class ReadStreamHandler implements HttpHandler {
 
                     ByteStreamContent streamContent = streamReader.getStreamContent(
                             streamName,
-                            stateReader.read(new Decoder(message)),
+                            STATE_READER.read(new Decoder(message)),
                             k,
                             n,
                             take
@@ -55,14 +57,13 @@ public class ReadStreamHandler implements HttpHandler {
 
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     Encoder encoder = new Encoder(stream);
-                    contentWriter.write(encoder, streamContent);
+                    CONTENT_WRITER.write(encoder, streamContent);
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
+                } catch (IllegalArgumentException e) {
+                    ResponseUtil.badRequest(exchange);
                 } catch (Exception e) {
                     LOGGER.error("Error on processing request", e);
-                    exchange.setStatusCode(500);
-                    exchange.endExchange();
-                }
-                finally {
+                    ResponseUtil.internalServerError(exchange);
                 }
             });
         });

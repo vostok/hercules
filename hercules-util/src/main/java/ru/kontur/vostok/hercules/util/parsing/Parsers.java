@@ -39,8 +39,7 @@ public final class Parsers {
         s = s.trim();
         try {
             return Result.ok(Short.parseShort(s));
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return Result.error(String.format("Invalid short '%s'", s));
         }
     }
@@ -55,8 +54,7 @@ public final class Parsers {
         s = s.trim();
         try {
             return Result.ok(Integer.parseInt(s));
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return Result.error(String.format("Invalid integer '%s'", s));
         }
     }
@@ -71,8 +69,7 @@ public final class Parsers {
         s = s.trim();
         try {
             return Result.ok(Long.parseLong(s));
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return Result.error(String.format("Invalid long '%s'", s));
         }
     }
@@ -159,8 +156,7 @@ public final class Parsers {
                 Result<T, String> parsed = parser.parse(split[i]);
                 if (parsed.isOk()) {
                     values.add(parsed.get());
-                }
-                else {
+                } else {
                     return Result.error(String.format("Error at index '%d': %s", i, parsed.getError()));
                 }
             }
@@ -198,8 +194,7 @@ public final class Parsers {
                 Result<T, String> parsed = parser.parse(split[i]);
                 if (parsed.isOk()) {
                     values[i] = parsed.get();
-                }
-                else {
+                } else {
                     return Result.error(String.format("Error at index '%d': %s", i, parsed.getError()));
                 }
             }
@@ -219,8 +214,7 @@ public final class Parsers {
         return s -> {
             if (Objects.isNull(s) || s.isEmpty()) {
                 return Result.ok(defaultValue);
-            }
-            else {
+            } else {
                 return parser.parse(s);
             }
         };
@@ -236,8 +230,7 @@ public final class Parsers {
         return s -> {
             try {
                 return Result.ok(Enum.valueOf(clazz, s.trim().toUpperCase()));
-            }
-            catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 return Result.error(String.format("Cannot parse '%s' as enum of class %s", s, clazz.getCanonicalName()));
             }
         };

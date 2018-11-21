@@ -4,12 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -59,6 +61,10 @@ public class SentryApiClient {
                 .build();
     }
 
+    public Result<Void, String> ping() {
+        return request(new HttpHead(API_URL), new TypeReference<Void>() {});
+    }
+
     public Result<List<ProjectInfo>, String> getProjects() {
         return pagedRequest(new HttpGet(PROJECTS_URL), new TypeReference<List<ProjectInfo>>() {});
     }
@@ -91,12 +97,13 @@ public class SentryApiClient {
             if (isErrorResponse(response)) {
                 return Result.error(extractErrorMessage(response));
             }
-            return Result.ok(objectMapper.readValue(
-                    response.getEntity().getContent(),
-                    typeReference
-            ));
-        }
-        catch (Exception e) {
+            T value = null;
+            Optional<HttpEntity> entity = Optional.ofNullable(response.getEntity());
+            if (entity.isPresent()) {
+                value = objectMapper.readValue(entity.get().getContent(), typeReference);
+            }
+            return Result.ok(value);
+        } catch (Exception e) {
             LOGGER.error("Error on request", e);
             return Result.error(e.getMessage());
         }
@@ -112,7 +119,7 @@ public class SentryApiClient {
                     request.getParams().removeParameter("cursor");
                     request.getParams().setParameter("cursor", cursorValue);
                 });
-                try(CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
+                try (CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
                     if (isErrorResponse(response)) {
                         return Result.error(extractErrorMessage(response));
                     }
@@ -121,8 +128,7 @@ public class SentryApiClient {
                 }
             } while (nextCursor.isPresent());
             return Result.ok(resultList);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             LOGGER.error("Error on paged request", e);
             return Result.error(e.getMessage());
         }

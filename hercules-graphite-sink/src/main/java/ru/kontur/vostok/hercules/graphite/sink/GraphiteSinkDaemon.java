@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.graphite.sink;
 
-import ru.kontur.vostok.hercules.kafka.util.processing.AbstractBulkSinkDaemon;
-import ru.kontur.vostok.hercules.kafka.util.processing.BulkSender;
+import ru.kontur.vostok.hercules.kafka.util.processing.bulk.AbstractBulkSinkDaemon;
+import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSender;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.util.Properties;
@@ -19,6 +19,11 @@ public class GraphiteSinkDaemon extends AbstractBulkSinkDaemon {
 
     @Override
     protected String getDaemonName() {
-        return "graphite sink";
+        return "Hercules graphite sink";
+    }
+
+    @Override
+    protected String getDaemonId() {
+        return "sink.graphite";
     }
 }

@@ -17,29 +17,6 @@ import java.util.concurrent.ThreadFactory;
  */
 public class EventPublisherFactory {
 
-    private static class Props {
-        static final PropertyDescription<Integer> THREAD_COUNT = PropertyDescriptions
-                .integerProperty("threads")
-                .withDefaultValue(3)
-                .build();
-
-        static final PropertyDescription<String[]> URLS = PropertyDescriptions
-                .arrayOfStringsProperty("urls")
-                .build();
-
-        static final PropertyDescription<String> API_KEY = PropertyDescriptions
-                .stringProperty("apiKey")
-                .build();
-
-        static final PropertyDescription<String> PROJECT = PropertyDescriptions
-                .stringProperty("project")
-                .build();
-
-        static final PropertyDescription<String> ENVIRONMENT = PropertyDescriptions
-                .stringProperty("env")
-                .build();
-    }
-
     private static final String DEFAULT_RESOURCE_NAME = "hercules-gate-client.properties";
     private static final String PROPERTY_NAME = "hercules.gate.client.config";
 
@@ -84,16 +61,10 @@ public class EventPublisherFactory {
     }
 
     private static EventPublisher createPublisher(Properties properties) {
-        final int threads = Props.THREAD_COUNT.extract(properties);
-        final String[] url = Props.URLS.extract(properties);
-        final String apiKey = Props.API_KEY.extract(properties);
-
         return new EventPublisher(
-                threads,
+                properties,
                 DEFAULT_THREAD_FACTORY,
-                Collections.emptyList(),
-                url,
-                apiKey
+                Collections.emptyList()
         );
     }
 
@@ -101,5 +72,17 @@ public class EventPublisherFactory {
         Properties properties = new Properties();
         properties.load(inputStream);
         return properties;
+    }
+
+    private static class Props {
+        static final PropertyDescription<String> PROJECT =
+                PropertyDescriptions
+                        .stringProperty("project")
+                        .build();
+
+        static final PropertyDescription<String> ENVIRONMENT =
+                PropertyDescriptions
+                        .stringProperty("env")
+                        .build();
     }
 }

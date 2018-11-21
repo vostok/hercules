@@ -38,7 +38,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
     public SendRequestProcessor(MetricsCollector metricsCollector, EventSender eventSender) {
         this.eventSender = eventSender;
 
-        this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sent_events");
+        this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sentEvents");
     }
 
     @Override
@@ -54,8 +54,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                             callback.call();
                             LOGGER.error("Cannot create ReaderIterator", exception);
                             throw exception; //TODO: Process exception
-                        }
-                        catch (InvalidDataException e) {
+                        } catch (InvalidDataException e) {
                             ResponseUtil.badRequest(exchange);
                             callback.call();
                             LOGGER.error("Cannot create ReaderIterator", e);

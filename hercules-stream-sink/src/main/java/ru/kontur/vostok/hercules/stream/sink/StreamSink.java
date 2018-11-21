@@ -62,7 +62,11 @@ public class StreamSink {
         EventDeserializer deserializer = EventDeserializer.parseTags(tags);
         Serde<Event> valueSerde = new EventSerde(serializer, deserializer);
 
-        EventStreamPartitioner partitioner = new EventStreamPartitioner(new HashPartitioner(new NaiveHasher()), derived.getShardingKey(), derived.getPartitions());
+        EventStreamPartitioner partitioner = new EventStreamPartitioner(
+                new HashPartitioner(new NaiveHasher()),
+                derived.getShardingKey(),
+                derived.getPartitions()
+        );
 
         StreamsBuilder builder = new StreamsBuilder();
         KStream<UUID, Event> kStream = builder.stream(topics, Consumed.with(keySerde, valueSerde));

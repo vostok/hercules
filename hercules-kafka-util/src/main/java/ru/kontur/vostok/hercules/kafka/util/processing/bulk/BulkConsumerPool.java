@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util.processing;
+package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.kafka.util.processing.NamedThreadFactory;
+import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
@@ -50,7 +52,7 @@ public class BulkConsumerPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumerPool.class);
 
-    private static final String ID_TEMPLATE = "hercules.sink.%s.%s";
+    private static final String ID_TEMPLATE = "hercules.%s.%s";
 
     private final AtomicLong id = new AtomicLong(0);
 
@@ -65,7 +67,7 @@ public class BulkConsumerPool {
             String destinationName,
             Properties consumerProperties,
             Properties sinkProperties,
-            CommonBulkSinkStatusFsm status,
+            SinkStatusFsm status,
             MetricsCollector metricsCollector,
             Supplier<BulkSender<Event>> senderSupplier
     ) {
@@ -81,10 +83,10 @@ public class BulkConsumerPool {
 
 
         final Meter receivedEventsMeter = metricsCollector.meter("receivedEvents");
-        final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSize");
+        final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSizeBytes");
         final Meter processedEventsMeter = metricsCollector.meter("processedEvents");
         final Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
-        final Timer processTimeTimer = metricsCollector.timer("processTime");
+        final Timer processTimeTimer = metricsCollector.timer("processTimeMs");
 
         this.pool = Executors.newFixedThreadPool(poolSize, new NamedThreadFactory("consumer-pool"));
         this.consumers = new ArrayList<>(poolSize);

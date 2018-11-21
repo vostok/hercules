@@ -10,94 +10,94 @@ import java.util.function.ToIntFunction;
 public class VariantReader implements Reader<Variant> {
 
     public static final VariantReader INSTANCE = new VariantReader();
-    private static final ContainerReader containerReader = ContainerReader.INSTANCE;
-    private static final ContainerArrayReader containerArrayReader = ContainerArrayReader.INSTANCE;
-    private static final ContainerVectorReader containerVectorReader = ContainerVectorReader.INSTANCE;
+    private static final ContainerReader CONTAINER_READER = ContainerReader.INSTANCE;
+    private static final ContainerArrayReader CONTAINER_ARRAY_READER = ContainerArrayReader.INSTANCE;
+    private static final ContainerVectorReader CONTAINER_VECTOR_READER = ContainerVectorReader.INSTANCE;
     /**
      * Type decoders
      */
-    private final static ObjectReader[] decoders = new ObjectReader[256];
+    private static final ObjectReader[] DECODERS = new ObjectReader[256];
     /**
      * Skip methods
      */
-    private final static ObjectSkipper[] skippers = new ObjectSkipper[256];
+    private static final ObjectSkipper[] SKIPPERS = new ObjectSkipper[256];
 
     static {
-        Arrays.setAll(decoders, idx -> decoder -> {
+        Arrays.setAll(DECODERS, idx -> decoder -> {
             throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));
         });
 
-        decoders[Type.CONTAINER.code] = VariantReader::readContainer;
-        decoders[Type.BYTE.code] = Decoder::readByte;
-        decoders[Type.SHORT.code] = Decoder::readShort;
-        decoders[Type.INTEGER.code] = Decoder::readInteger;
-        decoders[Type.LONG.code] = Decoder::readLong;
-        decoders[Type.FLAG.code] = Decoder::readFlag;
-        decoders[Type.FLOAT.code] = Decoder::readFloat;
-        decoders[Type.DOUBLE.code] = Decoder::readDouble;
-        decoders[Type.STRING.code] = Decoder::readStringAsBytes;
-        decoders[Type.TEXT.code] = Decoder::readTextAsBytes;
+        DECODERS[Type.CONTAINER.code] = VariantReader::readContainer;
+        DECODERS[Type.BYTE.code] = Decoder::readByte;
+        DECODERS[Type.SHORT.code] = Decoder::readShort;
+        DECODERS[Type.INTEGER.code] = Decoder::readInteger;
+        DECODERS[Type.LONG.code] = Decoder::readLong;
+        DECODERS[Type.FLAG.code] = Decoder::readFlag;
+        DECODERS[Type.FLOAT.code] = Decoder::readFloat;
+        DECODERS[Type.DOUBLE.code] = Decoder::readDouble;
+        DECODERS[Type.STRING.code] = Decoder::readStringAsBytes;
+        DECODERS[Type.TEXT.code] = Decoder::readTextAsBytes;
 
-        decoders[Type.CONTAINER_VECTOR.code] = VariantReader::readContainerVector;
-        decoders[Type.BYTE_VECTOR.code] = Decoder::readByteVector;
-        decoders[Type.SHORT_VECTOR.code] = Decoder::readShortVector;
-        decoders[Type.INTEGER_VECTOR.code] = Decoder::readIntegerVector;
-        decoders[Type.LONG_VECTOR.code] = Decoder::readLongVector;
-        decoders[Type.FLAG_VECTOR.code] = Decoder::readFlagVector;
-        decoders[Type.FLOAT_VECTOR.code] = Decoder::readFloatVector;
-        decoders[Type.DOUBLE_VECTOR.code] = Decoder::readDoubleVector;
-        decoders[Type.STRING_VECTOR.code] = Decoder::readStringVectorAsBytes;
-        decoders[Type.TEXT_VECTOR.code] = Decoder::readTextVectorAsBytes;
+        DECODERS[Type.CONTAINER_VECTOR.code] = VariantReader::readContainerVector;
+        DECODERS[Type.BYTE_VECTOR.code] = Decoder::readByteVector;
+        DECODERS[Type.SHORT_VECTOR.code] = Decoder::readShortVector;
+        DECODERS[Type.INTEGER_VECTOR.code] = Decoder::readIntegerVector;
+        DECODERS[Type.LONG_VECTOR.code] = Decoder::readLongVector;
+        DECODERS[Type.FLAG_VECTOR.code] = Decoder::readFlagVector;
+        DECODERS[Type.FLOAT_VECTOR.code] = Decoder::readFloatVector;
+        DECODERS[Type.DOUBLE_VECTOR.code] = Decoder::readDoubleVector;
+        DECODERS[Type.STRING_VECTOR.code] = Decoder::readStringVectorAsBytes;
+        DECODERS[Type.TEXT_VECTOR.code] = Decoder::readTextVectorAsBytes;
 
-        decoders[Type.CONTAINER_ARRAY.code] = VariantReader::readContainerArray;
-        decoders[Type.BYTE_ARRAY.code] = Decoder::readByteArray;
-        decoders[Type.SHORT_ARRAY.code] = Decoder::readShortArray;
-        decoders[Type.INTEGER_ARRAY.code] = Decoder::readIntegerArray;
-        decoders[Type.LONG_ARRAY.code] = Decoder::readLongArray;
-        decoders[Type.FLAG_ARRAY.code] = Decoder::readFlagArray;
-        decoders[Type.FLOAT_ARRAY.code] = Decoder::readFloatArray;
-        decoders[Type.DOUBLE_ARRAY.code] = Decoder::readDoubleArray;
-        decoders[Type.STRING_ARRAY.code] = Decoder::readStringArrayAsBytes;
-        decoders[Type.TEXT_ARRAY.code] = Decoder::readTextArrayAsBytes;
+        DECODERS[Type.CONTAINER_ARRAY.code] = VariantReader::readContainerArray;
+        DECODERS[Type.BYTE_ARRAY.code] = Decoder::readByteArray;
+        DECODERS[Type.SHORT_ARRAY.code] = Decoder::readShortArray;
+        DECODERS[Type.INTEGER_ARRAY.code] = Decoder::readIntegerArray;
+        DECODERS[Type.LONG_ARRAY.code] = Decoder::readLongArray;
+        DECODERS[Type.FLAG_ARRAY.code] = Decoder::readFlagArray;
+        DECODERS[Type.FLOAT_ARRAY.code] = Decoder::readFloatArray;
+        DECODERS[Type.DOUBLE_ARRAY.code] = Decoder::readDoubleArray;
+        DECODERS[Type.STRING_ARRAY.code] = Decoder::readStringArrayAsBytes;
+        DECODERS[Type.TEXT_ARRAY.code] = Decoder::readTextArrayAsBytes;
     }
 
     static {
-        Arrays.setAll(skippers, idx -> decoder -> {
+        Arrays.setAll(SKIPPERS, idx -> decoder -> {
             throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));
         });
 
-        skippers[Type.CONTAINER.code] = VariantReader::skipContainer;
-        skippers[Type.BYTE.code] = Decoder::skipByte;
-        skippers[Type.SHORT.code] = Decoder::skipShort;
-        skippers[Type.INTEGER.code] = Decoder::skipInteger;
-        skippers[Type.LONG.code] = Decoder::skipLong;
-        skippers[Type.FLAG.code] = Decoder::skipFlag;
-        skippers[Type.FLOAT.code] = Decoder::skipFloat;
-        skippers[Type.DOUBLE.code] = Decoder::skipDouble;
-        skippers[Type.STRING.code] = Decoder::skipString;
-        skippers[Type.TEXT.code] = Decoder::skipText;
+        SKIPPERS[Type.CONTAINER.code] = VariantReader::skipContainer;
+        SKIPPERS[Type.BYTE.code] = Decoder::skipByte;
+        SKIPPERS[Type.SHORT.code] = Decoder::skipShort;
+        SKIPPERS[Type.INTEGER.code] = Decoder::skipInteger;
+        SKIPPERS[Type.LONG.code] = Decoder::skipLong;
+        SKIPPERS[Type.FLAG.code] = Decoder::skipFlag;
+        SKIPPERS[Type.FLOAT.code] = Decoder::skipFloat;
+        SKIPPERS[Type.DOUBLE.code] = Decoder::skipDouble;
+        SKIPPERS[Type.STRING.code] = Decoder::skipString;
+        SKIPPERS[Type.TEXT.code] = Decoder::skipText;
 
-        skippers[Type.CONTAINER_VECTOR.code] = VariantReader::skipContainerVector;
-        skippers[Type.BYTE_VECTOR.code] = Decoder::skipByteVector;
-        skippers[Type.SHORT_VECTOR.code] = Decoder::skipShortVector;
-        skippers[Type.INTEGER_VECTOR.code] = Decoder::skipIntegerVector;
-        skippers[Type.LONG_VECTOR.code] = Decoder::skipLongVector;
-        skippers[Type.FLAG_VECTOR.code] = Decoder::skipFlagVector;
-        skippers[Type.FLOAT_VECTOR.code] = Decoder::skipFloatVector;
-        skippers[Type.DOUBLE_VECTOR.code] = Decoder::skipDoubleVector;
-        skippers[Type.STRING_VECTOR.code] = Decoder::skipStringVector;
-        skippers[Type.TEXT_VECTOR.code] = Decoder::skipTextVector;
+        SKIPPERS[Type.CONTAINER_VECTOR.code] = VariantReader::skipContainerVector;
+        SKIPPERS[Type.BYTE_VECTOR.code] = Decoder::skipByteVector;
+        SKIPPERS[Type.SHORT_VECTOR.code] = Decoder::skipShortVector;
+        SKIPPERS[Type.INTEGER_VECTOR.code] = Decoder::skipIntegerVector;
+        SKIPPERS[Type.LONG_VECTOR.code] = Decoder::skipLongVector;
+        SKIPPERS[Type.FLAG_VECTOR.code] = Decoder::skipFlagVector;
+        SKIPPERS[Type.FLOAT_VECTOR.code] = Decoder::skipFloatVector;
+        SKIPPERS[Type.DOUBLE_VECTOR.code] = Decoder::skipDoubleVector;
+        SKIPPERS[Type.STRING_VECTOR.code] = Decoder::skipStringVector;
+        SKIPPERS[Type.TEXT_VECTOR.code] = Decoder::skipTextVector;
 
-        skippers[Type.CONTAINER_ARRAY.code] = VariantReader::skipContainerArray;
-        skippers[Type.BYTE_ARRAY.code] = Decoder::skipByteArray;
-        skippers[Type.SHORT_ARRAY.code] = Decoder::skipShortArray;
-        skippers[Type.INTEGER_ARRAY.code] = Decoder::skipIntegerArray;
-        skippers[Type.LONG_ARRAY.code] = Decoder::skipLongArray;
-        skippers[Type.FLAG_ARRAY.code] = Decoder::skipFlagArray;
-        skippers[Type.FLOAT_ARRAY.code] = Decoder::skipFloatArray;
-        skippers[Type.DOUBLE_ARRAY.code] = Decoder::skipDoubleArray;
-        skippers[Type.STRING_ARRAY.code] = Decoder::skipStringArray;
-        skippers[Type.TEXT_ARRAY.code] = Decoder::skipTextArray;
+        SKIPPERS[Type.CONTAINER_ARRAY.code] = VariantReader::skipContainerArray;
+        SKIPPERS[Type.BYTE_ARRAY.code] = Decoder::skipByteArray;
+        SKIPPERS[Type.SHORT_ARRAY.code] = Decoder::skipShortArray;
+        SKIPPERS[Type.INTEGER_ARRAY.code] = Decoder::skipIntegerArray;
+        SKIPPERS[Type.LONG_ARRAY.code] = Decoder::skipLongArray;
+        SKIPPERS[Type.FLAG_ARRAY.code] = Decoder::skipFlagArray;
+        SKIPPERS[Type.FLOAT_ARRAY.code] = Decoder::skipFloatArray;
+        SKIPPERS[Type.DOUBLE_ARRAY.code] = Decoder::skipDoubleArray;
+        SKIPPERS[Type.STRING_ARRAY.code] = Decoder::skipStringArray;
+        SKIPPERS[Type.TEXT_ARRAY.code] = Decoder::skipTextArray;
     }
 
     private static Type readType(Decoder decoder) {
@@ -105,35 +105,35 @@ public class VariantReader implements Reader<Variant> {
     }
 
     private static Object readValue(Decoder decoder, Type type) {
-        return decoders[type.code].apply(decoder);
+        return DECODERS[type.code].apply(decoder);
     }
 
     private static int skipValue(Decoder decoder, Type type) {
-        return skippers[type.code].applyAsInt(decoder);
+        return SKIPPERS[type.code].applyAsInt(decoder);
     }
 
     private static Object readContainer(Decoder decoder) {
-        return containerReader.read(decoder);
+        return CONTAINER_READER.read(decoder);
     }
 
     private static Object readContainerArray(Decoder decoder) {
-        return containerArrayReader.read(decoder);
+        return CONTAINER_ARRAY_READER.read(decoder);
     }
 
     private static Object readContainerVector(Decoder decoder) {
-        return containerVectorReader.read(decoder);
+        return CONTAINER_VECTOR_READER.read(decoder);
     }
 
     private static int skipContainer(Decoder decoder) {
-        return containerReader.skip(decoder);
+        return CONTAINER_READER.skip(decoder);
     }
 
     private static int skipContainerArray(Decoder decoder) {
-        return containerArrayReader.skip(decoder);
+        return CONTAINER_ARRAY_READER.skip(decoder);
     }
 
     private static int skipContainerVector(Decoder decoder) {
-        return containerVectorReader.skip(decoder);
+        return CONTAINER_VECTOR_READER.skip(decoder);
     }
 
     @Override

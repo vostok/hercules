@@ -16,7 +16,7 @@ public class PropertiesReader {
             throw new IllegalArgumentException("Cannot read properties: Invalid path");
         }
 
-        try(InputStream in = new FileInputStream(path)) {
+        try (InputStream in = new FileInputStream(path)) {
             Properties properties = new Properties();
             properties.load(in);
             return properties;

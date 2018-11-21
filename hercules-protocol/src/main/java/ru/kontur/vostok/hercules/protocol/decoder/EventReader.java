@@ -10,8 +10,8 @@ import java.util.UUID;
 
 public class EventReader implements Reader<Event> {
 
-    private static final UUIDReader uuidReader = new UUIDReader();
-    private static final ContainerReader containerSkipper = ContainerReader.readTags(Collections.emptySet());
+    private static final UUIDReader UUID_READER = new UUIDReader();
+    private static final ContainerReader CONTAINER_READER = ContainerReader.readTags(Collections.emptySet());
 
     private final ContainerReader containerReader;
 
@@ -24,7 +24,7 @@ public class EventReader implements Reader<Event> {
         int from = decoder.position();
 
         int version = decoder.readUnsignedByte();
-        UUID eventId = uuidReader.read(decoder);
+        UUID eventId = UUID_READER.read(decoder);
         Container container = processContainer(decoder);
 
         int to = decoder.position();
@@ -36,9 +36,8 @@ public class EventReader implements Reader<Event> {
     private Container processContainer(Decoder decoder) {
         if (Objects.nonNull(containerReader)) {
             return containerReader.read(decoder);
-        }
-        else {
-            containerSkipper.skip(decoder);
+        } else {
+            CONTAINER_READER.skip(decoder);
             return new Container(Collections.emptyMap());
         }
     }
