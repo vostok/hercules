@@ -1,13 +1,24 @@
 package ru.kontur.vostok.hercules.undertow.util;
 
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author Gregory Koshelev
  */
 public class ResponseUtil {
+
     public static void ok(HttpServerExchange exchange) {
         exchange.setStatusCode(200);
+        exchange.endExchange();
+    }
+
+    public static void okJson(HttpServerExchange exchange, String jsonString) {
+        exchange.setStatusCode(200);
+        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, ContentTypes.APPLICATION_JSON);
+        exchange.getResponseSender().send(jsonString, StandardCharsets.UTF_8);
         exchange.endExchange();
     }
 
