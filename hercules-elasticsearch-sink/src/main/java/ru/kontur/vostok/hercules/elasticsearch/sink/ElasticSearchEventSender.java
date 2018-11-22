@@ -97,6 +97,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
     private final RestClient restClient;
+    private final BulkResponseHandler bulkResponseHandler;
 
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
@@ -113,9 +114,6 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         final int connectionRequestTimeout = ElasticsearchProperties.CONNECTION_REQUEST_TIMEOUT_MS.extract(elasticsearchProperties);
         final int socketTimeout = ElasticsearchProperties.SOCKET_TIMEOUT_MS.extract(elasticsearchProperties);
 
-        // FIXME: Do a better initialization
-        BulkResponseHandler.retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
-
         this.restClient = RestClient.builder(hosts)
                 .setMaxRetryTimeoutMillis(retryTimeoutMs)
                 .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder
@@ -128,6 +126,10 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                         .setSocketTimeout(socketTimeout)
                 )
                 .build();
+
+        final boolean retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
+
+        this.bulkResponseHandler = new BulkResponseHandler(retryOnUnknownErrors);
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
@@ -166,7 +168,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     elasticsearchRequestErrorsMeter.mark();
                     throw new RuntimeException("Bad response");
                 }
-                result = BulkResponseHandler.process(response.getEntity());
+                result = bulkResponseHandler.process(response.getEntity());
             } while (result.hasRetryableErrors() && 0 < retryCount--);
             if (result.hasRetryableErrors()) {
                 throw new Exception("Have retryable errors in elasticsearch response");

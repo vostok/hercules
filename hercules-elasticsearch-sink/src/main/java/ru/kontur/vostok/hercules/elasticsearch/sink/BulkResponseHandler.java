@@ -186,11 +186,14 @@ public final class BulkResponseHandler {
     private static final JsonFactory FACTORY = new JsonFactory();
     private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
 
-    // FIXME: do a better initialization
-    public static volatile boolean retryOnUnknownErrors = false;
+    private final boolean retryOnUnknownErrors;
+
+    public BulkResponseHandler(boolean retryOnUnknownErrors) {
+        this.retryOnUnknownErrors = retryOnUnknownErrors;
+    }
 
     // TODO: Replace with a good parser
-    public static Result process(HttpEntity httpEntity) {
+    public Result process(HttpEntity httpEntity) {
         return toUnchecked(() -> {
             int errorCount = 0;
             boolean hasRetryableErrors = false;
@@ -236,7 +239,7 @@ public final class BulkResponseHandler {
      * @return does request should be retried
      * @throws IOException
      */
-    private static boolean processError(TreeNode errorNode, String id, String index) throws IOException {
+    private boolean processError(TreeNode errorNode, String id, String index) throws IOException {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
             JsonNode nestedError = error.get("caused_by");
@@ -273,9 +276,5 @@ public final class BulkResponseHandler {
             }
         }
         return false;
-    }
-
-    private BulkResponseHandler() {
-        /* static class */
     }
 }
