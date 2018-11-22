@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.undertow.util.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.nio.charset.StandardCharsets;
@@ -24,10 +25,7 @@ public class AboutHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        String jsonString = objectMapper.writeValueAsString(ApplicationContextHolder.get());
-
-        exchange.setStatusCode(200);
-        exchange.getResponseSender().send(jsonString, StandardCharsets.UTF_8);
-        exchange.endExchange();
+        final String jsonString = objectMapper.writeValueAsString(ApplicationContextHolder.get());
+        ResponseUtil.okJson(exchange, jsonString);
     }
 }
