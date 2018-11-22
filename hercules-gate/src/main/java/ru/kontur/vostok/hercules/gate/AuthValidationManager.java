@@ -44,7 +44,7 @@ public class AuthValidationManager {
             return;
         }
 
-        List<String> children = curatorClient.children("/hercules/auth/validations", e -> update());
+        List<String> children = curatorClient.children("/hercules/auth/validations");
 
         Map<String, Map<String, ContentValidator>> newValidators = new HashMap<>();
         Map<String, Map<String, Set<String>>> newTags = new HashMap<>();

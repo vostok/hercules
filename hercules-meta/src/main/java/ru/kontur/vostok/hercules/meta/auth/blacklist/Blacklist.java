@@ -56,9 +56,7 @@ public class Blacklist {
 
         List<String> children;
         try {
-            children = curatorClient.children("/hercules/auth/blacklist", e -> {
-                updateTask.renew();
-            });
+            children = curatorClient.children("/hercules/auth/blacklist");
         } catch (Exception e) {
             LOGGER.error("Error on updating list", e);
             return;
