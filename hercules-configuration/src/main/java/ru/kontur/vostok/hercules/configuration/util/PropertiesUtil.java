@@ -6,7 +6,8 @@ import java.util.Properties;
 /**
  * @author Gregory Koshelev
  */
-public class PropertiesUtil {
+public final class PropertiesUtil {
+
     public static Properties ofScope(Properties properties, String scope) {
         return subProperties(properties, scope, '.');
     }
@@ -23,4 +24,22 @@ public class PropertiesUtil {
         return props;
     }
 
+    public static String prettyView(final Properties properties) {
+        final StringBuilder builder = new StringBuilder();
+
+        properties.stringPropertyNames().stream()
+                .sorted()
+                .forEach(key -> {
+                    builder.append("\n\t")
+                            .append(key)
+                            .append("=")
+                            .append(properties.getProperty(key));
+                });
+
+        return builder.toString();
+    }
+
+    private PropertiesUtil() {
+        /* static class */
+    }
 }
