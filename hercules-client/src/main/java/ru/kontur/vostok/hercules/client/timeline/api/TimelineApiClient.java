@@ -7,6 +7,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import ru.kontur.vostok.hercules.client.CommonHeaders;
 import ru.kontur.vostok.hercules.client.CommonParameters;
 import ru.kontur.vostok.hercules.client.LogicalShardState;
@@ -31,7 +32,7 @@ import java.net.URI;
 import java.util.function.Supplier;
 
 /**
- * TimelineApiClient
+ * TimelineApiClient - client for Hercules Timeline API
  *
  * @author Kirill Sulim
  */
@@ -40,22 +41,61 @@ public class TimelineApiClient {
     private static final TimelineReadStateWriter STATE_WRITER = new TimelineReadStateWriter();
     private static final TimelineContentReader CONTENT_READER = new TimelineContentReader(EventReader.readAllTags());
 
+    private final CloseableHttpClient httpClient;
     private final URI server;
     private final LogicalShardState shardState;
     private final String apiKey;
-    private final CloseableHttpClient httpClient;
 
+    /**
+     * @param server server URI
+     * @param shardState client logical shard state
+     * @param apiKey api key for authorization
+     */
     public TimelineApiClient(
-            final Supplier<CloseableHttpClient> httpClient,
+            URI server,
+            LogicalShardState shardState,
+            String apiKey
+    ) {
+        this.httpClient = HttpClients.createDefault();
+        this.server = server;
+        this.shardState = shardState;
+        this.apiKey = apiKey;
+    }
+
+    /**
+     * @param httpClient apache http client instance
+     * @param server server URI
+     * @param shardState client logical shard state
+     * @param apiKey api key for authorization
+     */
+    public TimelineApiClient(
+            CloseableHttpClient httpClient,
+            URI server,
+            LogicalShardState shardState,
+            String apiKey
+    ) {
+        this.httpClient = httpClient;
+        this.server = server;
+        this.shardState = shardState;
+        this.apiKey = apiKey;
+    }
+
+    /**
+     * @param httpClientFactory apache http client supplier
+     * @param server server URI
+     * @param shardState client logical shard state
+     * @param apiKey api key for authorization
+     */
+    public TimelineApiClient(
+            final Supplier<CloseableHttpClient> httpClientFactory,
             final URI server,
             final LogicalShardState shardState,
             final String apiKey
     ) {
+        this.httpClient = httpClientFactory.get();
         this.server = server;
         this.shardState = shardState;
         this.apiKey = apiKey;
-
-        this.httpClient = httpClient.get();
     }
 
     /**
@@ -119,6 +159,9 @@ public class TimelineApiClient {
         }
     }
 
+    /**
+     * @return true if ping was performed without errors
+     */
     public boolean ping() {
         HttpGet httpGet = new HttpGet(server.resolve(Resources.PING));
 

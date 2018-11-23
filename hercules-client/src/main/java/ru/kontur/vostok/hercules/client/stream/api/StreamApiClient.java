@@ -7,9 +7,15 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import ru.kontur.vostok.hercules.client.CommonHeaders;
 import ru.kontur.vostok.hercules.client.CommonParameters;
 import ru.kontur.vostok.hercules.client.LogicalShardState;
+import ru.kontur.vostok.hercules.client.exceptions.BadRequestException;
+import ru.kontur.vostok.hercules.client.exceptions.ForbiddenException;
+import ru.kontur.vostok.hercules.client.exceptions.HerculesClientException;
+import ru.kontur.vostok.hercules.client.exceptions.NotFoundException;
+import ru.kontur.vostok.hercules.client.exceptions.UnauthorizedException;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
@@ -25,7 +31,7 @@ import java.net.URI;
 import java.util.function.Supplier;
 
 /**
- * StreamApiClient
+ * StreamApiClient - client for Hercules Stream API
  *
  * @author Kirill Sulim
  */
@@ -34,11 +40,51 @@ public class StreamApiClient {
     private static final StreamReadStateWriter STATE_WRITER = new StreamReadStateWriter();
     private static final EventStreamContentReader CONTENT_READER = new EventStreamContentReader();
 
+    private final CloseableHttpClient httpClient;
     private final URI server;
     private final LogicalShardState shardState;
     private final String apiKey;
-    private final CloseableHttpClient httpClient;
 
+    /**
+     * @param server server URI
+     * @param shardState client logical shard state
+     * @param apiKey api key for authorization
+     */
+    public StreamApiClient(
+            URI server,
+            LogicalShardState shardState,
+            String apiKey
+    ) {
+        this.httpClient = HttpClients.createDefault();
+        this.server = server;
+        this.shardState = shardState;
+        this.apiKey = apiKey;
+    }
+
+    /**
+     * @param httpClient apache http client instance
+     * @param server server URI
+     * @param shardState client logical shard state
+     * @param apiKey api key for authorization
+     */
+    public StreamApiClient(
+            CloseableHttpClient httpClient,
+            URI server,
+            LogicalShardState shardState,
+            String apiKey
+    ) {
+        this.httpClient = httpClient;
+        this.server = server;
+        this.shardState = shardState;
+        this.apiKey = apiKey;
+    }
+
+    /**
+     * @param httpClientFactory apache http client supplier
+     * @param server server URI
+     * @param shardState client logical shard state
+     * @param apiKey api key for authorization
+     */
     public StreamApiClient(
             Supplier<CloseableHttpClient> httpClientFactory,
             URI server,
@@ -51,13 +97,31 @@ public class StreamApiClient {
         this.apiKey = apiKey;
     }
 
+    /**
+     * Get stream content from Stream API
+     *
+     * @param stream stream name
+     * @param streamReadState stream read state
+     * @param count event count
+     * @return stream content
+     *
+     * @throws HerculesClientException in case of unspecified error
+     * @throws BadRequestException in case of incorrect parameters
+     * @throws UnauthorizedException in case of missing authorization data
+     * @throws ForbiddenException in case of request of forbidden resource
+     * @throws NotFoundException in case of not found resource
+     */
     public EventStreamContent getStreamContent(
-            final String pattern,
+            final String stream,
             final StreamReadState streamReadState,
             final int count
-    ) {
+    ) throws HerculesClientException,
+            BadRequestException,
+            UnauthorizedException,
+            ForbiddenException,
+            NotFoundException {
         URI uri = ThrowableUtil.toUnchecked(() -> new URIBuilder(server.resolve(Resources.STREAM_READ))
-                .addParameter(Parameters.STREAM_PATTERN, pattern)
+                .addParameter(Parameters.STREAM, stream)
                 .addParameter(Parameters.RESPONSE_EVENTS_COUNT, String.valueOf(count))
                 .addParameter(CommonParameters.LOGICAL_SHARD_ID, String.valueOf(shardState.getShardId()))
                 .addParameter(CommonParameters.LOGICAL_SHARD_COUNT, String.valueOf(shardState.getShardCount()))
@@ -71,17 +135,28 @@ public class StreamApiClient {
         httpPost.setEntity(new ByteArrayEntity(bytes.toByteArray()));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+            switch (response.getStatusLine().getStatusCode()) {
+                case 200: break;
+                case 400: throw new BadRequestException();
+                case 401: throw new UnauthorizedException();
+                case 403: throw new ForbiddenException(stream, apiKey);
+                case 404: throw new NotFoundException(stream);
+                default: throw new HerculesClientException("Unknown exception");
+            }
+
             HttpEntity entity = response.getEntity();
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream((int) entity.getContentLength());
             entity.writeTo(outputStream);
             return CONTENT_READER.read(new Decoder(outputStream.toByteArray()));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new HerculesClientException("IOException occurred", e);
         }
     }
 
+    /**
+     * @return true if ping was performed without errors
+     */
     public boolean ping() {
-
         HttpGet httpGet = new HttpGet(server.resolve(Resources.PING));
 
         try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
@@ -111,7 +186,7 @@ public class StreamApiClient {
         /**
          * Stream pattern
          */
-        static final String STREAM_PATTERN = "stream";
+        static final String STREAM = "stream";
 
         /**
          * Event count
