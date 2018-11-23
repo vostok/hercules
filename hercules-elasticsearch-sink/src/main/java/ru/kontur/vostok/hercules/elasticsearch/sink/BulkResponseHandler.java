@@ -282,24 +282,16 @@ public class BulkResponseHandler {
                 errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
 
                 if (RETRYABLE_ERRORS_CODES.contains(type)) {
-                    /* do not write error to log in case of retryable error */
+                    /* Do not write error to log in case of retryable error */
                     retryableErrorsMeter.mark();
                     return true;
                 } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                    /* if error is retriable and known just add */
                     nonRetryableErrorsMeter.mark();
-                    LOGGER.error(
-                            "Bulk processing error: index={}, id={}, type={}, reason={}",
-                            index,
-                            id,
-                            type,
-                            reason
-                    );
+                    LOGGER.error("Bulk processing error: index={}, id={}, type={}, reason={}", index, id, type,reason);
                     return false;
                 } else {
-                    /* unknown error type */
                     unknownErrorsMeter.mark();
-                    LOGGER.warn("Unknown error type={} reaon={}", type, reason);
+                    LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
                     return retryOnUnknownErrors;
                 }
             }
