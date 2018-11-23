@@ -10,6 +10,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import ru.kontur.vostok.hercules.client.CommonHeaders;
 import ru.kontur.vostok.hercules.client.CommonParameters;
 import ru.kontur.vostok.hercules.client.LogicalShardState;
+import ru.kontur.vostok.hercules.client.exceptions.BadRequestException;
+import ru.kontur.vostok.hercules.client.exceptions.ForbiddenException;
+import ru.kontur.vostok.hercules.client.exceptions.HerculesClientException;
+import ru.kontur.vostok.hercules.client.exceptions.NotFoundException;
+import ru.kontur.vostok.hercules.client.exceptions.UnauthorizedException;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
@@ -53,12 +58,32 @@ public class TimelineApiClient {
         this.httpClient = httpClient.get();
     }
 
+    /**
+     * Request timeline content from timeline API
+     *
+     * @param timeline timeline name
+     * @param timelineReadState read state
+     * @param timeInterval time interval
+     * @param count count of events
+     * @return timeline content
+     *
+     * @throws HerculesClientException in case of unspecified error
+     * @throws BadRequestException in case of incorrect parameters
+     * @throws UnauthorizedException in case of missing authorization data
+     * @throws ForbiddenException in case of request of forbidden resource
+     * @throws NotFoundException in case of not found resource
+     */
     public TimelineContent getTimelineContent(
             final String timeline,
             final TimelineReadState timelineReadState,
             final TimeInterval timeInterval,
             final int count
-    ) {
+    ) throws HerculesClientException,
+            BadRequestException,
+            UnauthorizedException,
+            ForbiddenException,
+            NotFoundException {
+
         URI uri = ThrowableUtil.toUnchecked(() -> new URIBuilder(server.resolve(Resources.TIMELINE_READ))
                 .addParameter(Parameters.TIMELINE, timeline)
                 .addParameter(Parameters.RESPONSE_EVENTS_COUNT, String.valueOf(count))
@@ -76,12 +101,21 @@ public class TimelineApiClient {
         httpPost.setEntity(new ByteArrayEntity(bytes.toByteArray()));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+            switch (response.getStatusLine().getStatusCode()) {
+                case 200: break;
+                case 400: throw new BadRequestException();
+                case 401: throw new UnauthorizedException();
+                case 403: throw new ForbiddenException(timeline, apiKey);
+                case 404: throw new NotFoundException(timeline);
+                default: throw new HerculesClientException("Unknown exception");
+            }
+
             HttpEntity entity = response.getEntity();
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream((int) entity.getContentLength());
             entity.writeTo(outputStream);
             return CONTENT_READER.read(new Decoder(outputStream.toByteArray()));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new HerculesClientException("IO Exception occurred", e);
         }
     }
 
