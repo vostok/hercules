@@ -82,6 +82,11 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
                 .build();
+
+        static final PropertyDescription<Boolean> RETRY_ON_UNKNOWN_ERRORS = PropertyDescriptions
+                .booleanProperty("retryOnUnknownErrors")
+                .withDefaultValue(Boolean.FALSE)
+                .build();
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchEventSender.class);
@@ -92,6 +97,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
 
     private final RestClient restClient;
+    private final BulkResponseHandler bulkResponseHandler;
 
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
@@ -101,12 +107,12 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             MetricsCollector metricsCollector
     ) {
         HttpHost[] hosts = ElasticsearchProperties.HOSTS.extract(elasticsearchProperties);
-        int maxConnections = ElasticsearchProperties.MAX_CONNECTIONS.extract(elasticsearchProperties);
-        int maxConnectionsPerRoute = ElasticsearchProperties.MAX_CONNECTIONS_PER_ROUTE.extract(elasticsearchProperties);
-        int retryTimeoutMs = ElasticsearchProperties.RETRY_TIMEOUT_MS.extract(elasticsearchProperties);
-        int connectionTimeout = ElasticsearchProperties.CONNECTION_TIMEOUT_MS.extract(elasticsearchProperties);
-        int connectionRequestTimeout = ElasticsearchProperties.CONNECTION_REQUEST_TIMEOUT_MS.extract(elasticsearchProperties);
-        int socketTimeout = ElasticsearchProperties.SOCKET_TIMEOUT_MS.extract(elasticsearchProperties);
+        final int maxConnections = ElasticsearchProperties.MAX_CONNECTIONS.extract(elasticsearchProperties);
+        final int maxConnectionsPerRoute = ElasticsearchProperties.MAX_CONNECTIONS_PER_ROUTE.extract(elasticsearchProperties);
+        final int retryTimeoutMs = ElasticsearchProperties.RETRY_TIMEOUT_MS.extract(elasticsearchProperties);
+        final int connectionTimeout = ElasticsearchProperties.CONNECTION_TIMEOUT_MS.extract(elasticsearchProperties);
+        final int connectionRequestTimeout = ElasticsearchProperties.CONNECTION_REQUEST_TIMEOUT_MS.extract(elasticsearchProperties);
+        final int socketTimeout = ElasticsearchProperties.SOCKET_TIMEOUT_MS.extract(elasticsearchProperties);
 
         this.restClient = RestClient.builder(hosts)
                 .setMaxRetryTimeoutMillis(retryTimeoutMs)
@@ -120,6 +126,10 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                         .setSocketTimeout(socketTimeout)
                 )
                 .build();
+
+        final boolean retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
+
+        this.bulkResponseHandler = new BulkResponseHandler(retryOnUnknownErrors, metricsCollector);
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
@@ -158,7 +168,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     elasticsearchRequestErrorsMeter.mark();
                     throw new RuntimeException("Bad response");
                 }
-                result = BulkResponseHandler.process(response.getEntity());
+                result = bulkResponseHandler.process(response.getEntity());
             } while (result.hasRetryableErrors() && 0 < retryCount--);
             if (result.hasRetryableErrors()) {
                 throw new Exception("Have retryable errors in elasticsearch response");
