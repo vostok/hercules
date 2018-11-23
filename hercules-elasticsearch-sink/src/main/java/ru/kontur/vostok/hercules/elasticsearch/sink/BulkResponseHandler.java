@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.elasticsearch.sink;
 
+import com.codahale.metrics.Meter;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
@@ -9,6 +10,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -16,10 +19,11 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-public final class BulkResponseHandler {
+public class BulkResponseHandler {
 
     public static class Result {
 
@@ -47,7 +51,28 @@ public final class BulkResponseHandler {
             "es_rejected_execution_exception",
             "index_closed_exception",
             "cluster_block_exception",
-            "unavailable_shards_exception",
+            "unavailable_shards_exception"
+    ));
+
+    private static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
+            "illegal_argument_exception"
+    ));
+
+    private static final Set<String> UNSPECIFIED_ERRORS_CODES = new HashSet<>(Arrays.asList(
+            "invalid_alias_name_exception",
+            "invalid_index_name_exception",
+            "elasticsearch_parse_exception",
+            "invalid_type_name_exception",
+            "parsing_exception",
+            "index_template_missing_exception",
+            "search_parse_exception",
+            "timestamp_parsing_exception",
+            "invalid_index_template_exception",
+            "invalid_snapshot_name_exception",
+            "document_source_missing_exception",
+            "resource_already_exists_exception",
+            "mapper_parsing_exception",
+            "type_missing_exception",
             "index_shard_snapshot_failed_exception",
             "dfs_phase_execution_exception",
             "execution_cancelled_exception",
@@ -163,33 +188,32 @@ public final class BulkResponseHandler {
             "too_many_buckets_exception"
     ));
 
-    private static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
-            "invalid_alias_name_exception",
-            "invalid_index_name_exception",
-            "elasticsearch_parse_exception",
-            "invalid_type_name_exception",
-            "parsing_exception",
-            "index_template_missing_exception",
-            "search_parse_exception",
-            "timestamp_parsing_exception",
-            "invalid_index_template_exception",
-            "invalid_snapshot_name_exception",
-            "document_source_missing_exception",
-            "resource_already_exists_exception",
-            "mapper_parsing_exception",
-            "type_missing_exception",
-            "illegal_argument_exception"
-    ));
-
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
+
+    private static final String METRIC_PREFIX = "bulkResponseHandler.";
 
     private static final JsonFactory FACTORY = new JsonFactory();
     private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
 
     private final boolean retryOnUnknownErrors;
 
-    public BulkResponseHandler(boolean retryOnUnknownErrors) {
+    private final MetricsCollector metricsCollector;
+
+    private final ConcurrentHashMap<String, Meter> errorTypesMeter = new ConcurrentHashMap<>();
+
+    private final Meter retryableErrorsMeter;
+    private final Meter nonRetryableErrorsMeter;
+    private final Meter unknownErrorsMeter;
+
+
+    public BulkResponseHandler(final boolean retryOnUnknownErrors, final MetricsCollector metricsCollector) {
         this.retryOnUnknownErrors = retryOnUnknownErrors;
+
+        this.metricsCollector = metricsCollector;
+
+        this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "retryableErrors");
+        this.nonRetryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "nonRetryableErrors");
+        this.unknownErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "unknownErrors");
     }
 
     // TODO: Replace with a good parser
@@ -255,11 +279,15 @@ public final class BulkResponseHandler {
                         .orElse("")
                         .replaceAll("[\\r\\n]+", " ");
 
+                errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
+
                 if (RETRYABLE_ERRORS_CODES.contains(type)) {
                     /* do not write error to log in case of retryable error */
+                    retryableErrorsMeter.mark();
                     return true;
                 } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
                     /* if error is retriable and known just add */
+                    nonRetryableErrorsMeter.mark();
                     LOGGER.error(
                             "Bulk processing error: index={}, id={}, type={}, reason={}",
                             index,
@@ -270,11 +298,16 @@ public final class BulkResponseHandler {
                     return false;
                 } else {
                     /* unknown error type */
+                    unknownErrorsMeter.mark();
                     LOGGER.warn("Unknown error type={} reaon={}", type, reason);
                     return retryOnUnknownErrors;
                 }
             }
         }
         return false;
+    }
+
+    private Meter createMeter(final String errorType) {
+        return metricsCollector.meter(METRIC_PREFIX + "errorTypes." + GraphiteMetricsUtil.sanitizeMetricName(errorType));
     }
 }

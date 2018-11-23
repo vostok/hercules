@@ -129,7 +129,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
 
         final boolean retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
 
-        this.bulkResponseHandler = new BulkResponseHandler(retryOnUnknownErrors);
+        this.bulkResponseHandler = new BulkResponseHandler(retryOnUnknownErrors, metricsCollector);
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
