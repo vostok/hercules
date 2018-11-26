@@ -8,6 +8,10 @@ public class TimelineReadState {
         this.shards = shards;
     }
 
+    public int getShardCount() {
+        return shards.length;
+    }
+
     public TimelineShardReadState[] getShards() {
         return shards;
     }
