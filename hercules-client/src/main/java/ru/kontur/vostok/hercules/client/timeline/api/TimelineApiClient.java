@@ -14,6 +14,7 @@ import ru.kontur.vostok.hercules.client.LogicalShardState;
 import ru.kontur.vostok.hercules.client.exceptions.BadRequestException;
 import ru.kontur.vostok.hercules.client.exceptions.ForbiddenException;
 import ru.kontur.vostok.hercules.client.exceptions.HerculesClientException;
+import ru.kontur.vostok.hercules.client.exceptions.HerculesClientExceptionUtil;
 import ru.kontur.vostok.hercules.client.exceptions.NotFoundException;
 import ru.kontur.vostok.hercules.client.exceptions.UnauthorizedException;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
@@ -29,6 +30,7 @@ import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -141,13 +143,14 @@ public class TimelineApiClient {
         httpPost.setEntity(new ByteArrayEntity(bytes.toByteArray()));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-            switch (response.getStatusLine().getStatusCode()) {
-                case 200: break;
-                case 400: throw new BadRequestException();
-                case 401: throw new UnauthorizedException();
-                case 403: throw new ForbiddenException(timeline, apiKey);
-                case 404: throw new NotFoundException(timeline);
-                default: throw new HerculesClientException("Unknown exception");
+            final Optional<HerculesClientException> exception = HerculesClientExceptionUtil.exceptionFromStatus(
+                    response.getStatusLine().getStatusCode(),
+                    timeline,
+                    apiKey
+            );
+
+            if (exception.isPresent()) {
+                throw exception.get();
             }
 
             HttpEntity entity = response.getEntity();
