@@ -111,3 +111,9 @@ Where,
 `X*` means "repeat `X` zero or more times"  
 `X | Y` means "`X` or `Y`"  
 `; commentary` is commentary.
+
+### Byte order
+
+Binary protocol uses **network byte order** or **Big Endian**.
+
+Thus, `Short`, `Integer`, `Float` and other numbers are presented in Big Endian form.
