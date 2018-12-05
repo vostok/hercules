@@ -67,7 +67,7 @@ Event = Version Timestamp Random Payload
         ; Hercules Event
 
 Version = <i>Byte</i>
-        ; Protocol version is used
+        ; Protocol version is used. Current protocol version is 0x01
 
 Timestamp = <i>Long</i>
         ; Event timestamp in 100-ns ticks from Gregorian Epoch (1582-10-15T00:00:00.000Z)
