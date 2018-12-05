@@ -1,0 +1,7 @@
+# mvn target directory
+target
+
+# IDE specific resources
+target
+*.iml
+.idea
