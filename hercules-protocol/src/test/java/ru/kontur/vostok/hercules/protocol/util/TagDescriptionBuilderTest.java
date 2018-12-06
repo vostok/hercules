@@ -4,6 +4,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.HerculesProtocolAssert;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.Vector;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -46,14 +47,14 @@ public class TagDescriptionBuilderTest {
 
     @Test
     public void shouldAllowStringAndTextVariantsInTextualTag() throws Exception {
-        TagDescription<String> description = TagDescriptionBuilder.textual("test").build();
+        TagDescription<String> description = TagDescriptionBuilder.string("test").build();
 
         String stringVariantValue = ContainerUtil.extract(
                 ContainerBuilder.create().tag("test", Variant.ofString("abc")).build(),
                 description
         );
         String textVariantValue = ContainerUtil.extract(
-                ContainerBuilder.create().tag("test", Variant.ofText("def")).build(),
+                ContainerBuilder.create().tag("test", Variant.ofString("def")).build(),
                 description
         );
 
@@ -62,28 +63,21 @@ public class TagDescriptionBuilderTest {
     }
 
     @Test
-    public void shouldAllowVectorAndContainerInContainerListTag() throws Exception {
+    public void shouldAllowVectorOfContainersTag() throws Exception {
         TagDescription<Container[]> description = TagDescriptionBuilder.containerList("test").build();
 
-        Container[] extractedContainerArray = ContainerUtil.extract(
-                ContainerBuilder.create()
-                        .tag("test", Variant.ofContainerArray(new Container[]{
-                                ContainerBuilder.create().tag("a", Variant.ofInteger(1)).build()
-                        }))
-                        .build(),
-                description
-        );
+        Container[] expectedContainerVector = new Container[]{
+                ContainerBuilder.create().tag("a", Variant.ofInteger(1)).build()
+        };
 
         Container[] extractedContainerVector = ContainerUtil.extract(
                 ContainerBuilder.create()
-                        .tag("test", Variant.ofContainerVector(new Container[]{
-                                ContainerBuilder.create().tag("a", Variant.ofInteger(1)).build()
-                        }))
+                        .tag("test", Variant.ofVector(Vector.ofContainers(expectedContainerVector)))
                         .build(),
                 description
         );
 
-        HerculesProtocolAssert.assertArrayEquals(extractedContainerArray, extractedContainerVector, HerculesProtocolAssert::assertEquals);
+        HerculesProtocolAssert.assertArrayEquals(expectedContainerVector, extractedContainerVector, HerculesProtocolAssert::assertEquals);
     }
 
     @Test
@@ -100,7 +94,7 @@ public class TagDescriptionBuilderTest {
 
     @Test
     public void shouldUseDefaultValueInCaseOfValueAbsence() throws Exception {
-        TagDescription<String> description = TagDescriptionBuilder.textual("test")
+        TagDescription<String> description = TagDescriptionBuilder.string("test")
                 .addDefault(() -> "Default value")
                 .build();
 
@@ -114,7 +108,7 @@ public class TagDescriptionBuilderTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldThrowIllegalArgumentExceptionInCaseOfAbsenceOfRequiredValue() throws Exception {
-        TagDescription<String> description = TagDescriptionBuilder.textual("test").build();
+        TagDescription<String> description = TagDescriptionBuilder.string("test").build();
 
         ContainerUtil.extract(
                 ContainerBuilder.create().build(),

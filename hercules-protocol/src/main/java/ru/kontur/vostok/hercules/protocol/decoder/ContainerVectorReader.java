@@ -38,13 +38,13 @@ public class ContainerVectorReader implements Reader<Container[]> {
      */
     @Override
     public int skip(Decoder decoder) {
-        int length = decoder.readVectorLength();
-        int skipped = 0;
+        int position = decoder.position();
 
+        int length = decoder.readVectorLength();
         while (0 <= --length) {
-            skipped += CONTAINER_READER.skip(decoder);
+            CONTAINER_READER.skip(decoder);
         }
 
-        return skipped + SizeOf.VECTOR_LENGTH;
+        return decoder.position() - position;
     }
 }

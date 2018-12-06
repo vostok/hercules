@@ -176,7 +176,7 @@ public class TimelineApiClient {
     }
 
     private static int calculateReadStateSize(int shardCount) {
-        return SizeOf.VECTOR_LENGTH + shardCount * (SizeOf.INTEGER + SizeOf.LONG + 2 * SizeOf.LONG);
+        return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG + 2 * SizeOf.LONG);
     }
 
     private static class Resources {

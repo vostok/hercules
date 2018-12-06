@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
-import ru.kontur.vostok.hercules.protocol.VectorConstants;
+import ru.kontur.vostok.hercules.protocol.Type;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -57,6 +57,10 @@ public class Encoder {
         }
     }
 
+    public void writeFlag(boolean flag) {
+        writeByte(flag ? (byte) 1 : (byte) 0);
+    }
+
     public void writeFloat(float f) {
         try {
             stream.writeFloat(f);
@@ -73,10 +77,6 @@ public class Encoder {
         }
     }
 
-    public void writeFlag(boolean flag) {
-        writeByte(flag ? (byte) 1 : (byte) 0);
-    }
-
     public void writeString(String s) {
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
         writeBytesAsString(bytes);
@@ -84,21 +84,7 @@ public class Encoder {
 
     public void writeBytesAsString(byte[] bytes) {
         try {
-            writeVectorLength(bytes.length, VectorConstants.STRING_LENGTH_ERROR_MESSAGE);
-            stream.write(bytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void writeText(String s) {
-        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-        writeBytesAsText(bytes);
-    }
-
-    public void writeBytesAsText(byte[] bytes) {
-        try {
-            writeArrayLength(bytes.length);
+            writeStringLength(bytes.length);
             stream.write(bytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -114,13 +100,11 @@ public class Encoder {
         }
     }
 
-    public void writeByteArray(byte[] array) {
-        try {
-            writeArrayLength(array.length);
-            stream.write(array);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public void writeNull() {
+    }
+
+    public void writeType(Type type) {
+        writeUnsignedByte(type.code);
     }
 
     public void writeByteVector(byte[] vector) {
@@ -132,24 +116,10 @@ public class Encoder {
         }
     }
 
-    public void writeUnsignedByteArray(int[] array) {
-        writeArrayLength(array.length);
-        for (int ub : array) {
-            writeUnsignedByte(ub);
-        }
-    }
-
     public void writeUnsignedByteVector(int[] vector) {
         writeVectorLength(vector.length);
         for (int ub : vector) {
             writeUnsignedByte(ub);
-        }
-    }
-
-    public void writeShortArray(short[] array) {
-        writeArrayLength(array.length);
-        for (short s : array) {
-            writeShort(s);
         }
     }
 
@@ -160,24 +130,10 @@ public class Encoder {
         }
     }
 
-    public void writeIntegerArray(int[] array) {
-        writeArrayLength(array.length);
-        for (int i : array) {
-            writeInteger(i);
-        }
-    }
-
     public void writeIntegerVector(int[] vector) {
         writeVectorLength(vector.length);
         for (int i : vector) {
             writeInteger(i);
-        }
-    }
-
-    public void writeLongArray(long[] array) {
-        writeArrayLength(array.length);
-        for (long l : array) {
-            writeLong(l);
         }
     }
 
@@ -188,24 +144,10 @@ public class Encoder {
         }
     }
 
-    public void writeFlagArray(boolean[] array) {
-        writeArrayLength(array.length);
-        for (boolean b : array) {
-            writeFlag(b);
-        }
-    }
-
     public void writeFlagVector(boolean[] vector) {
         writeVectorLength(vector.length);
         for (boolean b : vector) {
             writeFlag(b);
-        }
-    }
-
-    public void writeFloatArray(float[] array) {
-        writeArrayLength(array.length);
-        for (float f : array) {
-            writeFloat(f);
         }
     }
 
@@ -216,31 +158,10 @@ public class Encoder {
         }
     }
 
-    public void writeDoubleArray(double[] array) {
-        writeArrayLength(array.length);
-        for (double d : array) {
-            writeDouble(d);
-        }
-    }
-
     public void writeDoubleVector(double[] vector) {
         writeVectorLength(vector.length);
         for (double d : vector) {
             writeDouble(d);
-        }
-    }
-
-    public void writeStringArray(String[] array) {
-        writeArrayLength(array.length);
-        for (String s : array) {
-            writeString(s);
-        }
-    }
-
-    public void writeBytesAsStringArray(byte[][] strings) {
-        writeArrayLength(strings.length);
-        for (byte[] string : strings) {
-            writeBytesAsString(string);
         }
     }
 
@@ -258,34 +179,6 @@ public class Encoder {
         }
     }
 
-    public void writeTextArray(String[] array) {
-        writeArrayLength(array.length);
-        for (String s : array) {
-            writeText(s);
-        }
-    }
-
-    public void writeBytesAsTextArray(byte[][] texts) {
-        writeArrayLength(texts.length);
-        for (byte[] text : texts) {
-            writeBytesAsText(text);
-        }
-    }
-
-    public void writeTextVector(String[] vector) {
-        writeVectorLength(vector.length);
-        for (String s : vector) {
-            writeText(s);
-        }
-    }
-
-    public void writeBytesAsTextVector(byte[][] texts) {
-        writeVectorLength(texts.length);
-        for (byte[] text : texts) {
-            writeBytesAsText(text);
-        }
-    }
-
     public void writeRawBytes(byte[] bytes) {
         try {
             stream.write(bytes);
@@ -296,19 +189,66 @@ public class Encoder {
 
     /* --- Utility methods --- */
 
-    public void writeArrayLength(int length) {
-        writeInteger(length);
-    }
+    public void writeVarLen(int value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("Cannot encode negative value: " + value);
+        }
 
-    public void writeVectorLength(int length, String errorMessage) {
-        if (length < VectorConstants.VECTOR_LENGTH_EXCEEDED) {
-            writeUnsignedByte(length);
-        } else {
-            throw new IllegalArgumentException(errorMessage);
+        try {
+            byte lsb1 = (byte) (value & 0x7F);
+            value = value >> 7;
+            if (value == 0) {
+                stream.write(lsb1);
+                return;
+            }
+
+            byte lsb2 = (byte) (value & 0x7F);
+            value = value >> 7;
+            if (value == 0) {
+                stream.write(lsb2 | 0x80);
+                stream.write(lsb1);
+                return;
+            }
+
+            byte lsb3 = (byte) (value & 0x7F);
+            value = value >> 7;
+            if (value == 0) {
+                stream.write(lsb3 | 0x80);
+                stream.write(lsb2 | 0x80);
+                stream.write(lsb1);
+                return;
+            }
+
+            byte lsb4 = (byte) (value & 0x7F);
+            value = value >> 7;
+            if (value == 0) {
+                stream.write(lsb4 | 0x80);
+                stream.write(lsb3 | 0x80);
+                stream.write(lsb2 | 0x80);
+                stream.write(lsb1);
+                return;
+            }
+
+            byte lsb5 = (byte) (value & 0x7F);
+            stream.write(lsb5 | 0x80);
+            stream.write(lsb4 | 0x80);
+            stream.write(lsb3 | 0x80);
+            stream.write(lsb2 | 0x80);
+            stream.write(lsb1);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public void writeVectorLength(int length) {
-        writeVectorLength(length, VectorConstants.VECTOR_LENGTH_ERROR_MESSAGE);
+        writeVarLen(length);
+    }
+
+    public void writeStringLength(int length) {
+        writeVarLen(length);
+    }
+
+    public void writeContainerSize(int size) {
+        writeVarLen(size);
     }
 }

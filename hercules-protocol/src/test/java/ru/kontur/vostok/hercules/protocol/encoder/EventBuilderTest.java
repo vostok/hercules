@@ -20,7 +20,8 @@ public class EventBuilderTest {
         UUID uuid = UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000");
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setVersion(1);
-        eventBuilder.setEventId(uuid);
+        eventBuilder.setTimestamp(uuid.timestamp());
+        eventBuilder.setRandom(uuid);
         eventBuilder.setTag("host", Variant.ofString("localhost"));
         eventBuilder.setTag("timestamp", Variant.ofLong(1527679920000000L));
 

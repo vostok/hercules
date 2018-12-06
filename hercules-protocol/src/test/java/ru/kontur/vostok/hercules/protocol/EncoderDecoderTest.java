@@ -126,31 +126,6 @@ public class EncoderDecoderTest {
     }
 
     @Test
-    public void shouldEncodeDecodeText() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeText(TestUtil.multiply("Very very long text", 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertEquals(TestUtil.multiply("Very very long text", 100), decoder.readText());
-    }
-
-    @Test
-    public void shouldEncodeDecodeByteArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeByteArray(TestUtil.multiply(new byte[]{(byte) 1, (byte) 2, (byte) 3}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                TestUtil.multiply(new byte[]{(byte) 1, (byte) 2, (byte) 3}, 100),
-                decoder.readByteArray()
-        );
-    }
-
-    @Test
     public void shouldEncodeDecodeByteVector() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Encoder encoder = new Encoder(stream);
@@ -159,20 +134,6 @@ public class EncoderDecoderTest {
         Decoder decoder = new Decoder(stream.toByteArray());
 
         assertArrayEquals(new byte[]{(byte) 1, (byte) 2, (byte) 3}, decoder.readByteVector());
-    }
-
-    @Test
-    public void shouldEncodeDecodeUnsignedByteArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeUnsignedByteArray(TestUtil.multiply(new int[]{0, 100, 200}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                TestUtil.multiply(new int[]{0, 100, 200}, 100),
-                decoder.readUnsignedByteArray()
-        );
     }
 
     @Test
@@ -187,20 +148,6 @@ public class EncoderDecoderTest {
     }
 
     @Test
-    public void shouldEncodeDecodeShortArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeShortArray(TestUtil.multiply(new short[]{100, 10_000, 20_000}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                TestUtil.multiply(new short[]{100, 10_000, 20_000}, 100),
-                decoder.readShortArray()
-        );
-    }
-
-    @Test
     public void shouldEncodeDecodeShortVector() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Encoder encoder = new Encoder(stream);
@@ -209,20 +156,6 @@ public class EncoderDecoderTest {
         Decoder decoder = new Decoder(stream.toByteArray());
 
         assertArrayEquals(new short[]{100, 10_000, 20_000}, decoder.readShortVector());
-    }
-
-    @Test
-    public void shouldEncodeDecodeIntegerArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeIntegerArray(TestUtil.multiply(new int[]{1_000, 10_000, 100_000}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                TestUtil.multiply(new int[]{1_000, 10_000, 100_000}, 100),
-                decoder.readIntegerArray()
-        );
     }
 
     @Test
@@ -237,20 +170,6 @@ public class EncoderDecoderTest {
     }
 
     @Test
-    public void shouldEncodeDecodeLongArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeLongArray(TestUtil.multiply(new long[]{1_000, 10_000, 100_000}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                TestUtil.multiply(new long[]{1_000, 10_000, 100_000}, 100),
-                decoder.readLongArray()
-        );
-    }
-
-    @Test
     public void shouldEncodeDecodeLongVector() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Encoder encoder = new Encoder(stream);
@@ -259,20 +178,6 @@ public class EncoderDecoderTest {
         Decoder decoder = new Decoder(stream.toByteArray());
 
         assertArrayEquals(new long[]{1_000, 10_000, 100_000}, decoder.readLongVector());
-    }
-
-    @Test
-    public void shouldEncodeDecodeFlagArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeFlagArray(TestUtil.multiply(new boolean[]{true, true, false}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                TestUtil.multiply(new boolean[]{true, true, false}, 100),
-                decoder.readFlagArray()
-        );
     }
 
     @Test
@@ -287,21 +192,6 @@ public class EncoderDecoderTest {
     }
 
     @Test
-    public void shouldEncodeDecodeFloatArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeFloatArray(TestUtil.multiply(new float[]{1.23f, 4.56f, 7.89f}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                TestUtil.multiply(new float[]{1.23f, 4.56f, 7.89f}, 100),
-                decoder.readFloatArray(),
-                0
-        );
-    }
-
-    @Test
     public void shouldEncodeDecodeFloatVector() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Encoder encoder = new Encoder(stream);
@@ -313,21 +203,6 @@ public class EncoderDecoderTest {
     }
 
     @Test
-    public void shouldEncodeDecodeDoubleArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeDoubleArray(TestUtil.multiply(new double[]{1.23, 4.56, 7.89}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                TestUtil.multiply(new double[]{1.23, 4.56, 7.89}, 100),
-                decoder.readDoubleArray(),
-                0
-        );
-    }
-
-    @Test
     public void shouldEncodeDecodeDoubleVector() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Encoder encoder = new Encoder(stream);
@@ -336,20 +211,6 @@ public class EncoderDecoderTest {
         Decoder decoder = new Decoder(stream.toByteArray());
 
         assertArrayEquals(new double[]{1.23, 4.56, 7.89}, decoder.readDoubleVector(), 0);
-    }
-
-    @Test
-    public void shouldEncodeDecodeStringArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeStringArray(TestUtil.multiply(new String[]{"a", "b", "c"}, 100));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                Arrays.stream(TestUtil.multiply(new String[]{"a", "b", "c"}, 100)).map(String::getBytes).toArray(),
-                decoder.readStringArrayAsBytes()
-        );
     }
 
     @Test
@@ -365,33 +226,4 @@ public class EncoderDecoderTest {
                 decoder.readStringVectorAsBytes()
         );
     }
-
-    @Test
-    public void shouldEncodeDecodeTextArray() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeTextArray(TestUtil.multiply(new String[]{TestUtil.multiply("abc", 100)}, 300));
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                Arrays.stream(TestUtil.multiply(new String[]{TestUtil.multiply("abc", 100)}, 300)).map(String::getBytes).toArray(),
-                decoder.readTextArrayAsBytes()
-        );
-    }
-
-    @Test
-    public void shouldEncodeDecodeTextVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
-        encoder.writeTextVector(new String[]{TestUtil.multiply("abc", 100)});
-
-        Decoder decoder = new Decoder(stream.toByteArray());
-
-        assertArrayEquals(
-                Arrays.stream(new String[]{TestUtil.multiply("abc", 100)}).map(String::getBytes).toArray(),
-                decoder.readTextVectorAsBytes()
-        );
-    }
-
 }

@@ -31,7 +31,7 @@ public class ContainerReader implements Reader<Container> {
 
     @Override
     public Container read(Decoder decoder) {
-        short length = decoder.readShort();
+        int length = decoder.readContainerSize();
         Map<String, Variant> variantMap = new HashMap<>(Maps.effectiveHashMapCapacity(length));
         while (0 <= --length) {
             String tagName = decoder.readString();
@@ -47,13 +47,13 @@ public class ContainerReader implements Reader<Container> {
 
     @Override
     public int skip(Decoder decoder) {
-        int skipped = 0;
-        short length = decoder.readShort();
-        skipped += SizeOf.SHORT;
+        int position = decoder.position();
+
+        int length = decoder.readContainerSize();
         while (0 <= --length) {
-            skipped += decoder.skipString();
-            skipped += VARIANT_READER.skip(decoder);
+            decoder.skipString();
+            VARIANT_READER.skip(decoder);
         }
-        return skipped;
+        return decoder.position() - position;
     }
 }

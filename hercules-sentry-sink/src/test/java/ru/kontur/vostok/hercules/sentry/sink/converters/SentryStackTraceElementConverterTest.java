@@ -13,12 +13,12 @@ public class SentryStackTraceElementConverterTest {
     public void shouldConvert() throws Exception {
 
         Container container = ContainerBuilder.create()
-                .tag("mod", Variant.ofText("test.module"))
+                .tag("mod", Variant.ofString("test.module"))
                 .tag("fun", Variant.ofString("testFunction"))
                 .tag("fnm", Variant.ofString("SomeFile.java"))
                 .tag("ln", Variant.ofInteger(123))
                 .tag("cn", Variant.ofInteger(456))
-                .tag("abs", Variant.ofText("/just/some/path/to/SomeFile.java"))
+                .tag("abs", Variant.ofString("/just/some/path/to/SomeFile.java"))
                 .build();
 
         SentryStackTraceElement result = SentryStackTraceElementConverter.convert(container);
@@ -43,7 +43,7 @@ public class SentryStackTraceElementConverterTest {
     public void shouldThrowOnMissingFunction() throws Exception {
         SentryStackTraceElementConverter.convert(
                 ContainerBuilder.create()
-                        .tag("mod", Variant.ofText("test.module"))
+                        .tag("mod", Variant.ofString("test.module"))
                         .build()
         );
     }

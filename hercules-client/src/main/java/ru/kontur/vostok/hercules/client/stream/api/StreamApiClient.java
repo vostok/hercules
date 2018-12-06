@@ -170,7 +170,7 @@ public class StreamApiClient {
     }
 
     private static int calculateReadStateSize(int shardCount) {
-        return SizeOf.VECTOR_LENGTH + shardCount * (SizeOf.INTEGER + SizeOf.LONG);
+        return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG);
     }
 
     private static class Resources {

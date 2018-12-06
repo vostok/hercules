@@ -102,7 +102,8 @@ public final class TestUtil {
         UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
-        builder.setEventId(eventId);
+        builder.setTimestamp(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
+        builder.setRandom(eventId);
         builder.setTag("string", Variant.ofString("Abc ЕЁЮ"));
         builder.setTag("int", Variant.ofInteger(123));
         return builder.build();

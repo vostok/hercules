@@ -34,7 +34,7 @@ public final class IndexToElasticJsonWriter {
             if (project.isPresent() && env.isPresent()) {
                 indexName = project.get() + "-" +
                         env.get() + "-" +
-                        DATE_FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp()));
+                        DATE_FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getTimestamp()));
             } else {
                 return false;
             }
@@ -43,7 +43,8 @@ public final class IndexToElasticJsonWriter {
         stream.write(START_BYTES);
         stream.write(indexName.getBytes(StandardCharsets.UTF_8));
         stream.write(MIDDLE_BYTES);
-        stream.write(event.getId().toString().getBytes(StandardCharsets.UTF_8));
+        //stream.write(Long.toHexString(event.getTimestamp()).getBytes()); //TODO: Add timestamp to id
+        stream.write(event.getRandom().toString().getBytes(StandardCharsets.UTF_8));//TODO: Fix it!
         stream.write(END_BYTES);
 
         return true;

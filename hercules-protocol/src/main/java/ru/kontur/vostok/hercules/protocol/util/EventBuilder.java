@@ -16,14 +16,20 @@ public class EventBuilder {
 
     private static final ContainerWriter CONTAINER_WRITER = new ContainerWriter();
 
-    private UUID eventId;
+    private long timestamp;
+    private UUID random;
     private int version;
     ContainerBuilder containerBuilder = ContainerBuilder.create();
 
     private boolean wasBuild = false;
 
-    public EventBuilder setEventId(UUID eventId) {
-        this.eventId = eventId;
+    public EventBuilder setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+        return this;
+    }
+
+    public EventBuilder setRandom(UUID random) {
+        this.random = random;
         return this;
     }
 
@@ -53,11 +59,12 @@ public class EventBuilder {
         Encoder encoder = new Encoder(stream);
 
         encoder.writeUnsignedByte(version);
-        encoder.writeUuid(eventId);
+        encoder.writeLong(timestamp);
+        encoder.writeUuid(random);
 
         Container container = containerBuilder.build();
         CONTAINER_WRITER.write(encoder, container);
 
-        return new Event(stream.toByteArray(), version, eventId, container);
+        return new Event(stream.toByteArray(), version, timestamp, random, container);
     }
 }
