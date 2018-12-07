@@ -77,10 +77,14 @@ public class TagDescriptionBuilder<T> {
 
     public TagDescription<T> build() {
         Map<Type, Function<Object, ? extends T>> extractors = new HashMap<>(scalarExtractors);
-        extractors.put(Type.VECTOR, (o) -> {
-            Vector v = (Vector) o;
-            return vectorExtractors.get(v.getType()).apply(v.getValue());
-        });
+        if (!vectorExtractors.isEmpty()) {
+            extractors.put(Type.VECTOR, (o) -> {
+                Vector v = (Vector) o;
+                return vectorExtractors.getOrDefault(v.getType(), (o1) -> {
+                    throw new IllegalArgumentException("Usupported type in Vector: " + v.getType());
+                }).apply(v.getValue());
+            });
+        }
         return new TagDescription<>(tagName, extractors);
     }
 }

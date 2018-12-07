@@ -46,20 +46,15 @@ public class TagDescriptionBuilderTest {
     }
 
     @Test
-    public void shouldAllowStringAndTextVariantsInTextualTag() throws Exception {
+    public void shouldExtractString() throws Exception {
         TagDescription<String> description = TagDescriptionBuilder.string("test").build();
 
         String stringVariantValue = ContainerUtil.extract(
                 ContainerBuilder.create().tag("test", Variant.ofString("abc")).build(),
                 description
         );
-        String textVariantValue = ContainerUtil.extract(
-                ContainerBuilder.create().tag("test", Variant.ofString("def")).build(),
-                description
-        );
 
         assertThat(stringVariantValue, is("abc"));
-        assertThat(textVariantValue, is("def"));
     }
 
     @Test

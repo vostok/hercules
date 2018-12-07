@@ -57,101 +57,108 @@ public class HerculesProtocolAssert {
                 case STRING:
                     Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
                     break;
+                case UUID:
+                    Assert.assertArrayEquals((java.util.UUID[][]) expected.getValue(), (java.util.UUID[][]) actual.getValue());
+                    break;
+                case NULL:
+                    Assert.assertEquals(((Object[]) expected.getValue()).length, ((Object[]) actual.getValue()).length);
+                    break;
+                /* TODO: support Vector of Vectors assertion */
                 default:
                     Assert.fail("Unsupported type " + expected.getType());
             }
         };
     }
 
-            public static <T > void assertArrayEquals (T[]expected, T[]actual, BiConsumer < T, T > asserter){
-                Assert.assertEquals("Arrays length mismatch", expected.length, actual.length);
-                for (int i = 0; i < expected.length; ++i) {
-                    try {
-                        asserter.accept(expected[i], actual[i]);
-                    } catch (AssertionError e) {
-                        throw new AssertionError("Arrays content mismatch at index [" + i + "]", e);
-                    }
-                }
-            }
-
-            public static void assertEquals (StreamShardReadState expected, StreamShardReadState actual){
-                Assert.assertEquals(expected.getPartition(), actual.getPartition());
-                Assert.assertEquals(expected.getOffset(), actual.getOffset());
-            }
-
-            public static void assertEquals (StreamReadState expected, StreamReadState actual){
-                Assert.assertEquals(expected.getShardCount(), actual.getShardCount());
-                HerculesProtocolAssert.assertArrayEquals(
-                        expected.getShardStates(),
-                        actual.getShardStates(),
-                        HerculesProtocolAssert::assertEquals
-                );
-            }
-
-            public static void assertEquals (TimelineShardReadState expected, TimelineShardReadState actual){
-                Assert.assertEquals(expected.getShardId(), actual.getShardId());
-                Assert.assertEquals(expected.getTtOffset(), actual.getTtOffset());
-                Assert.assertEquals(expected.getEventId(), actual.getEventId());
-            }
-
-            public static void assertEquals (TimelineReadState expected, TimelineReadState actual){
-                assertArrayEquals(expected.getShards(), actual.getShards(), HerculesProtocolAssert::assertEquals);
-            }
-
-            public static void assertEquals (TimelineContent expected, TimelineContent actual){
-                assertEquals(expected.getReadState(), actual.getReadState());
-                assertArrayEquals(expected.getEvents(), actual.getEvents(), HerculesProtocolAssert::assertEquals);
-            }
-
-            public static void assertEquals (Event expected, Event actual){
-                assertEquals(expected, actual, true, true);
-            }
-
-            public static void assertEquals (Event expected, Event actual,boolean checkId, boolean checkBytes){
-                Assert.assertEquals(expected.getVersion(), actual.getVersion());
-                if (checkId) {
-                    Assert.assertEquals(expected.getTimestamp(), actual.getTimestamp());
-                    Assert.assertEquals(expected.getRandom(), actual.getRandom());
-                }
-
-                assertTagsEquals(expected.getPayload(), actual.getPayload());
-                if (checkBytes) {
-                    Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
-                }
-            }
-
-            public static void assertEquals (Variant expected, Variant actual){
-                Assert.assertEquals(expected.getType(), actual.getType());
-                ASSERTERS[expected.getType().code].accept(expected, actual);
-            }
-
-            public static void assertEquals (Container expected, Container actual){
-                assertTagsEquals(expected, actual);
-            }
-
-            private static void assertTagsEquals
-            (Iterable < Map.Entry < String, Variant >> expected, Iterable < Map.Entry < String, Variant >> actual){
-                Map<String, Variant> expectedMap = StreamSupport.stream(expected.spliterator(), false)
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-                Map<String, Variant> actualMap = StreamSupport.stream(actual.spliterator(), false)
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-                Set<String> checked = new HashSet<>();
-                for (Map.Entry<String, Variant> entry : expectedMap.entrySet()) {
-                    String tagName = entry.getKey();
-                    Variant value = actualMap.get(entry.getKey());
-                    if (Objects.isNull(value)) {
-                        Assert.fail("Missing tag " + tagName);
-                    }
-                    assertEquals(entry.getValue(), value);
-                    checked.add(tagName);
-                }
-                for (Map.Entry<String, Variant> entry : actual) {
-                    String tagName = entry.getKey();
-                    if (!checked.contains(tagName)) {
-                        Assert.fail("Extra tag " + tagName);
-                    }
-                }
+    public static <T> void assertArrayEquals(T[] expected, T[] actual, BiConsumer<T, T> asserter) {
+        Assert.assertEquals("Arrays length mismatch", expected.length, actual.length);
+        for (int i = 0; i < expected.length; ++i) {
+            try {
+                asserter.accept(expected[i], actual[i]);
+            } catch (AssertionError e) {
+                throw new AssertionError("Arrays content mismatch at index [" + i + "]", e);
             }
         }
+    }
+
+    public static void assertEquals(StreamShardReadState expected, StreamShardReadState actual) {
+        Assert.assertEquals(expected.getPartition(), actual.getPartition());
+        Assert.assertEquals(expected.getOffset(), actual.getOffset());
+    }
+
+    public static void assertEquals(StreamReadState expected, StreamReadState actual) {
+        Assert.assertEquals(expected.getShardCount(), actual.getShardCount());
+        HerculesProtocolAssert.assertArrayEquals(
+                expected.getShardStates(),
+                actual.getShardStates(),
+                HerculesProtocolAssert::assertEquals
+        );
+    }
+
+    public static void assertEquals(TimelineShardReadState expected, TimelineShardReadState actual) {
+        Assert.assertEquals(expected.getShardId(), actual.getShardId());
+        Assert.assertEquals(expected.getTtOffset(), actual.getTtOffset());
+        Assert.assertEquals(expected.getEventId(), actual.getEventId());
+    }
+
+    public static void assertEquals(TimelineReadState expected, TimelineReadState actual) {
+        assertArrayEquals(expected.getShards(), actual.getShards(), HerculesProtocolAssert::assertEquals);
+    }
+
+    public static void assertEquals(TimelineContent expected, TimelineContent actual) {
+        assertEquals(expected.getReadState(), actual.getReadState());
+        assertArrayEquals(expected.getEvents(), actual.getEvents(), HerculesProtocolAssert::assertEquals);
+    }
+
+    public static void assertEquals(Event expected, Event actual) {
+        assertEquals(expected, actual, true, true);
+    }
+
+    public static void assertEquals(Event expected, Event actual, boolean checkId, boolean checkBytes) {
+        Assert.assertEquals(expected.getVersion(), actual.getVersion());
+        if (checkId) {
+            Assert.assertEquals(expected.getTimestamp(), actual.getTimestamp());
+            Assert.assertEquals(expected.getRandom(), actual.getRandom());
+        }
+
+        assertTagsEquals(expected.getPayload(), actual.getPayload());
+        if (checkBytes) {
+            Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
+        }
+    }
+
+    public static void assertEquals(Variant expected, Variant actual) {
+        Assert.assertEquals(expected.getType(), actual.getType());
+        ASSERTERS[expected.getType().code].accept(expected, actual);
+    }
+
+    public static void assertEquals(Container expected, Container actual) {
+        assertTagsEquals(expected, actual);
+    }
+
+    private static void assertTagsEquals
+            (Iterable<Map.Entry<String, Variant>> expected, Iterable<Map.Entry<String, Variant>> actual) {
+        Map<String, Variant> expectedMap = StreamSupport.stream(expected.spliterator(), false)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<String, Variant> actualMap = StreamSupport.stream(actual.spliterator(), false)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Set<String> checked = new HashSet<>();
+        for (Map.Entry<String, Variant> entry : expectedMap.entrySet()) {
+            String tagName = entry.getKey();
+            Variant value = actualMap.get(entry.getKey());
+            if (Objects.isNull(value)) {
+                Assert.fail("Missing tag " + tagName);
+            }
+            assertEquals(entry.getValue(), value);
+            checked.add(tagName);
+        }
+        for (Map.Entry<String, Variant> entry : actual) {
+            String tagName = entry.getKey();
+            if (!checked.contains(tagName)) {
+                Assert.fail("Extra tag " + tagName);
+            }
+        }
+    }
+}
