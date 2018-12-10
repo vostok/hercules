@@ -70,7 +70,7 @@ Version = <i>Byte</i>
         ; Protocol version is used. Current protocol version is 0x01
 
 Timestamp = <i>Long</i>
-        ; Event timestamp in 100-ns ticks from Gregorian Epoch (1582-10-15T00:00:00.000Z)
+        ; Event timestamp in 100-ns ticks from Unix Epoch (1970-01-01T00:00:00.000Z)
 
 Random = <i>UUID</i>
         ; Event identifier is used to deduplicate events with the same timestamp
