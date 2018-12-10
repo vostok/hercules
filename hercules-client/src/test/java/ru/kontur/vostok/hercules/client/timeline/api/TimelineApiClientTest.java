@@ -13,6 +13,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.util.EventUtil;
 
 import java.net.URI;
 import java.util.UUID;
@@ -37,7 +38,7 @@ public class TimelineApiClientTest {
                 new TimelineContent(
                         new TimelineReadState(
                                 new TimelineShardReadState[]{
-                                        new TimelineShardReadState(0, 123456789, UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1"))
+                                        new TimelineShardReadState(0, 123456789, EventUtil.eventIdAsBytes(137_620_098_108_949_610L, UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")))
                                 }),
                         new Event[]{
                                 new EventBuilder().setRandom(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")).build(),

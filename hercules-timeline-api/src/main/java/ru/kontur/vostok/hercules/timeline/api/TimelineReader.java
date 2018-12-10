@@ -13,6 +13,8 @@ import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineReadState;
 import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
+import ru.kontur.vostok.hercules.util.EventUtil;
+import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
@@ -37,9 +39,9 @@ public class TimelineReader {
      */
     private static class TimelineShardReadStateOffset {
         long ttOffset;
-        UUID eventId;
+        byte[] eventId;
 
-        public TimelineShardReadStateOffset(long ttOffset, UUID eventId) {
+        public TimelineShardReadStateOffset(long ttOffset, byte[] eventId) {
             this.ttOffset = ttOffset;
             this.eventId = eventId;
         }
@@ -111,9 +113,9 @@ public class TimelineReader {
         }
     }
 
-    private static final UUID NIL = new UUID(0, 0);
-    private static boolean isNil(UUID uuid) {
-        return NIL.equals(uuid);
+    private static final byte[] NIL = new byte[24];
+    private static boolean isNil(byte[] eventId) {
+        return Arrays.equals(NIL, eventId);
     }
 
     private static final String EVENT_ID = "event_id";
@@ -214,7 +216,7 @@ public class TimelineReader {
 
             ResultSet rows = session.execute(statement);
             for (Row row : rows) {
-                offset.eventId = row.getUUID(EVENT_ID);
+                offset.eventId = ByteUtil.fromByteBuffer(row.getBytes(EVENT_ID));
                 result.add(row.getBytes(PAYLOAD).array());
                 --take;
             }
@@ -246,8 +248,8 @@ public class TimelineReader {
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    offset.eventId.toString(),
-                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.eventIdOfBytesAsHexString(offset.eventId),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         } else {
@@ -256,8 +258,8 @@ public class TimelineReader {
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset)),
-                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToGregorianTicks(params.ttOffset)),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         }

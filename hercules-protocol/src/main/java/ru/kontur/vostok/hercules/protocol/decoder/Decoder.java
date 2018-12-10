@@ -78,7 +78,7 @@ public class Decoder {
 
     public byte[] readBytes(int count) {
         byte[] array = new byte[count];
-        buffer.get(array);
+        buffer.get(array, 0, count);
         return array;
     }
 

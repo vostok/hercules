@@ -21,9 +21,9 @@ public class CassandraManager {
         session.execute("CREATE TABLE IF NOT EXISTS " + table + " ("
                 + "slice int,"
                 + "tt_offset bigint,"
-                + "event_id timeuuid,"
+                + "event_id blob,"
                 + "payload blob,"
-                + "PRIMARY KEY ((slice, tt_offset), event_id))");
+                + "PRIMARY KEY ((slice, tt_offset), event_id));");
     }
 
     public void deleteTable(String table) {

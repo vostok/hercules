@@ -9,7 +9,7 @@ public class TimelineShardReadStateReader implements Reader<TimelineShardReadSta
         return new TimelineShardReadState(
                 decoder.readInteger(),
                 decoder.readLong(),
-                decoder.readUuid()
+                decoder.readBytes(24)//TODO: Read Event ID
         );
     }
 }
