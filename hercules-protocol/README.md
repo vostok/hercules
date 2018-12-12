@@ -53,13 +53,6 @@ Binary protocol is used to store and transfer Hercules Events.
 | Null      | 0x0B  |
 | Vector    | 0x80  |
 
-### VarLen
-
-VarLen is VLQ-encoded unsigned integer.
-VLQ is Variable-length quantity format.
-
-See [wikipedia](https://en.wikipedia.org/wiki/Variable-length_quantity) for details.
-
 ### Binary representation
 
 <pre>
@@ -78,39 +71,44 @@ Random = <i>UUID</i>
 Payload = <i>Container</i>
         ; Event body 
 
-Container = Count, Tag*
+Container = Count Tag*
         ; Collection of Tags
 
-Count = <i>VarLen</i>
-        ; Total Tags count 
+Count = <i>Byte</i> <i>Byte</i>
+        ; Total Tags count is encoded as unsigned 16-bit integer, where LSB follows after MSB 
 
 Tag = Key <i>DataType</i> Value
         ; Tag of Event
 
-Key = <i>String</i>
-        ; Name of Tag
+Key = KeyLength <i>Byte</i>*
+        ; Name of Tag is UTF-8 encoded string, where length in bytes does not exceed 255
+
+KeyLength = <i>Byte</i>
+        ; Length of Tag's name from 0 to 255 inclusively
+
+Value = <i>Container</i> | <i>Byte</i> | <i>Short</i> | <i>Integer</i> | <i>Long</i> |
+        <i>Flag</i> | <i>Float</i> | <i>Double</i> | <i>String</i> | <i>UUID</i> | <i>Null</i> | Vector
+        ; Value of Tag
 
 String = Size <i>Byte</i>*
         ; String
 
-Size = <i>VarLen</i>
-        ; String size in bytes
-
-Value = <i>Container</i> | <i>Byte</i> | <i>Short</i> | <i>Integer</i> | <i>Long</i> |
-        <i>Flag</i> | <i>Float</i> | <i>Double</i> | <i>String</i> | <i>UUID</i> | <i>Null</i> | Vector
-        ; Value
+Size = <i>Integer</i>
+        ; Size of String in bytes
 
 Vector = <i>DataType</i> Length Value*
         ; Vector
 
-Length = <i>VarLen</i>
+Length = <i>Integer</i>
         ; Length of Vector
 </pre>
 
 Where,  
 `X*` means "repeat `X` zero or more times"  
 `X | Y` means "`X` or `Y`"  
-`; commentary` is commentary.
+`; commentary` is commentary,  
+LSB is least significant byte,  
+MSB is most significant byte.
 
 ### Byte order
 
