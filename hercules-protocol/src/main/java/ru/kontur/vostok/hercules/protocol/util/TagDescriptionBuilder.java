@@ -81,7 +81,7 @@ public class TagDescriptionBuilder<T> {
             extractors.put(Type.VECTOR, (o) -> {
                 Vector v = (Vector) o;
                 return vectorExtractors.getOrDefault(v.getType(), (o1) -> {
-                    throw new IllegalArgumentException("Usupported type in Vector: " + v.getType());
+                    throw new IllegalArgumentException("Unsupported type in Vector: " + v.getType());
                 }).apply(v.getValue());
             });
         }
