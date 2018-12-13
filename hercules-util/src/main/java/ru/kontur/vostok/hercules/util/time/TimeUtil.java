@@ -23,9 +23,14 @@ public class TimeUtil {
     private static final long NANOS_IN_TICK = 100L;
 
     /**
-     * EPOCH is offset from 1970-01-01T00:00:00.000Z to 1582-01-01T00:00:00.000Z in 100ns ticks. Epoch determines time-point to start Time Traps
+     * GREGORIAN_EPOCH is offset from 1970-01-01T00:00:00.000Z to 1582-01-01T00:00:00.000Z in 100ns ticks. Epoch determines time-point to start Time Traps
      */
-    public static final long EPOCH = makeEpoch();// -122192928000000000L
+    public static final long GREGORIAN_EPOCH = makeEpoch();// -122192928000000000L
+
+    /**
+     * UNIX_EPOCH starts from 1970-01-01T00:00:00.000Z.
+     */
+    public static final long UNIX_EPOCH = 0;
 
     private static long makeEpoch() {
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT-0"));
@@ -45,7 +50,7 @@ public class TimeUtil {
      * @return UUID compatible timestamp
      */
     public static long unixToGregorianTicks(long ticks) {
-        return ticks - EPOCH;
+        return ticks - GREGORIAN_EPOCH;
     }
 
     /**
@@ -54,7 +59,7 @@ public class TimeUtil {
      * @return Unix ticks
      */
     public static long gregorianToUnixTicks(long ticks) {
-        return (ticks + EPOCH);
+        return (ticks + GREGORIAN_EPOCH);
     }
 
     /**
@@ -73,6 +78,24 @@ public class TimeUtil {
      */
     public static long millisToTicks(long millis) {
         return millis * TICKS_IN_MS;
+    }
+
+    /**
+     * Convert Unix ticks to Unix Time (Unix timestamp in millis)
+     * @param ticks is 100ns ticks from Unix Epoch
+     * @return Unix timestamp in millis
+     */
+    public static long unixTicksToTime(long ticks) {
+        return ticksToMillis(ticks);
+    }
+
+    /**
+     * Convert Unix Time to Unix ticks
+     * @param timestamp is Unix Time
+     * @return Unix ticks
+     */
+    public static long unixTimeToTicks(long timestamp) {
+        return ticksToMillis(timestamp);
     }
 
     /**

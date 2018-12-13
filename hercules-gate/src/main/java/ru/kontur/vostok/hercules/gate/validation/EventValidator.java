@@ -12,7 +12,7 @@ public class EventValidator {
             return false;
         }
 
-        if (TimeUtil.gregorianTicksToUnixTime(event.getTimestamp()) < 0) { // Event timestamp should be positive
+        if (event.getTimestamp() < 0) { // Event timestamp should be non-negative
             return false;
         }
 

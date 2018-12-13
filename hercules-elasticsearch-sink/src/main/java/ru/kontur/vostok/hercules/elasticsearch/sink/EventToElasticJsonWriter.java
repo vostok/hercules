@@ -86,7 +86,7 @@ public final class EventToElasticJsonWriter {
     public static void writeEvent(OutputStream stream, Event event) throws IOException {
         try (JsonGenerator generator = FACTORY.createGenerator(stream, JsonEncoding.UTF8)) {
             generator.writeStartObject();
-            generator.writeStringField(TIMESTAMP_TAG_NAME, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getTimestamp())));
+            generator.writeStringField(TIMESTAMP_TAG_NAME, FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp())));
 
             for (Map.Entry<String, Variant> tag : event.getPayload()) {
                 if (IGNORED_TAGS.contains(tag.getKey())) {

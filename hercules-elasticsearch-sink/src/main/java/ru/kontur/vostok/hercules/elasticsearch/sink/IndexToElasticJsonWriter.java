@@ -34,7 +34,7 @@ public final class IndexToElasticJsonWriter {
             if (project.isPresent() && env.isPresent()) {
                 indexName = project.get() + "-" +
                         env.get() + "-" +
-                        DATE_FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getTimestamp()));
+                        DATE_FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp()));
             } else {
                 return false;
             }

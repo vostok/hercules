@@ -17,10 +17,10 @@ public class EventReaderWriteReadTest {
     public void shouldWriteReadAllTags() {
         WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readAllTags());
 
-        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
+        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToTicks(123_456_789L));
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
-        builder.setTimestamp(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
+        builder.setTimestamp(TimeUtil.unixTimeToTicks(123_456_789L));
         builder.setRandom(eventId);
         builder.setTag("string-tag", Variant.ofString("Abc ЕЁЮ"));
         builder.setTag("flag-array-tag", Variant.ofVector(Vector.ofFlags(new boolean[]{true, true, false})));
@@ -32,10 +32,10 @@ public class EventReaderWriteReadTest {
     public void shouldWriteReadNoTags() {
         WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readNoTags());
 
-        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
+        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToTicks(123_456_789L));
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
-        builder.setTimestamp(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
+        builder.setTimestamp(TimeUtil.unixTimeToTicks(123_456_789L));
         builder.setRandom(eventId);
 
         builder.setTag("string-tag", Variant.ofString("Abc ЕЁЮ"));
@@ -59,10 +59,10 @@ public class EventReaderWriteReadTest {
     public void shouldWriteReadOneTag() {
         WriteReadPipe<Event> pipe = WriteReadPipe.init(new EventWriter(), EventReader.readTags(Collections.singleton("string-tag")));
 
-        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
+        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixTimeToTicks(123_456_789L));
         EventBuilder builder = new EventBuilder();
         builder.setVersion(1);
-        builder.setTimestamp(TimeUtil.unixTimeToGregorianTicks(123_456_789L));
+        builder.setTimestamp(TimeUtil.unixTimeToTicks(123_456_789L));
         builder.setRandom(eventId);
 
         builder.setTag("string-tag", Variant.ofString("Abc ЕЁЮ"));

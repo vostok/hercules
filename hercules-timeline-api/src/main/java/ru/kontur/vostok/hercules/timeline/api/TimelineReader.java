@@ -249,7 +249,7 @@ public class TimelineReader {
                     params.slice,
                     params.ttOffset,
                     EventUtil.eventIdOfBytesAsHexString(offset.eventId),
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         } else {
@@ -258,8 +258,8 @@ public class TimelineReader {
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToGregorianTicks(params.ttOffset)),
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToTicks(params.ttOffset)),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         }

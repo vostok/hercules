@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.io.ByteArrayOutputStream;
@@ -22,7 +23,7 @@ public class EventToElasticJsonWriterTest {
         EventBuilder event = new EventBuilder();
 
         event.setVersion(1);
-        event.setTimestamp(137469727200000010L);
+        event.setTimestamp(TimeUtil.gregorianToUnixTicks(137469727200000010L));
         event.setRandom(UuidGenerator.getClientInstance().withTicks(137469727200000010L));
 
         event.setTag("Byte sample", Variant.ofByte((byte) 127));
@@ -180,11 +181,11 @@ public class EventToElasticJsonWriterTest {
 
     private void assertVariantConverted(String convertedVariant, Variant variant) throws Exception {
         EventBuilder builder = new EventBuilder();
-        builder.setTimestamp(0);
-        builder.setRandom(UuidGenerator.getClientInstance().withTicks(0));
+        builder.setTimestamp(TimeUtil.UNIX_EPOCH);
+        builder.setRandom(UuidGenerator.getClientInstance().withTicks(TimeUtil.unixToGregorianTicks(TimeUtil.UNIX_EPOCH)));
         builder.setTag("v", variant);
 
-        assertEquals("{\"@timestamp\":\"1582-10-15T00:00:00.000000000Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
+        assertEquals("{\"@timestamp\":\"1970-01-01T00:00:00.000000000Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
     }
 
     private static String builderToJson(EventBuilder builder) throws Exception {
