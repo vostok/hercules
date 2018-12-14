@@ -44,6 +44,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     private final BulkResponseHandler bulkResponseHandler;
 
     private final int retryLimit;
+    private final boolean retryOnUnknownErrors;
 
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
@@ -74,9 +75,9 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 )
                 .build();
 
-        final boolean retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
+        this.retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
 
-        this.bulkResponseHandler = new BulkResponseHandler(retryOnUnknownErrors, metricsCollector);
+        this.bulkResponseHandler = new BulkResponseHandler(metricsCollector);
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
@@ -103,6 +104,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             ByteArrayEntity body = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
 
             int retryCount = retryLimit;
+            boolean needToRetry;
             do {
                 long start = System.currentTimeMillis();
                 Response response = restClient.performRequest(
@@ -118,8 +120,9 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     throw new RuntimeException("Bad response");
                 }
                 result = bulkResponseHandler.process(response.getEntity());
-            } while (result.hasRetryableErrors() && 0 < retryCount--);
-            if (result.hasRetryableErrors()) {
+                needToRetry = result.hasRetryableErrors() || result.hasUnknownErrors() && retryOnUnknownErrors;
+            } while (0 < retryCount-- && needToRetry);
+            if (needToRetry) {
                 throw new Exception("Have retryable errors in elasticsearch response");
             }
         } catch (Exception e) {
@@ -129,7 +132,8 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
             events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getId()));
         }
-        return new BulkSenderStat(events.size() - result.getErrorCount(), result.getErrorCount());
+
+        return new BulkSenderStat(events.size() - result.getTotalErrors(), result.getTotalErrors());
     }
 
     @Override

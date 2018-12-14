@@ -27,23 +27,47 @@ public class BulkResponseHandler {
 
     public static class Result {
 
-        public static final Result OK = new Result(0, false);
+        public static final Result OK = new Result(0, 0, 0);
 
-        private final int errorCount;
-        private final boolean hasRetryableErrors;
+        private final int retryableErrorCount;
+        private final int nonRetryableErrorCount;
+        private final int unknownErrorCount;
 
-        public Result(int errorCount, boolean hasRetryableErrors) {
-            this.errorCount = errorCount;
-            this.hasRetryableErrors = hasRetryableErrors;
+        public Result(int retryableErrorCount, int nonRetryableErrorCount, int unknownErrorCount) {
+            this.retryableErrorCount = retryableErrorCount;
+            this.nonRetryableErrorCount = nonRetryableErrorCount;
+            this.unknownErrorCount = unknownErrorCount;
         }
 
-        public int getErrorCount() {
-            return errorCount;
+        public int getRetryableErrorCount() {
+            return retryableErrorCount;
+        }
+
+        public int getNonRetryableErrorCount() {
+            return nonRetryableErrorCount;
+        }
+
+        public int getUnknownErrorCount() {
+            return unknownErrorCount;
         }
 
         public boolean hasRetryableErrors() {
-            return hasRetryableErrors;
+            return retryableErrorCount != 0;
         }
+
+        public boolean hasUnknownErrors() {
+            return unknownErrorCount != 0;
+        }
+
+        public int getTotalErrors() {
+            return retryableErrorCount + nonRetryableErrorCount + unknownErrorCount;
+        }
+    }
+
+    public enum ErrorType {
+        RETRYABLE,
+        NON_RETRYABLE,
+        UNKNOWN
     }
 
     private static final Set<String> RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
@@ -196,8 +220,6 @@ public class BulkResponseHandler {
     private static final JsonFactory FACTORY = new JsonFactory();
     private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
 
-    private final boolean retryOnUnknownErrors;
-
     private final MetricsCollector metricsCollector;
 
     private final ConcurrentHashMap<String, Meter> errorTypesMeter = new ConcurrentHashMap<>();
@@ -207,9 +229,7 @@ public class BulkResponseHandler {
     private final Meter unknownErrorsMeter;
 
 
-    public BulkResponseHandler(final boolean retryOnUnknownErrors, final MetricsCollector metricsCollector) {
-        this.retryOnUnknownErrors = retryOnUnknownErrors;
-
+    public BulkResponseHandler(final MetricsCollector metricsCollector) {
         this.metricsCollector = metricsCollector;
 
         this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "retryableErrors");
@@ -220,8 +240,10 @@ public class BulkResponseHandler {
     // TODO: Replace with a good parser
     public Result process(HttpEntity httpEntity) {
         return toUnchecked(() -> {
-            int errorCount = 0;
-            boolean hasRetryableErrors = false;
+            int retryableErrorCount = 0;
+            int nonRetryableErrorCount = 0;
+            int unknownErrorCount = 0;
+
             JsonParser parser = FACTORY.createParser(httpEntity.getContent());
 
             String currentId = "";
@@ -245,13 +267,22 @@ public class BulkResponseHandler {
                 }
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
-                    if (processError(MAPPER.readTree(parser), currentId, currentIndex)) {
-                        hasRetryableErrors = true;
+                    final ErrorType errorType = processError(MAPPER.readTree(parser), currentId, currentIndex);
+                    switch (errorType) {
+                        case RETRYABLE: retryableErrorCount++; break;
+                        case NON_RETRYABLE: nonRetryableErrorCount++; break;
+                        case UNKNOWN: unknownErrorCount++; break;
+                        default: throw new RuntimeException(String.format("Unsupported error type '%s'", errorType));
                     }
-                    errorCount++;
+
                 }
             }
-            return new Result(errorCount, hasRetryableErrors);
+
+            retryableErrorsMeter.mark(retryableErrorCount);
+            nonRetryableErrorsMeter.mark(nonRetryableErrorCount);
+            unknownErrorsMeter.mark(unknownErrorCount);
+
+            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount);
         });
     }
 
@@ -264,7 +295,7 @@ public class BulkResponseHandler {
      * @return does request should be retried
      * @throws IOException
      */
-    private boolean processError(TreeNode errorNode, String id, String index) throws IOException {
+    private ErrorType processError(TreeNode errorNode, String id, String index) throws IOException {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
             JsonNode nestedError = error.get("caused_by");
@@ -284,20 +315,19 @@ public class BulkResponseHandler {
 
                 if (RETRYABLE_ERRORS_CODES.contains(type)) {
                     /* Do not write error to log in case of retryable error */
-                    retryableErrorsMeter.mark();
-                    return true;
+                    return ErrorType.RETRYABLE;
                 } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                    nonRetryableErrorsMeter.mark();
                     LOGGER.error("Bulk processing error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                    return false;
+                    return ErrorType.NON_RETRYABLE;
                 } else {
-                    unknownErrorsMeter.mark();
                     LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                    return retryOnUnknownErrors;
+                    return ErrorType.UNKNOWN;
                 }
             }
+        } else {
+            LOGGER.error("Error node is not object note, cannot parse");
+            return ErrorType.NON_RETRYABLE;
         }
-        return false;
     }
 
     private Meter createMeter(final String errorType) {
