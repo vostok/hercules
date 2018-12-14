@@ -41,6 +41,14 @@ public class Encoder {
         }
     }
 
+    public void writeUnsignedShort(int s) {
+        try {
+            stream.writeShort(s);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void writeInteger(int i) {
         try {
             stream.writeInt(i);
@@ -189,6 +197,24 @@ public class Encoder {
 
     /* --- Utility methods --- */
 
+    /**
+     * Write tiny string, which has 1-byte length
+     *
+     * @param s is tiny string
+     */
+    public void writeTinyString(String s) {
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length > 255) {
+            throw new IllegalArgumentException("Length of tiny string should be less or equal 255 but got " + bytes.length);
+        }
+        writeUnsignedByte(bytes.length);
+        try {
+            stream.write(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void writeVarLen(int value) {
         if (value < 0) {
             throw new IllegalArgumentException("Cannot encode negative value: " + value);
@@ -241,14 +267,14 @@ public class Encoder {
     }
 
     public void writeVectorLength(int length) {
-        writeVarLen(length);
+        writeInteger(length);
     }
 
     public void writeStringLength(int length) {
-        writeVarLen(length);
+        writeInteger(length);
     }
 
     public void writeContainerSize(int size) {
-        writeVarLen(size);
+        writeUnsignedShort(size);
     }
 }

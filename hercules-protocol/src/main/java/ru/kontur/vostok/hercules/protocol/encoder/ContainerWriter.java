@@ -15,7 +15,7 @@ public class ContainerWriter implements Writer<Container> {
     public void write(Encoder encoder, Container value) {
         encoder.writeContainerSize((short) value.size());
         for (Map.Entry<String, Variant> entry : value) {
-            encoder.writeString(entry.getKey());
+            encoder.writeTinyString(entry.getKey());
             VARIANT_WRITER.write(encoder, entry.getValue());
         }
     }

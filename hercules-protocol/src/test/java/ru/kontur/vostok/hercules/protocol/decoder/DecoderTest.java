@@ -73,7 +73,7 @@ public class DecoderTest {
 
         byte[] bytes = event.getBytes();
         assertNotNull(bytes);
-        assertEquals(61, bytes.length);
+        assertEquals(65, bytes.length);
         assertArrayEquals(new byte[]{
                 /* Version equals 1 */
                 0x01,
@@ -82,16 +82,20 @@ public class DecoderTest {
                 /* Random is UUID for Timestamp 137469727200000000L is 2018-05-30T11:32:00.000Z in 100ns ticks from Gregorian Epoch */
                 0x11, 0x20, 0x38, 0x00, 0x63, (byte) 0xFD, 0x11, (byte) 0xE8, (byte) 0x83, (byte) 0xE2, 0x3A, 0x58,
                 0x7D, (byte) 0x90, 0x20, 0x00,
-                /* Tags count (VLQ-encoded value 2) */
-                0x02,
-                /* Tag name 'host' */
+                /* Tags count equals 2 */
+                0x00, 0x02,
+                /* Tag's key 'host' */
                 0x04, 0x68, 0x6F, 0x73, 0x74,
-                /* Tag value 'localhost' of type String*/
-                0x09, 0x09, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x68, 0x6F, 0x73, 0x74,
-                /* Tag name 'timestamp' */
+                /* Tag's value type String */
+                0x09,
+                /* Tag's value 'localhost' */
+                0x00, 0x00, 0x00, 0x09, 0x6C, 0x6F, 0x63, 0x61, 0x6C, 0x68, 0x6F, 0x73, 0x74,
+                /* Tag's key 'timestamp' */
                 0x09, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70,
-                /*Tag value 1527679920000000L of type Long */
-                0x05, 0x00, 0x05, 0x6D, 0x6A, (byte) 0xB2, (byte) 0xF6, 0x4C, 0x00
+                /* Tag's value type Long */
+                0x05,
+                /*Tag's value 1527679920000000L */
+                0x00, 0x05, 0x6D, 0x6A, (byte) 0xB2, (byte) 0xF6, 0x4C, 0x00
         }, bytes);
     }
 }

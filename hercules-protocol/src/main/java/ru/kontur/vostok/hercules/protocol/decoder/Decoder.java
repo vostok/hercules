@@ -31,6 +31,10 @@ public class Decoder {
         return buffer.getShort();
     }
 
+    public int readUnsignedShort() {
+        return readShort() & 0xFFFF;
+    }
+
     public int readInteger() {
         return buffer.getInt();
     }
@@ -366,6 +370,24 @@ public class Decoder {
 
     /* --- Utility methods --- */
 
+    /**
+     * Read tiny string, which has 1-byte length
+     *
+     * @return string
+     */
+    public String readTinyString() {
+        int length = readUnsignedByte();
+        byte[] bytes = new byte[length];
+        buffer.get(bytes);
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    public int skipTinyString() {
+        int length = readUnsignedByte();
+        skip(length);
+        return length + SizeOf.BYTE;
+    }
+
     public int readVarLen() {
         byte b = buffer.get();
         int value = b & 0x7F;
@@ -378,15 +400,15 @@ public class Decoder {
     }
 
     public int readVectorLength() {
-        return readVarLen();
+        return readInteger();
     }
 
     public int readStringLength() {
-        return readVarLen();
+        return readInteger();
     }
 
     public int readContainerSize() {
-        return readVarLen();
+        return readUnsignedShort();
     }
 
     public int position() {
