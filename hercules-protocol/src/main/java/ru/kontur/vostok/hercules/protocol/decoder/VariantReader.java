@@ -65,6 +65,7 @@ public class VariantReader implements Reader<Variant> {
         VECTOR_DECODERS[Type.FLOAT.code] = Decoder::readFloatVector;
         VECTOR_DECODERS[Type.DOUBLE.code] = Decoder::readDoubleVector;
         VECTOR_DECODERS[Type.STRING.code] = Decoder::readStringVectorAsBytes;
+        VECTOR_DECODERS[Type.UUID.code] = Decoder::readUuidVector;
         VECTOR_DECODERS[Type.NULL.code] = Decoder::readNullVector;
         VECTOR_DECODERS[Type.VECTOR.code] = VariantReader::readVectorVector;
     }

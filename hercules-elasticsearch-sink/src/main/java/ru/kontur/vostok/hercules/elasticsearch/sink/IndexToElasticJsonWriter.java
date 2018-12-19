@@ -44,7 +44,7 @@ public final class IndexToElasticJsonWriter {
         stream.write(indexName.getBytes(StandardCharsets.UTF_8));
         stream.write(MIDDLE_BYTES);
         //stream.write(Long.toHexString(event.getTimestamp()).getBytes()); //TODO: Add timestamp to id
-        stream.write(event.getRandom().toString().getBytes(StandardCharsets.UTF_8));//TODO: Fix it!
+        stream.write(event.getUuid().toString().getBytes(StandardCharsets.UTF_8));//TODO: Fix it!
         stream.write(END_BYTES);
 
         return true;

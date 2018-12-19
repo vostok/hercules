@@ -10,14 +10,14 @@ public class Event {
     private final byte[] bytes;
     private final int version;
     private final long timestamp;
-    private final UUID random;
+    private final UUID uuid;
     private final Container payload;
 
-    public Event(byte[] bytes, int version, long timestamp, UUID random, Container payload) {
+    public Event(byte[] bytes, int version, long timestamp, UUID uuid, Container payload) {
         this.bytes = bytes;
         this.version = version;
         this.timestamp = timestamp;
-        this.random = random;
+        this.uuid = uuid;
         this.payload = payload;
     }
 
@@ -33,8 +33,8 @@ public class Event {
         return timestamp;
     }
 
-    public UUID getRandom() {
-        return random;
+    public UUID getUuid() {
+        return uuid;
     }
 
     public Container getPayload() {

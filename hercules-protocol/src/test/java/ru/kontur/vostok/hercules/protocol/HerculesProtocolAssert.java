@@ -58,7 +58,7 @@ public class HerculesProtocolAssert {
                     Assert.assertArrayEquals((byte[][]) expected.getValue(), (byte[][]) actual.getValue());
                     break;
                 case UUID:
-                    Assert.assertArrayEquals((java.util.UUID[][]) expected.getValue(), (java.util.UUID[][]) actual.getValue());
+                    Assert.assertArrayEquals((java.util.UUID[]) expected.getValue(), (java.util.UUID[]) actual.getValue());
                     break;
                 case NULL:
                     Assert.assertEquals(((Object[]) expected.getValue()).length, ((Object[]) actual.getValue()).length);
@@ -118,7 +118,7 @@ public class HerculesProtocolAssert {
         Assert.assertEquals(expected.getVersion(), actual.getVersion());
         if (checkId) {
             Assert.assertEquals(expected.getTimestamp(), actual.getTimestamp());
-            Assert.assertEquals(expected.getRandom(), actual.getRandom());
+            Assert.assertEquals(expected.getUuid(), actual.getUuid());
         }
 
         assertTagsEquals(expected.getPayload(), actual.getPayload());

@@ -63,8 +63,12 @@ public final class Vector {
         return new Vector(Type.STRING, bytes);
     }
 
-    public static Vector ofUUIDs(UUID[] uuids) {
+    public static Vector ofUuids(UUID[] uuids) {
         return new Vector(Type.UUID, uuids);
+    }
+
+    public static Vector ofNulls(Object[] nulls) {
+        return new Vector(Type.NULL, nulls);
     }
 
     public static Vector ofVectors(Vector[] vectors) {

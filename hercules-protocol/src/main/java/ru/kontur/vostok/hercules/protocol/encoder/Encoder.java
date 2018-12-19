@@ -187,6 +187,20 @@ public class Encoder {
         }
     }
 
+    public void writeUuidVector(UUID[] vector) {
+        writeVectorLength(vector.length);
+        for (UUID uuid : vector) {
+            writeUuid(uuid);
+        }
+    }
+
+    public void writeNullVector(Object[] vector) {
+        writeVectorLength(vector.length);
+        for(int i = 0; i < vector.length; i++) {
+            writeNull();
+        }
+    }
+
     public void writeRawBytes(byte[] bytes) {
         try {
             stream.write(bytes);

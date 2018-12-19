@@ -141,7 +141,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             return BulkSenderStat.ZERO;
         }
 
-        events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getRandom()));
+        events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getUuid()));
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
         writeEventRecords(stream, events);
@@ -177,7 +177,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             throw new BackendServiceFailedException(e);
         }
 
-        events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getRandom()));
+        events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getUuid()));
         return new BulkSenderStat(events.size() - result.getErrorCount(), result.getErrorCount());
     }
 
@@ -205,7 +205,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     EventToElasticJsonWriter.writeEvent(stream, event);
                     writeNewLine(stream);
                 } else {
-                    LOGGER.error(String.format("Cannot process event '%s' because of missing index data", event.getRandom()));
+                    LOGGER.error(String.format("Cannot process event '%s' because of missing index data", event.getUuid()));
                 }
             }
         });

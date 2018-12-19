@@ -80,7 +80,7 @@ public class StreamApiClientTest {
 
         assertEquals(2, content.getEvents().length);
 
-        assertEquals(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[0].getRandom());
-        assertEquals(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[1].getRandom());
+        assertEquals(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[0].getUuid());
+        assertEquals(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[1].getUuid());
     }
 }

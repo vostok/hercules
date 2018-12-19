@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.VariantReader;
 import ru.kontur.vostok.hercules.protocol.encoder.VariantWriter;
 
 import java.util.Collections;
+import java.util.UUID;
 
 import static ru.kontur.vostok.hercules.protocol.TestUtil.multiply;
 
@@ -78,8 +79,15 @@ public class VariantWriteReadTest {
     }
 
     @Test
-    public void shouldWriteReadText() {
-        Variant variant = Variant.ofString("Abc def Абв гдё");
+    public void shouldWriteReadUuid() {
+        Variant variant = Variant.ofUuid(UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000"));
+
+        pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
+    }
+
+    @Test
+    public void shouldWriteReadNull() {
+        Variant variant = Variant.ofNull();
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
@@ -147,6 +155,20 @@ public class VariantWriteReadTest {
     @Test
     public void shouldWriteReadStringVector() {
         Variant variant = Variant.ofVector(Vector.ofStrings(new String[]{"S", "F", "Ё"}));
+
+        pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
+    }
+
+    @Test
+    public void shouldWriteReadUuidVector() {
+        Variant variant = Variant.ofVector(Vector.ofUuids(new UUID[]{UUID.randomUUID(), UUID.randomUUID()}));
+
+        pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
+    }
+
+    @Test
+    public void shouldWriteReadNullVector() {
+        Variant variant = Variant.ofVector(Vector.ofNulls(new Object[] {null, null}));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }

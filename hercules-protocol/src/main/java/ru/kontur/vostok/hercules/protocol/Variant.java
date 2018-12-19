@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 public class Variant {
 
@@ -55,6 +56,14 @@ public class Variant {
     public static Variant ofString(String s) {
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
         return new Variant(Type.STRING, bytes);
+    }
+
+    public static Variant ofUuid(UUID uuid) {
+        return new Variant(Type.UUID, uuid);
+    }
+
+    public static Variant ofNull() {
+        return new Variant(Type.NULL, null);
     }
 
     public static Variant ofVector(Vector v) {

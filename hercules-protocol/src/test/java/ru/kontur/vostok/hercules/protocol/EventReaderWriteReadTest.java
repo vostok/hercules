@@ -48,7 +48,7 @@ public class EventReaderWriteReadTest {
 
         Assert.assertEquals(original.getVersion(), processed.getVersion());
         Assert.assertEquals(original.getTimestamp(), processed.getTimestamp());
-        Assert.assertEquals(original.getRandom(), processed.getRandom());
+        Assert.assertEquals(original.getUuid(), processed.getUuid());
 
         Assert.assertEquals(0, processed.getPayload().size());
 
@@ -75,7 +75,7 @@ public class EventReaderWriteReadTest {
 
         Assert.assertEquals(original.getVersion(), processed.getVersion());
         Assert.assertEquals(original.getTimestamp(), processed.getTimestamp());
-        Assert.assertEquals(original.getRandom(), processed.getRandom());
+        Assert.assertEquals(original.getUuid(), processed.getUuid());
 
         Assert.assertEquals(1, processed.getPayload().size());
         HerculesProtocolAssert.assertEquals(Variant.ofString("Abc ЕЁЮ"), processed.getPayload().get("string-tag"));

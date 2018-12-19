@@ -7,11 +7,13 @@ import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
+import java.util.UUID;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class EncoderDecoderTest {
 
@@ -126,6 +128,32 @@ public class EncoderDecoderTest {
     }
 
     @Test
+    public void shouldEncodeDecodeUuid() {
+        UUID uuid = UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000");
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
+        encoder.writeUuid(uuid);
+
+        Decoder decoder = new Decoder(stream.toByteArray());
+
+        assertEquals(uuid.toString(), decoder.readUuid().toString());
+    }
+
+    @Test
+    public void shouldEncodeDecodeNull() {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
+        encoder.writeNull();
+
+        assertEquals(0, stream.size());
+
+        Decoder decoder = new Decoder(stream.toByteArray());
+
+        assertNull(decoder.readNull());
+    }
+
+    @Test
     public void shouldEncodeDecodeByteVector() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Encoder encoder = new Encoder(stream);
@@ -225,5 +253,32 @@ public class EncoderDecoderTest {
                 Arrays.stream(new String[]{"a", "b", "c"}).map(String::getBytes).toArray(),
                 decoder.readStringVectorAsBytes()
         );
+    }
+
+    @Test
+    public void shouldEncodeDecodeUuidVector() {
+        UUID[] uuids = new UUID[]{UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
+        encoder.writeUuidVector(uuids);
+
+        Decoder decoder = new Decoder(stream.toByteArray());
+
+        assertArrayEquals(uuids, decoder.readUuidVector()
+        );
+    }
+
+    @Test
+    public void shouldEncodeDecodeNullVector() {
+        Object[] nulls = new Object[] {null, null, null};
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        Encoder encoder = new Encoder(stream);
+        encoder.writeNullVector(nulls);
+
+        Decoder decoder = new Decoder(stream.toByteArray());
+
+        assertArrayEquals(nulls, decoder.readNullVector());
     }
 }

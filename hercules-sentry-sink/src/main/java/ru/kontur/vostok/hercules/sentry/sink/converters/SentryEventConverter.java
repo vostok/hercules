@@ -50,7 +50,7 @@ public class SentryEventConverter {
 
     public static io.sentry.event.Event convert(Event event) {
 
-        EventBuilder eventBuilder = new EventBuilder(event.getRandom());
+        EventBuilder eventBuilder = new EventBuilder(event.getUuid());
         eventBuilder.withTimestamp(Date.from(TimeUtil.gregorianTicksToInstant(event.getTimestamp())));
 
 

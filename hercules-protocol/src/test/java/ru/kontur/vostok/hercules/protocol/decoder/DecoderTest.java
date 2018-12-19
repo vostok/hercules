@@ -46,7 +46,7 @@ public class DecoderTest {
 
         assertEquals(1, event.getVersion());
         assertEquals(15276799200000000L, event.getTimestamp());
-        assertEquals(UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000"), event.getRandom());
+        assertEquals(UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000"), event.getUuid());
 
         assertEquals(2, event.getPayload().size());
         assertNotNull(event.getPayload().get("host"));

@@ -94,7 +94,7 @@ public class CommonSingleSinkProcessor extends AbstractProcessor<UUID, Event> {
 
     private void markReceivedEvent(Event event) {
         if (RECEIVED_EVENTS_LOGGER.isTraceEnabled()) {
-            RECEIVED_EVENTS_LOGGER.trace("{}", event.getRandom());
+            RECEIVED_EVENTS_LOGGER.trace("{}", event.getUuid());
         }
         receivedEventsMeter.mark();
         receivedEventsSizeMeter.mark(event.getBytes().length);
@@ -102,14 +102,14 @@ public class CommonSingleSinkProcessor extends AbstractProcessor<UUID, Event> {
 
     private void markDroppedEvent(Event event) {
         if (DROPPED_EVENTS_LOGGER.isTraceEnabled()) {
-            DROPPED_EVENTS_LOGGER.trace("{}", event.getRandom());
+            DROPPED_EVENTS_LOGGER.trace("{}", event.getUuid());
         }
         droppedEventsMeter.mark();
     }
 
     private void markProcessedEvent(Event event) {
         if (PROCESSED_EVENTS_LOGGER.isTraceEnabled()) {
-            PROCESSED_EVENTS_LOGGER.trace("{}", event.getRandom());
+            PROCESSED_EVENTS_LOGGER.trace("{}", event.getUuid());
         }
         processedEventsMeter.mark();
     }
