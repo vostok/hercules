@@ -51,7 +51,8 @@ public class BulkResponseHandler {
             "es_rejected_execution_exception",
             "index_closed_exception",
             "cluster_block_exception",
-            "unavailable_shards_exception"
+            "unavailable_shards_exception",
+            "timeout_exception"
     ));
 
     private static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(

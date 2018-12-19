@@ -33,8 +33,144 @@ import java.util.concurrent.TimeUnit;
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 public class ElasticSearchEventSender implements BulkSender<Event> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchEventSender.class);
+
+    private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
+    private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
+
+    private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
+
+    private final RestClient restClient;
+    private final BulkResponseHandler bulkResponseHandler;
+
+    private final int retryLimit;
+
+    private final Timer elasticsearchRequestTimeTimer;
+    private final Meter elasticsearchRequestErrorsMeter;
+
+    public ElasticSearchEventSender(
+            Properties elasticsearchProperties,
+            MetricsCollector metricsCollector) {
+        this.retryLimit = ElasticsearchProperties.RETRY_LIMIT.extract(elasticsearchProperties);
+
+        HttpHost[] hosts = ElasticsearchProperties.HOSTS.extract(elasticsearchProperties);
+        final int maxConnections = ElasticsearchProperties.MAX_CONNECTIONS.extract(elasticsearchProperties);
+        final int maxConnectionsPerRoute = ElasticsearchProperties.MAX_CONNECTIONS_PER_ROUTE.extract(elasticsearchProperties);
+        final int retryTimeoutMs = ElasticsearchProperties.RETRY_TIMEOUT_MS.extract(elasticsearchProperties);
+        final int connectionTimeout = ElasticsearchProperties.CONNECTION_TIMEOUT_MS.extract(elasticsearchProperties);
+        final int connectionRequestTimeout = ElasticsearchProperties.CONNECTION_REQUEST_TIMEOUT_MS.extract(elasticsearchProperties);
+        final int socketTimeout = ElasticsearchProperties.SOCKET_TIMEOUT_MS.extract(elasticsearchProperties);
+
+        this.restClient = RestClient.builder(hosts)
+                .setMaxRetryTimeoutMillis(retryTimeoutMs)
+                .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder
+                        .setMaxConnTotal(maxConnections)
+                        .setMaxConnPerRoute(maxConnectionsPerRoute)
+                )
+                .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
+                        .setConnectTimeout(connectionTimeout)
+                        .setConnectionRequestTimeout(connectionRequestTimeout)
+                        .setSocketTimeout(socketTimeout)
+                )
+                .build();
+
+        final boolean retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
+
+        this.bulkResponseHandler = new BulkResponseHandler(retryOnUnknownErrors, metricsCollector);
+
+        this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
+        this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
+    }
+
+    @Override
+    public BulkSenderStat process(Collection<Event> events) throws BackendServiceFailedException {
+        if (events.size() == 0) {
+            return BulkSenderStat.ZERO;
+        }
+
+        if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
+            events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getUuid()));
+        }
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
+        writeEventRecords(stream, events);
+        if (stream.size() == 0) {
+            return BulkSenderStat.ZERO;
+        }
+
+        BulkResponseHandler.Result result;
+        try {
+            ByteArrayEntity body = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
+
+            int retryCount = retryLimit;
+            do {
+                long start = System.currentTimeMillis();
+                Response response = restClient.performRequest(
+                        "POST",
+                        "/_bulk",
+                        Collections.emptyMap(),
+                        body
+
+                );
+                elasticsearchRequestTimeTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    elasticsearchRequestErrorsMeter.mark();
+                    throw new RuntimeException("Bad response");
+                }
+                result = bulkResponseHandler.process(response.getEntity());
+            } while (result.hasRetryableErrors() && 0 < retryCount--);
+            if (result.hasRetryableErrors()) {
+                throw new Exception("Have retryable errors in elasticsearch response");
+            }
+        } catch (Exception e) {
+            throw new BackendServiceFailedException(e);
+        }
+
+        if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
+            events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getUuid()));
+        }
+        return new BulkSenderStat(events.size() - result.getErrorCount(), result.getErrorCount());
+    }
+
+    @Override
+    public boolean ping() {
+        try {
+            Response response = restClient.performRequest("HEAD", "/", Collections.emptyMap());
+            return 200 == response.getStatusLine().getStatusCode();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        restClient.close();
+    }
+
+    private void writeEventRecords(OutputStream stream, Collection<Event> events) {
+        toUnchecked(() -> {
+            for (Event event : events) {
+                boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
+                if (result) {
+                    writeNewLine(stream);
+                    EventToElasticJsonWriter.writeEvent(stream, event);
+                    writeNewLine(stream);
+                } else {
+                    LOGGER.error(String.format("Cannot process event '%s' because of missing index data", event.getUuid()));
+                }
+            }
+        });
+    }
+
+    private static void writeNewLine(OutputStream stream) throws IOException {
+        stream.write('\n');
+    }
 
     private static class ElasticsearchProperties {
+        static final PropertyDescription<Integer> RETRY_LIMIT = PropertyDescriptions
+                .integerProperty("retryLimit")
+                .withDefaultValue(3)
+                .build();
 
         static final PropertyDescription<HttpHost[]> HOSTS = PropertyDescriptions
                 .propertyOfType(HttpHost[].class, "elasticsearch.hosts")
@@ -87,131 +223,5 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 .booleanProperty("retryOnUnknownErrors")
                 .withDefaultValue(Boolean.FALSE)
                 .build();
-    }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchEventSender.class);
-
-    private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
-    private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
-
-    private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
-
-    private final RestClient restClient;
-    private final BulkResponseHandler bulkResponseHandler;
-
-    private final Timer elasticsearchRequestTimeTimer;
-    private final Meter elasticsearchRequestErrorsMeter;
-
-    public ElasticSearchEventSender(
-            Properties elasticsearchProperties,
-            MetricsCollector metricsCollector
-    ) {
-        HttpHost[] hosts = ElasticsearchProperties.HOSTS.extract(elasticsearchProperties);
-        final int maxConnections = ElasticsearchProperties.MAX_CONNECTIONS.extract(elasticsearchProperties);
-        final int maxConnectionsPerRoute = ElasticsearchProperties.MAX_CONNECTIONS_PER_ROUTE.extract(elasticsearchProperties);
-        final int retryTimeoutMs = ElasticsearchProperties.RETRY_TIMEOUT_MS.extract(elasticsearchProperties);
-        final int connectionTimeout = ElasticsearchProperties.CONNECTION_TIMEOUT_MS.extract(elasticsearchProperties);
-        final int connectionRequestTimeout = ElasticsearchProperties.CONNECTION_REQUEST_TIMEOUT_MS.extract(elasticsearchProperties);
-        final int socketTimeout = ElasticsearchProperties.SOCKET_TIMEOUT_MS.extract(elasticsearchProperties);
-
-        this.restClient = RestClient.builder(hosts)
-                .setMaxRetryTimeoutMillis(retryTimeoutMs)
-                .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder
-                        .setMaxConnTotal(maxConnections)
-                        .setMaxConnPerRoute(maxConnectionsPerRoute)
-                )
-                .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
-                        .setConnectTimeout(connectionTimeout)
-                        .setConnectionRequestTimeout(connectionRequestTimeout)
-                        .setSocketTimeout(socketTimeout)
-                )
-                .build();
-
-        final boolean retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
-
-        this.bulkResponseHandler = new BulkResponseHandler(retryOnUnknownErrors, metricsCollector);
-
-        this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
-        this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
-    }
-
-    @Override
-    public BulkSenderStat process(Collection<Event> events) throws BackendServiceFailedException {
-        if (events.size() == 0) {
-            return BulkSenderStat.ZERO;
-        }
-
-        events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getUuid()));
-
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
-        writeEventRecords(stream, events);
-        if (stream.size() == 0) {
-            return BulkSenderStat.ZERO;
-        }
-
-        BulkResponseHandler.Result result;
-        try {
-            ByteArrayEntity body = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
-
-            int retryCount = 3;
-            do {
-                long start = System.currentTimeMillis();
-                Response response = restClient.performRequest(
-                        "POST",
-                        "/_bulk",
-                        Collections.emptyMap(),
-                        body
-
-                );
-                elasticsearchRequestTimeTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    elasticsearchRequestErrorsMeter.mark();
-                    throw new RuntimeException("Bad response");
-                }
-                result = bulkResponseHandler.process(response.getEntity());
-            } while (result.hasRetryableErrors() && 0 < retryCount--);
-            if (result.hasRetryableErrors()) {
-                throw new Exception("Have retryable errors in elasticsearch response");
-            }
-        } catch (Exception e) {
-            throw new BackendServiceFailedException(e);
-        }
-
-        events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getUuid()));
-        return new BulkSenderStat(events.size() - result.getErrorCount(), result.getErrorCount());
-    }
-
-    @Override
-    public boolean ping() {
-        try {
-            Response response = restClient.performRequest("HEAD", "/", Collections.emptyMap());
-            return 200 == response.getStatusLine().getStatusCode();
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    @Override
-    public void close() throws Exception {
-        restClient.close();
-    }
-
-    private void writeEventRecords(OutputStream stream, Collection<Event> events) {
-        toUnchecked(() -> {
-            for (Event event : events) {
-                boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
-                if (result) {
-                    writeNewLine(stream);
-                    EventToElasticJsonWriter.writeEvent(stream, event);
-                    writeNewLine(stream);
-                } else {
-                    LOGGER.error(String.format("Cannot process event '%s' because of missing index data", event.getUuid()));
-                }
-            }
-        });
-    }
-
-    private static void writeNewLine(OutputStream stream) throws IOException {
-        stream.write('\n');
     }
 }
