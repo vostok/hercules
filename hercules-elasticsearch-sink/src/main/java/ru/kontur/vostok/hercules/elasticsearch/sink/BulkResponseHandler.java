@@ -302,6 +302,7 @@ public class BulkResponseHandler {
             if (Objects.nonNull(nestedError)) {
                 return processError(nestedError, id, index);
             } else {
+                LOGGER.error("Original error: {}", error);
                 final String type = Optional.ofNullable(error.get("type"))
                         .map(JsonNode::asText)
                         .orElse("");
@@ -314,10 +315,10 @@ public class BulkResponseHandler {
                 errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
 
                 if (RETRYABLE_ERRORS_CODES.contains(type)) {
-                    /* Do not write error to log in case of retryable error */
+                    LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
                     return ErrorType.RETRYABLE;
                 } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                    LOGGER.error("Bulk processing error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                    LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
                     return ErrorType.NON_RETRYABLE;
                 } else {
                     LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);

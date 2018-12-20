@@ -38,7 +38,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
     private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
 
-    private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
+    private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
 
     private final RestClient restClient;
     private final BulkResponseHandler bulkResponseHandler;
@@ -93,7 +93,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getId()));
         }
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE_BYTES);
         writeEventRecords(stream, events);
         if (stream.size() == 0) {
             return BulkSenderStat.ZERO;
@@ -120,6 +120,15 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     throw new RuntimeException("Bad response");
                 }
                 result = bulkResponseHandler.process(response.getEntity());
+                if (result.getTotalErrors() != 0) {
+                    LOGGER.info(
+                            "Error statistics (retryanble/non retyable/unknown/total): {}/{}/{}/{}",
+                            result.getRetryableErrorCount(),
+                            result.getNonRetryableErrorCount(),
+                            result.getUnknownErrorCount(),
+                            result.getTotalErrors()
+                    );
+                }
                 needToRetry = result.hasRetryableErrors() || result.hasUnknownErrors() && retryOnUnknownErrors;
             } while (0 < retryCount-- && needToRetry);
             if (needToRetry) {
