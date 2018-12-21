@@ -55,7 +55,7 @@ public class VariantWriter implements Writer<Variant> {
         VECTOR_WRITERS[Type.STRING.code] = VariantWriter::writeStringVector;
         VECTOR_WRITERS[Type.UUID.code] = VariantWriter::writeUuidVector;
         VECTOR_WRITERS[Type.NULL.code] = VariantWriter::writeNullVector;
-        //TODO: VECTOR
+        VECTOR_WRITERS[Type.VECTOR.code] = VariantWriter::writeVectorOfVectors;
     }
 
     private static void writeContainer(Encoder encoder, Object value) {
@@ -154,6 +154,14 @@ public class VariantWriter implements Writer<Variant> {
 
     private static void writeNullVector(Encoder encoder, Object value) {
         encoder.writeNullVector((Object[]) value);
+    }
+
+    private static void writeVectorOfVectors(Encoder encoder, Object value) {
+        Vector[] vectors = (Vector[]) value;
+        encoder.writeVectorLength(vectors.length);
+        for (Vector vector : vectors) {
+            writeVector(encoder, vector);
+        }
     }
 
     /**
