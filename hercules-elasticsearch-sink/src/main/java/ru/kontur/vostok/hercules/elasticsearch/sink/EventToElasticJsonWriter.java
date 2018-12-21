@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public final class EventToElasticJsonWriter {
 
@@ -57,9 +58,9 @@ public final class EventToElasticJsonWriter {
         TO_JSON_WRITERS[Type.FLAG.code] = EventToElasticJsonWriter::writeFlag;
         TO_JSON_WRITERS[Type.FLOAT.code] = EventToElasticJsonWriter::writeFloat;
         TO_JSON_WRITERS[Type.DOUBLE.code] = EventToElasticJsonWriter::writeDouble;
-        TO_JSON_WRITERS[Type.STRING.code] = EventToElasticJsonWriter::writeStringOrText;
-        //TODO: UUID
-        //TODO: NULL
+        TO_JSON_WRITERS[Type.STRING.code] = EventToElasticJsonWriter::writeString;
+        TO_JSON_WRITERS[Type.UUID.code] = EventToElasticJsonWriter::writeUuid;
+        TO_JSON_WRITERS[Type.NULL.code] = EventToElasticJsonWriter::writeAsNull;
         TO_JSON_WRITERS[Type.VECTOR.code] = EventToElasticJsonWriter::writeVector;
     }
 
@@ -77,9 +78,9 @@ public final class EventToElasticJsonWriter {
         VECTOR_TO_JSON_WRITERS[Type.DOUBLE.code] = EventToElasticJsonWriter::writeDoubleVector;
         VECTOR_TO_JSON_WRITERS[Type.FLAG.code] = EventToElasticJsonWriter::writeFlagVector;
         VECTOR_TO_JSON_WRITERS[Type.STRING.code] = EventToElasticJsonWriter::writeStringVector;
-        //TODO: UUID
-        //TODO: NULL
-        //TODO: VECTOR
+        VECTOR_TO_JSON_WRITERS[Type.UUID.code] = EventToElasticJsonWriter::writeUuidVector;
+        VECTOR_TO_JSON_WRITERS[Type.NULL.code] = EventToElasticJsonWriter::writeNullVector;
+        VECTOR_TO_JSON_WRITERS[Type.VECTOR.code] = EventToElasticJsonWriter::writeVectorVector;
     }
 
 
@@ -132,8 +133,12 @@ public final class EventToElasticJsonWriter {
         generator.writeBoolean((boolean) value);
     }
 
-    private static void writeStringOrText(JsonGenerator generator, Object value) throws IOException {
+    private static void writeString(JsonGenerator generator, Object value) throws IOException {
         generator.writeString(new String((byte[]) value, StandardCharsets.UTF_8));
+    }
+
+    private static void writeUuid(JsonGenerator generator, Object value) throws IOException {
+        generator.writeString(((UUID)value).toString());
     }
 
     private static void writeVector(JsonGenerator generator, Object value) throws IOException {
@@ -201,6 +206,31 @@ public final class EventToElasticJsonWriter {
         generator.writeStartArray();
         for (byte[] bytes : (byte[][]) value) {
             generator.writeString(new String(bytes, StandardCharsets.UTF_8));
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeUuidVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (UUID uuid : (UUID[]) value) {
+            generator.writeString(uuid.toString());
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeNullVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        Object[] nulls = (Object[]) value;
+        for (int i = 0; i < nulls.length; i++) {
+            generator.writeNull();
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeVectorVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (Vector vector : (Vector[]) value) {
+            VECTOR_TO_JSON_WRITERS[vector.getType().code].write(generator, vector.getValue());
         }
         generator.writeEndArray();
     }

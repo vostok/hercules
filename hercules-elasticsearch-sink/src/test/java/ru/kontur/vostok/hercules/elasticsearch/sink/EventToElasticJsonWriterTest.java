@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
@@ -100,43 +101,77 @@ public class EventToElasticJsonWriterTest {
     }
 
     @Test
-    public void shouldConvertEventWithByteArrayVariant() throws Exception {
+    public void shouldConvertEventWithUuidVariant() throws Exception {
+        assertVariantConverted(
+                "\"11203800-63fd-11e8-83e2-3a587d902000\"",
+                Variant.ofUuid(UUID.fromString("11203800-63fd-11e8-83e2-3a587d902000")));
+    }
+
+    @Test
+    public void shouldConvertEventWithNullVariant() throws Exception {
+        assertVariantConverted(null, Variant.ofNull());
+    }
+
+    @Test
+    public void shouldConvertEventWithByteVectorVariant() throws Exception {
         assertVariantConverted("[1,2,3]", Variant.ofVector(Vector.ofBytes(new byte[]{1, 2, 3})));
     }
 
     @Test
-    public void shouldConvertEventWithShortArrayVariant() throws Exception {
+    public void shouldConvertEventWithShortVectorVariant() throws Exception {
         assertVariantConverted("[1,2,3]", Variant.ofVector(Vector.ofShorts(new short[]{1, 2, 3})));
     }
 
     @Test
-    public void shouldConvertEventWithIntegerArrayVariant() throws Exception {
+    public void shouldConvertEventWithIntegerVectorVariant() throws Exception {
         assertVariantConverted("[1,2,3]", Variant.ofVector(Vector.ofIntegers(new int[]{1, 2, 3})));
     }
 
     @Test
-    public void shouldConvertEventWithLongArrayVariant() throws Exception {
+    public void shouldConvertEventWithLongVectorVariant() throws Exception {
         assertVariantConverted("[1,2,3]", Variant.ofVector(Vector.ofLongs(new long[]{1, 2, 3})));
     }
 
     @Test
-    public void shouldConvertEventWithFloatArrayVariant() throws Exception {
+    public void shouldConvertEventWithFloatVectorVariant() throws Exception {
         assertVariantConverted("[1.23,2.34]", Variant.ofVector(Vector.ofFloats(new float[]{1.23f, 2.34f})));
     }
 
     @Test
-    public void shouldConvertEventWithDoubleArrayVariant() throws Exception {
+    public void shouldConvertEventWithDoubleVectorVariant() throws Exception {
         assertVariantConverted("[1.23,2.34]", Variant.ofVector(Vector.ofDoubles(new double[]{1.23, 2.34})));
     }
 
     @Test
-    public void shouldConvertEventWithFlagArrayVariant() throws Exception {
+    public void shouldConvertEventWithFlagVectorVariant() throws Exception {
         assertVariantConverted("[true,false]", Variant.ofVector(Vector.ofFlags(new boolean[]{true, false})));
     }
 
     @Test
-    public void shouldConvertEventWithStringArrayVariant() throws Exception {
+    public void shouldConvertEventWithStringVectorVariant() throws Exception {
         assertVariantConverted("[\"Абв\",\"Ежз\"]", Variant.ofVector(Vector.ofStrings(new String[]{"Абв", "Ежз"})));
+    }
+
+    @Test
+    public void shouldConvertEventWithUuidVectorVariant() throws Exception {
+        assertVariantConverted(
+                "[\"11203800-63fd-11e8-83e2-3a587d902000\",\"05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1\"]",
+                Variant.ofVector(Vector.ofUuids(new UUID[]{
+                        UUID.fromString("11203800-63fd-11e8-83e2-3a587d902000"), UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")})));
+    }
+
+    @Test
+    public void shouldConvertEventWithNullVectorVariant() throws Exception {
+        assertVariantConverted("[null,null]", Variant.ofVector(Vector.ofNulls(new Object[]{null, null})));
+    }
+
+    @Test
+    public void shouldConvertEventWithVectorOfVectorsVariant() throws Exception {
+        assertVariantConverted(
+                "[[1,2],[3,4]]",
+                Variant.ofVector(Vector.ofVectors(new Vector[]{
+                        Vector.ofIntegers(new int[]{1, 2}),
+                        Vector.ofIntegers(new int[]{3, 4})})));
     }
 
     @Test
@@ -166,7 +201,7 @@ public class EventToElasticJsonWriterTest {
     }
 
     @Test
-    public void shouldWriteArrayOfContainers() throws Exception {
+    public void shouldWriteVectorOfContainers() throws Exception {
         ContainerBuilder first = ContainerBuilder.create();
         first.tag("a", Variant.ofInteger(123));
 
