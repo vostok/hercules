@@ -38,12 +38,13 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
     private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
     private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
 
-    private static final int EXPECTED_EVENT_SIZE = 2_048; // in bytes
+    private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
 
     private final RestClient restClient;
     private final BulkResponseHandler bulkResponseHandler;
 
     private final int retryLimit;
+    private final boolean retryOnUnknownErrors;
 
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
@@ -74,9 +75,9 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 )
                 .build();
 
-        final boolean retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
+        this.retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
 
-        this.bulkResponseHandler = new BulkResponseHandler(retryOnUnknownErrors, metricsCollector);
+        this.bulkResponseHandler = new BulkResponseHandler(metricsCollector);
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
@@ -92,7 +93,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getId()));
         }
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE_BYTES);
         writeEventRecords(stream, events);
         if (stream.size() == 0) {
             return BulkSenderStat.ZERO;
@@ -103,6 +104,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             ByteArrayEntity body = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
 
             int retryCount = retryLimit;
+            boolean needToRetry;
             do {
                 long start = System.currentTimeMillis();
                 Response response = restClient.performRequest(
@@ -118,8 +120,18 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     throw new RuntimeException("Bad response");
                 }
                 result = bulkResponseHandler.process(response.getEntity());
-            } while (result.hasRetryableErrors() && 0 < retryCount--);
-            if (result.hasRetryableErrors()) {
+                if (result.getTotalErrors() != 0) {
+                    LOGGER.info(
+                            "Error statistics (retryanble/non retyable/unknown/total): {}/{}/{}/{}",
+                            result.getRetryableErrorCount(),
+                            result.getNonRetryableErrorCount(),
+                            result.getUnknownErrorCount(),
+                            result.getTotalErrors()
+                    );
+                }
+                needToRetry = result.hasRetryableErrors() || result.hasUnknownErrors() && retryOnUnknownErrors;
+            } while (0 < retryCount-- && needToRetry);
+            if (needToRetry) {
                 throw new Exception("Have retryable errors in elasticsearch response");
             }
         } catch (Exception e) {
@@ -129,7 +141,8 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
             events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getId()));
         }
-        return new BulkSenderStat(events.size() - result.getErrorCount(), result.getErrorCount());
+
+        return new BulkSenderStat(events.size() - result.getTotalErrors(), result.getTotalErrors());
     }
 
     @Override
