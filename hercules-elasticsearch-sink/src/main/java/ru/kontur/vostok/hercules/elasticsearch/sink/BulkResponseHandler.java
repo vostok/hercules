@@ -80,7 +80,8 @@ public class BulkResponseHandler {
     ));
 
     private static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
-            "illegal_argument_exception"
+            "illegal_argument_exception",
+            "mapper_parsing_exception"
     ));
 
     private static final Set<String> UNSPECIFIED_ERRORS_CODES = new HashSet<>(Arrays.asList(
@@ -96,7 +97,6 @@ public class BulkResponseHandler {
             "invalid_snapshot_name_exception",
             "document_source_missing_exception",
             "resource_already_exists_exception",
-            "mapper_parsing_exception",
             "type_missing_exception",
             "index_shard_snapshot_failed_exception",
             "dfs_phase_execution_exception",
