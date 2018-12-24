@@ -18,7 +18,6 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
@@ -179,7 +178,10 @@ public class BulkConsumer implements Runnable {
                     }
                     int count = current.getRecords().size();
                     receivedEventsMeter.mark(count);
-                    receivedEventsSizeMeter.mark(EventUtil.getSizeInBytes(current.getRecords()));
+                    receivedEventsSizeMeter.mark(
+                            current.getRecords().stream().
+                                    mapToInt(event -> event.getBytes().length).
+                                    sum());
 
                     /*
                      * Queuing phase
