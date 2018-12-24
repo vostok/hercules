@@ -48,9 +48,9 @@ public class StreamApiClient {
     private final String apiKey;
 
     /**
-     * @param server server URI
+     * @param server     server URI
      * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param apiKey     api key for authorization
      */
     public StreamApiClient(
             URI server,
@@ -65,9 +65,9 @@ public class StreamApiClient {
 
     /**
      * @param httpClient apache http client instance
-     * @param server server URI
+     * @param server     server URI
      * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param apiKey     api key for authorization
      */
     public StreamApiClient(
             CloseableHttpClient httpClient,
@@ -83,9 +83,9 @@ public class StreamApiClient {
 
     /**
      * @param httpClientFactory apache http client supplier
-     * @param server server URI
-     * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param server            server URI
+     * @param shardState        client logical shard state
+     * @param apiKey            api key for authorization
      */
     public StreamApiClient(
             Supplier<CloseableHttpClient> httpClientFactory,
@@ -102,16 +102,15 @@ public class StreamApiClient {
     /**
      * Get stream content from Stream API
      *
-     * @param stream stream name
+     * @param stream          stream name
      * @param streamReadState stream read state
-     * @param count event count
+     * @param count           event count
      * @return stream content
-     *
      * @throws HerculesClientException in case of unspecified error
-     * @throws BadRequestException in case of incorrect parameters
-     * @throws UnauthorizedException in case of missing authorization data
-     * @throws ForbiddenException in case of request of forbidden resource
-     * @throws NotFoundException in case of not found resource
+     * @throws BadRequestException     in case of incorrect parameters
+     * @throws UnauthorizedException   in case of missing authorization data
+     * @throws ForbiddenException      in case of request of forbidden resource
+     * @throws NotFoundException       in case of not found resource
      */
     public EventStreamContent getStreamContent(
             final String stream,
@@ -169,6 +168,27 @@ public class StreamApiClient {
         }
     }
 
+    /**
+     * Return read state size in bytes                                          <br>
+     * <code>
+     * |......Read State.......|                                                <br>
+     * |.Count.|.Shard State *.|                                                <br>
+     * </code>
+     * Where, Count is Integer.
+     * <p>
+     * <code>
+     * |....Shard State.....|                                                   <br>
+     * |.Partition.|.Offset.|                                                   <br>
+     * </code>
+     * Where, Partition is Integer, Offset is Long.
+     * <p>
+     * Thus,                                                                    <br>
+     * sizeof(ReadState) = sizeof(Count) + Count * sizeof(ShardState)           <br>
+     * sizeof(ShardState) = sizeof(Partition) + sizeof(Offset)
+     *
+     * @param shardCount shard count
+     * @return read state size in bytes
+     */
     private static int calculateReadStateSize(int shardCount) {
         return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG);
     }

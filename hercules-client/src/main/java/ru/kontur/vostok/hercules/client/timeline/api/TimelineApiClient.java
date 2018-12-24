@@ -49,9 +49,9 @@ public class TimelineApiClient {
     private final String apiKey;
 
     /**
-     * @param server server URI
+     * @param server     server URI
      * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param apiKey     api key for authorization
      */
     public TimelineApiClient(
             URI server,
@@ -66,9 +66,9 @@ public class TimelineApiClient {
 
     /**
      * @param httpClient apache http client instance
-     * @param server server URI
+     * @param server     server URI
      * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param apiKey     api key for authorization
      */
     public TimelineApiClient(
             CloseableHttpClient httpClient,
@@ -84,9 +84,9 @@ public class TimelineApiClient {
 
     /**
      * @param httpClientFactory apache http client supplier
-     * @param server server URI
-     * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param server            server URI
+     * @param shardState        client logical shard state
+     * @param apiKey            api key for authorization
      */
     public TimelineApiClient(
             final Supplier<CloseableHttpClient> httpClientFactory,
@@ -103,17 +103,16 @@ public class TimelineApiClient {
     /**
      * Request timeline content from timeline API
      *
-     * @param timeline timeline name
+     * @param timeline          timeline name
      * @param timelineReadState read state
-     * @param timeInterval time interval
-     * @param count count of events
+     * @param timeInterval      time interval
+     * @param count             count of events
      * @return timeline content
-     *
      * @throws HerculesClientException in case of unspecified error
-     * @throws BadRequestException in case of incorrect parameters
-     * @throws UnauthorizedException in case of missing authorization data
-     * @throws ForbiddenException in case of request of forbidden resource
-     * @throws NotFoundException in case of not found resource
+     * @throws BadRequestException     in case of incorrect parameters
+     * @throws UnauthorizedException   in case of missing authorization data
+     * @throws ForbiddenException      in case of request of forbidden resource
+     * @throws NotFoundException       in case of not found resource
      */
     public TimelineContent getTimelineContent(
             final String timeline,
@@ -175,8 +174,36 @@ public class TimelineApiClient {
         }
     }
 
+    /**
+     * Return read state size in bytes                                              <br>
+     * <code>
+     * |........Timeline State..........|                                           <br>
+     * |.Count.|.Timeline Slice State *.|                                           <br>
+     * </code>
+     * Where, Count is Integer.
+     * <p>
+     * <code>
+     * |...Timeline Slice State...|                                                 <br>
+     * |.Slice.|.Offset.|.EventId.|                                                 <br>
+     * </code>
+     * Where, Slice is Integer, Offset is Long.
+     * <p>
+     * <code>
+     * |.....EventId......|
+     * |.Timestamp.|.Uuid.|
+     * </code>
+     * Where, Timestamp is Long, Uuid is UUID.
+     * <p>
+     * Thus,                                                                        <br>
+     * sizeof(TimelineState) = sizeof(Count) + Count * sizeof(TimelineSliceState)   <br>
+     * sizeof(TimelineSliceState) = sizeof(Slice) + sizeof(Offset) + sizeof(EventId)<br>
+     * sizeof(EventId) = sizeof(Timestamp) + sizeof(Uuid)
+     *
+     * @param shardCount shard count
+     * @return read state size in bytes
+     */
     private static int calculateReadStateSize(int shardCount) {
-        return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG + 2 * SizeOf.LONG);
+        return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG + (SizeOf.LONG + SizeOf.UUID));
     }
 
     private static class Resources {
