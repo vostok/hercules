@@ -26,7 +26,7 @@ public enum Type {
         this.code = code;
     }
 
-    public static Type valueOf(byte code) {
+    public static Type valueOf(int code) {
         return CODES[code & 0xFF];
     }
 
