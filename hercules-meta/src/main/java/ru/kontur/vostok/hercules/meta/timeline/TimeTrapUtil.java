@@ -15,7 +15,7 @@ public final class TimeTrapUtil {
      * @return offset of Time Trap
      */
     public static long toTimeTrapOffset(long timeTrapSize, long timestamp) {
-        return (TimeUtil.unixTicksToTime(timestamp) / timeTrapSize) * timeTrapSize;
+        return (TimeUtil.ticksToMillis(timestamp) / timeTrapSize) * timeTrapSize;
     }
 
     /**
@@ -26,7 +26,7 @@ public final class TimeTrapUtil {
      * @return offset of Time Trap
      */
     public static long toTimeTrapOffsetExclusive(long epoch, long timeTrapSize, long timestamp) {
-        return ((TimeUtil.unixTicksToTime(timestamp) - 1) / timeTrapSize) * timeTrapSize;
+        return ((TimeUtil.ticksToMillis(timestamp) - 1) / timeTrapSize) * timeTrapSize;
     }
 
     /**

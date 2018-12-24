@@ -16,7 +16,6 @@ import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
 import ru.kontur.vostok.hercules.util.EventUtil;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
-import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -24,7 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -249,7 +247,7 @@ public class TimelineReader {
                     params.slice,
                     params.ttOffset,
                     EventUtil.eventIdOfBytesAsHexString(offset.eventId),
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         } else {
@@ -258,8 +256,8 @@ public class TimelineReader {
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToTicks(params.ttOffset)),
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.unixTimeToTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset)),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         }

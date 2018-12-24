@@ -72,6 +72,15 @@ public class TimeUtil {
     }
 
     /**
+     * Convert 100ns ticks to seconds
+     * @param ticks is 100ns ticks
+     * @return seconds
+     */
+    public static long ticksToSeconds(long ticks) {
+        return ticks / TICKS_IN_SEC;
+    }
+
+    /**
      * Convert millis to 100ns ticks
      * @param millis is millis
      * @return 100ns ticks
@@ -81,38 +90,47 @@ public class TimeUtil {
     }
 
     /**
-     * Convert Unix ticks to Unix Time (Unix timestamp in millis)
-     * @param ticks is 100ns ticks from Unix Epoch
-     * @return Unix timestamp in millis
+     * Convert seconds to 100ns ticks
+     * @param seconds is seconds
+     * @return 100ns ticks
      */
-    public static long unixTicksToTime(long ticks) {
+    public static long secondsToTicks(long seconds) {
+        return seconds * TICKS_IN_SEC;
+    }
+
+    /**
+     * Convert Unix ticks to Unix Time or POSIX time (Unix timestamp in seconds)
+     * @param ticks is 100ns ticks from Unix Epoch
+     * @return Unix timestamp in seconds
+     */
+    public static long unixTicksToUnixTime(long ticks) {
         return ticksToMillis(ticks);
     }
 
     /**
-     * Convert Unix Time to Unix ticks
-     * @param timestamp is Unix Time
+     * Convert Unix Time or POSIX time (Unix timestamp in seconds) to Unix ticks
+     * @param timestamp is Unix timestamp in seconds
      * @return Unix ticks
      */
-    public static long unixTimeToTicks(long timestamp) {
-        return millisToTicks(timestamp);
+    public static long unixTimeToUnixTicks(long timestamp) {
+        return secondsToTicks(timestamp);
     }
 
     /**
-     * Convert Gregorian ticks (UUID compatible timestamp) to Unix Time (Unix timestamp in millis)
+     * Convert Gregorian ticks (UUID compatible timestamp) to Unix timestamp in millis
      * @param ticks is 100ns ticks from Gregorian Epoch
      * @return Unix timestamp in millis
      */
-    public static long gregorianTicksToUnixTime(long ticks) {
+    public static long gregorianTicksToUnixMillis(long ticks) {
         return ticksToMillis(gregorianToUnixTicks(ticks));
     }
 
     /**
-     * Convert Unix Time (Unix timestamp in millis) to Gregorian ticks (UUID compatible timestamp)
-     * @param timestamp is Unix Time
+     * Convert Unix timestamp in millis to Gregorian ticks (UUID compatible timestamp)
+     * @param timestamp is Unix timestamp in millis
      * @return UUID compatible timestamp
      */
-    public static long unixTimeToGregorianTicks(long timestamp) {
+    public static long unixMillisToGregorianTicks(long timestamp) {
         return unixToGregorianTicks(millisToTicks(timestamp));
     }
 
