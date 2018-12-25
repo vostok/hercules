@@ -11,22 +11,22 @@ public final class TimeTrapUtil {
      * Determine Time Trap (i.e. it's offset) for specified timestamp
      *
      * @param timeTrapSize is size of Time Trap in millis
-     * @param timestamp    is source timestamp in 100ns ticks from Gregorian Epoch (1582-10-15T00:00:00.000Z)
+     * @param timestamp    is source timestamp in 100ns ticks from Unix Epoch (1970-01-01T00:00:00.000Z)
      * @return offset of Time Trap
      */
     public static long toTimeTrapOffset(long timeTrapSize, long timestamp) {
-        return (TimeUtil.ticksToMillis(TimeUtil.gregorianToUnixTicks(timestamp)) / timeTrapSize) * timeTrapSize;
+        return (TimeUtil.ticksToMillis(timestamp) / timeTrapSize) * timeTrapSize;
     }
 
     /**
      * Determine Time Trap (i.e. it's offset) where it's left bound is less than timestamp.
      *
      * @param timeTrapSize is size of Time Trap
-     * @param timestamp    is source timestamp in 100ns ticks from Gregorian Epoch (1582-10-15T00:00:00.000Z)
+     * @param timestamp    is source timestamp in 100ns ticks from Unix Epoch (1970-01-01T00:00:00.000Z)
      * @return offset of Time Trap
      */
     public static long toTimeTrapOffsetExclusive(long epoch, long timeTrapSize, long timestamp) {
-        return ((TimeUtil.ticksToMillis(TimeUtil.gregorianToUnixTicks(timestamp)) - 1) / timeTrapSize) * timeTrapSize;
+        return ((TimeUtil.ticksToMillis(timestamp) - 1) / timeTrapSize) * timeTrapSize;
     }
 
     /**

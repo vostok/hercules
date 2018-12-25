@@ -49,7 +49,7 @@ public class EventDeserializerTest {
         EventBuilder builder = new EventBuilder();
 
         builder.setVersion(1);
-        builder.setEventId(UuidGenerator.getClientInstance().next());
+        builder.setRandom(UuidGenerator.getClientInstance().next());
 
         builder.setTag("string-tag", Variant.ofString("tag content"));
         builder.setTag("int-tag", Variant.ofInteger(123));

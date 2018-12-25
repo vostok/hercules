@@ -3,8 +3,10 @@ package ru.kontur.vostok.hercules.protocol.encoder;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.Vector;
 
 import java.util.Arrays;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 /**
@@ -14,47 +16,47 @@ public class VariantWriter implements Writer<Variant> {
 
     public static final VariantWriter INSTANCE = new VariantWriter();
     public static final ContainerWriter CONTAINER_WRITER = ContainerWriter.INSTANCE;
-    public static final ContainerArrayWriter CONTAINER_ARRAY_WRITER = ContainerArrayWriter.INSTANCE;
     public static final ContainerVectorWriter CONTAINER_VECTOR_WRITER = ContainerVectorWriter.INSTANCE;
-    private static final ObjectWriter[] WRITERS = new ObjectWriter[256];
+
+    private static final ObjectWriter[] TYPE_WRITERS = new ObjectWriter[256];
+    private static final ObjectWriter[] VECTOR_OF_TYPE_WRITERS = new ObjectWriter[256];
 
     static {
-        Arrays.setAll(WRITERS, idx -> (e, v) -> {
+        Arrays.setAll(TYPE_WRITERS, idx -> (e, v) -> {
             throw new IllegalArgumentException("Unsupported type with code " + idx);
         });
 
-        WRITERS[Type.CONTAINER.code] = VariantWriter::writeContainer;
-        WRITERS[Type.BYTE.code] = VariantWriter::writeByte;
-        WRITERS[Type.SHORT.code] = VariantWriter::writeShort;
-        WRITERS[Type.INTEGER.code] = VariantWriter::writeInteger;
-        WRITERS[Type.LONG.code] = VariantWriter::writeLong;
-        WRITERS[Type.FLAG.code] = VariantWriter::writeFlag;
-        WRITERS[Type.FLOAT.code] = VariantWriter::writeFloat;
-        WRITERS[Type.DOUBLE.code] = VariantWriter::writeDouble;
-        WRITERS[Type.STRING.code] = VariantWriter::writeString;
-        WRITERS[Type.TEXT.code] = VariantWriter::writeText;
+        TYPE_WRITERS[Type.CONTAINER.code] = VariantWriter::writeContainer;
+        TYPE_WRITERS[Type.BYTE.code] = VariantWriter::writeByte;
+        TYPE_WRITERS[Type.SHORT.code] = VariantWriter::writeShort;
+        TYPE_WRITERS[Type.INTEGER.code] = VariantWriter::writeInteger;
+        TYPE_WRITERS[Type.LONG.code] = VariantWriter::writeLong;
+        TYPE_WRITERS[Type.FLAG.code] = VariantWriter::writeFlag;
+        TYPE_WRITERS[Type.FLOAT.code] = VariantWriter::writeFloat;
+        TYPE_WRITERS[Type.DOUBLE.code] = VariantWriter::writeDouble;
+        TYPE_WRITERS[Type.STRING.code] = VariantWriter::writeString;
+        TYPE_WRITERS[Type.UUID.code] = VariantWriter::writeUuid;
+        TYPE_WRITERS[Type.NULL.code] = VariantWriter::writeNull;
+        TYPE_WRITERS[Type.VECTOR.code] = VariantWriter::writeVector;
+    }
 
-        WRITERS[Type.CONTAINER_VECTOR.code] = VariantWriter::writeContainerVector;
-        WRITERS[Type.BYTE_VECTOR.code] = VariantWriter::writeByteVector;
-        WRITERS[Type.SHORT_VECTOR.code] = VariantWriter::writeShortVector;
-        WRITERS[Type.INTEGER_VECTOR.code] = VariantWriter::writeIntegerVector;
-        WRITERS[Type.LONG_VECTOR.code] = VariantWriter::writeLongVector;
-        WRITERS[Type.FLAG_VECTOR.code] = VariantWriter::writeFlagVector;
-        WRITERS[Type.FLOAT_VECTOR.code] = VariantWriter::writeFloatVector;
-        WRITERS[Type.DOUBLE_VECTOR.code] = VariantWriter::writeDoubleVector;
-        WRITERS[Type.STRING_VECTOR.code] = VariantWriter::writeStringVector;
-        WRITERS[Type.TEXT_VECTOR.code] = VariantWriter::writeTextVector;
+    static {
+        Arrays.setAll(VECTOR_OF_TYPE_WRITERS, idx -> (e, v) -> {
+            throw new IllegalArgumentException("Unsupported type with code " + idx);
+        });
 
-        WRITERS[Type.CONTAINER_ARRAY.code] = VariantWriter::writeContainerArray;
-        WRITERS[Type.BYTE_ARRAY.code] = VariantWriter::writeByteArray;
-        WRITERS[Type.SHORT_ARRAY.code] = VariantWriter::writeShortArray;
-        WRITERS[Type.INTEGER_ARRAY.code] = VariantWriter::writeIntegerArray;
-        WRITERS[Type.LONG_ARRAY.code] = VariantWriter::writeLongArray;
-        WRITERS[Type.FLAG_ARRAY.code] = VariantWriter::writeFlagArray;
-        WRITERS[Type.FLOAT_ARRAY.code] = VariantWriter::writeFloatArray;
-        WRITERS[Type.DOUBLE_ARRAY.code] = VariantWriter::writeDoubleArray;
-        WRITERS[Type.STRING_ARRAY.code] = VariantWriter::writeStringArray;
-        WRITERS[Type.TEXT_ARRAY.code] = VariantWriter::writeTextArray;
+        VECTOR_OF_TYPE_WRITERS[Type.CONTAINER.code] = VariantWriter::writeContainerVector;
+        VECTOR_OF_TYPE_WRITERS[Type.BYTE.code] = VariantWriter::writeByteVector;
+        VECTOR_OF_TYPE_WRITERS[Type.SHORT.code] = VariantWriter::writeShortVector;
+        VECTOR_OF_TYPE_WRITERS[Type.INTEGER.code] = VariantWriter::writeIntegerVector;
+        VECTOR_OF_TYPE_WRITERS[Type.LONG.code] = VariantWriter::writeLongVector;
+        VECTOR_OF_TYPE_WRITERS[Type.FLAG.code] = VariantWriter::writeFlagVector;
+        VECTOR_OF_TYPE_WRITERS[Type.FLOAT.code] = VariantWriter::writeFloatVector;
+        VECTOR_OF_TYPE_WRITERS[Type.DOUBLE.code] = VariantWriter::writeDoubleVector;
+        VECTOR_OF_TYPE_WRITERS[Type.STRING.code] = VariantWriter::writeStringVector;
+        VECTOR_OF_TYPE_WRITERS[Type.UUID.code] = VariantWriter::writeUuidVector;
+        VECTOR_OF_TYPE_WRITERS[Type.NULL.code] = VariantWriter::writeNullVector;
+        VECTOR_OF_TYPE_WRITERS[Type.VECTOR.code] = VariantWriter::writeVectorOfVectors;
     }
 
     private static void writeContainer(Encoder encoder, Object value) {
@@ -94,8 +96,19 @@ public class VariantWriter implements Writer<Variant> {
         encoder.writeBytesAsString((byte[]) value);
     }
 
-    private static void writeText(Encoder encoder, Object value) {
-        encoder.writeBytesAsText((byte[]) value);
+    private static void writeUuid(Encoder encoder, Object value) {
+        encoder.writeUuid((UUID) value);
+    }
+
+    private static void writeNull(Encoder encoder, Object value) {
+        encoder.writeNull();
+    }
+
+    private static void writeVector(Encoder encoder, Object value) {
+        Vector vector = (Vector) value;
+        Type type = vector.getType();
+        encoder.writeType(type);
+        VECTOR_OF_TYPE_WRITERS[type.code].accept(encoder, vector.getValue());
     }
 
     private static void writeContainerVector(Encoder encoder, Object value) {
@@ -136,50 +149,20 @@ public class VariantWriter implements Writer<Variant> {
         encoder.writeBytesAsStringVector((byte[][]) value);
     }
 
-    private static void writeTextVector(Encoder encoder, Object value) {
-        encoder.writeBytesAsTextVector((byte[][]) value);
+    private static void writeUuidVector(Encoder encoder, Object value) {
+        encoder.writeUuidVector((UUID[]) value);
     }
 
-    private static void writeContainerArray(Encoder encoder, Object value) {
-        Container[] containers = (Container[]) value;
-
-        CONTAINER_ARRAY_WRITER.write(encoder, containers);
+    private static void writeNullVector(Encoder encoder, Object value) {
+        encoder.writeNullVector((Object[]) value);
     }
 
-    private static void writeByteArray(Encoder encoder, Object value) {
-        encoder.writeByteArray((byte[]) value);
-    }
-
-    private static void writeShortArray(Encoder encoder, Object value) {
-        encoder.writeShortArray((short[]) value);
-    }
-
-    private static void writeIntegerArray(Encoder encoder, Object value) {
-        encoder.writeIntegerArray((int[]) value);
-    }
-
-    private static void writeLongArray(Encoder encoder, Object value) {
-        encoder.writeLongArray((long[]) value);
-    }
-
-    private static void writeFloatArray(Encoder encoder, Object value) {
-        encoder.writeFloatArray((float[]) value);
-    }
-
-    private static void writeDoubleArray(Encoder encoder, Object value) {
-        encoder.writeDoubleArray((double[]) value);
-    }
-
-    private static void writeFlagArray(Encoder encoder, Object value) {
-        encoder.writeFlagArray((boolean[]) value);
-    }
-
-    private static void writeStringArray(Encoder encoder, Object value) {
-        encoder.writeBytesAsStringArray((byte[][]) value);
-    }
-
-    private static void writeTextArray(Encoder encoder, Object value) {
-        encoder.writeBytesAsTextArray((byte[][]) value);
+    private static void writeVectorOfVectors(Encoder encoder, Object value) {
+        Vector[] vectors = (Vector[]) value;
+        encoder.writeVectorLength(vectors.length);
+        for (Vector vector : vectors) {
+            writeVector(encoder, vector);
+        }
     }
 
     /**
@@ -190,8 +173,8 @@ public class VariantWriter implements Writer<Variant> {
      */
     @Override
     public void write(Encoder encoder, Variant variant) {
-        encoder.writeByte(variant.getType().code);
-        WRITERS[variant.getType().code].accept(encoder, variant.getValue());
+        encoder.writeType(variant.getType());
+        TYPE_WRITERS[variant.getType().code].accept(encoder, variant.getValue());
     }
 
     private interface ObjectWriter extends BiConsumer<Encoder, Object> {

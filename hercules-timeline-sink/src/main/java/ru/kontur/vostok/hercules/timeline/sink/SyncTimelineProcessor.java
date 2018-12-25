@@ -11,7 +11,7 @@ import ru.kontur.vostok.hercules.cassandra.util.Slicer;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.time.TimeUtil;
+import ru.kontur.vostok.hercules.util.EventUtil;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -40,9 +40,10 @@ public class SyncTimelineProcessor extends AbstractProcessor<UUID, Event> {
     @Override
     public void process(UUID key, Event value) {
         int slice = slicer.slice(value);
-        long ttOffset = TimeTrapUtil.toTimeTrapOffset(timeline.getTimetrapSize(), value.getId().timestamp());
+        long ttOffset = TimeTrapUtil.toTimeTrapOffset(timeline.getTimetrapSize(), value.getTimestamp());
+        ByteBuffer eventId = EventUtil.eventIdAsByteBuffer(value.getTimestamp(), value.getUuid());
         byte[] payload = value.getBytes();
-        BoundStatement statement = prepared.bind(slice, ttOffset, key, ByteBuffer.wrap(payload));
+        BoundStatement statement = prepared.bind(slice, ttOffset, eventId, ByteBuffer.wrap(payload));
         try {
             ResultSet result = session.execute(statement);
         } catch (Exception e) {

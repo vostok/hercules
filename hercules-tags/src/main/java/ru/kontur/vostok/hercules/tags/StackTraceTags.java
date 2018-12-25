@@ -26,7 +26,7 @@ public final class StackTraceTags {
     /**
      * Exception message
      */
-    public static final TagDescription<Optional<String>> MESSAGE_TAG = TagDescriptionBuilder.textual("msg")
+    public static final TagDescription<Optional<String>> MESSAGE_TAG = TagDescriptionBuilder.string("msg")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();
@@ -34,7 +34,7 @@ public final class StackTraceTags {
     /**
      * Error level
      */
-    public static final TagDescription<Optional<String>> LEVEL_TAG = TagDescriptionBuilder.textual("lvl")
+    public static final TagDescription<Optional<String>> LEVEL_TAG = TagDescriptionBuilder.string("lvl")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();
@@ -42,7 +42,7 @@ public final class StackTraceTags {
     /**
      * Release name
      */
-    public static final TagDescription<Optional<String>> RELEASE_TAG = TagDescriptionBuilder.textual("rlz")
+    public static final TagDescription<Optional<String>> RELEASE_TAG = TagDescriptionBuilder.string("rlz")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();
@@ -50,7 +50,7 @@ public final class StackTraceTags {
     /**
      * Server name
      */
-    public static final TagDescription<Optional<String>> SERVER_TAG = TagDescriptionBuilder.textual("srv")
+    public static final TagDescription<Optional<String>> SERVER_TAG = TagDescriptionBuilder.string("srv")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();
@@ -59,17 +59,17 @@ public final class StackTraceTags {
     /**
      * Exception class simple name
      */
-    public static final TagDescription<String> TYPE_TAG = TagDescriptionBuilder.textual("tp").build();
+    public static final TagDescription<String> TYPE_TAG = TagDescriptionBuilder.string("tp").build();
 
     /**
      * Exception message
      */
-    public static final TagDescription<String> VALUE_TAG = TagDescriptionBuilder.textual("msg").build();
+    public static final TagDescription<String> VALUE_TAG = TagDescriptionBuilder.string("msg").build();
 
     /**
      * Exception module full name
      */
-    public static final TagDescription<String> EXCEPTION_MODULE_TAG = TagDescriptionBuilder.textual("mod").build();
+    public static final TagDescription<String> EXCEPTION_MODULE_TAG = TagDescriptionBuilder.string("mod").build();
 
     /**
      * Collection of stacktrace frame
@@ -84,17 +84,17 @@ public final class StackTraceTags {
     /**
      * Stacktrace frame module full name
      */
-    public static final TagDescription<String> STACK_FRAME_MODULE_TAG = TagDescriptionBuilder.textual("mod").build();
+    public static final TagDescription<String> STACK_FRAME_MODULE_TAG = TagDescriptionBuilder.string("mod").build();
 
     /**
      * Stacktrace frame function name
      */
-    public static final TagDescription<String> FUNCTION_TAG = TagDescriptionBuilder.textual("fun").build();
+    public static final TagDescription<String> FUNCTION_TAG = TagDescriptionBuilder.string("fun").build();
 
     /**
      * Stacktrace frame file name
      */
-    public static final TagDescription<Optional<String>> FILENAME_TAG = TagDescriptionBuilder.textual("fnm")
+    public static final TagDescription<Optional<String>> FILENAME_TAG = TagDescriptionBuilder.string("fnm")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();
@@ -118,7 +118,7 @@ public final class StackTraceTags {
     /**
      * Stacktrace frame file path
      */
-    public static final TagDescription<Optional<String>> ABS_PATH_TAG = TagDescriptionBuilder.textual("abs")
+    public static final TagDescription<Optional<String>> ABS_PATH_TAG = TagDescriptionBuilder.string("abs")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();

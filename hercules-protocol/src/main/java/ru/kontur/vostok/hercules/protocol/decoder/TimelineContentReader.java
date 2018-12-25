@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineContent;
 
 public class TimelineContentReader implements Reader<TimelineContent> {
 
-    private static final TimelineReadStateReader STATE_READER = new TimelineReadStateReader();
+    private static final TimelineStateReader STATE_READER = new TimelineStateReader();
     private final ArrayReader<Event> eventArrayReader;
 
     public TimelineContentReader(Reader<Event> eventReader) {

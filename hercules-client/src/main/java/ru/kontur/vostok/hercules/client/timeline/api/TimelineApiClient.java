@@ -18,13 +18,13 @@ import ru.kontur.vostok.hercules.client.exceptions.HerculesClientExceptionUtil;
 import ru.kontur.vostok.hercules.client.exceptions.NotFoundException;
 import ru.kontur.vostok.hercules.client.exceptions.UnauthorizedException;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
-import ru.kontur.vostok.hercules.protocol.TimelineReadState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.decoder.SizeOf;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
-import ru.kontur.vostok.hercules.protocol.encoder.TimelineReadStateWriter;
+import ru.kontur.vostok.hercules.protocol.encoder.TimelineStateWriter;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -40,7 +40,7 @@ import java.util.function.Supplier;
  */
 public class TimelineApiClient {
 
-    private static final TimelineReadStateWriter STATE_WRITER = new TimelineReadStateWriter();
+    private static final TimelineStateWriter STATE_WRITER = new TimelineStateWriter();
     private static final TimelineContentReader CONTENT_READER = new TimelineContentReader(EventReader.readAllTags());
 
     private final CloseableHttpClient httpClient;
@@ -49,9 +49,9 @@ public class TimelineApiClient {
     private final String apiKey;
 
     /**
-     * @param server server URI
+     * @param server     server URI
      * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param apiKey     api key for authorization
      */
     public TimelineApiClient(
             URI server,
@@ -66,9 +66,9 @@ public class TimelineApiClient {
 
     /**
      * @param httpClient apache http client instance
-     * @param server server URI
+     * @param server     server URI
      * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param apiKey     api key for authorization
      */
     public TimelineApiClient(
             CloseableHttpClient httpClient,
@@ -84,9 +84,9 @@ public class TimelineApiClient {
 
     /**
      * @param httpClientFactory apache http client supplier
-     * @param server server URI
-     * @param shardState client logical shard state
-     * @param apiKey api key for authorization
+     * @param server            server URI
+     * @param shardState        client logical shard state
+     * @param apiKey            api key for authorization
      */
     public TimelineApiClient(
             final Supplier<CloseableHttpClient> httpClientFactory,
@@ -103,21 +103,20 @@ public class TimelineApiClient {
     /**
      * Request timeline content from timeline API
      *
-     * @param timeline timeline name
-     * @param timelineReadState read state
-     * @param timeInterval time interval
-     * @param count count of events
+     * @param timeline          timeline name
+     * @param timelineState read state
+     * @param timeInterval      time interval
+     * @param count             count of events
      * @return timeline content
-     *
      * @throws HerculesClientException in case of unspecified error
-     * @throws BadRequestException in case of incorrect parameters
-     * @throws UnauthorizedException in case of missing authorization data
-     * @throws ForbiddenException in case of request of forbidden resource
-     * @throws NotFoundException in case of not found resource
+     * @throws BadRequestException     in case of incorrect parameters
+     * @throws UnauthorizedException   in case of missing authorization data
+     * @throws ForbiddenException      in case of request of forbidden resource
+     * @throws NotFoundException       in case of not found resource
      */
     public TimelineContent getTimelineContent(
             final String timeline,
-            final TimelineReadState timelineReadState,
+            final TimelineState timelineState,
             final TimeInterval timeInterval,
             final int count
     ) throws HerculesClientException,
@@ -135,8 +134,8 @@ public class TimelineApiClient {
                 .addParameter(Parameters.RIGHT_TIME_BOUND, String.valueOf(timeInterval.getTo()))
                 .build());
 
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream(calculateReadStateSize(timelineReadState.getShardCount()));
-        STATE_WRITER.write(new Encoder(bytes), timelineReadState);
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream(calculateReadStateSize(timelineState.getSliceCount()));
+        STATE_WRITER.write(new Encoder(bytes), timelineState);
 
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setHeader(CommonHeaders.API_KEY, apiKey);
@@ -175,8 +174,36 @@ public class TimelineApiClient {
         }
     }
 
+    /**
+     * Return read state size in bytes                                              <br>
+     * <code>
+     * |........Timeline State..........|                                           <br>
+     * |.Count.|.Timeline Slice State *.|                                           <br>
+     * </code>
+     * Where, Count is Integer.
+     * <p>
+     * <code>
+     * |...Timeline Slice State...|                                                 <br>
+     * |.Slice.|.Offset.|.EventId.|                                                 <br>
+     * </code>
+     * Where, Slice is Integer, Offset is Long.
+     * <p>
+     * <code>
+     * |.....EventId......|
+     * |.Timestamp.|.Uuid.|
+     * </code>
+     * Where, Timestamp is Long, Uuid is UUID.
+     * <p>
+     * Thus,                                                                        <br>
+     * sizeof(TimelineState) = sizeof(Count) + Count * sizeof(TimelineSliceState)   <br>
+     * sizeof(TimelineSliceState) = sizeof(Slice) + sizeof(Offset) + sizeof(EventId)<br>
+     * sizeof(EventId) = sizeof(Timestamp) + sizeof(Uuid)
+     *
+     * @param shardCount shard count
+     * @return read state size in bytes
+     */
     private static int calculateReadStateSize(int shardCount) {
-        return SizeOf.VECTOR_LENGTH + shardCount * (SizeOf.INTEGER + SizeOf.LONG + 2 * SizeOf.LONG);
+        return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG + (SizeOf.LONG + SizeOf.UUID));
     }
 
     private static class Resources {

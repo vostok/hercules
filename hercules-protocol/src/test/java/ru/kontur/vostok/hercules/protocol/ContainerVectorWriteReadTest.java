@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.protocol.encoder.ContainerVectorWriter;
 
 import java.util.Collections;
 
-public class ContainerVectoreWriteReadTest {
+public class ContainerVectorWriteReadTest {
     @Test
     public void shouldWriteReadContainerArray() throws Exception {
         Container[] containers = new Container[]{

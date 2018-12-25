@@ -7,9 +7,9 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
-import ru.kontur.vostok.hercules.protocol.TimelineReadState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
-import ru.kontur.vostok.hercules.protocol.decoder.TimelineReadStateReader;
+import ru.kontur.vostok.hercules.protocol.decoder.TimelineStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 
@@ -23,7 +23,7 @@ public class ReadTimelineHandler implements HttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadTimelineHandler.class);
 
-    private static final TimelineReadStateReader STATE_READER = new TimelineReadStateReader();
+    private static final TimelineStateReader STATE_READER = new TimelineStateReader();
     private static final TimelineByteContentWriter CONTENT_WRITER = new TimelineByteContentWriter();
 
     private final TimelineRepository timelineRepository;
@@ -53,7 +53,7 @@ public class ReadTimelineHandler implements HttpHandler {
                         return;
                     }
 
-                    TimelineReadState readState = STATE_READER.read(new Decoder(message));
+                    TimelineState readState = STATE_READER.read(new Decoder(message));
 
                     TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, k, n, take, from, to);
 

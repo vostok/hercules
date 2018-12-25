@@ -56,8 +56,8 @@ public class StreamApiClientTest {
                                         new StreamShardReadState(0, 2)
                                 }),
                         new Event[]{
-                                new EventBuilder().setEventId(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")).build(),
-                                new EventBuilder().setEventId(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1")).build()
+                                new EventBuilder().setRandom(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")).build(),
+                                new EventBuilder().setRandom(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1")).build()
                         }),
                 new EventStreamContentWriter()
         )));
@@ -80,7 +80,7 @@ public class StreamApiClientTest {
 
         assertEquals(2, content.getEvents().length);
 
-        assertEquals(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[0].getId());
-        assertEquals(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[1].getId());
+        assertEquals(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[0].getUuid());
+        assertEquals(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[1].getUuid());
     }
 }

@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.TimelineContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
+import ru.kontur.vostok.hercules.util.EventUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
@@ -21,9 +22,9 @@ public class TimelineContentWriteReadTest {
         );
 
         TimelineContent content = new TimelineContent(
-                new TimelineReadState(new TimelineShardReadState[]{
-                        new TimelineShardReadState(0, 123, new UUID(1, 2)),
-                        new TimelineShardReadState(1, 456, new UUID(3, 4))
+                new TimelineState(new TimelineSliceState[]{
+                        new TimelineSliceState(0, 123, EventUtil.eventIdAsBytes(1, new UUID(1, 2))),
+                        new TimelineSliceState(1, 456, EventUtil.eventIdAsBytes(3, new UUID(3, 4)))
                 }),
                 new Event[]{
                         TestUtil.createEvent(),
@@ -37,9 +38,9 @@ public class TimelineContentWriteReadTest {
     @Test
     public void shouldWriteReadTimelineByteContent() {
         TimelineByteContent byteContent = new TimelineByteContent(
-                new TimelineReadState(new TimelineShardReadState[]{
-                        new TimelineShardReadState(0, 123, new UUID(1, 2)),
-                        new TimelineShardReadState(1, 456, new UUID(3, 4))
+                new TimelineState(new TimelineSliceState[]{
+                        new TimelineSliceState(0, 123, EventUtil.eventIdAsBytes(1, new UUID(1, 2))),
+                        new TimelineSliceState(1, 456, EventUtil.eventIdAsBytes(3, new UUID(3, 4)))
                 }),
                 new byte[][]{
                         TestUtil.createEvent().getBytes(),
@@ -54,9 +55,9 @@ public class TimelineContentWriteReadTest {
         TimelineContent processedContent = new TimelineContentReader(EventReader.readAllTags()).read(decoder);
 
         TimelineContent expectedContent = new TimelineContent(
-                new TimelineReadState(new TimelineShardReadState[]{
-                        new TimelineShardReadState(0, 123, new UUID(1, 2)),
-                        new TimelineShardReadState(1, 456, new UUID(3, 4))
+                new TimelineState(new TimelineSliceState[]{
+                        new TimelineSliceState(0, 123, EventUtil.eventIdAsBytes(1, new UUID(1, 2))),
+                        new TimelineSliceState(1, 456, EventUtil. eventIdAsBytes(3, new UUID(3, 4)))
                 }),
                 new Event[] {
                         TestUtil.createEvent(),

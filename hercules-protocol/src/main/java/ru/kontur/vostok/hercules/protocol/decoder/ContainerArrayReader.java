@@ -20,7 +20,7 @@ public class ContainerArrayReader implements Reader<Container[]> {
      */
     @Override
     public Container[] read(Decoder decoder) {
-        int length = decoder.readArrayLength();
+        int length = decoder.readInteger();
         Container[] containers = new Container[length];
 
         for (int index = 0; index < length; index++) {
@@ -38,13 +38,13 @@ public class ContainerArrayReader implements Reader<Container[]> {
      */
     @Override
     public int skip(Decoder decoder) {
-        int length = decoder.readArrayLength();
+        int length = decoder.readInteger();
         int skipped = 0;
 
         while (0 <= --length) {
             skipped += CONTAINER_READER.skip(decoder);
         }
 
-        return skipped + SizeOf.ARRAY_LENGTH;
+        return skipped + SizeOf.INTEGER;
     }
 }
