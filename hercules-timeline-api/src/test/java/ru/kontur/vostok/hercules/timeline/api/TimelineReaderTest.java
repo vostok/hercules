@@ -9,8 +9,8 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.protocol.TimelineReadState;
-import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
+import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.util.EventUtil;
 
 import java.util.Arrays;
@@ -80,7 +80,7 @@ public class TimelineReaderTest {
 
         timelineReader.readTimeline(
                 timeline,
-                new TimelineReadState(new TimelineShardReadState[]{}),
+                new TimelineState(new TimelineSliceState[]{}),
                 0,
                 1,
                 10,
@@ -96,7 +96,7 @@ public class TimelineReaderTest {
     public void shouldIncludeMinimalEventIdInRequestIfNoPartitionReadStatePassed() {
         timelineReader.readTimeline(
                 TIMELINE,
-                new TimelineReadState(new TimelineShardReadState[]{}),
+                new TimelineState(new TimelineSliceState[]{}),
                 0,
                 1,
                 1,
@@ -113,8 +113,8 @@ public class TimelineReaderTest {
     public void shouldNotIncludeMinimalEventIdInRequestIfPartitionReadStatePassed() {
         timelineReader.readTimeline(
                 TIMELINE,
-                new TimelineReadState(new TimelineShardReadState[]{
-                        new TimelineShardReadState(0, 0, EventUtil.eventIdAsBytes(122_192_928_000_000_000L, UUID.fromString("13814000-1dd2-11b2-8000-000000000000")))
+                new TimelineState(new TimelineSliceState[]{
+                        new TimelineSliceState(0, 0, EventUtil.eventIdAsBytes(122_192_928_000_000_000L, UUID.fromString("13814000-1dd2-11b2-8000-000000000000")))
                 }),
                 0,
                 1,

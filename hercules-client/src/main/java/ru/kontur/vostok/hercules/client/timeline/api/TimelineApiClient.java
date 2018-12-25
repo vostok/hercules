@@ -18,13 +18,13 @@ import ru.kontur.vostok.hercules.client.exceptions.HerculesClientExceptionUtil;
 import ru.kontur.vostok.hercules.client.exceptions.NotFoundException;
 import ru.kontur.vostok.hercules.client.exceptions.UnauthorizedException;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
-import ru.kontur.vostok.hercules.protocol.TimelineReadState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.protocol.decoder.SizeOf;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
-import ru.kontur.vostok.hercules.protocol.encoder.TimelineReadStateWriter;
+import ru.kontur.vostok.hercules.protocol.encoder.TimelineStateWriter;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -40,7 +40,7 @@ import java.util.function.Supplier;
  */
 public class TimelineApiClient {
 
-    private static final TimelineReadStateWriter STATE_WRITER = new TimelineReadStateWriter();
+    private static final TimelineStateWriter STATE_WRITER = new TimelineStateWriter();
     private static final TimelineContentReader CONTENT_READER = new TimelineContentReader(EventReader.readAllTags());
 
     private final CloseableHttpClient httpClient;
@@ -104,7 +104,7 @@ public class TimelineApiClient {
      * Request timeline content from timeline API
      *
      * @param timeline          timeline name
-     * @param timelineReadState read state
+     * @param timelineState read state
      * @param timeInterval      time interval
      * @param count             count of events
      * @return timeline content
@@ -116,7 +116,7 @@ public class TimelineApiClient {
      */
     public TimelineContent getTimelineContent(
             final String timeline,
-            final TimelineReadState timelineReadState,
+            final TimelineState timelineState,
             final TimeInterval timeInterval,
             final int count
     ) throws HerculesClientException,
@@ -134,8 +134,8 @@ public class TimelineApiClient {
                 .addParameter(Parameters.RIGHT_TIME_BOUND, String.valueOf(timeInterval.getTo()))
                 .build());
 
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream(calculateReadStateSize(timelineReadState.getShardCount()));
-        STATE_WRITER.write(new Encoder(bytes), timelineReadState);
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream(calculateReadStateSize(timelineState.getSliceCount()));
+        STATE_WRITER.write(new Encoder(bytes), timelineState);
 
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setHeader(CommonHeaders.API_KEY, apiKey);

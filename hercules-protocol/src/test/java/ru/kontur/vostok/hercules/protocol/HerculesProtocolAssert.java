@@ -101,14 +101,14 @@ public class HerculesProtocolAssert {
         );
     }
 
-    public static void assertEquals(TimelineShardReadState expected, TimelineShardReadState actual) {
-        Assert.assertEquals(expected.getShardId(), actual.getShardId());
+    public static void assertEquals(TimelineSliceState expected, TimelineSliceState actual) {
+        Assert.assertEquals(expected.getSlice(), actual.getSlice());
         Assert.assertEquals(expected.getTtOffset(), actual.getTtOffset());
         Assert.assertArrayEquals(expected.getEventId(), actual.getEventId());
     }
 
-    public static void assertEquals(TimelineReadState expected, TimelineReadState actual) {
-        assertArrayEquals(expected.getShards(), actual.getShards(), HerculesProtocolAssert::assertEquals);
+    public static void assertEquals(TimelineState expected, TimelineState actual) {
+        assertArrayEquals(expected.getSliceStates(), actual.getSliceStates(), HerculesProtocolAssert::assertEquals);
     }
 
     public static void assertEquals(TimelineContent expected, TimelineContent actual) {

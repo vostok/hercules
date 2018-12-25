@@ -2,15 +2,15 @@ package ru.kontur.vostok.hercules.protocol;
 
 public class TimelineContent {
 
-    private final TimelineReadState readState;
+    private final TimelineState readState;
     private final Event[] events;
 
-    public TimelineContent(TimelineReadState readState, Event[] events) {
+    public TimelineContent(TimelineState readState, Event[] events) {
         this.readState = readState;
         this.events = events;
     }
 
-    public TimelineReadState getReadState() {
+    public TimelineState getReadState() {
         return readState;
     }
 
