@@ -11,10 +11,11 @@ import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
-import ru.kontur.vostok.hercules.protocol.TimelineReadState;
-import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
+import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
+import ru.kontur.vostok.hercules.util.EventUtil;
+import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
-import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -22,11 +23,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
  * Read event timeline from Cassandra cluster
+ *
+ * FIXME: Should be revised and refactored
  */
 public class TimelineReader {
 
@@ -37,9 +39,9 @@ public class TimelineReader {
      */
     private static class TimelineShardReadStateOffset {
         long ttOffset;
-        UUID eventId;
+        byte[] eventId;
 
-        public TimelineShardReadStateOffset(long ttOffset, UUID eventId) {
+        public TimelineShardReadStateOffset(long ttOffset, byte[] eventId) {
             this.ttOffset = ttOffset;
             this.eventId = eventId;
         }
@@ -111,9 +113,9 @@ public class TimelineReader {
         }
     }
 
-    private static final UUID NIL = new UUID(0, 0);
-    private static boolean isNil(UUID uuid) {
-        return NIL.equals(uuid);
+    private static final byte[] NIL = new byte[24];
+    private static boolean isNil(byte[] eventId) {
+        return Arrays.equals(NIL, eventId);
     }
 
     private static final String EVENT_ID = "event_id";
@@ -176,7 +178,7 @@ public class TimelineReader {
      */
     public TimelineByteContent readTimeline(
             Timeline timeline,
-            TimelineReadState readState,
+            TimelineState readState,
             int k,
             int n,
             int take,
@@ -214,7 +216,7 @@ public class TimelineReader {
 
             ResultSet rows = session.execute(statement);
             for (Row row : rows) {
-                offset.eventId = row.getUUID(EVENT_ID);
+                offset.eventId = ByteUtil.fromByteBuffer(row.getBytes(EVENT_ID));
                 result.add(row.getBytes(PAYLOAD).array());
                 --take;
             }
@@ -246,8 +248,8 @@ public class TimelineReader {
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    offset.eventId.toString(),
-                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.eventIdOfBytesAsHexString(offset.eventId),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         } else {
@@ -256,17 +258,17 @@ public class TimelineReader {
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset)),
-                    UuidGenerator.min(TimeUtil.unixTimeToGregorianTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset)),
+                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize())),
                     take
             ));
         }
     }
 
-    private static Map<Integer, TimelineShardReadStateOffset> toMap(TimelineReadState readState) {
-        return Arrays.stream(readState.getShards())
+    private static Map<Integer, TimelineShardReadStateOffset> toMap(TimelineState readState) {
+        return Arrays.stream(readState.getSliceStates())
                 .collect(Collectors.toMap(
-                        TimelineShardReadState::getShardId,
+                        TimelineSliceState::getSlice,
                         shardState -> new TimelineShardReadStateOffset(
                                 shardState.getTtOffset(),
                                 shardState.getEventId()
@@ -274,14 +276,14 @@ public class TimelineReader {
                 ));
     }
 
-    private static TimelineReadState toState(Map<Integer, TimelineShardReadStateOffset> offsetMap) {
-        return new TimelineReadState(offsetMap.entrySet().stream()
-                .map(offsetEntry -> new TimelineShardReadState(
+    private static TimelineState toState(Map<Integer, TimelineShardReadStateOffset> offsetMap) {
+        return new TimelineState(offsetMap.entrySet().stream()
+                .map(offsetEntry -> new TimelineSliceState(
                         offsetEntry.getKey(),
                         offsetEntry.getValue().ttOffset,
                         offsetEntry.getValue().eventId
                 ))
-                .toArray(TimelineShardReadState[]::new)
+                .toArray(TimelineSliceState[]::new)
         );
     }
 

@@ -14,6 +14,6 @@ public class ArrayReader<T> extends CollectionReader<T> {
 
     @Override
     protected int readLength(Decoder decoder) {
-        return decoder.readArrayLength();
+        return decoder.readInteger();
     }
 }

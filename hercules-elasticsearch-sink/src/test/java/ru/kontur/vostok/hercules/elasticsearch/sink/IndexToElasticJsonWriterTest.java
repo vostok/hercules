@@ -4,6 +4,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
@@ -17,7 +18,7 @@ public class IndexToElasticJsonWriterTest {
     @Test
     public void shouldWriteIndexIfEventHasIndexTag() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
+        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me!
         eventBuilder.setTag("$index", Variant.ofString("just-some-index-value"));
         Event event = eventBuilder.build();
 
@@ -39,7 +40,8 @@ public class IndexToElasticJsonWriterTest {
     @Test
     public void shouldWriteIndexIfEventHasProjectAndEnvTags() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
+        eventBuilder.setTimestamp(TimeUtil.UNIX_EPOCH);
+        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
         eventBuilder.setTag("proj", Variant.ofString("awesome-project"));
         eventBuilder.setTag("env", Variant.ofString("production"));
         Event event = eventBuilder.build();
@@ -50,7 +52,7 @@ public class IndexToElasticJsonWriterTest {
         assertEquals(
                 "{" +
                         "\"index\":{" +
-                        "\"_index\":\"awesome-project-production-1582.10.15\"," +
+                        "\"_index\":\"awesome-project-production-1970.01.01\"," +
                         "\"_type\":\"LogEvent\"," +
                         "\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"" +
                         "}" +
@@ -62,7 +64,7 @@ public class IndexToElasticJsonWriterTest {
     @Test
     public void shouldReturnFalseIfNoSuitableTags() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
+        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me!
         Event event = eventBuilder.build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

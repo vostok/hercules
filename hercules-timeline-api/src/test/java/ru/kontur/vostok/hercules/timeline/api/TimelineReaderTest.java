@@ -9,8 +9,9 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.protocol.TimelineReadState;
-import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
+import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
+import ru.kontur.vostok.hercules.util.EventUtil;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -45,7 +46,7 @@ public class TimelineReaderTest {
         }
     }
 
-    private static final String UUID_REGEXP = "[0-9a-zA-Z]{8}\\-[0-9a-zA-Z]{4}\\-[0-9a-zA-Z]{4}\\-[0-9a-zA-Z]{4}\\-[0-9a-zA-Z]{12}";
+    private static final String EVENT_ID_REGEXP = "0x[0-9a-zA-Z]{48}";
 
     private static final Timeline TIMELINE = new Timeline();
     static {
@@ -79,7 +80,7 @@ public class TimelineReaderTest {
 
         timelineReader.readTimeline(
                 timeline,
-                new TimelineReadState(new TimelineShardReadState[]{}),
+                new TimelineState(new TimelineSliceState[]{}),
                 0,
                 1,
                 10,
@@ -95,7 +96,7 @@ public class TimelineReaderTest {
     public void shouldIncludeMinimalEventIdInRequestIfNoPartitionReadStatePassed() {
         timelineReader.readTimeline(
                 TIMELINE,
-                new TimelineReadState(new TimelineShardReadState[]{}),
+                new TimelineState(new TimelineSliceState[]{}),
                 0,
                 1,
                 1,
@@ -104,7 +105,7 @@ public class TimelineReaderTest {
         );
 
         verify(session).execute(argThat(cql(
-                ".+  event_id >= " + UUID_REGEXP + " AND  event_id < " + UUID_REGEXP + " .+"
+                ".+  event_id >= " + EVENT_ID_REGEXP + " AND  event_id < " + EVENT_ID_REGEXP + " .+"
         )));
     }
 
@@ -112,8 +113,8 @@ public class TimelineReaderTest {
     public void shouldNotIncludeMinimalEventIdInRequestIfPartitionReadStatePassed() {
         timelineReader.readTimeline(
                 TIMELINE,
-                new TimelineReadState(new TimelineShardReadState[]{
-                        new TimelineShardReadState(0, 0, UUID.fromString("13814000-1dd2-11b2-8000-000000000000"))
+                new TimelineState(new TimelineSliceState[]{
+                        new TimelineSliceState(0, 0, EventUtil.eventIdAsBytes(122_192_928_000_000_000L, UUID.fromString("13814000-1dd2-11b2-8000-000000000000")))
                 }),
                 0,
                 1,
@@ -123,7 +124,7 @@ public class TimelineReaderTest {
         );
 
         verify(session).execute(argThat(cql(
-                ".+  event_id > " + UUID_REGEXP + " AND  event_id < " + UUID_REGEXP + " .+"
+                ".+  event_id > " + EVENT_ID_REGEXP + " AND  event_id < " + EVENT_ID_REGEXP + " .+"
         )));
     }
 

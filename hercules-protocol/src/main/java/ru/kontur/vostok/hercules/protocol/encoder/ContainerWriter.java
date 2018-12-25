@@ -13,13 +13,9 @@ public class ContainerWriter implements Writer<Container> {
 
     @Override
     public void write(Encoder encoder, Container value) {
-        if (Short.MAX_VALUE < value.size()) {
-            throw new RuntimeException("Only " + Short.MAX_VALUE + " tags are supported");
-        }
-
-        encoder.writeShort((short) value.size());
+        encoder.writeContainerSize((short) value.size());
         for (Map.Entry<String, Variant> entry : value) {
-            encoder.writeString(entry.getKey());
+            encoder.writeTinyString(entry.getKey());
             VARIANT_WRITER.write(encoder, entry.getValue());
         }
     }

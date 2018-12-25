@@ -16,7 +16,7 @@ public class ContainerWriteReadTest {
     public void shouldReadWriteContainer() throws Exception {
         Map<String, Variant> variantMap = new HashMap<>();
         variantMap.put("int-sample", Variant.ofInteger(123));
-        variantMap.put("text-sample", Variant.ofText("Abc еёю"));
+        variantMap.put("text-sample", Variant.ofString("Abc еёю"));
 
         Container container = new Container(variantMap);
         pipe.process(container).assertEquals(HerculesProtocolAssert::assertEquals);
@@ -56,7 +56,7 @@ public class ContainerWriteReadTest {
     public void shouldReadWriteInnerContainer() throws Exception {
         Map<String, Variant> innerVariantMap = new HashMap<>();
         innerVariantMap.put("first", Variant.ofInteger(1));
-        innerVariantMap.put("second", Variant.ofStringArray(new String[]{"a", "b", "c"}));
+        innerVariantMap.put("second", Variant.ofVector(Vector.ofStrings(new String[]{"a", "b", "c"})));
         Container innerContainer = new Container(innerVariantMap);
 
         Map<String, Variant> variantMap = Collections.singletonMap("inner", Variant.ofContainer(innerContainer));

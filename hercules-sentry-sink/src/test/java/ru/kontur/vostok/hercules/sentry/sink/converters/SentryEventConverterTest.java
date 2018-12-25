@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
@@ -21,29 +22,29 @@ public class SentryEventConverterTest {
 
     private static Container createException() {
         Map<String, Variant> stackFrame0Map = new HashMap<>();
-        stackFrame0Map.put("mod", Variant.ofText("com.example.test.SomeModule"));
+        stackFrame0Map.put("mod", Variant.ofString("com.example.test.SomeModule"));
         stackFrame0Map.put("fun", Variant.ofString("function"));
         stackFrame0Map.put("fnm", Variant.ofString("SomeModule.java"));
         stackFrame0Map.put("ln", Variant.ofInteger(100));
         stackFrame0Map.put("cn", Variant.ofInteger(12));
-        stackFrame0Map.put("abs", Variant.ofText("/home/usr/git/project/src/java/com/example/test/SomeModule.java"));
+        stackFrame0Map.put("abs", Variant.ofString("/home/usr/git/project/src/java/com/example/test/SomeModule.java"));
 
         Map<String, Variant> stackFrame1Map = new HashMap<>();
-        stackFrame1Map.put("mod", Variant.ofText("com.example.test.AnotherModule"));
+        stackFrame1Map.put("mod", Variant.ofString("com.example.test.AnotherModule"));
         stackFrame1Map.put("fun", Variant.ofString("function"));
         stackFrame1Map.put("fnm", Variant.ofString("AnotherModule.java"));
         stackFrame1Map.put("ln", Variant.ofInteger(200));
         stackFrame1Map.put("cn", Variant.ofInteger(13));
-        stackFrame1Map.put("abs", Variant.ofText("/home/usr/git/project/src/java/com/example/test/AnotherModule.java"));
+        stackFrame1Map.put("abs", Variant.ofString("/home/usr/git/project/src/java/com/example/test/AnotherModule.java"));
 
         Map<String, Variant> exceptionMap = new HashMap<>();
-        exceptionMap.put("str", Variant.ofContainerArray(new Container[]{
+        exceptionMap.put("str", Variant.ofVector(Vector.ofContainers(new Container[]{
                 new Container(stackFrame0Map),
                 new Container(stackFrame1Map)
-        }));
+        })));
         exceptionMap.put("tp", Variant.ofString("ExceptionClass"));
-        exceptionMap.put("msg", Variant.ofText("Some error of ExceptionClass happened"));
-        exceptionMap.put("mod", Variant.ofText("com.example.test.exceptions"));
+        exceptionMap.put("msg", Variant.ofString("Some error of ExceptionClass happened"));
+        exceptionMap.put("mod", Variant.ofString("com.example.test.exceptions"));
 
         return new Container(exceptionMap);
     }
@@ -60,9 +61,9 @@ public class SentryEventConverterTest {
     @Test
     public void shouldConvertEventWithMessage() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
+        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me
         eventBuilder.setVersion(1);
-        eventBuilder.setTag("msg", Variant.ofText("This is message sample"));
+        eventBuilder.setTag("msg", Variant.ofString("This is message sample"));
 
         Event sentryEvent = SentryEventConverter.convert(eventBuilder.build());
 
@@ -72,11 +73,11 @@ public class SentryEventConverterTest {
     @Test
     public void shouldConvertEventWithExceptions() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
+        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me
         eventBuilder.setVersion(1);
-        eventBuilder.setTag("exc", Variant.ofContainerVector(new Container[]{
+        eventBuilder.setTag("exc", Variant.ofVector(Vector.ofContainers(new Container[]{
                 createException()
-        }));
+        })));
 
         Event sentryEvent = SentryEventConverter.convert(eventBuilder.build());
 
@@ -108,11 +109,11 @@ public class SentryEventConverterTest {
     @Test
     public void shouldExtractPlatformValue() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setEventId(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
+        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO Fix me
         eventBuilder.setVersion(1);
-        eventBuilder.setTag("exc", Variant.ofContainerVector(new Container[]{
+        eventBuilder.setTag("exc", Variant.ofVector(Vector.ofContainers(new Container[]{
                 createException()
-        }));
+        })));
 
         Event sentryEvent = SentryEventConverter.convert(eventBuilder.build());
 

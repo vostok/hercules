@@ -4,7 +4,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 
 public class TimelineByteContentWriter implements Writer<TimelineByteContent> {
 
-    private static final TimelineReadStateWriter STATE_WRITER = new TimelineReadStateWriter();
+    private static final TimelineStateWriter STATE_WRITER = new TimelineStateWriter();
     private static final ArrayWriter<byte[]> ARRAY_WRITER = new ArrayWriter<>(Encoder::writeRawBytes);
 
     @Override

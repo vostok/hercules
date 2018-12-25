@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineContent;
 
 public class TimelineContentWriter implements Writer<TimelineContent> {
 
-    private static final TimelineReadStateWriter STATE_WRITER = new TimelineReadStateWriter();
+    private static final TimelineStateWriter STATE_WRITER = new TimelineStateWriter();
     private static final ArrayWriter<Event> ARRAY_WRITER = new ArrayWriter<>(new EventWriter());
 
     @Override

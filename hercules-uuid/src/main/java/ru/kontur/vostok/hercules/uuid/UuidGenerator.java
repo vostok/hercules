@@ -90,8 +90,8 @@ public class UuidGenerator {
     private static long nextTimestamp() {
         while (true) {
             long nowMillis = System.currentTimeMillis();
-            long nowTicks = TimeUtil.unixTimeToGregorianTicks(nowMillis);
-            long highTicks = TimeUtil.unixTimeToGregorianTicks(nowMillis + 1);
+            long nowTicks = TimeUtil.unixMillisToGregorianTicks(nowMillis);
+            long highTicks = TimeUtil.unixMillisToGregorianTicks(nowMillis + 1);
             long lastTicks = UuidGenerator.LAST_TICKS.get();
             if (nowTicks > lastTicks) {
                 if (UuidGenerator.LAST_TICKS.compareAndSet(lastTicks, nowTicks)) {

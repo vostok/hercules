@@ -118,7 +118,7 @@ public class Conditions {
 
         @Override
         public boolean test(Variant variant) {
-            return variant != null && isStringOrText(variant) && Arrays.equals(bytes, (byte[]) variant.getValue());
+            return variant != null && variant.getType() == Type.STRING && Arrays.equals(bytes, (byte[]) variant.getValue());
         }
     }
 
@@ -138,18 +138,13 @@ public class Conditions {
 
         @Override
         public boolean test(Variant variant) {
-            return variant != null && isStringOrText(variant) && ByteUtil.isSubarray((byte[]) variant.getValue(), bytes);
+            return variant != null && variant.getType() == Type.STRING && ByteUtil.isSubarray((byte[]) variant.getValue(), bytes);
         }
     }
 
     private static boolean isAssignableToLong(Variant variant) {
         Type type = variant.getType();
         return type == Type.BYTE || type == Type.SHORT || type == Type.INTEGER || type == Type.LONG;
-    }
-
-    private static boolean isStringOrText(Variant variant) {
-        Type type = variant.getType();
-        return type == Type.STRING || type == Type.TEXT;
     }
 
     private static long toLong(Variant variant) {

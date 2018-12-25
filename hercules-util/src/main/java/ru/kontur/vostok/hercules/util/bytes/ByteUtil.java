@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.util.bytes;
 
+import java.nio.ByteBuffer;
+
 /**
  * @author Gregory Koshelev
  */
@@ -35,5 +37,12 @@ public class ByteUtil {
                 | ((bytes[5] & 0xFFL) << 16)
                 | ((bytes[6] & 0xFFL) << 8)
                 | (bytes[7] & 0xFFL);
+    }
+
+    public static byte[] fromByteBuffer(ByteBuffer buffer) {
+        int size = buffer.remaining();
+        byte[] bytes = new byte[size];
+        buffer.get(bytes);
+        return bytes;
     }
 }

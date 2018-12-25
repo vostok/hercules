@@ -20,7 +20,7 @@ public class ContainerArrayWriter implements Writer<Container[]> {
      */
     @Override
     public void write(Encoder encoder, Container[] value) {
-        encoder.writeArrayLength(value.length);
+        encoder.writeInteger(value.length);
 
         for (Container container : value) {
             CONTAINER_WRITER.write(encoder, container);

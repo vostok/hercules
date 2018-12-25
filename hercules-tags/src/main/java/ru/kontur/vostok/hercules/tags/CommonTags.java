@@ -15,7 +15,7 @@ public final class CommonTags {
     /**
      * Environment tag
      */
-    public static final TagDescription<Optional<String>> ENVIRONMENT_TAG = TagDescriptionBuilder.textual("env")
+    public static final TagDescription<Optional<String>> ENVIRONMENT_TAG = TagDescriptionBuilder.string("env")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();
@@ -23,7 +23,7 @@ public final class CommonTags {
     /**
      * Project tag
      */
-    public static final TagDescription<Optional<String>> PROJECT_TAG = TagDescriptionBuilder.textual("proj")
+    public static final TagDescription<Optional<String>> PROJECT_TAG = TagDescriptionBuilder.string("proj")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();

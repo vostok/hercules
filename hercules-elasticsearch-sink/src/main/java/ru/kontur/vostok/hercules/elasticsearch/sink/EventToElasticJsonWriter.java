@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -20,6 +21,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public final class EventToElasticJsonWriter {
 
@@ -40,6 +42,9 @@ public final class EventToElasticJsonWriter {
     private static final JsonFactory FACTORY = new JsonFactory();
 
     private static final VariantValueToJsonWriter[] TO_JSON_WRITERS = new VariantValueToJsonWriter[256];
+
+    private static final VariantValueToJsonWriter[] VECTOR_TO_JSON_WRITERS = new VariantValueToJsonWriter[256];
+
     static {
         Arrays.setAll(TO_JSON_WRITERS, idx -> (g, v) -> {
             throw new IllegalArgumentException("Not implemented for index " + idx);
@@ -53,37 +58,36 @@ public final class EventToElasticJsonWriter {
         TO_JSON_WRITERS[Type.FLAG.code] = EventToElasticJsonWriter::writeFlag;
         TO_JSON_WRITERS[Type.FLOAT.code] = EventToElasticJsonWriter::writeFloat;
         TO_JSON_WRITERS[Type.DOUBLE.code] = EventToElasticJsonWriter::writeDouble;
-        TO_JSON_WRITERS[Type.STRING.code] = EventToElasticJsonWriter::writeStringOrText;
-        TO_JSON_WRITERS[Type.TEXT.code] = EventToElasticJsonWriter::writeStringOrText;
+        TO_JSON_WRITERS[Type.STRING.code] = EventToElasticJsonWriter::writeString;
+        TO_JSON_WRITERS[Type.UUID.code] = EventToElasticJsonWriter::writeUuid;
+        TO_JSON_WRITERS[Type.NULL.code] = EventToElasticJsonWriter::writeAsNull;
+        TO_JSON_WRITERS[Type.VECTOR.code] = EventToElasticJsonWriter::writeVector;
+    }
 
-        TO_JSON_WRITERS[Type.CONTAINER_VECTOR.code] = EventToElasticJsonWriter::writeContainerArrayOrVector;
-        TO_JSON_WRITERS[Type.BYTE_VECTOR.code] = EventToElasticJsonWriter::writeByteArrayOrVector;
-        TO_JSON_WRITERS[Type.SHORT_VECTOR.code] = EventToElasticJsonWriter::writeShortArrayOrVector;
-        TO_JSON_WRITERS[Type.INTEGER_VECTOR.code] = EventToElasticJsonWriter::writeIntegerArrayOrVector;
-        TO_JSON_WRITERS[Type.LONG_VECTOR.code] = EventToElasticJsonWriter::writeLongArrayOrVector;
-        TO_JSON_WRITERS[Type.FLOAT_VECTOR.code] = EventToElasticJsonWriter::writeFloatArrayOrVector;
-        TO_JSON_WRITERS[Type.DOUBLE_VECTOR.code] = EventToElasticJsonWriter::writeDoubleArrayOrVector;
-        TO_JSON_WRITERS[Type.FLAG_VECTOR.code] = EventToElasticJsonWriter::writeFlagArrayOrVector;
-        TO_JSON_WRITERS[Type.STRING_VECTOR.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
-        TO_JSON_WRITERS[Type.TEXT_VECTOR.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
+    static {
+        Arrays.setAll(VECTOR_TO_JSON_WRITERS, idx -> (g, v) -> {
+            throw new IllegalArgumentException("Not implemented for index " + idx);
+        });
 
-        TO_JSON_WRITERS[Type.CONTAINER_ARRAY.code] = EventToElasticJsonWriter::writeContainerArrayOrVector;
-        TO_JSON_WRITERS[Type.BYTE_ARRAY.code] = EventToElasticJsonWriter::writeByteArrayOrVector;
-        TO_JSON_WRITERS[Type.SHORT_ARRAY.code] = EventToElasticJsonWriter::writeShortArrayOrVector;
-        TO_JSON_WRITERS[Type.INTEGER_ARRAY.code] = EventToElasticJsonWriter::writeIntegerArrayOrVector;
-        TO_JSON_WRITERS[Type.LONG_ARRAY.code] = EventToElasticJsonWriter::writeLongArrayOrVector;
-        TO_JSON_WRITERS[Type.FLOAT_ARRAY.code] = EventToElasticJsonWriter::writeFloatArrayOrVector;
-        TO_JSON_WRITERS[Type.DOUBLE_ARRAY.code] = EventToElasticJsonWriter::writeDoubleArrayOrVector;
-        TO_JSON_WRITERS[Type.FLAG_ARRAY.code] = EventToElasticJsonWriter::writeFlagArrayOrVector;
-        TO_JSON_WRITERS[Type.STRING_ARRAY.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
-        TO_JSON_WRITERS[Type.TEXT_ARRAY.code] = EventToElasticJsonWriter::writeStringOrTextArrayOrVector;
+        VECTOR_TO_JSON_WRITERS[Type.CONTAINER.code] = EventToElasticJsonWriter::writeContainerVector;
+        VECTOR_TO_JSON_WRITERS[Type.BYTE.code] = EventToElasticJsonWriter::writeByteVector;
+        VECTOR_TO_JSON_WRITERS[Type.SHORT.code] = EventToElasticJsonWriter::writeShortVector;
+        VECTOR_TO_JSON_WRITERS[Type.INTEGER.code] = EventToElasticJsonWriter::writeIntegerVector;
+        VECTOR_TO_JSON_WRITERS[Type.LONG.code] = EventToElasticJsonWriter::writeLongVector;
+        VECTOR_TO_JSON_WRITERS[Type.FLOAT.code] = EventToElasticJsonWriter::writeFloatVector;
+        VECTOR_TO_JSON_WRITERS[Type.DOUBLE.code] = EventToElasticJsonWriter::writeDoubleVector;
+        VECTOR_TO_JSON_WRITERS[Type.FLAG.code] = EventToElasticJsonWriter::writeFlagVector;
+        VECTOR_TO_JSON_WRITERS[Type.STRING.code] = EventToElasticJsonWriter::writeStringVector;
+        VECTOR_TO_JSON_WRITERS[Type.UUID.code] = EventToElasticJsonWriter::writeUuidVector;
+        VECTOR_TO_JSON_WRITERS[Type.NULL.code] = EventToElasticJsonWriter::writeNullVector;
+        VECTOR_TO_JSON_WRITERS[Type.VECTOR.code] = EventToElasticJsonWriter::writeVectorVector;
     }
 
 
     public static void writeEvent(OutputStream stream, Event event) throws IOException {
         try (JsonGenerator generator = FACTORY.createGenerator(stream, JsonEncoding.UTF8)) {
             generator.writeStartObject();
-            generator.writeStringField(TIMESTAMP_TAG_NAME, FORMATTER.format(TimeUtil.gregorianTicksToInstant(event.getId().timestamp())));
+            generator.writeStringField(TIMESTAMP_TAG_NAME, FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp())));
 
             for (Map.Entry<String, Variant> tag : event.getPayload()) {
                 if (IGNORED_TAGS.contains(tag.getKey())) {
@@ -129,11 +133,20 @@ public final class EventToElasticJsonWriter {
         generator.writeBoolean((boolean) value);
     }
 
-    private static void writeStringOrText(JsonGenerator generator, Object value) throws IOException {
+    private static void writeString(JsonGenerator generator, Object value) throws IOException {
         generator.writeString(new String((byte[]) value, StandardCharsets.UTF_8));
     }
 
-    private static void writeByteArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeUuid(JsonGenerator generator, Object value) throws IOException {
+        generator.writeString(((UUID)value).toString());
+    }
+
+    private static void writeVector(JsonGenerator generator, Object value) throws IOException {
+        Vector vector = (Vector) value;
+        VECTOR_TO_JSON_WRITERS[vector.getType().code].write(generator, vector.getValue());
+    }
+
+    private static void writeByteVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
         for (byte b : (byte[]) value) {
             generator.writeNumber(b);
@@ -141,7 +154,7 @@ public final class EventToElasticJsonWriter {
         generator.writeEndArray();
     }
 
-    private static void writeShortArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeShortVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
         for (short s : (short[]) value) {
             generator.writeNumber(s);
@@ -149,7 +162,7 @@ public final class EventToElasticJsonWriter {
         generator.writeEndArray();
     }
 
-    private static void writeIntegerArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeIntegerVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
         for (int i : (int[]) value) {
             generator.writeNumber(i);
@@ -157,7 +170,7 @@ public final class EventToElasticJsonWriter {
         generator.writeEndArray();
     }
 
-    private static void writeLongArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeLongVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
         for (long l : (long[]) value) {
             generator.writeNumber(l);
@@ -165,7 +178,7 @@ public final class EventToElasticJsonWriter {
         generator.writeEndArray();
     }
 
-    private static void writeFloatArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeFloatVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
         for (float f : (float[]) value) {
             generator.writeNumber(f);
@@ -173,7 +186,7 @@ public final class EventToElasticJsonWriter {
         generator.writeEndArray();
     }
 
-    private static void writeDoubleArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeDoubleVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
         for (double d : (double[]) value) {
             generator.writeNumber(d);
@@ -181,7 +194,7 @@ public final class EventToElasticJsonWriter {
         generator.writeEndArray();
     }
 
-    private static void writeFlagArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeFlagVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
         for (boolean b : (boolean[]) value) {
             generator.writeBoolean(b);
@@ -189,10 +202,35 @@ public final class EventToElasticJsonWriter {
         generator.writeEndArray();
     }
 
-    private static void writeStringOrTextArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeStringVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
         for (byte[] bytes : (byte[][]) value) {
             generator.writeString(new String(bytes, StandardCharsets.UTF_8));
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeUuidVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (UUID uuid : (UUID[]) value) {
+            generator.writeString(uuid.toString());
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeNullVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        Object[] nulls = (Object[]) value;
+        for (int i = 0; i < nulls.length; i++) {
+            generator.writeNull();
+        }
+        generator.writeEndArray();
+    }
+
+    private static void writeVectorVector(JsonGenerator generator, Object value) throws IOException {
+        generator.writeStartArray();
+        for (Vector vector : (Vector[]) value) {
+            VECTOR_TO_JSON_WRITERS[vector.getType().code].write(generator, vector.getValue());
         }
         generator.writeEndArray();
     }
@@ -212,7 +250,7 @@ public final class EventToElasticJsonWriter {
         generator.writeEndObject();
     }
 
-    private static void writeContainerArrayOrVector(JsonGenerator generator, Object value) throws IOException {
+    private static void writeContainerVector(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartArray();
 
         for (Container container : (Container[]) value) {

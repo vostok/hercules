@@ -10,7 +10,7 @@ public class ContainerArrayWriteReadTest {
     @Test
     public void shouldWriteReadContainerArray() throws Exception {
         Container[] containers = TestUtil.multiply(new Container[]{
-                new Container(Collections.singletonMap("fist", Variant.ofString("first"))),
+                new Container(Collections.singletonMap("first", Variant.ofString("first"))),
                 new Container(Collections.singletonMap("second", Variant.ofString("second")))
         }, 100);
 

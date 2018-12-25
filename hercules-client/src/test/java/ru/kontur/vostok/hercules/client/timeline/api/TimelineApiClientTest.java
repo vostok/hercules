@@ -9,10 +9,11 @@ import ru.kontur.vostok.hercules.client.LogicalShardState;
 import ru.kontur.vostok.hercules.client.test.util.TestUtil;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
-import ru.kontur.vostok.hercules.protocol.TimelineReadState;
-import ru.kontur.vostok.hercules.protocol.TimelineShardReadState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
+import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.util.EventUtil;
 
 import java.net.URI;
 import java.util.UUID;
@@ -35,13 +36,13 @@ public class TimelineApiClientTest {
 
         when(responseMock.getEntity()).thenReturn(new ByteArrayEntity(TestUtil.toBytes(
                 new TimelineContent(
-                        new TimelineReadState(
-                                new TimelineShardReadState[]{
-                                        new TimelineShardReadState(0, 123456789, UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1"))
+                        new TimelineState(
+                                new TimelineSliceState[]{
+                                        new TimelineSliceState(0, 123456789, EventUtil.eventIdAsBytes(137_620_098_108_949_610L, UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")))
                                 }),
                         new Event[]{
-                                new EventBuilder().setEventId(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")).build(),
-                                new EventBuilder().setEventId(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1")).build()
+                                new EventBuilder().setRandom(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")).build(),
+                                new EventBuilder().setRandom(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1")).build()
                         }),
                 new TimelineContentWriter()
         )));
@@ -58,15 +59,15 @@ public class TimelineApiClientTest {
 
         TimelineContent content = client.getTimelineContent(
                 "test_tl_0",
-                new TimelineReadState(new TimelineShardReadState[]{}),
+                new TimelineState(new TimelineSliceState[]{}),
                 new TimeInterval(1542758400000L, 1542759400000L),
                 100
         );
 
         assertEquals(2, content.getEvents().length);
 
-        assertEquals(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[0].getId());
-        assertEquals(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[1].getId());
+        assertEquals(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[0].getUuid());
+        assertEquals(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1"), content.getEvents()[1].getUuid());
     }
 
     @Test

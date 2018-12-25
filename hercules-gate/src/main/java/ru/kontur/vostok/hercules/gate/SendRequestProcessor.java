@@ -90,11 +90,11 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
             Event event;
             try {
                 event = reader.next();
-                RECEIVED_EVENT_LOGGER.trace("{}", event.getId());
+                RECEIVED_EVENT_LOGGER.trace("{}", event.getUuid());
                 if (!eventValidator.validate(event)) {
                     //TODO: Metrics are coming!
                     LOGGER.warn("Invalid event data");
-                    DROPPED_EVENT_LOGGER.trace("{}", event.getId());
+                    DROPPED_EVENT_LOGGER.trace("{}", event.getUuid());
                     if (processed.compareAndSet(false, true)) {
                         ResponseUtil.badRequest(exchange);
                         callback.call();
@@ -118,12 +118,12 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                     }
                     callback.call();
                 }
-                DROPPED_EVENT_LOGGER.trace("{}", event.getId());
+                DROPPED_EVENT_LOGGER.trace("{}", event.getUuid());
                 continue;
             }
             eventSender.send(
                     event,
-                    event.getId(),
+                    event.getUuid(),//TODO: Think hard about this!
                     context.getTopic(),
                     context.getPartitions(),
                     context.getShardingKey(),
@@ -134,7 +134,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                             }
                             callback.call();
                         }
-                        PROCESSED_EVENT_LOGGER.trace("{}", event.getId());
+                        PROCESSED_EVENT_LOGGER.trace("{}", event.getUuid());
                         sentEventsMeter.mark(1);
                     },
                     () -> {
@@ -145,7 +145,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerExchange
                             }
                             callback.call();
                         }
-                        DROPPED_EVENT_LOGGER.trace("{}", event.getId());
+                        DROPPED_EVENT_LOGGER.trace("{}", event.getUuid());
                     }
             );
         }

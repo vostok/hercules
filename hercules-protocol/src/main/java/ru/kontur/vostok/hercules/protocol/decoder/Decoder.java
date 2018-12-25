@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * @author Gregory Koshelev
@@ -28,6 +29,10 @@ public class Decoder {
 
     public short readShort() {
         return buffer.getShort();
+    }
+
+    public int readUnsignedShort() {
+        return readShort() & 0xFFFF;
     }
 
     public int readInteger() {
@@ -56,27 +61,18 @@ public class Decoder {
     }
 
     public byte[] readStringAsBytes() {
-        int length = readUnsignedByte();
+        int length = readStringLength();
         byte[] bytes = new byte[length];
         buffer.get(bytes);
         return bytes;
     }
 
-    public String readText() {
-        byte[] bytes = readTextAsBytes();
-        return new String(bytes, StandardCharsets.UTF_8);
+    public UUID readUuid() {
+        return new UUID(readLong(), readLong());
     }
 
-    public byte[] readTextAsBytes() {
-        int length = readInteger();
-        byte[] bytes = new byte[length];
-        buffer.get(bytes);
-        return bytes;
-    }
-
-    public byte[] readByteArray() {
-        int length = readArrayLength();
-        return readBytes(length);
+    public Object readNull() {
+        return null;
     }
 
     public byte[] readByteVector() {
@@ -86,13 +82,8 @@ public class Decoder {
 
     public byte[] readBytes(int count) {
         byte[] array = new byte[count];
-        buffer.get(array);
+        buffer.get(array, 0, count);
         return array;
-    }
-
-    public int[] readUnsignedByteArray() {
-        int length = readArrayLength();
-        return readUnsignedBytes(length);
     }
 
     public int[] readUnsignedByteVector() {
@@ -108,11 +99,6 @@ public class Decoder {
         return array;
     }
 
-    public short[] readShortArray() {
-        int length = readArrayLength();
-        return readShorts(length);
-    }
-
     public short[] readShortVector() {
         int length = readVectorLength();
         return readShorts(length);
@@ -124,11 +110,6 @@ public class Decoder {
             array[i] = readShort();
         }
         return array;
-    }
-
-    public int[] readIntegerArray() {
-        int length = readArrayLength();
-        return readIntegers(length);
     }
 
     public int[] readIntegerVector() {
@@ -144,11 +125,6 @@ public class Decoder {
         return array;
     }
 
-    public long[] readLongArray() {
-        int length = readArrayLength();
-        return readLongs(length);
-    }
-
     public long[] readLongVector() {
         int length = readVectorLength();
         return readLongs(length);
@@ -160,11 +136,6 @@ public class Decoder {
             array[i] = readLong();
         }
         return array;
-    }
-
-    public boolean[] readFlagArray() {
-        int length = readArrayLength();
-        return readFlags(length);
     }
 
     public boolean[] readFlagVector() {
@@ -180,11 +151,6 @@ public class Decoder {
         return array;
     }
 
-    public float[] readFloatArray() {
-        int length = readArrayLength();
-        return readFloats(length);
-    }
-
     public float[] readFloatVector() {
         int length = readVectorLength();
         return readFloats(length);
@@ -196,11 +162,6 @@ public class Decoder {
             array[i] = readFloat();
         }
         return array;
-    }
-
-    public double[] readDoubleArray() {
-        int length = readArrayLength();
-        return readDoubles(length);
     }
 
     public double[] readDoubleVector() {
@@ -216,11 +177,6 @@ public class Decoder {
         return array;
     }
 
-    public byte[][] readStringArrayAsBytes() {
-        int length = readArrayLength();
-        return readStringsAsBytes(length);
-    }
-
     public byte[][] readStringVectorAsBytes() {
         int length = readVectorLength();
         return readStringsAsBytes(length);
@@ -234,21 +190,26 @@ public class Decoder {
         return array;
     }
 
-    public byte[][] readTextArrayAsBytes() {
-        int length = readArrayLength();
-        return readTextsAsBytes(length);
-    }
-
-    public byte[][] readTextVectorAsBytes() {
+    public UUID[] readUuidVector() {
         int length = readVectorLength();
-        return readTextsAsBytes(length);
+        return readUuids(length);
     }
 
-    public byte[][] readTextsAsBytes(int count) {
-        byte[][] array = new byte[count][];
+    public UUID[] readUuids(int count) {
+        UUID[] array = new UUID[count];
         for (int i = 0; i < count; i++) {
-            array[i] = readTextAsBytes();
+            array[i] = readUuid();
         }
+        return array;
+    }
+
+    public Object[] readNullVector() {
+        int length = readVectorLength();
+        return readNulls(length);
+    }
+
+    public Object[] readNulls(int count) {
+        Object[] array = new Object[count];
         return array;
     }
 
@@ -290,179 +251,164 @@ public class Decoder {
     }
 
     public int skipString() {
-        int length = readUnsignedByte();
+        int position = position();
+
+        int length = readStringLength();
         skip(length);
 
-        return length + SizeOf.STRING_LENGTH;
+        return position() - position;
     }
 
-    public int skipText() {
-        int length = readInteger();
-        skip(length);
-
-        return length + SizeOf.TEXT_LENGTH;
+    public int skipUuid() {
+        skip(SizeOf.UUID);
+        return SizeOf.UUID;
     }
 
-    public int skipByteArray() {
-        int length = readArrayLength();
-        int bytesToSkip = length * SizeOf.BYTE;
-        skip(bytesToSkip);
-
-        return bytesToSkip + SizeOf.ARRAY_LENGTH;
+    public int skipNull() {
+        return 0;
     }
 
     public int skipByteVector() {
+        int position = position();
+
         int length = readVectorLength();
         int bytesToSkip = length * SizeOf.BYTE;
         skip(bytesToSkip);
 
-        return bytesToSkip + SizeOf.VECTOR_LENGTH;
-    }
-
-    public int skipShortArray() {
-        int length = readArrayLength();
-        int bytesToSkip = length * SizeOf.SHORT;
-        skip(bytesToSkip);
-
-        return bytesToSkip + SizeOf.ARRAY_LENGTH;
+        return position() - position;
     }
 
     public int skipShortVector() {
+        int position = position();
+
         int length = readVectorLength();
         int bytesToSkip = length * SizeOf.SHORT;
         skip(bytesToSkip);
 
-        return bytesToSkip + SizeOf.VECTOR_LENGTH;
-    }
-
-    public int skipIntegerArray() {
-        int length = readArrayLength();
-        int bytesToSkip = length * SizeOf.INTEGER;
-        skip(bytesToSkip);
-
-        return bytesToSkip + SizeOf.ARRAY_LENGTH;
+        return position() - position;
     }
 
     public int skipIntegerVector() {
+        int position = position();
+
         int length = readVectorLength();
         int bytesToSkip = length * SizeOf.INTEGER;
         skip(bytesToSkip);
 
-        return bytesToSkip + SizeOf.VECTOR_LENGTH;
-    }
-
-    public int skipLongArray() {
-        int length = readArrayLength();
-        int bytesToSkip = length * SizeOf.LONG;
-        skip(bytesToSkip);
-
-        return bytesToSkip + SizeOf.ARRAY_LENGTH;
+        return position() - position;
     }
 
     public int skipLongVector() {
+        int position = position();
+
         int length = readVectorLength();
         int bytesToSkip = length * SizeOf.LONG;
         skip(bytesToSkip);
 
-        return bytesToSkip + SizeOf.VECTOR_LENGTH;
-    }
-
-    public int skipFlagArray() {
-        int length = readArrayLength();
-        int bytesToSkip = length * SizeOf.FLAG;
-        skip(bytesToSkip);
-
-        return bytesToSkip + SizeOf.ARRAY_LENGTH;
+        return position() - position;
     }
 
     public int skipFlagVector() {
+        int position = position();
+
         int length = readVectorLength();
         int bytesToSkip = length * SizeOf.FLAG;
         skip(bytesToSkip);
 
-        return bytesToSkip + SizeOf.VECTOR_LENGTH;
-    }
-
-    public int skipFloatArray() {
-        int length = readArrayLength();
-        int bytesToSkip = length * SizeOf.FLOAT;
-        skip(bytesToSkip);
-
-        return bytesToSkip + SizeOf.ARRAY_LENGTH;
+        return position() - position;
     }
 
     public int skipFloatVector() {
+        int position = position();
+
         int length = readVectorLength();
         int bytesToSkip = length * SizeOf.FLOAT;
         skip(bytesToSkip);
 
-        return bytesToSkip + SizeOf.VECTOR_LENGTH;
-    }
-
-    public int skipDoubleArray() {
-        int length = readArrayLength();
-        int bytesToSkip = length * SizeOf.DOUBLE;
-        skip(bytesToSkip);
-
-        return bytesToSkip + SizeOf.ARRAY_LENGTH;
+        return position() - position;
     }
 
     public int skipDoubleVector() {
+        int position = position();
+
         int length = readVectorLength();
         int bytesToSkip = length * SizeOf.DOUBLE;
         skip(bytesToSkip);
 
-        return bytesToSkip + SizeOf.VECTOR_LENGTH;
-    }
-
-    public int skipStringArray() {
-        int length = readArrayLength();
-        int skipped = 0;
-        for (int i = 0; i < length; i++) {
-            skipped += skipString();
-        }
-
-        return skipped + SizeOf.ARRAY_LENGTH;
+        return position() - position;
     }
 
     public int skipStringVector() {
+        int position = position();
+
         int length = readVectorLength();
-        int skipped = 0;
         for (int i = 0; i < length; i++) {
-            skipped += skipString();
+            skipString();
         }
 
-        return skipped + SizeOf.VECTOR_LENGTH;
+        return position() - position;
     }
 
-    public int skipTextArray() {
-        int length = readArrayLength();
-        int skipped = 0;
-        for (int i = 0; i < length; i++) {
-            skipped += skipText();
+    public int skipUuidVector() {
+        int position = position();
+
+        int length = readVectorLength();
+        for (int i = 0; i > length; i++) {
+            skipUuid();
         }
 
-        return skipped + SizeOf.ARRAY_LENGTH;
+        return position() - position;
     }
 
-    public int skipTextVector() {
-        int length = readVectorLength();
-        int skipped = 0;
-        for (int i = 0; i < length; i++) {
-            skipped += skipText();
-        }
+    public int skipNullVector() {
+        int position = position();
 
-        return skipped + SizeOf.VECTOR_LENGTH;
+        readVectorLength();
+
+        return position() - position;
     }
 
     /* --- Utility methods --- */
 
-    public int readArrayLength() {
-        return readInteger();
+    /**
+     * Read tiny string, which has 1-byte length
+     *
+     * @return string
+     */
+    public String readTinyString() {
+        int length = readUnsignedByte();
+        byte[] bytes = new byte[length];
+        buffer.get(bytes);
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    public int skipTinyString() {
+        int length = readUnsignedByte();
+        skip(length);
+        return length + SizeOf.BYTE;
+    }
+
+    public int readVarLen() {
+        byte b = buffer.get();
+        int value = b & 0x7F;
+        while ((b & 0x80) == 0x80) {
+            value = (value << 7);
+            b = buffer.get();
+            value |= (b & 0x7F);
+        }
+        return value;
     }
 
     public int readVectorLength() {
-        return readUnsignedByte();
+        return readInteger();
+    }
+
+    public int readStringLength() {
+        return readInteger();
+    }
+
+    public int readContainerSize() {
+        return readUnsignedShort();
     }
 
     public int position() {
