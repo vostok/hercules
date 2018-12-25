@@ -14,7 +14,7 @@ public class VariantWriteReadTest {
     private WriteReadPipe<Variant> pipe = WriteReadPipe.init(new VariantWriter(), new VariantReader());
 
     @Test
-    public void shouldReadWriteContainer() throws Exception {
+    public void shouldWriteReadContainer() {
         Variant variant = Variant.ofContainer(new Container(
                 Collections.singletonMap("value", Variant.ofInteger(123))
         ));
@@ -94,11 +94,10 @@ public class VariantWriteReadTest {
 
     @Test
     public void shouldWriteReadContainerVector() {
-        Variant variant = Variant.ofVector(Vector.ofContainers(new Container[]{
+        Variant variant = Variant.ofVector(Vector.ofContainers(
                 new Container(Collections.singletonMap("first", Variant.ofInteger(1))),
                 new Container(Collections.singletonMap("second", Variant.ofString("second"))),
-                new Container(Collections.singletonMap("third", Variant.ofVector(Vector.ofDoubles(new double[]{1.25, 1.3}))))
-        }));
+                new Container(Collections.singletonMap("third", Variant.ofVector(Vector.ofDoubles(1.25, 1.3))))));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
@@ -119,56 +118,56 @@ public class VariantWriteReadTest {
 
     @Test
     public void shouldWriteReadIntegerVector() {
-        Variant variant = Variant.ofVector(Vector.ofIntegers(new int[]{1, 2, 123_456_789}));
+        Variant variant = Variant.ofVector(Vector.ofIntegers(1, 2, 123_456_789));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
     public void shouldWriteReadLongVector() {
-        Variant variant = Variant.ofVector(Vector.ofLongs(new long[]{1, 2, 123_456_789L}));
+        Variant variant = Variant.ofVector(Vector.ofLongs(1, 2, 123_456_789L));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
     public void shouldWriteReadFloatVector() {
-        Variant variant = Variant.ofVector(Vector.ofFloats(new float[]{1.23f, 4.56f, 7.89f}));
+        Variant variant = Variant.ofVector(Vector.ofFloats(1.23f, 4.56f, 7.89f));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
     public void shouldWriteReadDoubleVector() {
-        Variant variant = Variant.ofVector(Vector.ofDoubles(new double[]{1.23, 4.56, 7.89}));
+        Variant variant = Variant.ofVector(Vector.ofDoubles(1.23, 4.56, 7.89));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
     public void shouldWriteReadFlagVector() {
-        Variant variant = Variant.ofVector(Vector.ofFlags(new boolean[]{true, true, false}));
+        Variant variant = Variant.ofVector(Vector.ofFlags(true, true, false));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
     public void shouldWriteReadStringVector() {
-        Variant variant = Variant.ofVector(Vector.ofStrings(new String[]{"S", "F", "Ё"}));
+        Variant variant = Variant.ofVector(Vector.ofStrings("S", "F", "Ё"));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
     public void shouldWriteReadUuidVector() {
-        Variant variant = Variant.ofVector(Vector.ofUuids(new UUID[]{UUID.randomUUID(), UUID.randomUUID()}));
+        Variant variant = Variant.ofVector(Vector.ofUuids(UUID.randomUUID(), UUID.randomUUID()));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
     public void shouldWriteReadNullVector() {
-        Variant variant = Variant.ofVector(Vector.ofNulls(new Object[] {null, null}));
+        Variant variant = Variant.ofVector(Vector.ofNulls(null, null));
 
         pipe.process(variant).assertEquals(HerculesProtocolAssert::assertEquals);
     }
