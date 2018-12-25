@@ -81,7 +81,8 @@ public class BulkResponseHandler {
 
     private static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
             "illegal_argument_exception",
-            "mapper_parsing_exception"
+            "mapper_parsing_exception",
+            "illegal_state_exception"
     ));
 
     private static final Set<String> UNSPECIFIED_ERRORS_CODES = new HashSet<>(Arrays.asList(
@@ -292,38 +293,35 @@ public class BulkResponseHandler {
      * @param errorNode JSON node with error data
      * @param id event id
      * @param index index
-     * @return does request should be retried
-     * @throws IOException
+     * @return error type, which determines retryability of the error
      */
-    private ErrorType processError(TreeNode errorNode, String id, String index) throws IOException {
+    private ErrorType processError(TreeNode errorNode, String id, String index) {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
-            JsonNode nestedError = error.get("caused_by");
-            if (Objects.nonNull(nestedError)) {
-                return processError(nestedError, id, index);
+            LOGGER.error("Original error: {}", error);
+
+            final String type = Optional.ofNullable(error.get("type"))
+                    .map(JsonNode::asText)
+                    .orElse("");
+
+            final String reason = Optional.ofNullable(error.get("reason"))
+                    .map(JsonNode::asText)
+                    .orElse("")
+                    .replaceAll("[\\r\\n]+", " ");
+
+            //TODO: Build "caused by" trace
+
+            errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
+
+            if (RETRYABLE_ERRORS_CODES.contains(type)) {
+                LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                return ErrorType.RETRYABLE;
+            } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
+                LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                return ErrorType.NON_RETRYABLE;
             } else {
-                LOGGER.error("Original error: {}", error);
-                final String type = Optional.ofNullable(error.get("type"))
-                        .map(JsonNode::asText)
-                        .orElse("");
-
-                final String reason = Optional.ofNullable(error.get("reason"))
-                        .map(JsonNode::asText)
-                        .orElse("")
-                        .replaceAll("[\\r\\n]+", " ");
-
-                errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
-
-                if (RETRYABLE_ERRORS_CODES.contains(type)) {
-                    LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                    return ErrorType.RETRYABLE;
-                } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                    LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                    return ErrorType.NON_RETRYABLE;
-                } else {
-                    LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                    return ErrorType.UNKNOWN;
-                }
+                LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
+                return ErrorType.UNKNOWN;
             }
         } else {
             LOGGER.error("Error node is not object note, cannot parse");
