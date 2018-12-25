@@ -90,7 +90,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         }
 
         if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
-            events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{}", event.getUuid()));
+            events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE_BYTES);
@@ -139,7 +139,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         }
 
         if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
-            events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{}", event.getUuid()));
+            events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
 
         return new BulkSenderStat(events.size() - result.getTotalErrors(), result.getTotalErrors());
