@@ -42,7 +42,7 @@ public class EventSender {
                 new ProducerRecord<>(
                         topic,
                         partition,
-                        TimeUtil.gregorianTicksToUnixTime(event.getId().timestamp()),
+                        System.currentTimeMillis(),// Use current timestamp of the Gate
                         eventId,
                         event.getBytes()
                 );
