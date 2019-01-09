@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
 
 import java.util.Collection;
 
@@ -21,6 +22,10 @@ public final class EventUtil {
             size += event.getBytes().length;
         }
         return size;
+    }
+
+    public static String toString(final Event event) {
+        throw new NotImplementedException("TODO: Add one line print and pretty print using ContainerUtil::toString");
     }
 
     private EventUtil() {
