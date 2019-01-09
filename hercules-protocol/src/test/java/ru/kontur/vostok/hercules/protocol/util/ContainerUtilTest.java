@@ -5,12 +5,6 @@ import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.TestUtil;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
 import static org.junit.Assert.*;
 
 public class ContainerUtilTest {
@@ -45,28 +39,15 @@ public class ContainerUtilTest {
 
         assertEquals(
                 "One line container print is invalid",
-                getResourceAsString("container-print-one-line.txt"),
+                TestUtil.getResourceAsString("container-print-one-line.txt"),
                 ContainerUtil.toString(container,  false) + "\n"
         );
 
         assertEquals(
-                "Pretty container print os invalid",
-                getResourceAsString("container-print-pretty.txt"),
+                "Pretty container print is invalid",
+                TestUtil.getResourceAsString("container-print-pretty.txt"),
                 ContainerUtil.toString(container,  true) + "\n"
         );
     }
 
-    private static String getResourceAsString(final String resource) {
-        try (InputStream stream = ContainerUtilTest.class.getClassLoader().getResourceAsStream(resource)) {
-            final ByteArrayOutputStream result = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = stream.read(buffer)) != -1) {
-                result.write(buffer, 0, length);
-            }
-            return result.toString(StandardCharsets.UTF_8.name());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

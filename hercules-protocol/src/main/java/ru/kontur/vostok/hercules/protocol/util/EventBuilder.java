@@ -22,6 +22,13 @@ public class EventBuilder {
 
     private boolean wasBuild = false;
 
+    /**
+     * @deprecated Use static function create instead
+     */
+    @Deprecated
+    public EventBuilder() {
+    }
+
     public EventBuilder setEventId(UUID eventId) {
         this.eventId = eventId;
         return this;
@@ -59,5 +66,9 @@ public class EventBuilder {
         CONTAINER_WRITER.write(encoder, container);
 
         return new Event(stream.toByteArray(), version, eventId, container);
+    }
+
+    public static EventBuilder create() {
+        return new EventBuilder();
     }
 }

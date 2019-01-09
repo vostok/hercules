@@ -43,8 +43,8 @@ public class ContainerUtil {
         final String line = pretty ? "\n" : "";
         final String separator = "," + line;
         final String equals = pretty ? " = " : "=";
-        final String indentString = pretty ? multiply(" ", (indent + 1) * INDENT_SPACES) : "";
-        final String endIndentString = pretty ? multiply(" ", indent * INDENT_SPACES) : "";
+        final String indentString = pretty ? indentString(indent + 1) : "";
+        final String endIndentString = pretty ? indentString(indent) : "";
 
         sb.append("{").append(line);
         for (Map.Entry<String, Variant> variantEntry : container) {
@@ -109,8 +109,8 @@ public class ContainerUtil {
 
         final String line = pretty ? "\n" : "";
         final String separator = "," + line;
-        final String indentString = pretty ? multiply(" ", (indent + 1) * INDENT_SPACES) : "";
-        final String endIndentString = pretty ? multiply(" ", indent * INDENT_SPACES) : "";
+        final String indentString = pretty ? indentString(indent + 1) : "";
+        final String endIndentString = pretty ? indentString(indent) : "";
 
         sb.append("[").append(line);
         switch (arrayType) {
@@ -182,6 +182,10 @@ public class ContainerUtil {
                 throw new NotImplementedException(arrayType);
         }
         sb.append(endIndentString).append("]");
+    }
+
+    public static String indentString(int indent) {
+        return multiply(" ", indent * INDENT_SPACES);
     }
 
     private static String multiply(final String s, int count) {
