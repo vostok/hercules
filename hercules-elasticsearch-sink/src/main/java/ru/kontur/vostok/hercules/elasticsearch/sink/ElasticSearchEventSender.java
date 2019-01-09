@@ -15,6 +15,7 @@ import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSender;
 import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSenderStat;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
@@ -128,6 +129,13 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                             result.getUnknownErrorCount(),
                             result.getTotalErrors()
                     );
+                }
+                if (result.hasUnknownErrors() && LOGGER.isInfoEnabled()) {
+                    for (Event event : events) {
+                        if (result.getBadUuid().contains(event.getId())) {
+                            LOGGER.info("Event caused unknown error: {}", EventUtil.toString(event, false));
+                        }
+                    }
                 }
                 needToRetry = result.hasRetryableErrors() || result.hasUnknownErrors() && retryOnUnknownErrors;
             } while (0 < retryCount-- && needToRetry);

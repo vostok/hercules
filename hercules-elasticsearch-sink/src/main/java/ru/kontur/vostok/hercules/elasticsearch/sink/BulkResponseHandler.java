@@ -12,13 +12,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
-import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
@@ -27,16 +29,28 @@ public class BulkResponseHandler {
 
     public static class Result {
 
-        public static final Result OK = new Result(0, 0, 0);
+        public static final Result OK = new Result(
+                0,
+                0,
+                0,
+                Collections.emptySet()
+        );
 
         private final int retryableErrorCount;
         private final int nonRetryableErrorCount;
         private final int unknownErrorCount;
+        private final Set<UUID> badUuid;
 
-        public Result(int retryableErrorCount, int nonRetryableErrorCount, int unknownErrorCount) {
+        public Result(
+                int retryableErrorCount,
+                int nonRetryableErrorCount,
+                int unknownErrorCount,
+                Set<UUID> badUuid
+        ) {
             this.retryableErrorCount = retryableErrorCount;
             this.nonRetryableErrorCount = nonRetryableErrorCount;
             this.unknownErrorCount = unknownErrorCount;
+            this.badUuid = badUuid;
         }
 
         public int getRetryableErrorCount() {
@@ -61,6 +75,10 @@ public class BulkResponseHandler {
 
         public int getTotalErrors() {
             return retryableErrorCount + nonRetryableErrorCount + unknownErrorCount;
+        }
+
+        public Set<UUID> getBadUuid() {
+            return badUuid;
         }
     }
 
@@ -244,6 +262,7 @@ public class BulkResponseHandler {
             int retryableErrorCount = 0;
             int nonRetryableErrorCount = 0;
             int unknownErrorCount = 0;
+            Set<UUID> badUuid = new HashSet<>();
 
             JsonParser parser = FACTORY.createParser(httpEntity.getContent());
 
@@ -270,10 +289,20 @@ public class BulkResponseHandler {
                     parser.nextToken(); // Skip name
                     final ErrorType errorType = processError(MAPPER.readTree(parser), currentId, currentIndex);
                     switch (errorType) {
-                        case RETRYABLE: retryableErrorCount++; break;
-                        case NON_RETRYABLE: nonRetryableErrorCount++; break;
-                        case UNKNOWN: unknownErrorCount++; break;
-                        default: throw new RuntimeException(String.format("Unsupported error type '%s'", errorType));
+                        case RETRYABLE:
+                            retryableErrorCount++;
+                            break;
+                        case NON_RETRYABLE:
+                            nonRetryableErrorCount++;
+                            break;
+                        case UNKNOWN:
+                            unknownErrorCount++;
+                            if (!StringUtil.isNullOrEmpty(currentId)) {
+                                badUuid.add(UUID.fromString(currentId));
+                            }
+                            break;
+                        default:
+                            throw new RuntimeException(String.format("Unsupported error type '%s'", errorType));
                     }
 
                 }
@@ -283,7 +312,7 @@ public class BulkResponseHandler {
             nonRetryableErrorsMeter.mark(nonRetryableErrorCount);
             unknownErrorsMeter.mark(unknownErrorCount);
 
-            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount);
+            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, badUuid);
         });
     }
 
