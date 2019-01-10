@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.gate;
 
-import ru.kontur.vostok.hercules.uuid.Marker;
-
 import java.util.Set;
 
 /**
@@ -9,7 +7,6 @@ import java.util.Set;
  */
 public class SendContext {
     private final boolean async;
-    private final Marker marker;
     private final String topic;
     private final Set<String> tags;
     private final int partitions;
@@ -18,7 +15,6 @@ public class SendContext {
 
     public SendContext(
             boolean async,
-            Marker marker,
             String topic,
             Set<String> tags,
             int partitions,
@@ -26,7 +22,6 @@ public class SendContext {
             ContentValidator validator
     ) {
         this.async = async;
-        this.marker = marker;
         this.topic = topic;
         this.tags = tags;
         this.partitions = partitions;
@@ -36,10 +31,6 @@ public class SendContext {
 
     public boolean isAsync() {
         return async;
-    }
-
-    public Marker getMarker() {
-        return marker;
     }
 
     public String getTopic() {
