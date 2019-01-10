@@ -115,3 +115,7 @@ MSB is most significant byte.
 Binary protocol uses **network byte order** or **Big Endian**.
 
 Thus, `Short`, `Integer`, `Float` and other numbers are presented in Big Endian form.
+
+## Event schema
+
+To describe tags in hercules event you can use event schema with .yaml syntax described in [separate document](./doc/event-schema.md).
