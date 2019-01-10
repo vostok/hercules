@@ -12,7 +12,6 @@ import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
-import ru.kontur.vostok.hercules.uuid.Marker;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -121,10 +120,9 @@ public class GateHandler implements HttpHandler {
         tags.addAll(Arrays.asList(shardingKey));
         tags.addAll(tagsToValidate);
 
-        Marker marker = Marker.forKey(apiKey);
         ContentValidator validator = authValidationManager.validator(apiKey, stream);
 
-        SendContext context = new SendContext(async, marker, topic, tags, partitions, shardingKey, validator);
+        SendContext context = new SendContext(async, topic, tags, partitions, shardingKey, validator);
         throttle.throttleAsync(exchange, context);
     }
 
