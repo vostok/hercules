@@ -4,6 +4,8 @@
   uuid = 5ef18239-8e6c-4e19-b222-c87fd06b003d,
   payload = {
     String tag = String value,
+    Null tag = null,
+    Uuid tag = 5ef18239-8e6c-4e19-b222-c87fd06b003d,
     Container array tag = [
       {
         Some integer tag = 123345567,

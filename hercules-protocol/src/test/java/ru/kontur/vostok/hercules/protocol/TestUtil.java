@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.protocol;
 
-import ru.kontur.vostok.hercules.protocol.util.ContainerUtilTest;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
@@ -114,7 +113,7 @@ public final class TestUtil {
     }
 
     public static String getResourceAsString(final String resource) {
-        try (InputStream stream = ContainerUtilTest.class.getClassLoader().getResourceAsStream(resource)) {
+        try (InputStream stream = TestUtil.class.getClassLoader().getResourceAsStream(resource)) {
             final ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
             int length;
