@@ -119,3 +119,7 @@ Thus, `Short`, `Integer`, `Float` and other numbers are presented in Big Endian 
 ## Event schema
 
 To describe tags in hercules event you can use event schema with .yaml syntax described in [separate document](./doc/event-schema.md).
+
+## Common tags
+
+Some tags are common for different tipe of Hercules events. List of common tags can be found in [separate document](./doc/common-tags.md).
