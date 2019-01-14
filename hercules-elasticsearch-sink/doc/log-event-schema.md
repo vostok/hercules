@@ -24,12 +24,12 @@ Index of LogEvent is defined by folowing rules
 1. If `elk-index` tag exists form index as `${elk-index}-${date}`
   where
     `${elk-index}` is value of `elk-index` tag,
-    `${date}` is UTC date from timestamp of event in `YYYY-MM-DD` format.
+    `${date}` is UTC date from timestamp of event in `YYYY.MM.DD` format.
 2. If `project` tag exists form index as `${project}-${service}-${environment}-${date}`:
   where
     `${project}` is value of `project` tag,
     `${service}` is value of `service` tag,
     `${environment}` is value of `environment` tag,
-    `${date}` is UTC date from timestamp of event in `YYYY-MM-DD` format.
+    `${date}` is UTC date from timestamp of event in `YYYY.MM.DD` format.
     If `service` or `environment` tags are missing theirs value and corresponding hyphen will be skipped.
 3. If none of above tags exists ignore event.
