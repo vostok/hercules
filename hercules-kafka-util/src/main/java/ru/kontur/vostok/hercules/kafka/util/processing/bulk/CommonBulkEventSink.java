@@ -93,6 +93,7 @@ public class CommonBulkEventSink {
                 status.markBackendAlive();
             } else {
                 status.markBackendFailed();
+                LOGGER.info("Ping failed");
             }
         } catch (Throwable e) {
             LOGGER.error("Ping error should never happen, stopping service", e);
