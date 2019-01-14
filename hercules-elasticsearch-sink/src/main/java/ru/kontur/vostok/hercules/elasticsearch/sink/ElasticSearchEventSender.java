@@ -38,6 +38,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
 
     private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
     private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
+    private static final Logger DROPPED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
 
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
 
@@ -95,9 +96,13 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         }
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE_BYTES);
-        writeEventRecords(stream, events);
+        int droppedCount = writeEventRecords(stream, events);
         if (stream.size() == 0) {
-            return BulkSenderStat.ZERO;
+            if (droppedCount == 0) {
+                return BulkSenderStat.ZERO;
+            } else {
+                return new BulkSenderStat(droppedCount, droppedCount);
+            }
         }
 
         BulkResponseHandler.Result result;
@@ -150,7 +155,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
 
-        return new BulkSenderStat(events.size() - result.getTotalErrors(), result.getTotalErrors());
+        return new BulkSenderStat(events.size() - result.getTotalErrors() + droppedCount, result.getTotalErrors() + droppedCount);
     }
 
     @Override
@@ -168,8 +173,9 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
         restClient.close();
     }
 
-    private void writeEventRecords(OutputStream stream, Collection<Event> events) {
-        toUnchecked(() -> {
+    private int writeEventRecords(OutputStream stream, Collection<Event> events) {
+        return toUnchecked(() -> {
+            int droppedCount = 0;
             for (Event event : events) {
                 boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
                 if (result) {
@@ -177,9 +183,11 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                     EventToElasticJsonWriter.writeEvent(stream, event);
                     writeNewLine(stream);
                 } else {
-                    LOGGER.error(String.format("Cannot process event '%s' because of missing index data", event.getUuid()));
+                    droppedCount++;
+                    DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
                 }
             }
+            return droppedCount;
         });
     }
 
