@@ -2,7 +2,9 @@
 
 Minimal data unit of Hercules is **Hercules Event**. Binary protocol is used to store and transfer Hercules Events. Binary protocol is explained below.
 
-Each event contains a set of Tags. Tag is pair of Name and Value, where Name is string with Tag's name, Value is value of Tag with one of several possible types.
+Each event contains a set of Tags.
+Tag is pair of Name and Value, where Name is string with Tag's name, Value is value of Tag with one of several possible types.
+Tag name should be in camelCase if there is no special requirements.
 
 ## Types
 

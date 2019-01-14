@@ -1,11 +1,11 @@
 # LogEvent schema
 
 Elasticsearch-sink does not apply any special requirements for LogEvent format except one:
-tag `Properties` should contain container with common tags from [common tags](../../hercules-protocol/doc/common-tags.md).
+tag `properties` should contain container with common tags from [common tags](../../hercules-protocol/doc/common-tags.md).
 
 ```yaml
 LogEvent:
-  Properties: Properties
+  properties: Properties
 ```
 
 Also `Properties` can contain special tags for use in elasticsearch-sink:
