@@ -13,9 +13,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
+ * Event formatter
+ *
  * @author Gregory Koshelev
  */
-public class EventFormatter {
+public final class EventFormatter {
     private static final int INDENT_SPACES = 2;
 
     /**
@@ -205,5 +207,9 @@ public class EventFormatter {
 
     private static String indentString(int indent) {
         return StringUtil.repeat(' ', indent * INDENT_SPACES);
+    }
+
+    private EventFormatter() {
+
     }
 }
