@@ -22,11 +22,11 @@ Where:
 Index of LogEvent is defined by folowing rules
 
 1. If `elk-index` tag exists use its value as index.
-2. If `project` and `service` tas exists, form index as `${project}-${service}-${date}` where
+2. If `project` tag exists form index as `${project}-${service}-${environment}-${date}`:
+  where
     `${project}` is value of `project` tag,
-    `${service}` is value of `service` tag and
+    `${service}` is value of `service` tag,
+    `${environment}` is value of `environment` tag,
     `${date}` is UTC date from timestamp of event in `YYYY-MM-DD` format.
-3. If `project` tag exists, form index as `${project}-${date}` where
-    `${project}` is value of `project` tag,
-    `${date}` is UTC date from timestamp of event in `YYYY-MM-DD` format.
-4. If none of above tags exists ignore event.
+    If `service` or `environment` tags are missing theirs value and corresponding hyphen will be skipped.
+3. If none of above tags exists ignore event.
