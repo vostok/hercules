@@ -101,7 +101,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             if (droppedCount == 0) {
                 return BulkSenderStat.ZERO;
             } else {
-                return new BulkSenderStat(droppedCount, droppedCount);
+                return new BulkSenderStat(0, droppedCount);
             }
         }
 
@@ -155,7 +155,9 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
             events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
 
-        return new BulkSenderStat(events.size() - result.getTotalErrors() + droppedCount, result.getTotalErrors() + droppedCount);
+        droppedCount += result.getTotalErrors();
+
+        return new BulkSenderStat(events.size() - droppedCount, droppedCount);
     }
 
     @Override
