@@ -12,13 +12,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
-import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
@@ -27,16 +29,28 @@ public class BulkResponseHandler {
 
     public static class Result {
 
-        public static final Result OK = new Result(0, 0, 0);
+        public static final Result OK = new Result(
+                0,
+                0,
+                0,
+                Collections.emptySet()
+        );
 
         private final int retryableErrorCount;
         private final int nonRetryableErrorCount;
         private final int unknownErrorCount;
+        private final Set<UUID> badUuid;
 
-        public Result(int retryableErrorCount, int nonRetryableErrorCount, int unknownErrorCount) {
+        public Result(
+                int retryableErrorCount,
+                int nonRetryableErrorCount,
+                int unknownErrorCount,
+                Set<UUID> badUuid
+        ) {
             this.retryableErrorCount = retryableErrorCount;
             this.nonRetryableErrorCount = nonRetryableErrorCount;
             this.unknownErrorCount = unknownErrorCount;
+            this.badUuid = badUuid;
         }
 
         public int getRetryableErrorCount() {
@@ -62,6 +76,10 @@ public class BulkResponseHandler {
         public int getTotalErrors() {
             return retryableErrorCount + nonRetryableErrorCount + unknownErrorCount;
         }
+
+        public Set<UUID> getBadUuid() {
+            return badUuid;
+        }
     }
 
     public enum ErrorType {
@@ -81,7 +99,8 @@ public class BulkResponseHandler {
 
     private static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
             "illegal_argument_exception",
-            "mapper_parsing_exception"
+            "mapper_parsing_exception",
+            "illegal_state_exception"
     ));
 
     private static final Set<String> UNSPECIFIED_ERRORS_CODES = new HashSet<>(Arrays.asList(
@@ -243,6 +262,7 @@ public class BulkResponseHandler {
             int retryableErrorCount = 0;
             int nonRetryableErrorCount = 0;
             int unknownErrorCount = 0;
+            Set<UUID> badUuid = new HashSet<>();
 
             JsonParser parser = FACTORY.createParser(httpEntity.getContent());
 
@@ -269,10 +289,20 @@ public class BulkResponseHandler {
                     parser.nextToken(); // Skip name
                     final ErrorType errorType = processError(MAPPER.readTree(parser), currentId, currentIndex);
                     switch (errorType) {
-                        case RETRYABLE: retryableErrorCount++; break;
-                        case NON_RETRYABLE: nonRetryableErrorCount++; break;
-                        case UNKNOWN: unknownErrorCount++; break;
-                        default: throw new RuntimeException(String.format("Unsupported error type '%s'", errorType));
+                        case RETRYABLE:
+                            retryableErrorCount++;
+                            break;
+                        case NON_RETRYABLE:
+                            nonRetryableErrorCount++;
+                            break;
+                        case UNKNOWN:
+                            unknownErrorCount++;
+                            if (!StringUtil.isNullOrEmpty(currentId)) {
+                                badUuid.add(UUID.fromString(currentId));
+                            }
+                            break;
+                        default:
+                            throw new RuntimeException(String.format("Unsupported error type '%s'", errorType));
                     }
 
                 }
@@ -282,7 +312,7 @@ public class BulkResponseHandler {
             nonRetryableErrorsMeter.mark(nonRetryableErrorCount);
             unknownErrorsMeter.mark(unknownErrorCount);
 
-            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount);
+            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, badUuid);
         });
     }
 
@@ -292,38 +322,35 @@ public class BulkResponseHandler {
      * @param errorNode JSON node with error data
      * @param id event id
      * @param index index
-     * @return does request should be retried
-     * @throws IOException
+     * @return error type, which determines retryability of the error
      */
-    private ErrorType processError(TreeNode errorNode, String id, String index) throws IOException {
+    private ErrorType processError(TreeNode errorNode, String id, String index) {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
-            JsonNode nestedError = error.get("caused_by");
-            if (Objects.nonNull(nestedError)) {
-                return processError(nestedError, id, index);
+            LOGGER.error("Original error: {}", error);
+
+            final String type = Optional.ofNullable(error.get("type"))
+                    .map(JsonNode::asText)
+                    .orElse("");
+
+            final String reason = Optional.ofNullable(error.get("reason"))
+                    .map(JsonNode::asText)
+                    .orElse("")
+                    .replaceAll("[\\r\\n]+", " ");
+
+            //TODO: Build "caused by" trace
+
+            errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
+
+            if (RETRYABLE_ERRORS_CODES.contains(type)) {
+                LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                return ErrorType.RETRYABLE;
+            } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
+                LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                return ErrorType.NON_RETRYABLE;
             } else {
-                LOGGER.error("Original error: {}", error);
-                final String type = Optional.ofNullable(error.get("type"))
-                        .map(JsonNode::asText)
-                        .orElse("");
-
-                final String reason = Optional.ofNullable(error.get("reason"))
-                        .map(JsonNode::asText)
-                        .orElse("")
-                        .replaceAll("[\\r\\n]+", " ");
-
-                errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
-
-                if (RETRYABLE_ERRORS_CODES.contains(type)) {
-                    LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                    return ErrorType.RETRYABLE;
-                } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                    LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                    return ErrorType.NON_RETRYABLE;
-                } else {
-                    LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                    return ErrorType.UNKNOWN;
-                }
+                LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
+                return ErrorType.UNKNOWN;
             }
         } else {
             LOGGER.error("Error node is not object note, cannot parse");

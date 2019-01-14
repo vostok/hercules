@@ -1,0 +1,31 @@
+{
+  Byte tag = 123,
+  Short tag = 12345,
+  Integer tag = 123456789,
+  Long tag = 123456789123,
+  Float tag = 123.456,
+  Double tag = 123.456789,
+  Flag tag = true,
+  String tag = Some string,
+  Container tag = {
+    Inner integer = 123456,
+    Inner string = Some inner value,
+  },
+  Array of integer tag = [
+    1,
+    2,
+    3,
+  ],
+  Array of container tag = [
+    {
+      String tag in array = Some string,
+    },
+    {
+      Flag array tag in array = [
+        true,
+        true,
+        false,
+      ],
+    },
+  ],
+}

@@ -23,6 +23,13 @@ public class EventBuilder {
 
     private boolean wasBuild = false;
 
+    /**
+     * @deprecated Use static function create instead
+     */
+    @Deprecated
+    public EventBuilder() {
+    }
+
     public EventBuilder setTimestamp(long timestamp) {
         this.timestamp = timestamp;
         return this;
@@ -66,5 +73,9 @@ public class EventBuilder {
         CONTAINER_WRITER.write(encoder, container);
 
         return new Event(stream.toByteArray(), version, timestamp, random, container);
+    }
+
+    public static EventBuilder create() {
+        return new EventBuilder();
     }
 }

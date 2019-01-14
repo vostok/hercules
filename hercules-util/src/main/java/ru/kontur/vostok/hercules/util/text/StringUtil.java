@@ -64,4 +64,28 @@ public final class StringUtil {
         substrings[parts - 1] = source.substring(offset);
         return substrings;
     }
+
+    /**
+     * Repeat string multiple times
+     *
+     * @param s     is repeated string
+     * @param count is repetition count
+     * @return resulting string with repetition
+     */
+    public static String repeat(final String s, int count) {
+        return new String(new char[count]).replace("\0", s);
+    }
+
+    /**
+     * Repeat char multiple times
+     *
+     * @param c     is repeated char
+     * @param count is repetition count
+     * @return resulting string with repetition
+     */
+    public static String repeat(char c, int count) {
+        char[] result = new char[count];
+        Arrays.fill(result, c);
+        return new String(result);
+    }
 }

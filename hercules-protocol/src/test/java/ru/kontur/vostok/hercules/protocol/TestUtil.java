@@ -4,6 +4,9 @@ import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -109,6 +112,21 @@ public final class TestUtil {
         return builder.build();
     }
 
+    public static String getResourceAsString(final String resource) {
+        try (InputStream stream = TestUtil.class.getClassLoader().getResourceAsStream(resource)) {
+            final ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = stream.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            return result.toString(StandardCharsets.UTF_8.name());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private TestUtil() {
+        /* static class */
     }
 }
