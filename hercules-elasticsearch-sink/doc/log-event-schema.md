@@ -21,7 +21,10 @@ Where:
 
 Index of LogEvent is defined by folowing rules
 
-1. If `elk-index` tag exists use its value as index.
+1. If `elk-index` tag exists form index as `${elk-index}-${date}`
+  where
+    `${elk-index}` is value of `elk-index` tag,
+    `${date}` is UTC date from timestamp of event in `YYYY-MM-DD` format.
 2. If `project` tag exists form index as `${project}-${service}-${environment}-${date}`:
   where
     `${project}` is value of `project` tag,
