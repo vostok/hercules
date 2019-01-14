@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.protocol.util;
 import ru.kontur.vostok.hercules.protocol.Container;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 /**
  * StandardExtractors
@@ -33,6 +32,11 @@ public final class StandardExtractors {
         return (Container[]) containerList;
     }
 
+    public static Container extractContainer(final Object o) {
+        return (Container) o;
+    }
+
     private StandardExtractors() {
+        /* static class */
     }
 }

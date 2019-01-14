@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.protocol.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -36,6 +37,11 @@ public class TagDescriptionBuilder<T> {
     public static TagDescriptionBuilder<Container[]> containerList(String name) {
         return new TagDescriptionBuilder<Container[]>(name)
                 .addVectorExtractor(Type.CONTAINER, StandardExtractors::extractContainerArray);
+    }
+
+    public static TagDescriptionBuilder<Container> container(final String name) {
+        return new TagDescriptionBuilder<Container>(name)
+                .addScalarExtractor(Type.CONTAINER, StandardExtractors::extractContainer);
     }
 
     public static <T> TagDescriptionBuilder<T> parsable(String name, Function<String, ? extends T> parser) {
@@ -73,6 +79,11 @@ public class TagDescriptionBuilder<T> {
         this.scalarExtractors.forEach((type, extractor) -> result.addScalarExtractor(type, extractor.andThen(converter)));//TODO: Fix me!
         this.vectorExtractors.forEach((type, extractor) -> result.addVectorExtractor(type, extractor.andThen(converter)));
         return result;
+    }
+
+    public TagDescriptionBuilder<Optional<T>> optional() {
+        return this.convert(Optional::of)
+                .addDefault(Optional::empty);
     }
 
     public TagDescription<T> build() {

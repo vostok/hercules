@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.elasticsearch.sink;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -19,7 +20,11 @@ public class IndexToElasticJsonWriterTest {
     public void shouldWriteIndexIfEventHasIndexTag() throws Exception {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me!
-        eventBuilder.setTag("$index", Variant.ofString("just-some-index-value"));
+        eventBuilder.setTag("properties", Variant.ofContainer(ContainerBuilder.create()
+                .tag("$index", Variant.ofString("just-some-index-value"))
+                .build()
+        ));
+
         Event event = eventBuilder.build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -28,7 +33,7 @@ public class IndexToElasticJsonWriterTest {
         assertEquals(
                 "{" +
                         "\"index\":{" +
-                        "\"_index\":\"just-some-index-value\"," +
+                        "\"_index\":\"just-some-index-value-1970.01.01\"," +
                         "\"_type\":\"LogEvent\"," +
                         "\"_id\":\"00000000-0000-1000-994f-8fcf383f0000\"" +
                         "}" +
@@ -42,8 +47,12 @@ public class IndexToElasticJsonWriterTest {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setTimestamp(TimeUtil.UNIX_EPOCH);
         eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
-        eventBuilder.setTag("proj", Variant.ofString("awesome-project"));
-        eventBuilder.setTag("env", Variant.ofString("production"));
+
+        eventBuilder.setTag("properties", Variant.ofContainer(ContainerBuilder.create()
+                .tag("project", Variant.ofString("awesome-project"))
+                .tag("environment", Variant.ofString("production"))
+                .build()
+        ));
         Event event = eventBuilder.build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
