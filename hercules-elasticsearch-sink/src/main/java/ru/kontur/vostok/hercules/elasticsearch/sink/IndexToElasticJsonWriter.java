@@ -46,7 +46,7 @@ public final class IndexToElasticJsonWriter {
                 .flatMap(properties -> {
                     final List<String> parts = new ArrayList<>(4);
 
-                    final Optional<String> index = ContainerUtil.extract(properties, ElasticSearchTags.INDEX_TAG);
+                    final Optional<String> index = ContainerUtil.extract(properties, ElasticSearchTags.INDEX_PATTERN_TAG);
                     if (index.isPresent()) {
                         parts.add(index.get());
                     } else {

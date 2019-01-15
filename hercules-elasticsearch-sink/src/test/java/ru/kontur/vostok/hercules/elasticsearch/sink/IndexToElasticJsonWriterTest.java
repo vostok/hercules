@@ -21,7 +21,7 @@ public class IndexToElasticJsonWriterTest {
         EventBuilder eventBuilder = new EventBuilder();
         eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me!
         eventBuilder.setTag("properties", Variant.ofContainer(ContainerBuilder.create()
-                .tag("$index", Variant.ofString("just-some-index-value"))
+                .tag("elk-index", Variant.ofString("just-some-index-value"))
                 .build()
         ));
 
