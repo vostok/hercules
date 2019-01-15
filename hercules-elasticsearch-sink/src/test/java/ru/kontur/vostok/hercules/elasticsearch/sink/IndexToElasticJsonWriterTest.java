@@ -35,7 +35,7 @@ public class IndexToElasticJsonWriterTest {
                         "\"index\":{" +
                         "\"_index\":\"just-some-index-value-1970.01.01\"," +
                         "\"_type\":\"LogEvent\"," +
-                        "\"_id\":\"0/AAAAAAAAEACZT4/POD8AAA\"" +
+                        "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                         "}" +
                         "}",
                 stream.toString()
@@ -63,7 +63,7 @@ public class IndexToElasticJsonWriterTest {
                         "\"index\":{" +
                         "\"_index\":\"awesome-project-production-1970.01.01\"," +
                         "\"_type\":\"LogEvent\"," +
-                        "\"_id\":\"0/AAAAAAAAEACZT4/POD8AAA\"" +
+                        "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                         "}" +
                         "}",
                 stream.toString()

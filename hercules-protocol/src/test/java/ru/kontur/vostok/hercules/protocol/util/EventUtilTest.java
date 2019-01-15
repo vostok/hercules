@@ -18,6 +18,6 @@ public class EventUtilTest {
                 .setTimestamp(LocalDateTime.parse("2018-01-15T12:45:00").toEpochSecond(ZoneOffset.UTC) * 100_000_000)
                 .build();
 
-        assertEquals("151602030000000000/bnF28vJJQ7i6VDNM3p0MIw", EventUtil.extractStringId(event));
+        assertEquals("AhqZPjlgzABucXby8klDuLpUM0zenQwj", EventUtil.extractStringId(event));
     }
 }

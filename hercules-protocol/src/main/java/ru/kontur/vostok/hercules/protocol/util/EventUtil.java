@@ -12,17 +12,16 @@ import java.util.Base64;
  */
 public final class EventUtil {
 
-    private static final int UUID_SIZE = 16;
-    private static final int SHORTENED_LENGTH = 22;
+    private static final int ID_SIZE = 24;
 
     public static String extractStringId(final Event event) {
 
-        final ByteBuffer buffer = ByteBuffer.allocate(UUID_SIZE);
+        final ByteBuffer buffer = ByteBuffer.allocate(ID_SIZE);
+        buffer.putLong(event.getTimestamp());
         buffer.putLong(event.getUuid().getMostSignificantBits());
         buffer.putLong(event.getUuid().getLeastSignificantBits());
 
-        final String base64String = Base64.getEncoder().encodeToString(buffer.array());
-        return event.getTimestamp() + "/" + base64String.substring(0, SHORTENED_LENGTH);
+        return Base64.getEncoder().encodeToString(buffer.array());
     }
 
     private EventUtil() {
