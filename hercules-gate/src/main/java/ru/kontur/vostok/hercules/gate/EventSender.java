@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerializer;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;
+import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -35,8 +36,8 @@ public class EventSender {
         this.partitioner = partitioner;
     }
 
-    public void send(Event event, UUID eventId, String topic, int partitions, String[] shardingKey, Callback callback, Callback errorCallback) {
-        Integer partition = (shardingKey.length > 0) ? partitioner.partition(event, shardingKey, partitions) : null;
+    public void send(Event event, UUID eventId, String topic, int partitions, ShardingKey shardingKey, Callback callback, Callback errorCallback) {
+        Integer partition = (!shardingKey.isEmpty()) ? partitioner.partition(event, shardingKey, partitions) : null;
 
         ProducerRecord<UUID, byte[]> record =
                 new ProducerRecord<>(

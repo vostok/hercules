@@ -9,6 +9,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
+import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
@@ -117,12 +118,12 @@ public class GateHandler implements HttpHandler {
         String topic = baseStream.getName();
 
         Set<String> tags = new HashSet<>(shardingKey.length + tagsToValidate.size());
-        tags.addAll(Arrays.asList(shardingKey));
+        tags.addAll(Arrays.asList(shardingKey));//TODO: shardingKey is actually set of key paths
         tags.addAll(tagsToValidate);
 
         ContentValidator validator = authValidationManager.validator(apiKey, stream);
 
-        SendContext context = new SendContext(async, topic, tags, partitions, shardingKey, validator);
+        SendContext context = new SendContext(async, topic, tags, partitions, ShardingKey.fromKeyPaths(shardingKey), validator);
         throttle.throttleAsync(exchange, context);
     }
 
