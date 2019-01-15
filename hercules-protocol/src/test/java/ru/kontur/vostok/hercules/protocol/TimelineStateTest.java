@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.protocol;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineStateWriter;
-import ru.kontur.vostok.hercules.util.EventUtil;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
 import java.util.UUID;
 
