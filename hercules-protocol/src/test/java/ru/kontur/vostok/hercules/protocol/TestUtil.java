@@ -102,14 +102,13 @@ public final class TestUtil {
     }
 
     static Event createEvent() {
-        UUID eventId = UuidGenerator.getClientInstance().withTicks(TimeUtil.unixMillisToGregorianTicks(123_456_789L));
-        EventBuilder builder = new EventBuilder();
-        builder.setVersion(1);
-        builder.setTimestamp(TimeUtil.millisToTicks(123_456_789L));
-        builder.setRandom(eventId);
-        builder.setTag("string", Variant.ofString("Abc ЕЁЮ"));
-        builder.setTag("int", Variant.ofInteger(123));
-        return builder.build();
+        return EventBuilder.create(
+            TimeUtil.millisToTicks(123_456_789L),
+                UuidGenerator.getClientInstance().withTicks(TimeUtil.unixMillisToGregorianTicks(123_456_789L))
+        )
+                .tag("string", Variant.ofString("Abc ЕЁЮ"))
+                .tag("int", Variant.ofInteger(123))
+                .build();
     }
 
     public static String getResourceAsString(final String resource) {

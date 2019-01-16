@@ -30,27 +30,67 @@ public class EventBuilder {
     public EventBuilder() {
     }
 
+    /**
+     * @deprecated Use timestamp instead
+     */
+    @Deprecated
     public EventBuilder setTimestamp(long timestamp) {
+        return timestamp(timestamp);
+    }
+
+    /**
+     * @deprecated Use random instead
+     */
+    @Deprecated
+    public EventBuilder setRandom(UUID random) {
+        return random(random);
+    }
+
+   /**
+     * @deprecated Use version instead
+     */
+    @Deprecated
+    public EventBuilder setVersion(int version) {
+        return version(version);
+    }
+
+    public EventBuilder timestamp(long timestamp) {
         this.timestamp = timestamp;
         return this;
     }
 
-    public EventBuilder setRandom(UUID random) {
+    public EventBuilder random(UUID random) {
         this.random = random;
         return this;
     }
 
-    public EventBuilder setVersion(int version) {
+    public EventBuilder version(int version) {
         this.version = version;
         return this;
     }
 
+    /**
+     * @deprecated use tag instead
+     */
+    @Deprecated
     public EventBuilder setTag(String key, Variant value) {
+        return tag(key, value);
+    }
+
+    /**
+     * @deprecated use tag instead
+     */
+    @Deprecated
+    public <T> EventBuilder setTag(TagDescription<T> tag, Variant value) {
+        return tag(tag, value);
+    }
+
+    public EventBuilder tag(String key, Variant value) {
         this.containerBuilder.tag(key, value);
         return this;
     }
 
-    public <T> EventBuilder setTag(TagDescription<T> tag, Variant value) {
+    public <T> EventBuilder tag(TagDescription<T> tag, Variant value) {
         this.containerBuilder.tag(tag, value);
         return this;
     }
@@ -77,5 +117,19 @@ public class EventBuilder {
 
     public static EventBuilder create() {
         return new EventBuilder();
+    }
+
+    public static EventBuilder create(final long timestamp, final UUID random) {
+        return new EventBuilder()
+                .version(1)
+                .timestamp(timestamp)
+                .random(random);
+    }
+
+    public static EventBuilder create(final long timestamp, final String uuidString) {
+        return new EventBuilder()
+                .version(1)
+                .timestamp(timestamp)
+                .random(UUID.fromString(uuidString));
     }
 }

@@ -16,7 +16,6 @@ import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 
 public class SentryEventConverterTest {
 
@@ -60,10 +59,8 @@ public class SentryEventConverterTest {
 
     @Test
     public void shouldConvertEventWithMessage() throws Exception {
-        EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me
-        eventBuilder.setVersion(1);
-        eventBuilder.setTag("msg", Variant.ofString("This is message sample"));
+        EventBuilder eventBuilder = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000")//TODO: fix me
+            .tag("msg", Variant.ofString("This is message sample"));
 
         Event sentryEvent = SentryEventConverter.convert(eventBuilder.build());
 
@@ -72,12 +69,8 @@ public class SentryEventConverterTest {
 
     @Test
     public void shouldConvertEventWithExceptions() throws Exception {
-        EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me
-        eventBuilder.setVersion(1);
-        eventBuilder.setTag("exc", Variant.ofVector(Vector.ofContainers(new Container[]{
-                createException()
-        })));
+        EventBuilder eventBuilder = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000")//TODO: fix me
+            .tag("exc", Variant.ofVector(Vector.ofContainers(createException())));
 
         Event sentryEvent = SentryEventConverter.convert(eventBuilder.build());
 
@@ -108,12 +101,8 @@ public class SentryEventConverterTest {
 
     @Test
     public void shouldExtractPlatformValue() throws Exception {
-        EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO Fix me
-        eventBuilder.setVersion(1);
-        eventBuilder.setTag("exc", Variant.ofVector(Vector.ofContainers(new Container[]{
-                createException()
-        })));
+        EventBuilder eventBuilder = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000") //TODO Fix me
+            .tag("exc", Variant.ofVector(Vector.ofContainers(createException())));
 
         Event sentryEvent = SentryEventConverter.convert(eventBuilder.build());
 

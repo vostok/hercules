@@ -14,8 +14,8 @@ public class EventUtilTest {
     @Test
     public void shouldExtractStringId() throws Exception {
         final Event event = EventBuilder.create()
-                .setRandom(UUID.fromString("6e7176f2-f249-43b8-ba54-334cde9d0c23"))
-                .setTimestamp(LocalDateTime.parse("2018-01-15T12:45:00").toEpochSecond(ZoneOffset.UTC) * 100_000_000)
+                .random(UUID.fromString("6e7176f2-f249-43b8-ba54-334cde9d0c23"))
+                .timestamp(LocalDateTime.parse("2018-01-15T12:45:00").toEpochSecond(ZoneOffset.UTC) * 100_000_000)
                 .build();
 
         assertEquals("AhqZPjlgzABucXby8klDuLpUM0zenQwj", EventUtil.extractStringId(event));

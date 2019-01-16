@@ -18,13 +18,13 @@ public class EventFormatterTest {
     @Test
     public void shouldPrettyPrintEvent() throws Exception {
         final Event event = EventBuilder.create()
-                .setVersion(1)
-                .setTimestamp(15276799200000000L)
-                .setRandom(UUID.fromString("5ef18239-8e6c-4e19-b222-c87fd06b003d"))
-                .setTag("String tag", Variant.ofString("String value"))
-                .setTag("Null tag", Variant.ofNull())
-                .setTag("Uuid tag", Variant.ofUuid(UUID.fromString("5ef18239-8e6c-4e19-b222-c87fd06b003d")))
-                .setTag("Container array tag", Variant.ofVector(Vector.ofContainers(
+                .version(1)
+                .timestamp(15276799200000000L)
+                .random(UUID.fromString("5ef18239-8e6c-4e19-b222-c87fd06b003d"))
+                .tag("String tag", Variant.ofString("String value"))
+                .tag("Null tag", Variant.ofNull())
+                .tag("Uuid tag", Variant.ofUuid(UUID.fromString("5ef18239-8e6c-4e19-b222-c87fd06b003d")))
+                .tag("Container array tag", Variant.ofVector(Vector.ofContainers(
                         ContainerBuilder.create()
                                 .tag("Some integer tag", Variant.ofInteger(123345567))
                                 .build(),
