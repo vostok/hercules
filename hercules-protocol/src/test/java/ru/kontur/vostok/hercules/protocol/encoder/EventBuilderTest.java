@@ -19,12 +19,9 @@ public class EventBuilderTest {
     @Test
     public void shouldBuildCorrectEvent() throws Exception {
         UUID uuid = UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000");
-        EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setVersion(1);
-        eventBuilder.setTimestamp(TimeUtil.gregorianToUnixTicks(uuid.timestamp()));
-        eventBuilder.setRandom(uuid);
-        eventBuilder.setTag("host", Variant.ofString("localhost"));
-        eventBuilder.setTag("timestamp", Variant.ofLong(1527679920000000L));
+        EventBuilder eventBuilder = EventBuilder.create(TimeUtil.gregorianToUnixTicks(uuid.timestamp()), uuid)
+            .tag("host", Variant.ofString("localhost"))
+            .tag("timestamp", Variant.ofLong(1527679920000000L));
 
         Event event = eventBuilder.build();
 

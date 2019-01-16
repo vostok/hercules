@@ -46,14 +46,9 @@ public class EventDeserializerTest {
     }
 
     private static Event createEvent() {
-        EventBuilder builder = new EventBuilder();
-
-        builder.setVersion(1);
-        builder.setRandom(UuidGenerator.getClientInstance().next());
-
-        builder.setTag("string-tag", Variant.ofString("tag content"));
-        builder.setTag("int-tag", Variant.ofInteger(123));
-
-        return builder.build();
+        return EventBuilder.create(0, UuidGenerator.getClientInstance().next())
+                .tag("string-tag", Variant.ofString("tag content"))
+                .tag("int-tag", Variant.ofInteger(123))
+                .build();
     }
 }

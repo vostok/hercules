@@ -18,14 +18,11 @@ public class IndexToElasticJsonWriterTest {
 
     @Test
     public void shouldWriteIndexIfEventHasIndexTag() throws Exception {
-        EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me!
-        eventBuilder.setTag("properties", Variant.ofContainer(ContainerBuilder.create()
-                .tag("elk-index", Variant.ofString("just-some-index-value"))
-                .build()
-        ));
-
-        Event event = eventBuilder.build();
+        final Event event = EventBuilder.create(0,"00000000-0000-1000-994f-8fcf383f0000") //TODO: fix me!
+                .tag("properties", Variant.ofContainer(ContainerBuilder.create()
+                        .tag("elk-index", Variant.ofString("just-some-index-value"))
+                        .build()
+                )).build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         IndexToElasticJsonWriter.tryWriteIndex(stream, event);
@@ -44,16 +41,13 @@ public class IndexToElasticJsonWriterTest {
 
     @Test
     public void shouldWriteIndexIfEventHasProjectAndEnvTags() throws Exception {
-        EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setTimestamp(TimeUtil.UNIX_EPOCH);
-        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));
-
-        eventBuilder.setTag("properties", Variant.ofContainer(ContainerBuilder.create()
-                .tag("project", Variant.ofString("awesome-project"))
-                .tag("environment", Variant.ofString("production"))
-                .build()
-        ));
-        Event event = eventBuilder.build();
+        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
+                .tag("properties", Variant.ofContainer(ContainerBuilder.create()
+                        .tag("project", Variant.ofString("awesome-project"))
+                        .tag("environment", Variant.ofString("production"))
+                        .build()
+                ))
+                .build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         IndexToElasticJsonWriter.tryWriteIndex(stream, event);
@@ -72,9 +66,8 @@ public class IndexToElasticJsonWriterTest {
 
     @Test
     public void shouldReturnFalseIfNoSuitableTags() throws Exception {
-        EventBuilder eventBuilder = new EventBuilder();
-        eventBuilder.setRandom(UUID.fromString("00000000-0000-1000-994f-8fcf383f0000"));//TODO: fix me!
-        Event event = eventBuilder.build();
+        final Event event = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000") //TODO: fix me!
+                .build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);

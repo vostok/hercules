@@ -21,23 +21,22 @@ public class EventToElasticJsonWriterTest {
     @Test
     public void shouldConvertEventToJson() throws Exception {
 
-        EventBuilder event = new EventBuilder();
+        EventBuilder event = EventBuilder.create(
+            TimeUtil.gregorianToUnixTicks(137469727200000010L),
+            UuidGenerator.getClientInstance().withTicks(137469727200000010L)
+        );
 
-        event.setVersion(1);
-        event.setTimestamp(TimeUtil.gregorianToUnixTicks(137469727200000010L));
-        event.setRandom(UuidGenerator.getClientInstance().withTicks(137469727200000010L));
-
-        event.setTag("Byte sample", Variant.ofByte((byte) 127));
-        event.setTag("Short sample", Variant.ofShort((short) 10_000));
-        event.setTag("Int sample", Variant.ofInteger(123_456_789));
-        event.setTag("Long sample", Variant.ofLong(123_456_789L));
-        event.setTag("Float sample", Variant.ofFloat(0.123456f));
-        event.setTag("Double sample", Variant.ofDouble(0.123456));
-        event.setTag("Flag sample", Variant.ofFlag(true));
-        event.setTag("Flag sample false", Variant.ofFlag(false));
-        event.setTag("String sample", Variant.ofString("Test string with json inside {\"a\": {\"b\": [123, true, \"str\"]}}"));
-        event.setTag("Text sample", Variant.ofString("Test string with json inside {\"a\": {\"b\": [123, true, \"str\"]}}"));
-        event.setTag("Array sample", Variant.ofVector(Vector.ofIntegers(new int[]{1, 2, 3})));
+        event.tag("Byte sample", Variant.ofByte((byte) 127));
+        event.tag("Short sample", Variant.ofShort((short) 10_000));
+        event.tag("Int sample", Variant.ofInteger(123_456_789));
+        event.tag("Long sample", Variant.ofLong(123_456_789L));
+        event.tag("Float sample", Variant.ofFloat(0.123456f));
+        event.tag("Double sample", Variant.ofDouble(0.123456));
+        event.tag("Flag sample", Variant.ofFlag(true));
+        event.tag("Flag sample false", Variant.ofFlag(false));
+        event.tag("String sample", Variant.ofString("Test string with json inside {\"a\": {\"b\": [123, true, \"str\"]}}"));
+        event.tag("Text sample", Variant.ofString("Test string with json inside {\"a\": {\"b\": [123, true, \"str\"]}}"));
+        event.tag("Array sample", Variant.ofVector(Vector.ofIntegers(new int[]{1, 2, 3})));
 
         assertEquals(
                 "{" +
@@ -215,10 +214,11 @@ public class EventToElasticJsonWriterTest {
     }
 
     private void assertVariantConverted(String convertedVariant, Variant variant) throws Exception {
-        EventBuilder builder = new EventBuilder();
-        builder.setTimestamp(TimeUtil.UNIX_EPOCH);
-        builder.setRandom(UuidGenerator.getClientInstance().withTicks(TimeUtil.unixToGregorianTicks(TimeUtil.UNIX_EPOCH)));
-        builder.setTag("v", variant);
+        final EventBuilder builder = EventBuilder.create(
+                TimeUtil.UNIX_EPOCH,
+                UuidGenerator.getClientInstance().withTicks(TimeUtil.unixToGregorianTicks(TimeUtil.UNIX_EPOCH))
+        );
+        builder.tag("v", variant);
 
         assertEquals("{\"@timestamp\":\"1970-01-01T00:00:00.000000000Z\",\"v\":" + convertedVariant + "}", builderToJson(builder));
     }

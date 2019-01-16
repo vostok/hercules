@@ -23,7 +23,7 @@ public class ContainerBuilder {
         return this;
     }
 
-    public <T> void tag(TagDescription<T> tag, Variant value) {
+    public <T> ContainerBuilder tag(TagDescription<T> tag, Variant value) {
         if (!tag.getExtractors().containsKey(value.getType())) {
             String allowedValues = "[" + tag.getExtractors().keySet().stream().map(String::valueOf).collect(Collectors.joining()) + "]";
             throw new IllegalArgumentException(
@@ -31,6 +31,7 @@ public class ContainerBuilder {
             );
         }
         tag(tag.getName(), value);
+        return this;
     }
 
     public Container build() {

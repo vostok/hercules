@@ -56,8 +56,8 @@ public class StreamApiClientTest {
                                         new StreamShardReadState(0, 2)
                                 }),
                         new Event[]{
-                                new EventBuilder().setRandom(UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")).build(),
-                                new EventBuilder().setRandom(UUID.fromString("0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1")).build()
+                                EventBuilder.create(0, "05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1").build(),
+                                EventBuilder.create(0, "0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1").build()
                         }),
                 new EventStreamContentWriter()
         )));
