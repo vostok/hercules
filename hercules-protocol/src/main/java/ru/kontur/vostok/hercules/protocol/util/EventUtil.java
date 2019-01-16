@@ -13,10 +13,10 @@ public class EventUtil {
     private static char[] HEX = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     private static char ZERO = '0';
 
-    private static final int ID_SIZE = 24;
+    private static final int ID_SIZE_IN_BYTES = 24;
 
     public static ByteBuffer eventIdAsByteBuffer(long timestamp, UUID random) {
-        ByteBuffer eventId = ByteBuffer.allocate(24);
+        ByteBuffer eventId = ByteBuffer.allocate(ID_SIZE_IN_BYTES);
         eventId.putLong(timestamp);
         eventId.putLong(random.getMostSignificantBits());
         eventId.putLong(random.getMostSignificantBits());
@@ -66,14 +66,14 @@ public class EventUtil {
     }
 
     public static String eventIdOfBytesAsHexString(byte[] bytes) {
-        if (bytes == null || bytes.length != 24) {
-            throw new IllegalArgumentException("Binary representation of event id must be 24 bytes length");
+        if (bytes == null || bytes.length != ID_SIZE_IN_BYTES) {
+            throw new IllegalArgumentException("Binary representation of event id must be " + ID_SIZE_IN_BYTES + " bytes length");
         }
 
-        char[] eventIdHex = new char[50];
+        char[] eventIdHex = new char[ID_SIZE_IN_BYTES * 2 + 2];
         eventIdHex[0] = '0';
         eventIdHex[1] = 'x';
-        for (int i = 0; i < 24; i++) {
+        for (int i = 0; i < ID_SIZE_IN_BYTES; i++) {
             eventIdHex[2 * i + 2] = HEX[(bytes[i] >> 4) & 0x0F];
             eventIdHex[2 * i + 3] = HEX[bytes[i] & 0x0F];
         }
@@ -82,13 +82,7 @@ public class EventUtil {
     }
 
     public static String extractStringId(final Event event) {
-
-        final ByteBuffer buffer = ByteBuffer.allocate(ID_SIZE);
-        buffer.putLong(event.getTimestamp());
-        buffer.putLong(event.getUuid().getMostSignificantBits());
-        buffer.putLong(event.getUuid().getLeastSignificantBits());
-
-        return Base64.getEncoder().encodeToString(buffer.array());
+        return Base64.getEncoder().encodeToString(eventIdAsBytes(event.getTimestamp(), event.getUuid()));
     }
 
     private EventUtil() {
