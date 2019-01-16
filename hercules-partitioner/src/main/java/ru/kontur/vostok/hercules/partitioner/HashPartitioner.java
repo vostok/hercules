@@ -13,7 +13,7 @@ public class HashPartitioner implements Partitioner {
     }
 
     @Override
-    public int partition(Event event, String[] shardingKey, int partitions) {
+    public int partition(Event event, ShardingKey shardingKey, int partitions) {
         int shardingHash = hasher.hash(event, shardingKey);
         return (shardingHash & 0x7FFFFFFF) % partitions;
     }
