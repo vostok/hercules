@@ -36,7 +36,7 @@ public final class EventToElasticJsonWriter {
 
     private static final Set<String> IGNORED_TAGS = new HashSet<>(Arrays.asList(
             TIMESTAMP_TAG_NAME,
-            ElasticSearchTags.INDEX_TAG.getName()
+            ElasticSearchTags.INDEX_PATTERN_TAG.getName()
     ));
 
     private static final JsonFactory FACTORY = new JsonFactory();

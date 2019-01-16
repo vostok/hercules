@@ -13,7 +13,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
-import ru.kontur.vostok.hercules.util.EventUtil;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
 import java.net.URI;
 import java.util.UUID;

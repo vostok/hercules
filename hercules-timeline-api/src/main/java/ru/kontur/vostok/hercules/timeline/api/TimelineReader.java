@@ -13,7 +13,7 @@ import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
-import ru.kontur.vostok.hercules.util.EventUtil;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 

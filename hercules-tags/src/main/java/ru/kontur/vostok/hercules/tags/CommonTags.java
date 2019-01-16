@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.tags;
 
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 
@@ -13,21 +14,34 @@ import java.util.Optional;
 public final class CommonTags {
 
     /**
-     * Environment tag
+     * Properties tag
      */
-    public static final TagDescription<Optional<String>> ENVIRONMENT_TAG = TagDescriptionBuilder.string("env")
-            .convert(Optional::of)
-            .addDefault(Optional::empty)
+    public static final TagDescription<Optional<Container>> PROPERTIES_TAG = TagDescriptionBuilder.container("properties")
+            .optional()
             .build();
 
     /**
      * Project tag
      */
-    public static final TagDescription<Optional<String>> PROJECT_TAG = TagDescriptionBuilder.string("proj")
-            .convert(Optional::of)
-            .addDefault(Optional::empty)
+    public static final TagDescription<Optional<String>> PROJECT_TAG = TagDescriptionBuilder.string("project")
+            .optional()
+            .build();
+
+    /**
+     * Service tag
+     */
+    public static final TagDescription<Optional<String>> SERVICE_TAG = TagDescriptionBuilder.string("service")
+            .optional()
+            .build();
+
+    /**
+     * Environment tag
+     */
+    public static final TagDescription<Optional<String>> ENVIRONMENT_TAG = TagDescriptionBuilder.string("environment")
+            .optional()
             .build();
 
     private CommonTags() {
+        /* static class */
     }
 }
