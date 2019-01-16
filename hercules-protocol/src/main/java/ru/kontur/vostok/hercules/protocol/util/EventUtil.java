@@ -19,7 +19,7 @@ public class EventUtil {
         ByteBuffer eventId = ByteBuffer.allocate(ID_SIZE_IN_BYTES);
         eventId.putLong(timestamp);
         eventId.putLong(random.getMostSignificantBits());
-        eventId.putLong(random.getMostSignificantBits());
+        eventId.putLong(random.getLeastSignificantBits());
         eventId.position(0);
         return eventId;
     }
