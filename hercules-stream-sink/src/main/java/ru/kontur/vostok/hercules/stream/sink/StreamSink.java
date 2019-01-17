@@ -17,6 +17,7 @@ import ru.kontur.vostok.hercules.meta.filter.Filter;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
+import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
@@ -64,7 +65,7 @@ public class StreamSink {
 
         EventStreamPartitioner partitioner = new EventStreamPartitioner(
                 new HashPartitioner(new NaiveHasher()),
-                derived.getShardingKey(),
+                ShardingKey.fromKeyPaths(derived.getShardingKey()),
                 derived.getPartitions()
         );
 

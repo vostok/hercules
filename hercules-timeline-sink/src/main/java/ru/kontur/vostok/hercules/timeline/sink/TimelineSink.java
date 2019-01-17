@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.RandomPartitioner;
+import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
@@ -60,7 +61,7 @@ public class TimelineSink {
                 new Slicer(
                         new HashPartitioner(new NaiveHasher()),
                         new RandomPartitioner(),
-                        timeline.getShardingKey(),
+                        ShardingKey.fromKeyPaths(timeline.getShardingKey()),
                         timeline.getSlices());
 
         Serde<UUID> keySerde = new UuidSerde();

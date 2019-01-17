@@ -22,7 +22,7 @@ public class RandomPartitioner implements Partitioner {
         return random;
     }
     @Override
-    public int partition(Event event, String[] shardingKey, int partitions) {
+    public int partition(Event event, ShardingKey shardingKey, int partitions) {
         return getRandom().nextInt(partitions);
     }
 }

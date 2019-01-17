@@ -11,7 +11,7 @@ import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
-import ru.kontur.vostok.hercules.util.EventUtil;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
 import java.util.Arrays;
 import java.util.Iterator;

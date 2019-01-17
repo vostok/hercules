@@ -11,7 +11,7 @@ import ru.kontur.vostok.hercules.cassandra.util.Slicer;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.EventUtil;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;

@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.gate;
 
+import ru.kontur.vostok.hercules.partitioner.ShardingKey;
+
 import java.util.Set;
 
 /**
@@ -10,7 +12,7 @@ public class SendContext {
     private final String topic;
     private final Set<String> tags;
     private final int partitions;
-    private final String[] shardingKey;
+    private final ShardingKey shardingKey;
     private final ContentValidator validator;
 
     public SendContext(
@@ -18,7 +20,7 @@ public class SendContext {
             String topic,
             Set<String> tags,
             int partitions,
-            String[] shardingKey,
+            ShardingKey shardingKey,
             ContentValidator validator
     ) {
         this.async = async;
@@ -45,7 +47,7 @@ public class SendContext {
         return partitions;
     }
 
-    public String[] getShardingKey() {
+    public ShardingKey getShardingKey() {
         return shardingKey;
     }
 
