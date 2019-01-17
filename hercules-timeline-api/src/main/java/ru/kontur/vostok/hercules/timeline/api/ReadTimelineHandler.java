@@ -41,8 +41,8 @@ public class ReadTimelineHandler implements HttpHandler {
                 try {
                     Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
                     String timelineName = queryParameters.get("timeline").getFirst();
-                    int k = Integer.valueOf(queryParameters.get("k").getFirst());
-                    int n = Integer.valueOf(queryParameters.get("n").getFirst());
+                    int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
+                    int shardCount = Integer.valueOf(queryParameters.get("shardCount").getFirst());
                     int take = Integer.valueOf(queryParameters.get("take").getFirst());
                     long from = Long.valueOf(queryParameters.get("from").getFirst());
                     long to = Long.valueOf(queryParameters.get("to").getFirst());
@@ -55,7 +55,7 @@ public class ReadTimelineHandler implements HttpHandler {
 
                     TimelineState readState = STATE_READER.read(new Decoder(message));
 
-                    TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, k, n, take, from, to);
+                    TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, shardIndex, shardCount, take, from, to);
 
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     Encoder encoder = new Encoder(stream);

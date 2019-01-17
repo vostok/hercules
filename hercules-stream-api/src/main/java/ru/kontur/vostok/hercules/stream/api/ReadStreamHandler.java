@@ -41,15 +41,15 @@ public class ReadStreamHandler implements HttpHandler {
                 try {
                     Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
                     String streamName = queryParameters.get("stream").getFirst();
-                    int k = Integer.valueOf(queryParameters.get("k").getFirst());
-                    int n = Integer.valueOf(queryParameters.get("n").getFirst());
+                    int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
+                    int shardCount = Integer.valueOf(queryParameters.get("shardCount").getFirst());
                     int take = Integer.valueOf(queryParameters.get("take").getFirst());
 
                     ByteStreamContent streamContent = streamReader.getStreamContent(
                             streamName,
                             STATE_READER.read(new Decoder(message)),
-                            k,
-                            n,
+                            shardIndex,
+                            shardCount,
                             take
                     );
 
