@@ -5,8 +5,8 @@ Schema of LogEvent described below:
 ```yaml
 LogEvent:
   utcOffset?: Long # Utc offset on 100ns ticks
+  message?: String # Rendered message
   messageTemplate?: String # Message template
-  renderedMessage?: String # Rendered message
   exception?: Exception # Exception
   properties?: Container # Key-value dictionary where values are primitives or string representation in case of object
 Exception:
