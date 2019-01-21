@@ -100,12 +100,12 @@ public class BulkResponseHandler {
     private static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
             "illegal_argument_exception",
             "mapper_parsing_exception",
-            "illegal_state_exception"
+            "illegal_state_exception",
+            "invalid_index_name_exception"
     ));
 
     private static final Set<String> UNSPECIFIED_ERRORS_CODES = new HashSet<>(Arrays.asList(
             "invalid_alias_name_exception",
-            "invalid_index_name_exception",
             "elasticsearch_parse_exception",
             "invalid_type_name_exception",
             "parsing_exception",
