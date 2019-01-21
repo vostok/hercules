@@ -2,14 +2,13 @@
 
 To make serialization and deserialization more easy you can use `HerculesMapper`.
 
-## Deserialization
+## Primitive types
 
-If you want to deserialize a simple pojo for this schema:
+If you want to map a simple pojo for this schema:
 
 ```yaml
 PojoClass:
   integerTag: Integer
-  optionalStringTag?: String
 ```
 
 you should add `@Tag` annotation the following way:
@@ -20,45 +19,9 @@ class PojoClass {
     @Tag("integerTag")
     private int integerTag;
 
-    @Tag(name = "optionalStringTag", optional = true)
-    private Maybe<String> optionalStringTag;
-
     // Getters and setters
 }
 ```
-
-For immutable classes you must mark one constructor with `@HerculesMapperConstructor` annotation.
-
-The same schema
-
-```yaml
-PojoClass:
-  integerTag: Integer
-  optionalStringTag?: String
-```
-
-will be described as:
-
-```java
-class ImmutablePojoClass {
-
-    private final int integerTag;
-    private final Maybe<String> optionalStringTag;
-
-    @HerculesMapperConstructor
-    public ImmutablePojoClass(
-        @Tag("integerTag") int integerTag,
-        @Tag(name = "optionalStringTag", optional = true) Maybe<String> optionalStringTag
-    ) {
-        this.integerTag = integerTag;
-        this.optionalStringTag = optionalStringTag;
-    }
-
-    // Getters
-}
-```
-
-### Expected tag type
 
 If types parameter is not set its value will be defined regarding java type of field.
 Following rules applies:
@@ -80,18 +43,9 @@ Following rules applies:
 - `String` -> `String, Null`
 - `UUID` -> `UUID, Null`
 
-So in class:
-
-```java
-class Pojo {
-
-    @Tag("integerTag")
-    private int value;
-
-}
-```
-
-parser will expect tag of `Integer` type.
+So in example abowe on serizlization java field `integerTag` of type `int` will be converted into `Integer` hercules value.
+On deserizlization mapper will expect tag with `Integer` value.
+In case of type mismatch mapper will throw `TypeMismatchException`.
 
 You can redefine default behavior by setting types value:
 
@@ -103,9 +57,13 @@ class Pojo {
 }
 ```
 
-In this example parser will expect tag of `Short` type.
+In this example on serialization mapper will convert `int` java value to `Short` hercules value
+or throw `InvalidValueException` in case of overflow.
+On deserialization mapper will expect tag of `Short` type and store its value in `int` field.
 
-### Deserialization of tag with many possible types
+## Multiple possible types
+
+In Hercules protocol you can set tag to value of different types.
 
 ```yaml
 MultitypePojo:
@@ -193,7 +151,40 @@ Null:
 - `Null` -> `UUID`
 - `Null` -> `Object`
 
-### Deserialization of optional tag
+## Immutable class
+
+For immutable classes you must mark one constructor with `@HerculesMapperConstructor` annotation.
+
+The same schema
+
+```yaml
+PojoClass:
+  integerTag: Integer
+  optionalStringTag?: String
+```
+
+will be described as:
+
+```java
+class ImmutablePojoClass {
+
+    private final int integerTag;
+    private final Maybe<String> optionalStringTag;
+
+    @HerculesMapperConstructor
+    public ImmutablePojoClass(
+        @Tag("integerTag") int integerTag,
+        @Tag(name = "optionalStringTag", optional = true) Maybe<String> optionalStringTag
+    ) {
+        this.integerTag = integerTag;
+        this.optionalStringTag = optionalStringTag;
+    }
+
+    // Getters
+}
+```
+
+## Optional tags
 
 In case of optional tag
 
@@ -207,7 +198,7 @@ java type must be enclosed in Maybe generic type
 ```java
 class PojoWithOptionalString {
 
-    @Tag("optionalString", optional = true)
+    @Tag(name = "optionalString", optional = true)
     private Maybe<String> optionalString;
 
     // Getters and setters
@@ -219,7 +210,7 @@ Unnecessary wrapping can be avoided by passing special parameter `missingAsNull 
 ```java
 class PojoWithOptionalString {
 
-    @Tag("optionalString", optional = true, missingAsNull = true)
+    @Tag(name = "optionalString", optional = true, missingAsNull = true)
     private String optionalString;
 
     // Getters and setters
@@ -228,11 +219,11 @@ class PojoWithOptionalString {
 
 In case of optional tag with possible null-value such parameter cannot be true and using `Maybe` wrapper is obligatory.
 
-### Missing required tags
+## Missing required tags
 
 In case of missing required tags during deserialization a `MissingRequiredTagsException` will be thrown.
 
-### Deserialization of container
+## Containers
 
 Nested object in hercules protocol are passed via nested containers.
 
@@ -248,7 +239,7 @@ Such schema can be described in java code as follows:
 ```java
 class MainPojo {
 
-    @Tag(name = "innerPojoTag")
+    @Tag("innerPojoTag")
     private InnerPojo innerPojo;
 }
 
@@ -256,5 +247,73 @@ class InnerPojo {
 
     @Tag("stringTag")
     private String stringTag;
+}
+```
+
+## Vector of primitives
+
+Vector of primitive values can be mapped to array of primitive (vectorTag1) or boxed (vectorTag2) arrays,
+ordered (vectorTag3) or unordered collections (vectorTag4) as follows:
+
+```yaml
+PojoWithVector:
+  vectorTag1: Vector<Integer>
+  vectorTag2: Vector<Integer>
+  vectorTag3: Vector<Integer>
+  vectorTag4: Vector<Integer>
+```
+
+```java
+class PojoWithVector {
+
+    @Tag("vectorTag1")
+    private int[] vectorTag1;
+
+    @Tag("vectorTag2")
+    private Integer[] vectorTag2;
+
+    @Tag("vectorTag3")
+    private List<Integer> vectorTag3;
+
+    @Tag("vectorTag4")
+    private Set<Integer> vectorTag4;
+}
+```
+
+## Vector of containers
+
+For more complex structure there is no much difference
+
+```yaml
+Node:
+  data: String
+  childs: Vector<Node>
+```
+
+```java
+class Node {
+
+    @Tag("data")
+    private String data;
+
+    @Tag("childs")
+    private Node[] childs;
+}
+```
+
+## Vector of vectors and more nested structures
+
+```yaml
+Matrix:
+  data: Vector<Vector<Integer>>
+```
+
+Vector of vectors can be mapped to two-dimensional array:
+
+```java
+class Matrix {
+
+    @Tag("data")
+    private int[][] data;
 }
 ```
