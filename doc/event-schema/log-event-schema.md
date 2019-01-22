@@ -13,7 +13,8 @@ Exception:
   type?: String # Exception runtime type
   message?: String # Exception message
   innerExceptions?: Vector<Exception> # Inner exceptions
-  stackTrace?: Vector<StackFrame> # Exception stack frame
+  stackTrace?: String # Exception stack trace
+  stackFrames?: Vector<StackFrame> # Exception stack frames
 StackFrame:
   function?: String # Name of function
   type?: String # Type where function is declared
