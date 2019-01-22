@@ -61,6 +61,11 @@ In this example on serialization mapper will convert `int` java value to `Short`
 or throw `InvalidValueException` in case of overflow.
 On deserialization mapper will expect tag of `Short` type and store its value in `int` field.
 
+All tags are required by default.
+In case of missing required tags during deserialization a `MissingRequiredTagsException` will be thrown.
+You can make a tag optional via parameter `optional=true` in `@Tag` annotation.
+For more information about optional tags see [optional tags](#optional-tags).
+
 ## Multiple possible types
 
 In Hercules protocol you can set tag to value of different types.
@@ -218,10 +223,6 @@ class PojoWithOptionalString {
 ```
 
 In case of optional tag with possible null-value such parameter cannot be true and using `Maybe` wrapper is obligatory.
-
-## Missing required tags
-
-In case of missing required tags during deserialization a `MissingRequiredTagsException` will be thrown.
 
 ## Containers
 
