@@ -1,8 +1,6 @@
 package ru.kontur.vostok.hercules.kafka.util.serialization;
 
 import org.apache.kafka.common.serialization.Deserializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.Map;
@@ -12,9 +10,7 @@ import java.util.Map;
  *
  * @author Kirill Sulim
  */
-public class ResultDeserializer<Type> implements Deserializer<Result<Type, Exception>> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResultDeserializer.class);
+public class ResultDeserializer<Type> implements Deserializer<Result<Type, DeserializationException>> {
 
     private final Deserializer<Type> wrapped;
 
@@ -28,8 +24,10 @@ public class ResultDeserializer<Type> implements Deserializer<Result<Type, Excep
     }
 
     @Override
-    public Result<Type, Exception> deserialize(String topic, byte[] data) {
-        return Result.of(() -> wrapped.deserialize(topic, data));
+    public Result<Type, DeserializationException> deserialize(String topic, byte[] data) {
+        return Result
+            .of(() -> wrapped.deserialize(topic, data))
+            .mapError(e -> new DeserializationException(data, e));
     }
 
     @Override

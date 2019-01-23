@@ -1,11 +1,15 @@
 package ru.kontur.vostok.hercules.util.bytes;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author Gregory Koshelev
  */
 public class ByteUtil {
+
+    private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
+
     /**
      * Check if array starts with subarray
      *
@@ -44,5 +48,18 @@ public class ByteUtil {
         byte[] bytes = new byte[size];
         buffer.get(bytes);
         return bytes;
+    }
+
+    public static String bytesToHexString(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2 + 2];
+        hexChars[0] = '0';
+        hexChars[1] = 'x';
+
+        for (int i = 0; i < bytes.length; i++) {
+            int v = bytes[i] & 0xFF;
+            hexChars[i * 2 + 2] = HEX_CHARS[v >>> 4];
+            hexChars[i * 2 + 3] = HEX_CHARS[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 }

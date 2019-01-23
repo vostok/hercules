@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatus;
 import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
+import ru.kontur.vostok.hercules.kafka.util.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
@@ -20,6 +21,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.ResultDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
@@ -60,7 +62,7 @@ public class BulkConsumer implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumer.class);
     private static final Logger DROPPED_EVENTS_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
 
-    private final KafkaConsumer<UUID, Result<Event, Exception>> consumer;
+    private final KafkaConsumer<UUID, Result<Event, DeserializationException>> consumer;
     private final PatternMatcher streamPattern;
     private final int pollTimeout;
     private final int batchSize;
@@ -168,8 +170,8 @@ public class BulkConsumer implements Runnable {
                     while (current.available() && 0 <= timeLeft) {
                         try {
                             // TODO: use poll(Duration)
-                            ConsumerRecords<UUID, Result<Event, Exception>> poll = consumer.poll(timeLeft);
-                            for (ConsumerRecord<UUID, Result<Event, Exception>> record : poll) {
+                            ConsumerRecords<UUID, Result<Event, DeserializationException>> poll = consumer.poll(timeLeft);
+                            for (ConsumerRecord<UUID, Result<Event, DeserializationException>> record : poll) {
                                 if (record.value().isOk()) {
                                     if (current.available()) {
                                         current.add(record, Result::get);
@@ -180,7 +182,11 @@ public class BulkConsumer implements Runnable {
                                     DROPPED_EVENTS_LOGGER.trace("{}", record.key());
                                     droppedEventsMeter.mark();
 
-                                    LOGGER.warn("Error on deserialize event", record.value().getError());
+                                    LOGGER.warn(
+                                        "Cannot deserialize event with bytes '{}', cause:",
+                                        ByteUtil.bytesToHexString(record.value().getError().getBytes()),
+                                        record.value().getError().getCause()
+                                    );
                                 }
                             }
                             timeLeft = timer.timeLeft();

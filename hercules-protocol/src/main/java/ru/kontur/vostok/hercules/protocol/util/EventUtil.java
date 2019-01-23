@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Base64;
@@ -70,15 +71,7 @@ public class EventUtil {
             throw new IllegalArgumentException("Binary representation of event id must be " + ID_SIZE_IN_BYTES + " bytes length");
         }
 
-        char[] eventIdHex = new char[ID_SIZE_IN_BYTES * 2 + 2];
-        eventIdHex[0] = '0';
-        eventIdHex[1] = 'x';
-        for (int i = 0; i < ID_SIZE_IN_BYTES; i++) {
-            eventIdHex[2 * i + 2] = HEX[(bytes[i] >> 4) & 0x0F];
-            eventIdHex[2 * i + 3] = HEX[bytes[i] & 0x0F];
-        }
-
-        return new String(eventIdHex);
+        return ByteUtil.bytesToHexString(bytes);
     }
 
     public static String extractStringId(final Event event) {
