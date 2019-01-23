@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.util.functional;
 
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 /**
@@ -56,5 +57,13 @@ public class Result<R, E> {
 
     public static <R, E> Result<R, E> error(E error) {
         return new Result<>(null, error);
+    }
+
+    public static <R> Result<R, Exception> of(final Callable<R> callable) {
+        try {
+            return Result.ok(callable.call());
+        } catch (Exception e) {
+            return Result.error(e);
+        }
     }
 }

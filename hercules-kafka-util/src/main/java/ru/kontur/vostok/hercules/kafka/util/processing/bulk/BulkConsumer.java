@@ -16,9 +16,12 @@ import ru.kontur.vostok.hercules.kafka.util.processing.SinkStatusFsm;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
+import ru.kontur.vostok.hercules.kafka.util.serialization.ResultDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.util.functional.Result;
+import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.Timer;
@@ -55,8 +58,9 @@ public class BulkConsumer implements Runnable {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumer.class);
+    private static final Logger DROPPED_EVENTS_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
 
-    private final KafkaConsumer<UUID, Event> consumer;
+    private final KafkaConsumer<UUID, Result<Event, Exception>> consumer;
     private final PatternMatcher streamPattern;
     private final int pollTimeout;
     private final int batchSize;
@@ -97,7 +101,11 @@ public class BulkConsumer implements Runnable {
         Serde<Event> valueSerde = new EventSerde(new EventSerializer(), EventDeserializer.parseAllTags());
 
         this.streamPattern = streamPattern;
-        this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
+        this.consumer = new KafkaConsumer<>(
+            streamsProperties,
+            keySerde.deserializer(),
+            new ResultDeserializer<>(valueSerde.deserializer())
+        );
 
         this.status = status;
 
@@ -159,12 +167,20 @@ public class BulkConsumer implements Runnable {
 
                     while (current.available() && 0 <= timeLeft) {
                         try {
-                            ConsumerRecords<UUID, Event> poll = consumer.poll(timeLeft);
-                            for (ConsumerRecord<UUID, Event> record : poll) {
-                                if (current.available()) {
-                                    current.add(record);
+                            // TODO: use poll(Duration)
+                            ConsumerRecords<UUID, Result<Event, Exception>> poll = consumer.poll(timeLeft);
+                            for (ConsumerRecord<UUID, Result<Event, Exception>> record : poll) {
+                                if (record.value().isOk()) {
+                                    if (current.available()) {
+                                        current.add(record, Result::get);
+                                    } else {
+                                        next.add(record, Result::get);
+                                    }
                                 } else {
-                                    next.add(record);
+                                    DROPPED_EVENTS_LOGGER.trace("{}", record.key());
+                                    droppedEventsMeter.mark();
+
+                                    LOGGER.warn("Error on deserialize event", record.value().getError());
                                 }
                             }
                             timeLeft = timer.timeLeft();
