@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
@@ -39,18 +38,18 @@ public class BulkResponseHandler {
         private final int retryableErrorCount;
         private final int nonRetryableErrorCount;
         private final int unknownErrorCount;
-        private final Set<UUID> badUuid;
+        private final Set<String> badIds;
 
         public Result(
                 int retryableErrorCount,
                 int nonRetryableErrorCount,
                 int unknownErrorCount,
-                Set<UUID> badUuid
+                Set<String> badIds
         ) {
             this.retryableErrorCount = retryableErrorCount;
             this.nonRetryableErrorCount = nonRetryableErrorCount;
             this.unknownErrorCount = unknownErrorCount;
-            this.badUuid = badUuid;
+            this.badIds = badIds;
         }
 
         public int getRetryableErrorCount() {
@@ -77,8 +76,8 @@ public class BulkResponseHandler {
             return retryableErrorCount + nonRetryableErrorCount + unknownErrorCount;
         }
 
-        public Set<UUID> getBadUuid() {
-            return badUuid;
+        public Set<String> getBadIds() {
+            return badIds;
         }
     }
 
@@ -262,7 +261,7 @@ public class BulkResponseHandler {
             int retryableErrorCount = 0;
             int nonRetryableErrorCount = 0;
             int unknownErrorCount = 0;
-            Set<UUID> badUuid = new HashSet<>();
+            Set<String> badIds = new HashSet<>();
 
             JsonParser parser = FACTORY.createParser(httpEntity.getContent());
 
@@ -298,7 +297,7 @@ public class BulkResponseHandler {
                         case UNKNOWN:
                             unknownErrorCount++;
                             if (!StringUtil.isNullOrEmpty(currentId)) {
-                                badUuid.add(UUID.fromString(currentId));
+                                badIds.add(currentId);
                             }
                             break;
                         default:
@@ -312,7 +311,7 @@ public class BulkResponseHandler {
             nonRetryableErrorsMeter.mark(nonRetryableErrorCount);
             unknownErrorsMeter.mark(unknownErrorCount);
 
-            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, badUuid);
+            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, badIds);
         });
     }
 
