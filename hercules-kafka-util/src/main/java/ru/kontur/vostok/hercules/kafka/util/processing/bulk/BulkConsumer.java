@@ -166,7 +166,6 @@ public class BulkConsumer implements Runnable {
                                 } else {
                                     next.add(record);
                                 }
-
                             }
                             timeLeft = timer.timeLeft();
                         } catch (WakeupException e) {
