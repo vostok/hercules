@@ -179,8 +179,11 @@ public class BulkConsumer implements Runnable {
                                         next.add(record, Result::get);
                                     }
                                 } else {
-                                    DROPPED_EVENTS_LOGGER.trace("{}", record.key());
+                                    receivedEventsMeter.mark();
+                                    receivedEventsSizeMeter.mark(record.value().getError().getBytes().length);
+
                                     droppedEventsMeter.mark();
+                                    DROPPED_EVENTS_LOGGER.trace("{}", record.key());
 
                                     LOGGER.warn(
                                         "Cannot deserialize event with bytes '{}', cause:",
