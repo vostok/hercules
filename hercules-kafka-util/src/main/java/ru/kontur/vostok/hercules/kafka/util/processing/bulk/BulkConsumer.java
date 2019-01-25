@@ -19,6 +19,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
+import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.Timer;
@@ -55,6 +56,7 @@ public class BulkConsumer implements Runnable {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumer.class);
+    private static final Logger DROPPED_EVENTS_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
 
     private final KafkaConsumer<UUID, Event> consumer;
     private final PatternMatcher streamPattern;
@@ -97,7 +99,11 @@ public class BulkConsumer implements Runnable {
         Serde<Event> valueSerde = new EventSerde(new EventSerializer(), EventDeserializer.parseAllTags());
 
         this.streamPattern = streamPattern;
-        this.consumer = new KafkaConsumer<>(streamsProperties, keySerde.deserializer(), valueSerde.deserializer());
+        this.consumer = new KafkaConsumer<>(
+            streamsProperties,
+            keySerde.deserializer(),
+            valueSerde.deserializer()
+        );
 
         this.status = status;
 
@@ -159,12 +165,20 @@ public class BulkConsumer implements Runnable {
 
                     while (current.available() && 0 <= timeLeft) {
                         try {
+                            // TODO: use poll(Duration)
                             ConsumerRecords<UUID, Event> poll = consumer.poll(timeLeft);
                             for (ConsumerRecord<UUID, Event> record : poll) {
-                                if (current.available()) {
-                                    current.add(record);
+                                if (Objects.nonNull(record.value())) {
+                                    if (current.available()) {
+                                        current.add(record);
+                                    } else {
+                                        next.add(record);
+                                    }
                                 } else {
-                                    next.add(record);
+                                    receivedEventsMeter.mark();
+
+                                    droppedEventsMeter.mark();
+                                    DROPPED_EVENTS_LOGGER.trace("{}", record.key());
                                 }
                             }
                             timeLeft = timer.timeLeft();

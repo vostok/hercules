@@ -1,9 +1,12 @@
 package ru.kontur.vostok.hercules.kafka.util.serialization;
 
 import org.apache.kafka.common.serialization.Deserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
+import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 
 import java.util.Collections;
 import java.util.Map;
@@ -14,6 +17,9 @@ import java.util.Set;
  * @author Gregory Koshelev
  */
 public class EventDeserializer implements Deserializer<Event> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventDeserializer.class);
+
     private final Set<String> tags;
 
     private EventDeserializer(Set<String> tags) {
@@ -27,8 +33,13 @@ public class EventDeserializer implements Deserializer<Event> {
 
     @Override
     public Event deserialize(String topic, byte[] data) {
-        EventReader reader = EventReader.readTags(tags);
-        return reader.read(new Decoder(data));
+        try {
+            EventReader reader = EventReader.readTags(tags);
+            return reader.read(new Decoder(data));
+        } catch (Exception e) {
+            LOGGER.warn("Error on deserialize bytes '{}'", ByteUtil.bytesToHexString(data), e);
+            return null;
+        }
     }
 
     @Override
