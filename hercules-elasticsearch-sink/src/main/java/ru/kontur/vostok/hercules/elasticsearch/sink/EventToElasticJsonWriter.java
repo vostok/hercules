@@ -8,6 +8,8 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
+import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -20,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -84,24 +87,39 @@ public final class EventToElasticJsonWriter {
     }
 
 
-    public static void writeEvent(OutputStream stream, Event event) throws IOException {
+    public static void writeEvent(OutputStream stream, Event event, boolean mergePropertiesToRoot) throws IOException {
         try (JsonGenerator generator = FACTORY.createGenerator(stream, JsonEncoding.UTF8)) {
             generator.writeStartObject();
             generator.writeStringField(TIMESTAMP_TAG_NAME, FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp())));
 
+            if (mergePropertiesToRoot) {
+                final Optional<Container> properties = ContainerUtil.extract(event.getPayload(), CommonTags.PROPERTIES_TAG);
+                if (properties.isPresent()) {
+                    for (Map.Entry<String, Variant> tag : properties.get()) {
+                        writeVariantAsField(generator, tag.getKey(), tag.getValue());
+                    }
+                }
+            }
+
             for (Map.Entry<String, Variant> tag : event.getPayload()) {
-                if (IGNORED_TAGS.contains(tag.getKey())) {
+                if (IGNORED_TAGS.contains(tag.getKey())
+                    || (mergePropertiesToRoot && CommonTags.PROPERTIES_TAG.getName().equals(tag.getKey()))
+                ) {
                     continue;
                 }
-                generator.writeFieldName(tag.getKey());
-                writeVariantField(generator, tag.getValue());
+                writeVariantAsField(generator, tag.getKey(), tag.getValue());
             }
 
             generator.writeEndObject();
         }
     }
 
-    private static void writeVariantField(JsonGenerator generator, Variant variant) throws IOException {
+    private static void writeVariantAsField(JsonGenerator generator, String tagName, Variant variant) throws IOException {
+        generator.writeFieldName(tagName);
+        writeVariantValue(generator, variant);
+    }
+
+    private static void writeVariantValue(JsonGenerator generator, Variant variant) throws IOException {
         TO_JSON_WRITERS[variant.getType().code].write(generator, variant.getValue());
     }
 
@@ -245,7 +263,7 @@ public final class EventToElasticJsonWriter {
         while (iterator.hasNext()) {
             Map.Entry<String, Variant> entry = iterator.next();
             generator.writeFieldName(entry.getKey());
-            writeVariantField(generator, entry.getValue());
+            writeVariantValue(generator, entry.getValue());
         }
         generator.writeEndObject();
     }
