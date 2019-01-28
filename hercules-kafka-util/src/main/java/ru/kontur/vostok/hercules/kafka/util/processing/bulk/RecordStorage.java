@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Utility class to store kafka records
@@ -32,13 +34,24 @@ public class RecordStorage<Key, Value> {
 
     /**
      * Add record to storage
+     *
      * @param record record
      */
     public void add(ConsumerRecord<Key, Value> record) {
+        add(record, Function.identity());
+    }
+
+    /**
+     * Add record to storage
+     *
+     * @param record record
+     * @param converter record value converter
+     */
+    public <ActualValue> void add(ConsumerRecord<Key, ActualValue> record, Function<ActualValue, Value> converter) {
         if (!available()) {
             throw new IllegalStateException("Exceeded capacity");
         }
-        records.add(record.value());
+        records.add(converter.apply(record.value()));
 
         Map<Integer, Long> topicOffsets = offsets.computeIfAbsent(record.topic(), s -> new HashMap<>());
         topicOffsets.put(record.partition(), record.offset());
