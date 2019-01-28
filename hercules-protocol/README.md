@@ -125,3 +125,7 @@ To describe tags in hercules event you can use event schema with .yaml syntax de
 ## Common tags
 
 Some tags are common for different kinds of Hercules events. List of common tags can be found in [separate document](./doc/common-tags.md).
+
+## H-path
+
+To describe hierarchy of tags inside many nested containers you can use H-path described in [separate documnet](./doc/h-path.md).
