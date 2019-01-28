@@ -116,10 +116,10 @@ public final class EventToElasticJsonWriter {
 
     private static void writeVariantAsField(JsonGenerator generator, String tagName, Variant variant) throws IOException {
         generator.writeFieldName(tagName);
-        writeVariantField(generator, variant);
+        writeVariantValue(generator, variant);
     }
 
-    private static void writeVariantField(JsonGenerator generator, Variant variant) throws IOException {
+    private static void writeVariantValue(JsonGenerator generator, Variant variant) throws IOException {
         TO_JSON_WRITERS[variant.getType().code].write(generator, variant.getValue());
     }
 
@@ -263,7 +263,7 @@ public final class EventToElasticJsonWriter {
         while (iterator.hasNext()) {
             Map.Entry<String, Variant> entry = iterator.next();
             generator.writeFieldName(entry.getKey());
-            writeVariantField(generator, entry.getValue());
+            writeVariantValue(generator, entry.getValue());
         }
         generator.writeEndObject();
     }
