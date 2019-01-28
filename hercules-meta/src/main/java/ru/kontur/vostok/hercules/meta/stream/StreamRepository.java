@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.meta.stream;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -21,7 +22,8 @@ public class StreamRepository {
     public StreamRepository(CuratorClient curatorClient) {
         this.curatorClient = curatorClient;
 
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper().
+                configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.deserializer = objectMapper.readerFor(Stream.class);
         this.serializer = objectMapper.writerFor(Stream.class);
     }
