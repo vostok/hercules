@@ -48,6 +48,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
 
     private final int retryLimit;
     private final boolean retryOnUnknownErrors;
+    private final boolean mergePropertiesTagToRoot;
 
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
@@ -79,6 +80,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 .build();
 
         this.retryOnUnknownErrors = ElasticsearchProperties.RETRY_ON_UNKNOWN_ERRORS.extract(elasticsearchProperties);
+        this.mergePropertiesTagToRoot = ElasticsearchProperties.MERGE_PROPERTIES_TAG_TO_ROOT.extract(elasticsearchProperties);
 
         this.bulkResponseHandler = new BulkResponseHandler(metricsCollector);
 
@@ -183,7 +185,7 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
                 if (result) {
                     writeNewLine(stream);
-                    EventToElasticJsonWriter.writeEvent(stream, event);
+                    EventToElasticJsonWriter.writeEvent(stream, event, mergePropertiesTagToRoot);
                     writeNewLine(stream);
                 } else {
                     droppedCount++;
@@ -255,5 +257,10 @@ public class ElasticSearchEventSender implements BulkSender<Event> {
                 .booleanProperty("retryOnUnknownErrors")
                 .withDefaultValue(Boolean.FALSE)
                 .build();
+
+        static final PropertyDescription<Boolean> MERGE_PROPERTIES_TAG_TO_ROOT = PropertyDescriptions
+            .booleanProperty("elasticsearch.mergePropertiesTagToRoot")
+            .withDefaultValue(Boolean.FALSE)
+            .build();
     }
 }

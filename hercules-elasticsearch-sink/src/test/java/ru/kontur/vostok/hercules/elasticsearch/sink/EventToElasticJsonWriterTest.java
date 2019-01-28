@@ -6,11 +6,13 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -213,6 +215,24 @@ public class EventToElasticJsonWriterTest {
         );
     }
 
+    @Test
+    public void shouldMergePropertiesIfFlagIsSet() throws Exception {
+        final EventBuilder eventBuilder = EventBuilder
+            .create(
+                0,
+                "11203800-63fd-11e8-83e2-3a587d902000"
+            )
+            .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                .tag("someKey", Variant.ofString("some value"))
+                .build()
+            ));
+
+        assertEquals(
+            "{\"@timestamp\":\"1970-01-01T00:00:00.000000000Z\",\"someKey\":\"some value\"}",
+            builderToJson(eventBuilder, true)
+        );
+    }
+
     private void assertVariantConverted(String convertedVariant, Variant variant) throws Exception {
         final EventBuilder builder = EventBuilder.create(
                 TimeUtil.UNIX_EPOCH,
@@ -224,8 +244,12 @@ public class EventToElasticJsonWriterTest {
     }
 
     private static String builderToJson(EventBuilder builder) throws Exception {
+        return builderToJson(builder, false);
+    }
+
+    private static String builderToJson(EventBuilder builder, boolean mergeProperties) throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        EventToElasticJsonWriter.writeEvent(stream, builder.build());
+        EventToElasticJsonWriter.writeEvent(stream, builder.build(), mergeProperties);
         return toUnchecked(() -> stream.toString(StandardCharsets.UTF_8.name()));
     }
 }
