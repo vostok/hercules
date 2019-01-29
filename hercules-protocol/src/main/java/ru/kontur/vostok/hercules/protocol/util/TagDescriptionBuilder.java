@@ -34,7 +34,7 @@ public class TagDescriptionBuilder<T> {
                 .addScalarExtractor(Type.STRING, StandardExtractors::extractString);
     }
 
-    public static TagDescriptionBuilder<Container[]> containerList(String name) {
+    public static TagDescriptionBuilder<Container[]> containerVector(String name) {
         return new TagDescriptionBuilder<Container[]>(name)
                 .addVectorExtractor(Type.CONTAINER, StandardExtractors::extractContainerArray);
     }
@@ -52,11 +52,25 @@ public class TagDescriptionBuilder<T> {
         return parsable(name, s -> Enum.valueOf(clazz, s.toUpperCase()));
     }
 
+    public static TagDescriptionBuilder<Short> shortTag(final String name) {
+        return new TagDescriptionBuilder<Short>(name)
+            .addScalarExtractor(Type.BYTE, o -> ((Byte) o).shortValue())
+            .addScalarExtractor(Type.SHORT, o -> (Short) o);
+    }
+
     public static TagDescriptionBuilder<Integer> integer(String name) {
         return new TagDescriptionBuilder<Integer>(name)
                 .addScalarExtractor(Type.BYTE, o -> ((Byte) o).intValue())
                 .addScalarExtractor(Type.SHORT, o -> ((Short) o).intValue())
                 .addScalarExtractor(Type.INTEGER, o -> (Integer) o);
+    }
+
+    public static TagDescriptionBuilder<Long> longTag(final String name) {
+        return new TagDescriptionBuilder<Long>(name)
+            .addScalarExtractor(Type.BYTE, o -> ((Byte) o).longValue())
+            .addScalarExtractor(Type.SHORT, o -> ((Short) o).longValue())
+            .addScalarExtractor(Type.INTEGER, o -> ((Integer) o).longValue())
+            .addScalarExtractor(Type.LONG, o -> (Long) o);
     }
 
     public TagDescriptionBuilder<T> addScalarExtractor(Type type, Function<Object, ? extends T> extractor) {

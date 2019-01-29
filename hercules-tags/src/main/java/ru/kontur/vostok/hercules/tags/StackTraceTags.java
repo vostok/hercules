@@ -18,7 +18,7 @@ public final class StackTraceTags {
      * List of exceptions from trown to causes
      */
     public static final TagDescription<Optional<Container[]>> EXCEPTIONS_TAG = TagDescriptionBuilder
-            .containerList("exc")
+            .containerVector("exc")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();
@@ -75,7 +75,7 @@ public final class StackTraceTags {
      * Collection of stacktrace frame
      */
     public static final TagDescription<Optional<Container[]>> STACKTRACE_TAG = TagDescriptionBuilder
-            .containerList("str")
+            .containerVector("str")
             .convert(Optional::of)
             .addDefault(Optional::empty)
             .build();
