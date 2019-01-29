@@ -5,6 +5,7 @@ Schema of LogEvent described below:
 ```yaml
 LogEvent:
   utcOffset?: Long # Utc offset on 100ns ticks
+  level?: String # Log level, possible values are Debug, Info, Warn (Warning), Error, Fatal.
   message?: String # Rendered message
   messageTemplate?: String # Message template
   exception?: Exception # Exception
