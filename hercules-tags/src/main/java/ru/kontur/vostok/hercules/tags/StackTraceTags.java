@@ -10,7 +10,9 @@ import java.util.Optional;
  * StackTraceTags collection of tag for stacktrace info
  *
  * @author Kirill Sulim
+ * @deprecated Schema was changed, use new schema
  */
+@Deprecated
 public final class StackTraceTags {
 
     // Root tags

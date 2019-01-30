@@ -15,14 +15,14 @@ public final class StackFrameTags {
     /**
      * Function name
      */
-    public static final TagDescription<Optional<String>> FUNCTION_TAG = TagDescriptionBuilder.string("stackFrames")
+    public static final TagDescription<Optional<String>> FUNCTION_TAG = TagDescriptionBuilder.string("function")
         .optional()
         .build();
 
     /**
      * Type where function is declared
      */
-    public static final TagDescription<Optional<String>> TYPE_TAG = TagDescriptionBuilder.string("stackFrames")
+    public static final TagDescription<Optional<String>> TYPE_TAG = TagDescriptionBuilder.string("type")
         .optional()
         .build();
 

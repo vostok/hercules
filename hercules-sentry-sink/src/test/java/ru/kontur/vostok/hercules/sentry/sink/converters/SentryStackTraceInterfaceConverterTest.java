@@ -6,18 +6,18 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
+import ru.kontur.vostok.hercules.tags.StackFrameTags;
 
 public class SentryStackTraceInterfaceConverterTest {
 
     private static Container createFrame(String moduleName) {
         return ContainerBuilder.create()
-                .tag("mod", Variant.ofString(moduleName))
-                .tag("fun", Variant.ofString("testFunction"))
-                .tag("fnm", Variant.ofString("SomeFile.java"))
-                .tag("ln", Variant.ofInteger(123))
-                .tag("cn", Variant.ofShort((short) 456))
-                .tag("abs", Variant.ofString("/just/some/path/to/SomeFile.java"))
-                .build();
+            .tag(StackFrameTags.TYPE_TAG, Variant.ofString(moduleName))
+            .tag(StackFrameTags.FUNCTION_TAG, Variant.ofString("testFunction"))
+            .tag(StackFrameTags.FILE_TAG, Variant.ofString("SomeFile.java"))
+            .tag(StackFrameTags.LINE_NUMBER_TAG, Variant.ofInteger(123))
+            .tag(StackFrameTags.COLUMN_NUMBER_TAG, Variant.ofShort((short) 456))
+            .build();
     }
 
     @Test

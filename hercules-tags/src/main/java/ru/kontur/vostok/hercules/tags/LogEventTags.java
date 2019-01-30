@@ -35,6 +35,12 @@ public final class LogEventTags {
         .optional()
         .build();
 
+    /**
+     * Level
+     */
+    public static final TagDescription<Optional<String>> LEVEL_TAG = TagDescriptionBuilder.string("level")
+        .optional()
+        .build();
 
     /**
      * Exception
