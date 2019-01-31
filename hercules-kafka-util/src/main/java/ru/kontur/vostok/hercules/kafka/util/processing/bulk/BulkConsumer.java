@@ -238,6 +238,7 @@ public class BulkConsumer implements Runnable {
                 status.markBackendFailed();
             } finally {
                 consumer.unsubscribe();
+                queue.purge();
             }
         }
         try {
