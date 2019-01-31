@@ -126,4 +126,9 @@ public class BulkQueue<Key, Value> {
             return new RunResult<>(result.get().storage, new BulkSenderStat(processed, dropped));
         }
     }
+
+    public void purge() {
+        queue.clear();
+        commitQueue.clear();
+    }
 }
