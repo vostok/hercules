@@ -156,9 +156,9 @@ public class BulkConsumer implements Runnable {
                     /*
                      * Polling phase
                      *
-                     * Try to poll new records from kafka until reached batchSize or timeout expired then process all
+                     * Try to poll new records from kafka until reached batchSize or timeout expired then execute all
                      * collected data. If the total count of polled records exceeded batchSize after the last poll extra records
-                     * will be saved in next record storage to process these records at the next step of iteration.
+                     * will be saved in next record storage to execute these records at the next step of iteration.
                      */
                     timer.reset().start();
                     long timeLeft = pollTimeout;
@@ -185,7 +185,7 @@ public class BulkConsumer implements Runnable {
                         } catch (WakeupException e) {
                             /*
                              * Skip wakeup exception as it is termination signal,
-                             * then process already polled data
+                             * then execute already polled data
                              */
                             break;
                         }

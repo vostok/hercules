@@ -56,9 +56,8 @@
         <module>hercules-undertow-util</module>
         <module>hercules-health</module>
         <module>hercules-gate-client</module>
-        <module>hercules-management-task</module>
-        <module>hercules-cassandra-manager</module>
-        <module>hercules-kafka-manager</module>
+        <module>hercules-timeline-manager</module>
+        <module>hercules-stream-manager</module>
         <module>hercules-init</module>
         <module>hercules-tags</module>
         <module>hercules-http</module>
@@ -302,11 +301,6 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-gateway-client</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-management-task</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>

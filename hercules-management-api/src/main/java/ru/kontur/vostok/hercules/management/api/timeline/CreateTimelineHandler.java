@@ -8,10 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
 import ru.kontur.vostok.hercules.meta.curator.CreationResult;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskType;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
@@ -26,22 +27,20 @@ public class CreateTimelineHandler implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTimelineHandler.class);
 
     private final AuthManager authManager;
-    private final TimelineRepository repository;
-    private final CassandraTaskQueue cassandraTaskQueue;
+    private final TimelineTaskRepository repository;
 
     private final ObjectReader deserializer;
 
-    public CreateTimelineHandler(AuthManager authManager, TimelineRepository repository, CassandraTaskQueue cassandraTaskQueue) {
+    public CreateTimelineHandler(AuthManager authManager, TimelineTaskRepository repository) {
         this.authManager = authManager;
         this.repository = repository;
-        this.cassandraTaskQueue = cassandraTaskQueue;
 
         ObjectMapper objectMapper = new ObjectMapper();
         this.deserializer = objectMapper.readerFor(Timeline.class);
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
+    public void handleRequest(HttpServerExchange exchange) {
         Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
         if (!optionalApiKey.isPresent()) {
             ResponseUtil.unauthorized(exchange);
@@ -64,7 +63,8 @@ public class CreateTimelineHandler implements HttpHandler {
                 }
                 //TODO: Auth sources
 
-                CreationResult creationResult = repository.create(timeline);
+                CreationResult creationResult =
+                        repository.create(new TimelineTask(timeline, TimelineTaskType.CREATE), timeline.getName());
                 if (!creationResult.isSuccess()) {
                     if (creationResult.getStatus() == CreationResult.Status.ALREADY_EXIST) {
                         ResponseUtil.conflict(exch);
@@ -74,8 +74,8 @@ public class CreateTimelineHandler implements HttpHandler {
                     return;
                 }
 
-                //TODO: Table creation may fail after successful meta creation (no atomicity at all).
-                cassandraTaskQueue.createTable(timeline.getName());
+                //TODO: Wait for result if needed
+                ResponseUtil.ok(exch);
             } catch (IOException e) {
                 LOGGER.error("Error on performing request", e);
                 ResponseUtil.badRequest(exch);

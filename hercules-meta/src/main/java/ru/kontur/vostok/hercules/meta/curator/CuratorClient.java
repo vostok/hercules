@@ -4,6 +4,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -104,31 +105,35 @@ public class CuratorClient {
         try {
             curatorFramework.create().forPath(path);
         } catch (KeeperException.NodeExistsException ex) {
-            return;//TODO: node already exists
+            return; /* nothing to do: node already exists */
         }
     }
 
-    public CreationResult create(String path, byte[] data) throws Exception {
-        try {
-            curatorFramework.create().forPath(path, data);
-            return CreationResult.ok();
-        } catch (KeeperException.NodeExistsException ex) {
-            return CreationResult.alreadyExist();
-        } catch (Exception ex) {
-            LOGGER.error("Error on creating path", ex);
-            return CreationResult.unknown();
-        }
+    public CreationResult create(String path, byte[] data) {
+        return createWithMode(path, data, CreateMode.PERSISTENT);
     }
 
-    public DeletionResult delete(String path) throws Exception {
+    public DeletionResult delete(String path) {
         try {
             curatorFramework.delete().forPath(path);
             return DeletionResult.ok();
         } catch (KeeperException.NoNodeException ex) {
             return DeletionResult.notExist();
         } catch (Exception ex) {
-            LOGGER.error("Error on deleting path", ex);
+            LOGGER.error("Error on deleting path '" + path + "'", ex);
             return DeletionResult.unknown();
+        }
+    }
+
+    public UpdateResult update(String path, byte[] data) {
+        try {
+            curatorFramework.setData().forPath(path, data);
+            return UpdateResult.ok();
+        } catch (KeeperException.NoNodeException ex) {
+            return UpdateResult.notExist();
+        } catch (Exception ex) {
+            LOGGER.error("Error on updating path '" + path + "'", ex);
+            return UpdateResult.unknown();
         }
     }
 
@@ -145,6 +150,17 @@ public class CuratorClient {
             if (Objects.isNull(stat)) {
                 curatorFramework.create().forPath(partialPath);
             }
+        }
+    }
+
+    public CreationResult createWithMode(String path, byte[] data, CreateMode mode) {
+        try {
+            return CreationResult.ok(curatorFramework.create().withMode(mode).forPath(path, data));
+        } catch (KeeperException.NodeExistsException ex) {
+            return CreationResult.alreadyExist(path);
+        } catch (Exception ex) {
+            LOGGER.error("Error on creating path", ex);
+            return CreationResult.unknown(path);
         }
     }
 

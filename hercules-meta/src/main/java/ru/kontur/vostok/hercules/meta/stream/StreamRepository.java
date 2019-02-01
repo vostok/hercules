@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
+import ru.kontur.vostok.hercules.meta.curator.UpdateResult;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,10 @@ public class StreamRepository {
 
     public DeletionResult delete(String name) throws Exception {
         return curatorClient.delete(zPrefix + '/' + name);
+    }
+
+    public UpdateResult update(Stream stream) throws Exception {
+        return curatorClient.update(zPrefix + '/' + stream.getName(), serializer.writeValueAsBytes(stream));
     }
 
     private static String zPrefix = "/hercules/streams";

@@ -5,9 +5,11 @@ package ru.kontur.vostok.hercules.meta.curator;
  */
 public class CreationResult {
     private final Status status;
+    private final String path;
 
-    private CreationResult(Status status) {
+    private CreationResult(Status status, String path) {
         this.status = status;
+        this.path = path;
     }
 
     public boolean isSuccess() {
@@ -24,19 +26,15 @@ public class CreationResult {
         UNKNOWN;
     }
 
-    public static CreationResult ok() {
-        return OK;
+    public static CreationResult ok(String path) {
+        return new CreationResult(Status.OK, path);
     }
 
-    public static CreationResult alreadyExist() {
-        return ALREADY_EXIST;
+    public static CreationResult alreadyExist(String path) {
+        return new CreationResult(Status.ALREADY_EXIST, path);
     }
 
-    public static CreationResult unknown() {
-        return UNKNOWN;
+    public static CreationResult unknown(String path) {
+        return new CreationResult(Status.UNKNOWN, path);
     }
-
-    private static final CreationResult OK = new CreationResult(Status.OK);
-    private static final CreationResult ALREADY_EXIST = new CreationResult(Status.ALREADY_EXIST);
-    private static final CreationResult UNKNOWN = new CreationResult(Status.UNKNOWN);
 }

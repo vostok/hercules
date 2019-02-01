@@ -3,9 +3,11 @@ package ru.kontur.vostok.hercules.management.api.timeline;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
-import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
-import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
-import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.meta.curator.CreationResult;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskType;
+import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
@@ -16,13 +18,11 @@ import java.util.Optional;
  */
 public class DeleteTimelineHandler implements HttpHandler {
     private final AuthManager authManager;
-    private final TimelineRepository repository;
-    private final CassandraTaskQueue cassandraTaskQueue;
+    private final TimelineTaskRepository repository;
 
-    public DeleteTimelineHandler(AuthManager authManager, TimelineRepository repository, CassandraTaskQueue cassandraTaskQueue) {
+    public DeleteTimelineHandler(AuthManager authManager, TimelineTaskRepository repository) {
         this.authManager = authManager;
         this.repository = repository;
-        this.cassandraTaskQueue = cassandraTaskQueue;
     }
 
     @Override
@@ -42,21 +42,17 @@ public class DeleteTimelineHandler implements HttpHandler {
 
         //TODO: auth
 
-        cassandraTaskQueue.deleteTable(timeline);
+        Timeline stub = new Timeline();
+        stub.setName(timeline);
 
-        //TODO: Meta deletion may fail after successful topic deletion (no atomicity at all).
-        DeletionResult deletionResult = repository.delete(timeline);
-        if (!deletionResult.isSuccess()) {
-            switch (deletionResult.getStatus()) {
-                case NOT_EXIST:
-                    ResponseUtil.notFound(exchange);
-                    return;
-                case UNKNOWN:
-                    ResponseUtil.internalServerError(exchange);
-                    return;
-            }
+        CreationResult creationResult =
+                repository.create(new TimelineTask(stub, TimelineTaskType.DELETE), stub.getName());
+        if (!creationResult.isSuccess()) {
+            ResponseUtil.internalServerError(exchange);
+            return;
         }
 
+        //TODO: Wait for deletion if needed
         ResponseUtil.ok(exchange);
     }
 }

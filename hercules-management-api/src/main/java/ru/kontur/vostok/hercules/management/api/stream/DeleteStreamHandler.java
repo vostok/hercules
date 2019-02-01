@@ -3,9 +3,12 @@ package ru.kontur.vostok.hercules.management.api.stream;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
-import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
-import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.meta.curator.CreationResult;
+import ru.kontur.vostok.hercules.meta.stream.BaseStream;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
@@ -16,13 +19,11 @@ import java.util.Optional;
  */
 public class DeleteStreamHandler implements HttpHandler {
     private final AuthManager authManager;
-    private final StreamRepository repository;
-    private final KafkaTaskQueue kafkaTaskQueue;
+    private final StreamTaskRepository repository;
 
-    public DeleteStreamHandler(AuthManager authManager, StreamRepository repository, KafkaTaskQueue kafkaTaskQueue) {
+    public DeleteStreamHandler(AuthManager authManager, StreamTaskRepository repository) {
         this.authManager = authManager;
         this.repository = repository;
-        this.kafkaTaskQueue = kafkaTaskQueue;
     }
 
     @Override
@@ -40,23 +41,27 @@ public class DeleteStreamHandler implements HttpHandler {
         }
         String stream = optionalStream.get();
 
-        //TODO: auth
-
-        kafkaTaskQueue.deleteTopic(stream);
-
-        //TODO: Meta deletion may fail after successful topic deletion (no atomicity at all).
-        DeletionResult deletionResult = repository.delete(stream);
-        if (!deletionResult.isSuccess()) {
-            switch (deletionResult.getStatus()) {
-                case NOT_EXIST:
-                    ResponseUtil.notFound(exchange);
-                    return;
-                case UNKNOWN:
-                    ResponseUtil.internalServerError(exchange);
-                    return;
+        AuthResult authResult = authManager.authManage(apiKey.get(), stream);
+        if (!authResult.isSuccess()) {
+            if (authResult.isUnknown()) {
+                ResponseUtil.unauthorized(exchange);
+                return;
             }
+            ResponseUtil.forbidden(exchange);
+            return;
         }
 
+        BaseStream stub = new BaseStream();
+        stub.setName(stream);
+
+        CreationResult creationResult =
+                repository.create(new StreamTask(stub, StreamTaskType.DELETE), stub.getName());
+        if (!creationResult.isSuccess()) {
+            ResponseUtil.internalServerError(exchange);
+            return;
+        }
+
+        //TODO: Wait for result if needed
         ResponseUtil.ok(exchange);
     }
 }
