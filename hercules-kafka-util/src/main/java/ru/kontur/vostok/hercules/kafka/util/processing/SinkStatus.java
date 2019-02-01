@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.util.fsm.State;
  */
 public enum SinkStatus implements IHaveStatusCode, State {
     /**
-     * Sink in initialization execute
+     * Sink in initialization process
      */
     INIT(null),
 

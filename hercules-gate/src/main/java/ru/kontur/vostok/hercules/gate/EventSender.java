@@ -58,7 +58,7 @@ public class EventSender {
                 }
 
                 LOGGER.error("Error on event send", exception);
-                //TODO: execute exception
+                //TODO: process exception
             }
         });
     }
