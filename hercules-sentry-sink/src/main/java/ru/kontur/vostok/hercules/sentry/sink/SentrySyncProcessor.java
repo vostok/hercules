@@ -63,13 +63,15 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             return false;
         }
 
+        Optional<String> service = ContainerUtil.extract(properties.get(), CommonTags.SERVICE_TAG);
+
         Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
                 .flatMap(SentryLevelEnumParser::parse);
         if (!level.isPresent() || requiredLevel.compareTo(level.get()) < 0) {
             return false;
         }
 
-        Optional<String> sentryProjectName = sentryProjectRegistry.getSentryProjectName(project.get());
+        Optional<String> sentryProjectName = sentryProjectRegistry.getSentryProjectName(project.get(), service.orElse(null));
         if (!sentryProjectName.isPresent()) {
             LOGGER.warn("Project '{}' not found in registry", project.get());
             return false;

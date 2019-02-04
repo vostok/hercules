@@ -6,8 +6,11 @@ import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
 import ru.kontur.vostok.hercules.util.schedule.Scheduler;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -23,7 +26,7 @@ public class SentryProjectRegistry {
     private final RenewableTask updateTask;
     private final SentryProjectRepository sentryProjectRepository;
 
-    private volatile Map<String, String> registry = new HashMap<>();
+    private volatile Map<ProjectServicePair, String> registry = new HashMap<>();
 
     public SentryProjectRegistry(SentryProjectRepository sentryProjectRepository) {
         this.sentryProjectRepository = sentryProjectRepository;
@@ -32,8 +35,8 @@ public class SentryProjectRegistry {
         this.updateTask = scheduler.task(this::update, 60_000, false);
     }
 
-    public Optional<String> getSentryProjectName(String projectTagValue) {
-        return Optional.ofNullable(registry.get(projectTagValue));
+    public Optional<String> getSentryProjectName(@Nonnull final String project, @Nullable final String service) {
+        return Optional.ofNullable(registry.get(ProjectServicePair.of(project, service)));
     }
 
     public void start() {
@@ -48,10 +51,54 @@ public class SentryProjectRegistry {
     public void update() {
         ThrowableUtil.toUnchecked(() -> {
             registry = sentryProjectRepository.list().stream()
-                    .collect(Collectors.toMap(
-                            SentryProjectMappingRecord::getProject,
-                            SentryProjectMappingRecord::getSentryProject
-                    ));
+                .collect(Collectors.toMap(
+                    SentryProjectRegistry::getKey,
+                    SentryProjectRegistry::getValue
+                ));
         });
+    }
+
+    private static ProjectServicePair getKey(final SentryProjectMappingRecord record) {
+        return ProjectServicePair.of(record.getProject(), record.getService());
+    }
+
+    private static String getValue(final SentryProjectMappingRecord record) {
+        return record.getSentryOrganization() + "/" + record.getSentryProject();
+    }
+
+    private static class ProjectServicePair {
+        private final String project;
+        private final String service;
+
+        public ProjectServicePair(@Nonnull final String project, @Nullable String service) {
+            this.project = project;
+            this.service = service;
+        }
+
+        public String getProject() {
+            return project;
+        }
+
+        public String getService() {
+            return service;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ProjectServicePair that = (ProjectServicePair) o;
+            return Objects.equals(project, that.project) &&
+                Objects.equals(service, that.service);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(project, service);
+        }
+
+        public static ProjectServicePair of(@Nonnull final String project, @Nullable final String service) {
+            return new ProjectServicePair(project, service);
+        }
     }
 }
