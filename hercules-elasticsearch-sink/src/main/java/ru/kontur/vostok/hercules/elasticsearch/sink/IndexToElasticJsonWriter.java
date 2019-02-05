@@ -60,7 +60,7 @@ public final class IndexToElasticJsonWriter {
 
                     if (parts.size() != 0) {
                         parts.add(DATE_FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp())));
-                        return Optional.of(String.join("-", parts));
+                        return Optional.of(String.join("-", parts).toLowerCase());
                     }  else {
                         return Optional.empty();
                     }
