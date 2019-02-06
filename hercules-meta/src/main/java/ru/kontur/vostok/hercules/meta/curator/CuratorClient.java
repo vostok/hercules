@@ -92,12 +92,15 @@ public class CuratorClient {
     }
 
     public List<String> children(String path) throws Exception {
-        List<String> children = curatorFramework.getChildren().forPath(path);
-        return children;
+        return curatorFramework.getChildren().forPath(path).stream()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     public List<String> children(String path, CuratorWatcher watcher) throws Exception {
-        return curatorFramework.getChildren().usingWatcher(watcher).forPath(path);
+        return curatorFramework.getChildren().usingWatcher(watcher).forPath(path).stream()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     public void createIfAbsent(String path) throws Exception {
