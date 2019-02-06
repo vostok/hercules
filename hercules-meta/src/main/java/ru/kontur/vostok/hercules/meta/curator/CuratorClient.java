@@ -9,6 +9,13 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.meta.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.meta.curator.exception.CuratorInternalException;
+import ru.kontur.vostok.hercules.meta.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
+import ru.kontur.vostok.hercules.meta.curator.result.DeletionResult;
+import ru.kontur.vostok.hercules.meta.curator.result.ReadResult;
+import ru.kontur.vostok.hercules.meta.curator.result.UpdateResult;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.Validators;
@@ -16,7 +23,6 @@ import ru.kontur.vostok.hercules.util.validation.Validators;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -79,16 +85,20 @@ public class CuratorClient {
         curatorFramework.close();
     }
 
-    public Optional<byte[]> read(String path) throws Exception {
+    public ReadResult read(String path) throws CuratorInternalException, CuratorUnknownException {
         try {
             Stat stat = curatorFramework.checkExists().forPath(path);
             if (stat == null) {
-                return Optional.empty();
+                return ReadResult.notFound();
             }
             byte[] bytes = curatorFramework.getData().forPath(path);
-            return bytes != null ? Optional.of(bytes) : Optional.empty();
+            return ReadResult.found(bytes);
         } catch (KeeperException.NoNodeException ex) {
-            return Optional.empty();
+            return ReadResult.notFound();
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Read failed with KeeperException", ex);
+        } catch (Exception ex) {
+            throw new CuratorUnknownException("Read failed with Exception", ex);
         }
     }
 
@@ -109,31 +119,33 @@ public class CuratorClient {
         }
     }
 
-    public CreationResult create(String path, byte[] data) {
+    public CreationResult create(String path, byte[] data) throws CuratorUnknownException, CuratorInternalException {
         return createWithMode(path, data, CreateMode.PERSISTENT);
     }
 
-    public DeletionResult delete(String path) {
+    public DeletionResult delete(String path) throws CuratorInternalException, CuratorUnknownException {
         try {
             curatorFramework.delete().forPath(path);
             return DeletionResult.ok();
         } catch (KeeperException.NoNodeException ex) {
             return DeletionResult.notExist();
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Delete failed with KeeperException", ex);
         } catch (Exception ex) {
-            LOGGER.error("Error on deleting path '" + path + "'", ex);
-            return DeletionResult.unknown();
+            throw new CuratorUnknownException("Delete failed with Exception", ex);
         }
     }
 
-    public UpdateResult update(String path, byte[] data) {
+    public UpdateResult update(String path, byte[] data) throws CuratorInternalException, CuratorUnknownException {
         try {
             curatorFramework.setData().forPath(path, data);
             return UpdateResult.ok();
         } catch (KeeperException.NoNodeException ex) {
             return UpdateResult.notExist();
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Update failed with KeeperException", ex);
         } catch (Exception ex) {
-            LOGGER.error("Error on updating path '" + path + "'", ex);
-            return UpdateResult.unknown();
+            throw new CuratorUnknownException("Update failed with Exception", ex);
         }
     }
 
@@ -153,14 +165,16 @@ public class CuratorClient {
         }
     }
 
-    public CreationResult createWithMode(String path, byte[] data, CreateMode mode) {
+    public CreationResult createWithMode(String path, byte[] data, CreateMode mode)
+            throws CuratorInternalException, CuratorUnknownException {
         try {
             return CreationResult.ok(curatorFramework.create().withMode(mode).forPath(path, data));
         } catch (KeeperException.NodeExistsException ex) {
             return CreationResult.alreadyExist(path);
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Create failed with KeeperException", ex);
         } catch (Exception ex) {
-            LOGGER.error("Error on creating path", ex);
-            return CreationResult.unknown(path);
+            throw new CuratorUnknownException("Create failed with Exception", ex);
         }
     }
 

@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.meta.curator;
+package ru.kontur.vostok.hercules.meta.curator.result;
 
 /**
  * @author Gregory Koshelev
@@ -22,8 +22,7 @@ public class CreationResult {
 
     public enum Status {
         OK,
-        ALREADY_EXIST,
-        UNKNOWN;
+        ALREADY_EXIST;
     }
 
     public static CreationResult ok(String path) {
@@ -32,9 +31,5 @@ public class CreationResult {
 
     public static CreationResult alreadyExist(String path) {
         return new CreationResult(Status.ALREADY_EXIST, path);
-    }
-
-    public static CreationResult unknown(String path) {
-        return new CreationResult(Status.UNKNOWN, path);
     }
 }

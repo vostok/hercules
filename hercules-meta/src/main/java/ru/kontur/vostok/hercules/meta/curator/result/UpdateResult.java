@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.meta.curator;
+package ru.kontur.vostok.hercules.meta.curator.result;
 
 /**
  * @author Gregory Koshelev
@@ -20,8 +20,7 @@ public class UpdateResult {
 
     public enum Status {
         OK,
-        NOT_EXIST,
-        UNKNOWN;
+        NOT_EXIST;
     }
 
     public static UpdateResult ok() {
@@ -32,11 +31,6 @@ public class UpdateResult {
         return NOT_EXIST;
     }
 
-    public static UpdateResult unknown() {
-        return UNKNOWN;
-    }
-
     private static final UpdateResult OK = new UpdateResult(Status.OK);
     private static final UpdateResult NOT_EXIST = new UpdateResult(Status.NOT_EXIST);
-    private static final UpdateResult UNKNOWN = new UpdateResult(Status.UNKNOWN);
 }

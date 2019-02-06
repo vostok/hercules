@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.meta.curator.CreationResult;
+import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskType;

@@ -2,6 +2,10 @@ package ru.kontur.vostok.hercules.meta.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.meta.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.meta.curator.exception.CuratorInternalException;
+import ru.kontur.vostok.hercules.meta.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,11 +28,11 @@ public abstract class TaskExecutor<T> {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private final TaskRepository<T> repository;
-    private final long pollingTimeoutMillis;
+    private final long pollTimeoutMillis;
 
-    protected TaskExecutor(TaskRepository<T> repository, long pollingTimeoutMillis) {
+    protected TaskExecutor(TaskRepository<T> repository, long pollTimeoutMillis) {
         this.repository = repository;
-        this.pollingTimeoutMillis = pollingTimeoutMillis;
+        this.pollTimeoutMillis = pollTimeoutMillis;
     }
 
     public void start() {
@@ -40,7 +44,7 @@ public abstract class TaskExecutor<T> {
                     try {
                         children = repository.list();
                     } catch (Exception e) {
-                        LOGGER.warn("Get children fails with exception", e);
+                        LOGGER.error("Get children fails with exception", e);
                         awaitTimeout(mutex);
                         continue;
                     }
@@ -55,14 +59,26 @@ public abstract class TaskExecutor<T> {
                         Optional<T> task;
                         try {
                             task = repository.read(protoTask.fullName);
-                        } catch (Exception e) {
-                            repository.delete(protoTask.fullName);
+                        } catch (DeserializationException e) {
+                            LOGGER.warn("Task deserialization exception", e);
+                            cleanInvalidTask(protoTask.fullName);
                             continue;
-                        }
-                        if (task.isPresent() && execute(task.get())) {
-                            repository.delete(protoTask.fullName);
-                        } else {
+                        } catch (CuratorException e) {
+                            LOGGER.error("Cannot read Task from repository", e);
                             awaitTimeout(mutex);
+                            break;
+                        }
+
+                        if (task.isPresent() && !execute(task.get())) {
+                            awaitTimeout(mutex);
+                            break;
+                        }
+
+                        try {
+                            repository.delete(protoTask.fullName);
+                        } catch (CuratorException e) {
+                            LOGGER.warn("Task cannot be deleted", e);
+                            awaitTimeout(mutex);//TODO: How to process this situation properly?
                             break;
                         }
                     }
@@ -96,7 +112,7 @@ public abstract class TaskExecutor<T> {
             int delimiterPosition = task.indexOf(TaskConstants.SEQUENCE_DELIMITER);
             if (delimiterPosition == -1) {
                 /* Never possible by hercules modules. Treat as self-healing */
-                repository.delete(task);
+                cleanInvalidTask(task);
                 continue;
             }
             Integer sequenceId;
@@ -104,7 +120,7 @@ public abstract class TaskExecutor<T> {
                 sequenceId = Integer.valueOf(task.substring(delimiterPosition + TaskConstants.SEQUENCE_DELIMITER.length()));
             } catch (NumberFormatException ex) {
                 /* Never possible by hercules modules. Threat as self-healing */
-                repository.delete(task);
+                cleanInvalidTask(task);
                 continue;
             }
             protoTasks.add(new ProtoTask(task, sequenceId));
@@ -114,11 +130,24 @@ public abstract class TaskExecutor<T> {
     }
 
     /**
+     * Delete invalid task from task list. All possible exceptions are ignored.
+     *
+     * @param fullname the full name of invalid task
+     */
+    private void cleanInvalidTask(String fullname) {
+        try {
+            repository.delete(fullname);
+        } catch (CuratorException e) {
+            LOGGER.info("Cannot delete invalid task '" + fullname + "'", e);
+        }
+    }
+
+    /**
      * Await for polling timeout on mutex
      */
     private void awaitTimeout(Object mutex) {
         try {
-            mutex.wait(pollingTimeoutMillis);
+            mutex.wait(pollTimeoutMillis);
         } catch (InterruptedException interruptedException) {
             LOGGER.warn("Awaiting was interrupted", interruptedException);
         }
