@@ -75,12 +75,12 @@ public class HttpServer {
         CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository, kafkaTaskQueue);
         DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository, kafkaTaskQueue);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
-        InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository);
+        InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
 
         CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
         DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
-        InfoTimelineHandler infoTimelineHandler = new InfoTimelineHandler(timelineRepository);
+        InfoTimelineHandler infoTimelineHandler = new InfoTimelineHandler(timelineRepository, authManager);
 
         HttpHandler setRuleHandler = adminAuthManagerWrapper.wrap(new SetRuleHandler(ruleRepository));
         HttpHandler listRuleHandler = adminAuthManagerWrapper.wrap(new ListRuleHandler(ruleRepository));
@@ -97,11 +97,11 @@ public class HttpServer {
                 .post("/streams/create", createStreamHandler)
                 .post("/streams/delete", deleteStreamHandler)
                 .get("/streams/list", listStreamHandler)
-                .post("/streams", infoStreamHandler)
+                .get("/streams/info", infoStreamHandler)
                 .post("/timelines/create", createTimelineHandler)
                 .post("/timelines/delete", deleteTimelineHandler)
                 .get("/timelines/list", listTimelineHandler)
-                .post("/timelines", infoTimelineHandler)
+                .get("/timelines/info", infoTimelineHandler)
                 .post("/rules/set", setRuleHandler)
                 .get("/rules/list", listRuleHandler)
                 .post("/blacklist/add", addBlacklistHandler)
