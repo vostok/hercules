@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author Gregory Koshelev
@@ -32,7 +33,9 @@ public class ListStreamHandler implements HttpHandler {
         }
 
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-        List<String> list = repository.list();
+        List<String> list = repository.list().stream()
+                .sorted()
+                .collect(Collectors.toList());
         exchange.getResponseSender().send(mapper.writeValueAsString(list));
     }
 }
