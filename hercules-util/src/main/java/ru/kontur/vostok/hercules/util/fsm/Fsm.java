@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.util.fsm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,6 +39,8 @@ public class Fsm<T extends State> {
         }
     }
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Fsm.class);
+
     private final AtomicReference<StateWithFuture<T>> state;
 
     public Fsm(T state) {
@@ -58,6 +63,12 @@ public class Fsm<T extends State> {
             StateWithFuture<T> next = new StateWithFuture<>(newState, new CompletableFuture<>());
             if (state.compareAndSet(currentStateWithFuture, next)) {
                 currentStateWithFuture.next.complete(next);
+
+                LOGGER.debug(String.format(
+                    "State changed from '%s' to '%s', (may appear in wrong order in log)",
+                    currentStateWithFuture.state,
+                    next.state
+                ));
                 return Optional.of(newState);
             }
         } while (true);
