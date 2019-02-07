@@ -91,16 +91,21 @@ public class CuratorClient {
         }
     }
 
+    /**
+     * @param path path
+     * @return unordered list of children
+     */
     public List<String> children(String path) throws Exception {
-        return curatorFramework.getChildren().forPath(path).stream()
-                .sorted()
-                .collect(Collectors.toList());
+        return curatorFramework.getChildren().forPath(path);
     }
 
+    /**
+     * @param path path
+     * @param watcher watcher
+     * @return  unordered list of children
+     */
     public List<String> children(String path, CuratorWatcher watcher) throws Exception {
-        return curatorFramework.getChildren().usingWatcher(watcher).forPath(path).stream()
-                .sorted()
-                .collect(Collectors.toList());
+        return curatorFramework.getChildren().usingWatcher(watcher).forPath(path);
     }
 
     public void createIfAbsent(String path) throws Exception {
