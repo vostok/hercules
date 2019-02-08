@@ -9,12 +9,12 @@ LogEvent:
   message?: String # Rendered message
   messageTemplate?: String # Message template
   exception?: Exception # Exception
+  stackTrace?: String # Exception tree string representation (stacktrace)
   properties?: Container # Key-value dictionary where values are primitives or string representation in case of object
 Exception:
   type?: String # Exception runtime type
   message?: String # Exception message
   innerExceptions?: Vector<Exception> # Inner exceptions
-  stackTrace?: String # Exception stack trace
   stackFrames?: Vector<StackFrame> # Exception stack frames
 StackFrame:
   function?: String # Name of function
