@@ -9,7 +9,7 @@ LogEvent:
   message?: String # Rendered message
   messageTemplate?: String # Message template
   exception?: Exception # Exception
-  stackTrace?: String # Exception string representation (stacktrace)
+  stackTrace?: String # Exception tree string representation (stacktrace)
   properties?: Container # Key-value dictionary where values are primitives or string representation in case of object
 Exception:
   type?: String # Exception runtime type
