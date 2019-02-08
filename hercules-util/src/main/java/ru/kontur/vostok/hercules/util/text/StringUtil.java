@@ -88,4 +88,28 @@ public final class StringUtil {
         Arrays.fill(result, c);
         return new String(result);
     }
+
+    public static String emptyToNull(final String original) {
+        if (isNullOrEmpty(original)) {
+            return null;
+        } else {
+            return original;
+        }
+    }
+
+    public static String nullToEmpty(final String original) {
+        if (isNullOrEmpty(original)) {
+            return "";
+        } else {
+            return original;
+        }
+    }
+
+    public static String requireNotEmpty(final String value) {
+        if (!isNullOrEmpty(value)) {
+            return value;
+        } else {
+            throw new IllegalArgumentException("Value cannot be an empty string or null");
+        }
+    }
 }

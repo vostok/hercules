@@ -41,6 +41,7 @@ public class SentryClientHolder {
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
     private final SentryApiClient sentryApiClient;
+    private final SentryClientFactory sentryClientFactory = new CustomClientFactory();
 
     public SentryClientHolder(SentryApiClient sentryApiClient) {
         this.sentryApiClient = sentryApiClient;
@@ -79,7 +80,7 @@ public class SentryClientHolder {
                     }
                     updatedClients.put(
                             String.format("%s/%s", projectInfo.getOrganization().getSlug(), projectInfo.getSlug()),
-                            SentryClientFactory.sentryClient(applySettings(dsnString))
+                            SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory)
                     );
                 }
             }
@@ -96,8 +97,8 @@ public class SentryClientHolder {
      */
     private String applySettings(String dsn) {
         return dsn + "?" + String.join("&",
-                DISABLE_UNCAUGHT_EXCEPTION_HANDLING,
-                DISABLE_IN_APP_WARN_MESSAGE
+            DISABLE_UNCAUGHT_EXCEPTION_HANDLING,
+            DISABLE_IN_APP_WARN_MESSAGE
         );
     }
 }
