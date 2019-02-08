@@ -11,7 +11,7 @@ import java.util.Optional;
  *
  * @author Kirill Sulim
  */
-public final class ExceptionTags<psf> {
+public final class ExceptionTags {
 
     /**
      * Exception runtime type
