@@ -1,13 +1,13 @@
 package ru.kontur.vostok.hercules.meta.sink.sentry;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -47,7 +47,7 @@ public class SentryProjectRepository {
         curatorClient.createIfAbsent(zPrefix + "/" + SentryProjectMappingRecordSerializer.serialize(record));
     }
 
-    public void delete(@Nonnull final String project, @Nullable final String service) throws Exception {
+    public void delete(@NotNull final String project, @Nullable final String service) throws Exception {
         final String search = project + ":" + StringUtil.nullToEmpty(service ) + ":";
         curatorClient.children(zPrefix).stream()
                 .filter(record -> record.startsWith(search))

@@ -1,13 +1,13 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectMappingRecord;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
 import ru.kontur.vostok.hercules.util.schedule.Scheduler;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +35,7 @@ public class SentryProjectRegistry {
         this.updateTask = scheduler.task(this::update, 60_000, false);
     }
 
-    public Optional<String> getSentryProjectName(@Nonnull final String project, @Nullable final String service) {
+    public Optional<String> getSentryProjectName(@NotNull final String project, @Nullable final String service) {
         return Optional.ofNullable(registry.get(ProjectServicePair.of(project, service)));
     }
 
@@ -70,7 +70,7 @@ public class SentryProjectRegistry {
         private final String project;
         private final String service;
 
-        public ProjectServicePair(@Nonnull final String project, @Nullable String service) {
+        public ProjectServicePair(@NotNull final String project, @Nullable String service) {
             this.project = project;
             this.service = service;
         }
@@ -97,7 +97,7 @@ public class SentryProjectRegistry {
             return Objects.hash(project, service);
         }
 
-        public static ProjectServicePair of(@Nonnull final String project, @Nullable final String service) {
+        public static ProjectServicePair of(@NotNull final String project, @Nullable final String service) {
             return new ProjectServicePair(project, service);
         }
     }
