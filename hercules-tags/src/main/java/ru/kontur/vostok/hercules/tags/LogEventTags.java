@@ -49,6 +49,13 @@ public final class LogEventTags {
         .optional()
         .build();
 
+    /**
+     * Text value of stack trace
+     */
+    public static final TagDescription<Optional<String>> STACK_TRACE_TAG = TagDescriptionBuilder.string("stackTrace")
+        .optional()
+        .build();
+
     private LogEventTags() {
         /* static class */
     }

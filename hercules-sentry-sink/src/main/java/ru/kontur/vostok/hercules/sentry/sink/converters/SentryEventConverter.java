@@ -73,10 +73,10 @@ public class SentryEventConverter {
             final ExceptionInterface exceptionInterface = convertException(exception);
             eventBuilder.withSentryInterface(exceptionInterface);
             eventBuilder.withPlatform(SentryEventConverter.extractPlatform(exceptionInterface));
+        });
 
-            ContainerUtil.extract(exception, ExceptionTags.STACK_TRACE).ifPresent(stackTrace -> {
-                eventBuilder.withExtra("stackTrace", stackTrace);
-            });
+        ContainerUtil.extract(logEvent.getPayload(), LogEventTags.STACK_TRACE_TAG).ifPresent(stackTrace -> {
+            eventBuilder.withExtra("stackTrace", stackTrace);
         });
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();

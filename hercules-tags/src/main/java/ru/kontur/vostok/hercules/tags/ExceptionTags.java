@@ -35,13 +35,6 @@ public final class ExceptionTags<psf> {
         .build();
 
     /**
-     * Text value of stack trace
-     */
-    public static final TagDescription<Optional<String>> STACK_TRACE = TagDescriptionBuilder.string("stackTrace")
-        .optional()
-        .build();
-
-    /**
      * Exception stack frames
      */
     public static final TagDescription<Optional<Container[]>> STACK_FRAMES = TagDescriptionBuilder.containerVector("stackFrames")
