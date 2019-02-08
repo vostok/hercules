@@ -5,6 +5,8 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
@@ -17,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.Map;
+import java.util.Optional;
 
 public class ReadStreamHandler implements HttpHandler {
 
@@ -27,10 +30,12 @@ public class ReadStreamHandler implements HttpHandler {
 
     private static final String OCTET_STREAM = "application/octet-stream";
 
+    private final AuthManager authManager;
     private final StreamReader streamReader;
 
-    public ReadStreamHandler(StreamReader streamReader) {
+    public ReadStreamHandler(StreamReader streamReader, AuthManager authManager) {
         this.streamReader = streamReader;
+        this.authManager = authManager;
     }
 
     @Override
@@ -39,8 +44,26 @@ public class ReadStreamHandler implements HttpHandler {
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
                 try {
+                    Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
+                    if (!optionalApiKey.isPresent()) {
+                        ResponseUtil.unauthorized(exchange);
+                        return;
+                    }
+
                     Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
                     String streamName = queryParameters.get("stream").getFirst();
+
+                    AuthResult authResult = authManager.authRead(optionalApiKey.get(),streamName);
+
+                    if (!authResult.isSuccess()) {
+                        if (authResult.isUnknown()) {
+                            ResponseUtil.unauthorized(exchange);
+                            return;
+                        }
+                        ResponseUtil.forbidden(exchange);
+                        return;
+                    }
+
                     int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
                     int shardCount = Integer.valueOf(queryParameters.get("shardCount").getFirst());
                     int take = Integer.valueOf(queryParameters.get("take").getFirst());
