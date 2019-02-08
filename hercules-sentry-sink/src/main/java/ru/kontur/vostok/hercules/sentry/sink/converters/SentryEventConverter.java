@@ -116,11 +116,13 @@ public class SentryEventConverter {
             return Optional.empty();
         }
 
-        if (fileName.endsWith(".java")) {
+        final String lowerCaseFileName = fileName.toLowerCase();
+
+        if (lowerCaseFileName.endsWith(".java")) {
             return Optional.of("java");
-        } else if (fileName.endsWith(".cs")) {
+        } else if (lowerCaseFileName.endsWith(".cs")) {
             return Optional.of("csharp");
-        } else if (fileName.endsWith(".py")) {
+        } else if (lowerCaseFileName.endsWith(".py")) {
             return Optional.of("python");
         } else {
             return Optional.empty();
