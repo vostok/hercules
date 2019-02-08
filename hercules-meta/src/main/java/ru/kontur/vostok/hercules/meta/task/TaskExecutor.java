@@ -116,15 +116,14 @@ public abstract class TaskExecutor<T> {
                 cleanInvalidTask(task);
                 continue;
             }
-            Integer sequenceId;
+
             try {
-                sequenceId = Integer.valueOf(task.substring(delimiterPosition + TaskConstants.SEQUENCE_DELIMITER.length()));
+                Integer sequenceId = Integer.valueOf(task.substring(delimiterPosition + TaskConstants.SEQUENCE_DELIMITER.length()));
+                protoTasks.add(new ProtoTask(task, sequenceId));
             } catch (NumberFormatException ex) {
                 /* Never possible by hercules modules. Threat as self-healing */
                 cleanInvalidTask(task);
-                continue;
             }
-            protoTasks.add(new ProtoTask(task, sequenceId));
         }
 
         return protoTasks;
