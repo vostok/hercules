@@ -49,12 +49,18 @@ public class StreamApiApplication {
             streamReader = new StreamReader(consumerProperties, new StreamRepository(curatorClient));
 
             authManager = new AuthManager(curatorClient);
+            authManager.start();
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            server = new HttpServer(httpServerProperties, authManager, new ReadStreamHandler(streamReader), metricsCollector);
+            server = new HttpServer(
+                    httpServerProperties,
+                    authManager,
+                    new ReadStreamHandler(streamReader, authManager),
+                    metricsCollector
+            );
             server.start();
         } catch (Throwable t) {
             LOGGER.error("Error on starting stream API", t);
@@ -76,6 +82,14 @@ public class StreamApiApplication {
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping server");
+            //TODO: Process error
+        }
+        try {
+            if (authManager != null) {
+                authManager.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping auth manager");
             //TODO: Process error
         }
         try {

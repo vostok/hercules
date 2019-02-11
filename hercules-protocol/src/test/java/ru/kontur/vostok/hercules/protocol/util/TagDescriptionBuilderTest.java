@@ -59,7 +59,7 @@ public class TagDescriptionBuilderTest {
 
     @Test
     public void shouldAllowVectorOfContainersTag() throws Exception {
-        TagDescription<Container[]> description = TagDescriptionBuilder.containerList("test").build();
+        TagDescription<Container[]> description = TagDescriptionBuilder.containerVector("test").build();
 
         Container[] expectedContainerVector = new Container[]{
                 ContainerBuilder.create().tag("a", Variant.ofInteger(1)).build()

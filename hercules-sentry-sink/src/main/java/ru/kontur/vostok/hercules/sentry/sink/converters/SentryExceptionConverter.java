@@ -1,9 +1,14 @@
 package ru.kontur.vostok.hercules.sentry.sink.converters;
 
 import io.sentry.event.interfaces.SentryException;
+import io.sentry.event.interfaces.SentryStackTraceElement;
+import io.sentry.event.interfaces.StackTraceInterface;
 import ru.kontur.vostok.hercules.protocol.Container;
-import ru.kontur.vostok.hercules.tags.StackTraceTags;
+import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+
+import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * SentryExceptionConverter
@@ -12,17 +17,58 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
  */
 public class SentryExceptionConverter {
 
-    public static SentryException convert(Container container) {
-        String type = ContainerUtil.extract(container, StackTraceTags.TYPE_TAG);
-        String value = ContainerUtil.extract(container, StackTraceTags.VALUE_TAG);
-        String module = ContainerUtil.extract(container, StackTraceTags.EXCEPTION_MODULE_TAG);
-        Container[] stacktrace = ContainerUtil.extract(container, StackTraceTags.STACKTRACE_TAG).orElseGet(() -> new Container[0]);
+    private static final int NOT_FOUND = -1;
+
+    public static SentryException convert(final Container container) {
+        final String message = ContainerUtil.extract(container, ExceptionTags.MESSAGE_TAG).orElse(null);
+
+        final Optional<ClassPackagePair> classPackagePair = ContainerUtil.extract(container, ExceptionTags.TYPE_TAG)
+            .map(SentryExceptionConverter::extractClassPackagePair);
+
+        final String className = classPackagePair.map(ClassPackagePair::getClassName).orElse(null);
+        final String packageName = classPackagePair.map(ClassPackagePair::getPackageName).orElse(null);
+
+        final StackTraceInterface stacktrace = ContainerUtil.extract(container, ExceptionTags.STACK_FRAMES)
+            .map(containers -> Arrays.stream(containers)
+                .map(SentryStackTraceElementConverter::convert)
+                .toArray(SentryStackTraceElement[]::new)
+            )
+            .map(StackTraceInterface::new)
+            .orElse(null);
 
         return new SentryException(
-                value,
-                type,
-                module,
-                SentryStackTraceInterfaceConverter.convert(stacktrace)
+                message,
+                className,
+                packageName,
+                stacktrace
         );
+    }
+
+    private static ClassPackagePair extractClassPackagePair(final String typeName) {
+        final int finalDot = typeName.lastIndexOf('.');
+
+        if (finalDot != NOT_FOUND) {
+            return new ClassPackagePair(typeName.substring(0, finalDot), typeName.substring(finalDot + 1));
+        } else {
+            return new ClassPackagePair(null, typeName);
+        }
+    }
+
+    private static class ClassPackagePair {
+        private final String packageName;
+        private final String className;
+
+        public ClassPackagePair(String packageName, String className) {
+            this.packageName = packageName;
+            this.className = className;
+        }
+
+        public String getPackageName() {
+            return packageName;
+        }
+
+        public String getClassName() {
+            return className;
+        }
     }
 }
