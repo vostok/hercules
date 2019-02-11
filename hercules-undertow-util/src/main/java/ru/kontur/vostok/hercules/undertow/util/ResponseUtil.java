@@ -29,6 +29,7 @@ public class ResponseUtil {
 
     public static void badRequest(HttpServerExchange exchange, String reason) {
         exchange.setStatusCode(400);
+        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, ContentTypes.TEXT_PLAIN);
         exchange.getResponseSender().send(reason);
         exchange.endExchange();
     }
