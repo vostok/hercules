@@ -5,6 +5,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
@@ -14,6 +15,8 @@ import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.functional.Result;
+import ru.kontur.vostok.hercules.util.parsing.Parsers;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -26,8 +29,8 @@ public class ReadStreamHandler implements HttpHandler {
     private static final StreamReadStateReader STATE_READER = new StreamReadStateReader();
     private static final ByteStreamContentWriter CONTENT_WRITER = new ByteStreamContentWriter();
 
-    private static final String OCTET_STREAM = "application/octet-stream";
-    private static final String REASON = "Missing required parameter ";
+    private static final String REASON_MISSING_PARAM = "Missing required parameter ";
+    private static final String REASON_INCORRECT_PARAM = "Incorrect value of required parameter ";
 
     private static final String PARAM_STREAM = "stream";
     private static final String PARAM_SHARD_INDEX = "shardIndex";
@@ -56,7 +59,7 @@ public class ReadStreamHandler implements HttpHandler {
 
                     Optional<String> optionalStreamName = ExchangeUtil.extractQueryParam(exchange, PARAM_STREAM);
                     if (!optionalStreamName.isPresent()) {
-                        ResponseUtil.badRequest(exchange, REASON + PARAM_STREAM);
+                        ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_STREAM);
                         return;
                     }
 
@@ -76,34 +79,49 @@ public class ReadStreamHandler implements HttpHandler {
 
                     Optional<String> optionalShardIndex = ExchangeUtil.extractQueryParam(exchange, PARAM_SHARD_INDEX);
                     if (!optionalShardIndex.isPresent()) {
-                        ResponseUtil.badRequest(exchange, REASON + PARAM_SHARD_INDEX);
+                        ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_SHARD_INDEX);
+                        return;
+                    }
+
+                    Result<Integer, String> shardIndex = Parsers.parseInteger(optionalShardIndex.get());
+                    if (!shardIndex.isOk()) {
+                        ResponseUtil.badRequest(exchange, REASON_INCORRECT_PARAM + PARAM_SHARD_INDEX);
                         return;
                     }
 
                     Optional<String> optionalShardCount = ExchangeUtil.extractQueryParam(exchange, PARAM_SHARD_COUNT);
                     if (!optionalShardCount.isPresent()) {
-                        ResponseUtil.badRequest(exchange, REASON + PARAM_SHARD_COUNT);
+                        ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_SHARD_COUNT);
+                        return;
+                    }
+
+                    Result<Integer, String> shardCount = Parsers.parseInteger(optionalShardCount.get());
+                    if (!shardCount.isOk()) {
+                        ResponseUtil.badRequest(exchange, REASON_INCORRECT_PARAM + PARAM_SHARD_COUNT);
                         return;
                     }
 
                     Optional<String> optionalTake = ExchangeUtil.extractQueryParam(exchange, PARAM_TAKE);
                     if (!optionalTake.isPresent()) {
-                        ResponseUtil.badRequest(exchange, REASON + PARAM_TAKE);
+                        ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_TAKE);
                         return;
                     }
-                    int shardIndex = Integer.valueOf(optionalShardIndex.get());
-                    int shardCount = Integer.valueOf(optionalShardCount.get());
-                    int take = Integer.valueOf(optionalTake.get());
+
+                    Result<Integer, String> take = Parsers.parseInteger(optionalTake.get());
+                    if (!take.isOk()) {
+                        ResponseUtil.badRequest(exchange, REASON_INCORRECT_PARAM + PARAM_TAKE);
+                        return;
+                    }
 
                     ByteStreamContent streamContent = streamReader.getStreamContent(
                             streamName,
                             STATE_READER.read(new Decoder(message)),
-                            shardIndex,
-                            shardCount,
-                            take
+                            shardIndex.get(),
+                            shardCount.get(),
+                            take.get()
                     );
 
-                    exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, OCTET_STREAM);
+                    exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
 
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     Encoder encoder = new Encoder(stream);
