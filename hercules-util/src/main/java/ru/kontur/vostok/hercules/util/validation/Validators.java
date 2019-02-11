@@ -115,21 +115,6 @@ public final class Validators {
     }
 
     /**
-     * Return non empty string validator
-     *
-     * @return validator
-     */
-    public static Validator<String> notEmpty() {
-        return value -> {
-            if (Objects.nonNull(value) && !value.isEmpty()) {
-                return Optional.empty();
-            } else {
-                return Optional.of("String is empty");
-            }
-        };
-    }
-
-    /**
      * Return port validator
      *
      * @return validator
