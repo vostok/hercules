@@ -78,12 +78,12 @@ public class StreamManagerApplication {
 
         Runtime.getRuntime().addShutdownHook(new Thread(StreamManagerApplication::shutdown));
 
-        LOGGER.info("Kafka Manager started for {} millis", System.currentTimeMillis() - start);
+        LOGGER.info("Stream Manager started for {} millis", System.currentTimeMillis() - start);
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        LOGGER.info("Started Kafka Manager shutdown");
+        LOGGER.info("Started Stream Manager shutdown");
         try {
             if (Objects.nonNull(applicationStatusHttpServer)) {
                 applicationStatusHttpServer.stop();
