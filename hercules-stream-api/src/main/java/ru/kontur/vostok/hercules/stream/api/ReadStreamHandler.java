@@ -17,8 +17,6 @@ import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.util.Deque;
-import java.util.Map;
 import java.util.Optional;
 
 public class ReadStreamHandler implements HttpHandler {
@@ -29,6 +27,12 @@ public class ReadStreamHandler implements HttpHandler {
     private static final ByteStreamContentWriter CONTENT_WRITER = new ByteStreamContentWriter();
 
     private static final String OCTET_STREAM = "application/octet-stream";
+    private static final String REASON = "Missing required parameter ";
+
+    private static final String PARAM_STREAM = "stream";
+    private static final String PARAM_SHARD_INDEX = "shardIndex";
+    private static final String PARAM_SHARD_COUNT = "shardCount";
+    private static final String PARAM_TAKE = "take";
 
     private final AuthManager authManager;
     private final StreamReader streamReader;
@@ -50,10 +54,16 @@ public class ReadStreamHandler implements HttpHandler {
                         return;
                     }
 
-                    Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
-                    String streamName = queryParameters.get("stream").getFirst();
+                    Optional<String> optionalStreamName = ExchangeUtil.extractQueryParam(exchange, PARAM_STREAM);
+                    if (!optionalStreamName.isPresent()) {
+                        ResponseUtil.badRequest(exchange, REASON + PARAM_STREAM);
+                        return;
+                    }
 
-                    AuthResult authResult = authManager.authRead(optionalApiKey.get(),streamName);
+                    String apiKey = optionalApiKey.get();
+                    String streamName = optionalStreamName.get();
+
+                    AuthResult authResult = authManager.authRead(apiKey, streamName);
 
                     if (!authResult.isSuccess()) {
                         if (authResult.isUnknown()) {
@@ -64,9 +74,26 @@ public class ReadStreamHandler implements HttpHandler {
                         return;
                     }
 
-                    int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
-                    int shardCount = Integer.valueOf(queryParameters.get("shardCount").getFirst());
-                    int take = Integer.valueOf(queryParameters.get("take").getFirst());
+                    Optional<String> optionalShardIndex = ExchangeUtil.extractQueryParam(exchange, PARAM_SHARD_INDEX);
+                    if (!optionalShardIndex.isPresent()) {
+                        ResponseUtil.badRequest(exchange, REASON + PARAM_SHARD_INDEX);
+                        return;
+                    }
+
+                    Optional<String> optionalShardCount = ExchangeUtil.extractQueryParam(exchange, PARAM_SHARD_COUNT);
+                    if (!optionalShardCount.isPresent()) {
+                        ResponseUtil.badRequest(exchange, REASON + PARAM_SHARD_COUNT);
+                        return;
+                    }
+
+                    Optional<String> optionalTake = ExchangeUtil.extractQueryParam(exchange, PARAM_TAKE);
+                    if (!optionalTake.isPresent()) {
+                        ResponseUtil.badRequest(exchange, REASON + PARAM_TAKE);
+                        return;
+                    }
+                    int shardIndex = Integer.valueOf(optionalShardIndex.get());
+                    int shardCount = Integer.valueOf(optionalShardCount.get());
+                    int take = Integer.valueOf(optionalTake.get());
 
                     ByteStreamContent streamContent = streamReader.getStreamContent(
                             streamName,
