@@ -1,12 +1,15 @@
 package ru.kontur.vostok.hercules.meta.timeline;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import ru.kontur.vostok.hercules.meta.curator.CreationResult;
 import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
-import ru.kontur.vostok.hercules.meta.curator.DeletionResult;
+import ru.kontur.vostok.hercules.meta.curator.exception.CuratorInternalException;
+import ru.kontur.vostok.hercules.meta.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
+import ru.kontur.vostok.hercules.meta.curator.result.DeletionResult;
+import ru.kontur.vostok.hercules.meta.curator.result.ReadResult;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
+import ru.kontur.vostok.hercules.meta.serialization.Deserializer;
+import ru.kontur.vostok.hercules.meta.serialization.SerializationException;
+import ru.kontur.vostok.hercules.meta.serialization.Serializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,32 +19,31 @@ import java.util.Optional;
  */
 public class TimelineRepository {
     private final CuratorClient curatorClient;
-    private final ObjectReader deserializer;
-    private final ObjectWriter serializer;
+    private final Deserializer deserializer;
+    private final Serializer serializer;
 
     public TimelineRepository(CuratorClient curatorClient) {
         this.curatorClient = curatorClient;
 
-        ObjectMapper objectMapper = new ObjectMapper().
-                configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.deserializer = objectMapper.readerFor(Timeline.class);
-        this.serializer = objectMapper.writerFor(Timeline.class);
+        this.deserializer = Deserializer.forClass(Timeline.class);
+        this.serializer = Serializer.forClass(Timeline.class);
     }
 
-    public Optional<Timeline> read(String name) throws Exception {
-        Optional<byte[]> jsonBytes = curatorClient.read(zPrefix + '/' + name);
-        return jsonBytes.isPresent() ? Optional.of(deserializer.readValue(jsonBytes.get())) : Optional.empty();
+    public Optional<Timeline> read(String name) throws CuratorUnknownException, CuratorInternalException, DeserializationException {
+        ReadResult readResult = curatorClient.read(zPrefix + '/' + name);
+        Optional<byte[]> jsonBytes = readResult.getData();
+        return jsonBytes.isPresent() ? Optional.of(deserializer.deserialize(jsonBytes.get())) : Optional.empty();
     }
 
-    public CreationResult create(Timeline timeline) throws Exception {
-        return curatorClient.create(zPrefix + '/' + timeline.getName(), serializer.writeValueAsBytes(timeline));
+    public CreationResult create(Timeline timeline) throws SerializationException, CuratorUnknownException, CuratorInternalException {
+        return curatorClient.create(zPrefix + '/' + timeline.getName(), serializer.serialize(timeline));
     }
 
     public List<String> list() throws Exception {
         return curatorClient.children(zPrefix);
     }
 
-    public DeletionResult delete(String name) throws Exception {
+    public DeletionResult delete(String name) throws CuratorUnknownException, CuratorInternalException {
         return curatorClient.delete(zPrefix + '/' + name);
     }
 

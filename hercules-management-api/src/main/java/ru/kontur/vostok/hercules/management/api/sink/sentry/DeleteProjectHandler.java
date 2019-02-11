@@ -21,13 +21,15 @@ public class DeleteProjectHandler extends SentryRegistryHandler {
     @Override
     public void process(HttpServerExchange exchange) throws Exception {
 
-        Optional<String> projectName = ExchangeUtil.extractQueryParam(exchange, "projectName");
+        final Optional<String> projectName = ExchangeUtil.extractQueryParam(exchange, "project");
         if (!projectName.isPresent()) {
             ResponseUtil.badRequest(exchange);
             return;
         }
 
-        sentryProjectRepository.delete(projectName.get());
+        final String service = ExchangeUtil.extractQueryParam(exchange, "service").orElse(null);
+
+        sentryProjectRepository.delete(projectName.get(), service);
         ResponseUtil.ok(exchange);
     }
 }

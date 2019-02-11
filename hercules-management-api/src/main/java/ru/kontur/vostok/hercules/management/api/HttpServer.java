@@ -8,23 +8,25 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
+import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
+import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
 import ru.kontur.vostok.hercules.management.api.sink.sentry.DeleteProjectHandler;
 import ru.kontur.vostok.hercules.management.api.sink.sentry.ListProjectHandler;
 import ru.kontur.vostok.hercules.management.api.sink.sentry.SetProjectHandler;
-import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
-import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
-import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
-import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
+import ru.kontur.vostok.hercules.management.api.stream.InfoStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.CreateStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.DeleteStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.ListStreamHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.CreateTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.DeleteTimelineHandler;
+import ru.kontur.vostok.hercules.management.api.timeline.InfoTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.ListTimelineHandler;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
 import ru.kontur.vostok.hercules.undertow.util.handlers.HerculesRoutingHandler;
@@ -58,11 +60,11 @@ public class HttpServer {
             AuthManager authManager,
             StreamRepository streamRepository,
             TimelineRepository timelineRepository,
+            StreamTaskRepository streamTaskRepository,
+            TimelineTaskRepository timelineTaskRepository,
             BlacklistRepository blacklistRepository,
             RuleRepository ruleRepository,
             SentryProjectRepository sentryProjectRepository,
-            CassandraTaskQueue cassandraTaskQueue,
-            KafkaTaskQueue kafkaTaskQueue,
             MetricsCollector metricsCollector
     ) {
         final String host = Props.HOST.extract(properties);
@@ -70,13 +72,15 @@ public class HttpServer {
 
         AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
 
-        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamRepository, kafkaTaskQueue);
-        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamRepository, kafkaTaskQueue);
+        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskRepository);
+        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskRepository);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
+        InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
 
-        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
-        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineRepository, cassandraTaskQueue);
+        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineTaskRepository);
+        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineTaskRepository);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
+        InfoTimelineHandler infoTimelineHandler = new InfoTimelineHandler(timelineRepository, authManager);
 
         HttpHandler setRuleHandler = adminAuthManagerWrapper.wrap(new SetRuleHandler(ruleRepository));
         HttpHandler listRuleHandler = adminAuthManagerWrapper.wrap(new ListRuleHandler(ruleRepository));
@@ -93,9 +97,11 @@ public class HttpServer {
                 .post("/streams/create", createStreamHandler)
                 .post("/streams/delete", deleteStreamHandler)
                 .get("/streams/list", listStreamHandler)
+                .get("/streams/info", infoStreamHandler)
                 .post("/timelines/create", createTimelineHandler)
                 .post("/timelines/delete", deleteTimelineHandler)
                 .get("/timelines/list", listTimelineHandler)
+                .get("/timelines/info", infoTimelineHandler)
                 .post("/rules/set", setRuleHandler)
                 .get("/rules/list", listRuleHandler)
                 .post("/blacklist/add", addBlacklistHandler)

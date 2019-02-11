@@ -1,5 +1,10 @@
 package ru.kontur.vostok.hercules.meta.sink.sentry;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * SentryProjectMappingRecord record from sentry registry
  *
@@ -7,14 +12,21 @@ package ru.kontur.vostok.hercules.meta.sink.sentry;
  */
 public class SentryProjectMappingRecord {
 
-    private String project;
-    private String sentryProject;
+    private final String project;
+    private final String service;
+    private final String sentryOrganization;
+    private final String sentryProject;
 
-    public SentryProjectMappingRecord() {
-    }
-
-    public SentryProjectMappingRecord(String project, String sentryProject) {
+    @JsonCreator
+    public SentryProjectMappingRecord(
+        @JsonProperty("project") @NotNull final String project,
+        @JsonProperty("service") @Nullable final String service,
+        @JsonProperty("sentryOrganization") @NotNull final String sentryOrganization,
+        @JsonProperty("sentryProject") @NotNull final String sentryProject
+    ) {
         this.project = project;
+        this.service = service;
+        this.sentryOrganization = sentryOrganization;
         this.sentryProject = sentryProject;
     }
 
@@ -22,15 +34,15 @@ public class SentryProjectMappingRecord {
         return project;
     }
 
-    public void setProject(String project) {
-        this.project = project;
+    public String getService() {
+        return service;
     }
 
     public String getSentryProject() {
         return sentryProject;
     }
 
-    public void setSentryProject(String sentryProject) {
-        this.sentryProject = sentryProject;
+    public String getSentryOrganization() {
+        return sentryOrganization;
     }
 }
