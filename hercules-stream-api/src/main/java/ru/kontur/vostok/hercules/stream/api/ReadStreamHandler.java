@@ -30,7 +30,6 @@ public class ReadStreamHandler implements HttpHandler {
     private static final ByteStreamContentWriter CONTENT_WRITER = new ByteStreamContentWriter();
 
     private static final String REASON_MISSING_PARAM = "Missing required parameter ";
-    private static final String REASON_INCORRECT_PARAM = "Incorrect value of required parameter ";
 
     private static final String PARAM_STREAM = "stream";
     private static final String PARAM_SHARD_INDEX = "shardIndex";
@@ -85,7 +84,7 @@ public class ReadStreamHandler implements HttpHandler {
 
                     Result<Integer, String> shardIndex = Parsers.parseInteger(optionalShardIndex.get());
                     if (!shardIndex.isOk()) {
-                        ResponseUtil.badRequest(exchange, REASON_INCORRECT_PARAM + PARAM_SHARD_INDEX);
+                        ResponseUtil.badRequest(exchange, shardIndex.getError() + " in parameter " + PARAM_SHARD_INDEX);
                         return;
                     }
 
@@ -97,7 +96,7 @@ public class ReadStreamHandler implements HttpHandler {
 
                     Result<Integer, String> shardCount = Parsers.parseInteger(optionalShardCount.get());
                     if (!shardCount.isOk()) {
-                        ResponseUtil.badRequest(exchange, REASON_INCORRECT_PARAM + PARAM_SHARD_COUNT);
+                        ResponseUtil.badRequest(exchange, shardCount.getError() + " in parameter " + PARAM_SHARD_COUNT);
                         return;
                     }
 
@@ -109,7 +108,7 @@ public class ReadStreamHandler implements HttpHandler {
 
                     Result<Integer, String> take = Parsers.parseInteger(optionalTake.get());
                     if (!take.isOk()) {
-                        ResponseUtil.badRequest(exchange, REASON_INCORRECT_PARAM + PARAM_TAKE);
+                        ResponseUtil.badRequest(exchange, take.getError() + " in parameter " + PARAM_TAKE);
                         return;
                     }
 
