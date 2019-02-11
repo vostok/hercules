@@ -90,7 +90,6 @@ public class BulkResponseHandler {
     private static final Set<String> RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
             "process_cluster_event_timeout_exception",
             "es_rejected_execution_exception",
-            "index_closed_exception",
             "cluster_block_exception",
             "unavailable_shards_exception",
             "timeout_exception"
@@ -100,7 +99,8 @@ public class BulkResponseHandler {
             "illegal_argument_exception",
             "mapper_parsing_exception",
             "illegal_state_exception",
-            "invalid_index_name_exception"
+            "invalid_index_name_exception",
+            "index_closed_exception"
     ));
 
     private static final Set<String> UNSPECIFIED_ERRORS_CODES = new HashSet<>(Arrays.asList(
