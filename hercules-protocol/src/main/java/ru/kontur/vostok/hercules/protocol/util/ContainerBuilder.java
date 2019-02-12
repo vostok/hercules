@@ -25,7 +25,7 @@ public class ContainerBuilder {
 
     public <T> ContainerBuilder tag(TagDescription<T> tag, Variant value) {
         if (!tag.getExtractors().containsKey(value.getType())) {
-            String allowedValues = "[" + tag.getExtractors().keySet().stream().map(String::valueOf).collect(Collectors.joining()) + "]";
+            String allowedValues = "[" + tag.getExtractors().keySet().stream().map(String::valueOf).collect(Collectors.joining(", ")) + "]";
             throw new IllegalArgumentException(
                     String.format("Value type mismatch, expected one of %s, actual: %s", allowedValues, value.getType())
             );

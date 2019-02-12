@@ -8,10 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
-import ru.kontur.vostok.hercules.meta.curator.CreationResult;
+import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
-import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
@@ -26,15 +27,13 @@ public class CreateStreamHandler implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateStreamHandler.class);
 
     private final AuthManager authManager;
-    private final StreamRepository repository;
-    private final KafkaTaskQueue kafkaTaskQueue;
+    private final StreamTaskRepository repository;
 
     private final ObjectReader deserializer;
 
-    public CreateStreamHandler(AuthManager authManager, StreamRepository repository, KafkaTaskQueue kafkaTaskQueue) {
+    public CreateStreamHandler(AuthManager authManager, StreamTaskRepository repository) {
         this.authManager = authManager;
         this.repository = repository;
-        this.kafkaTaskQueue = kafkaTaskQueue;
 
         ObjectMapper objectMapper = new ObjectMapper();
         this.deserializer = objectMapper.readerFor(Stream.class);
@@ -64,7 +63,8 @@ public class CreateStreamHandler implements HttpHandler {
                 }
                 //TODO: Auth sources if needed
 
-                CreationResult creationResult = repository.create(stream);
+                CreationResult creationResult =
+                        repository.create(new StreamTask(stream, StreamTaskType.CREATE), stream.getName());
                 if (!creationResult.isSuccess()) {
                     if (creationResult.getStatus() == CreationResult.Status.ALREADY_EXIST) {
                         ResponseUtil.conflict(exch);
@@ -74,8 +74,8 @@ public class CreateStreamHandler implements HttpHandler {
                     return;
                 }
 
-                //TODO: Topic creation may fail after successful meta creation (no atomicity at all).
-                kafkaTaskQueue.createTopic(stream.getName(), stream.getPartitions(), stream.getTtl());
+                //TODO: Wait for result if needed
+                ResponseUtil.ok(exch);
             } catch (IOException e) {
                 LOGGER.error("Error on processing request", e);
                 ResponseUtil.badRequest(exch);

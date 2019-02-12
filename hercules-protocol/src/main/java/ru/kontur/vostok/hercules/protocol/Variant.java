@@ -69,4 +69,15 @@ public class Variant {
     public static Variant ofVector(Vector v) {
         return new Variant(Type.VECTOR, v);
     }
+
+    @Override
+    public String toString() {
+        final String stringValue;
+        if (Type.STRING == type) {
+            stringValue = new String((byte[]) value, StandardCharsets.UTF_8);
+        } else {
+            stringValue = String.valueOf(value);
+        }
+        return String.format("(%s) %s", type.name(), stringValue);
+    }
 }
