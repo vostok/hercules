@@ -2,11 +2,13 @@ package ru.kontur.vostok.hercules.util.validation;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Petr Demenev
  */
-public class StringValidators {
+public final class StringValidators {
 
     /**
      * Return non empty string validator
@@ -29,15 +31,19 @@ public class StringValidators {
      * @return validator
      */
     public static Validator<String> matchesWith(String regex) {
+        final Pattern pattern = Pattern.compile(regex);
         return value -> {
-            if (value.matches(regex)) {
+            Matcher matcher = pattern.matcher(value);
+            if (matcher.matches()) {
                 return Optional.empty();
             } else {
-                return Optional.of(String.format("String should match the pattern but was '%s'", value));
+                return Optional.of(String.format("String should match the pattern '%s' but was '%s'",
+                        regex, value));
             }
         };
     }
 
-    public StringValidators() {
+    private StringValidators() {
+        /* static class */
     }
 }
