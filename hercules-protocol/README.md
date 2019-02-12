@@ -128,4 +128,4 @@ Some tags are common for different kinds of Hercules events. List of common tags
 
 ## HPath
 
-To describe hierarchy of tags inside many nested containers you can use HPath described in [separate documnet](./doc/h-path.md).
+To describe hierarchy of tags inside many nested containers you can use HPath described in [separate document](./doc/h-path.md).
