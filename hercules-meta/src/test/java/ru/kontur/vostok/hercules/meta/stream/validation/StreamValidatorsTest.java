@@ -24,7 +24,7 @@ public class StreamValidatorsTest {
     }
 
     @Test
-    public void shouldValidateInvalidBaseStream() {
+    public void shouldReturnErrorOnInvalidBaseStream() {
         Stream stream = new BaseStream();
         stream.setName("test_t1_1");
         stream.setPartitions(0);

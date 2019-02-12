@@ -15,6 +15,7 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.stream.validation.StreamValidators;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import java.util.Optional;
 public class CreateStreamHandler implements HttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateStreamHandler.class);
+    private static final Validator<Stream> STREAM_VALIDATOR = StreamValidators.streamValidatorForHandler();
 
     private final AuthManager authManager;
     private final StreamRepository repository;
@@ -54,7 +56,7 @@ public class CreateStreamHandler implements HttpHandler {
             try {
                 Stream stream = deserializer.readValue(bytes);
 
-                Optional<String> streamError = StreamValidators.streamValidatorForHandler().validate(stream);
+                Optional<String> streamError = STREAM_VALIDATOR.validate(stream);
                 if(streamError.isPresent()) {
                     ResponseUtil.badRequest(exch);
                     return;
