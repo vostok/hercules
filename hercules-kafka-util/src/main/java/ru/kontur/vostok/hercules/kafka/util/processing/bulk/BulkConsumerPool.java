@@ -53,8 +53,6 @@ public class BulkConsumerPool {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumerPool.class);
 
-    private static final String ID_TEMPLATE = "hercules.%s.%s";
-
     private final AtomicLong id = new AtomicLong(0);
 
     private final int poolSize;
@@ -81,8 +79,7 @@ public class BulkConsumerPool {
             .map(PatternMatcher::new)
             .collect(Collectors.toList());
 
-        final String groupId = String.format(ID_TEMPLATE, destinationName, PatternMatcher.matchersListToRegexpString(patterns))
-                .replaceAll("\\s+", "-");
+        final String groupId = ConsumerUtil.toGroupId(destinationName, patterns);
 
         final Meter receivedEventsMeter = metricsCollector.meter("receivedEvents");
         final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSizeBytes");
