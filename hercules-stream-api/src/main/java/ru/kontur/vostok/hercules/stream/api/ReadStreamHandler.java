@@ -5,7 +5,6 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
@@ -13,6 +12,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
+import ru.kontur.vostok.hercules.undertow.util.ContentTypes;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.functional.Result;
@@ -120,7 +120,7 @@ public class ReadStreamHandler implements HttpHandler {
                             take.get()
                     );
 
-                    exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
+                    exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, ContentTypes.APPLICATION_OCTET_STREAM);
 
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     Encoder encoder = new Encoder(stream);
