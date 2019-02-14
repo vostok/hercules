@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -61,6 +62,32 @@ public class IndexToElasticJsonWriterTest {
                         "}" +
                         "}",
                 stream.toString()
+        );
+    }
+
+    @Test
+    public void shouldUseElkScopeForIndexName() throws Exception {
+        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
+            .tag("properties", Variant.ofContainer(ContainerBuilder.create()
+                .tag("project", Variant.ofString("awesome-project"))
+                .tag(ElasticSearchTags.ELK_SCOPE_TAG, Variant.ofString("scope"))
+                .tag("environment", Variant.ofString("production"))
+                .build()
+            ))
+            .build();
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        IndexToElasticJsonWriter.tryWriteIndex(stream, event);
+
+        assertEquals(
+            "{" +
+                "\"index\":{" +
+                "\"_index\":\"awesome-project-scope-production-1970.01.01\"," +
+                "\"_type\":\"LogEvent\"," +
+                "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
+                "}" +
+                "}",
+            stream.toString()
         );
     }
 

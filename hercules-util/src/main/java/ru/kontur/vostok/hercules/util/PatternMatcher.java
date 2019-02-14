@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.util;
 
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author Gregory Koshelev
@@ -69,4 +70,20 @@ public class PatternMatcher {
     }
 
     private static final String ALPHANUMERIC = "[a-z0-9_]";
+
+    public static String matchersListToRegexpString(final List<PatternMatcher> matchers) {
+        return matchers.stream()
+            .map(patternMatcher -> patternMatcher.pattern)
+            .map(PatternMatcher::toRegexString)
+            .collect(Collectors.joining("|"));
+    }
+
+    public static Pattern matcherListToRegexp(final List<PatternMatcher> matchers) {
+        return Pattern.compile(matchersListToRegexpString(matchers));
+    }
+
+    public static String toString(List<PatternMatcher> patternMatchers) {
+        return CollectionUtil.isNullOrEmpty(patternMatchers)
+                ? "" : patternMatchers.stream().map(x -> x.pattern).collect(Collectors.joining(","));
+    }
 }

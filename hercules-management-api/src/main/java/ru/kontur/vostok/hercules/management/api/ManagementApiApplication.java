@@ -10,13 +10,13 @@ import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.management.api.task.CassandraTaskQueue;
-import ru.kontur.vostok.hercules.management.api.task.KafkaTaskQueue;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
+import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
@@ -25,7 +25,6 @@ import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
@@ -43,8 +42,6 @@ public class ManagementApiApplication {
     private static HttpServer server;
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
-    private static CassandraTaskQueue cassandraTaskQueue;
-    private static KafkaTaskQueue kafkaTaskQueue;
     private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
@@ -57,7 +54,6 @@ public class ManagementApiApplication {
 
             Properties httpserverProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
-            Properties kafkaProperties = PropertiesUtil.ofScope(properties, Scopes.KAFKA);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
@@ -68,6 +64,8 @@ public class ManagementApiApplication {
 
             StreamRepository streamRepository = new StreamRepository(curatorClient);
             TimelineRepository timelineRepository = new TimelineRepository(curatorClient);
+            StreamTaskRepository streamTaskRepository = new StreamTaskRepository(curatorClient);
+            TimelineTaskRepository timelineTaskRepository = new TimelineTaskRepository(curatorClient);
             BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
             RuleRepository ruleRepository = new RuleRepository(curatorClient);
             SentryProjectRepository sentryProjectRepository = new SentryProjectRepository(curatorClient);
@@ -76,9 +74,6 @@ public class ManagementApiApplication {
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
-
-            cassandraTaskQueue = new CassandraTaskQueue(kafkaProperties);
-            kafkaTaskQueue = new KafkaTaskQueue(kafkaProperties);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
@@ -90,11 +85,11 @@ public class ManagementApiApplication {
                     authManager,
                     streamRepository,
                     timelineRepository,
+                    streamTaskRepository,
+                    timelineTaskRepository,
                     blacklistRepository,
                     ruleRepository,
                     sentryProjectRepository,
-                    cassandraTaskQueue,
-                    kafkaTaskQueue,
                     metricsCollector
             );
             server.start();
@@ -143,24 +138,6 @@ public class ManagementApiApplication {
             }
         } catch (Throwable e) {
             LOGGER.error("Error on curator client stopping", e);
-            //TODO: Process error
-        }
-
-        try {
-            if (cassandraTaskQueue != null) {
-                cassandraTaskQueue.close(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on cassandra task queue stopping", e);
-            //TODO: Process error
-        }
-
-        try {
-            if (kafkaTaskQueue != null) {
-                kafkaTaskQueue.close(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on kafka task queue stopping", e);
             //TODO: Process error
         }
 

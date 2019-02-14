@@ -25,6 +25,7 @@ import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.Timer;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
@@ -59,7 +60,7 @@ public class BulkConsumer implements Runnable {
     private static final Logger DROPPED_EVENTS_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
 
     private final KafkaConsumer<UUID, Event> consumer;
-    private final PatternMatcher streamPattern;
+    private final List<PatternMatcher> streamPatterns;
     private final int pollTimeout;
     private final int batchSize;
 
@@ -78,7 +79,7 @@ public class BulkConsumer implements Runnable {
             String id,
             Properties streamsProperties,
             Properties sinkProperties,
-            PatternMatcher streamPattern,
+            List<PatternMatcher> streamPatterns,
             String consumerGroupId,
             SinkStatusFsm status,
             Supplier<BulkSender<Event>> senderFactory,
@@ -98,7 +99,7 @@ public class BulkConsumer implements Runnable {
         Serde<UUID> keySerde = new UuidSerde();
         Serde<Event> valueSerde = new EventSerde(new EventSerializer(), EventDeserializer.parseAllTags());
 
-        this.streamPattern = streamPattern;
+        this.streamPatterns = streamPatterns;
         this.consumer = new KafkaConsumer<>(
             streamsProperties,
             keySerde.deserializer(),
@@ -145,7 +146,7 @@ public class BulkConsumer implements Runnable {
                     return;
                 }
 
-                consumer.subscribe(streamPattern.getRegexp());
+                consumer.subscribe(PatternMatcher.matcherListToRegexp(streamPatterns));
 
                 RecordStorage<UUID, Event> current = new RecordStorage<>(batchSize);
                 RecordStorage<UUID, Event> next = new RecordStorage<>(batchSize);

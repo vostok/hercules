@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * BulkConsumerPool
@@ -45,14 +46,12 @@ public class BulkConsumerPool {
                 .withValidator(Validators.greaterOrEquals(0))
                 .build();
 
-        static final PropertyDescription<String> PATTERN = PropertyDescriptions
-                .stringProperty("pattern")
+        static final PropertyDescription<List<String>> PATTERN = PropertyDescriptions
+                .listOfStringsProperty("pattern")
                 .build();
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkConsumerPool.class);
-
-    private static final String ID_TEMPLATE = "hercules.%s.%s";
 
     private final AtomicLong id = new AtomicLong(0);
 
@@ -76,11 +75,11 @@ public class BulkConsumerPool {
         this.poolSize = Props.POOL_SIZE.extract(consumerPoolProperties);
         this.shutdownTimeoutMs = Props.SHUTDOWN_TIMEOUT_MS.extract(consumerPoolProperties);
 
-        final PatternMatcher streamPattern = new PatternMatcher(Props.PATTERN.extract(consumerPoolProperties));
+        final List<PatternMatcher> patterns = Props.PATTERN.extract(consumerPoolProperties).stream()
+            .map(PatternMatcher::new)
+            .collect(Collectors.toList());
 
-        final String groupId = String.format(ID_TEMPLATE, destinationName, streamPattern.toString())
-                .replaceAll("\\s+", "-");
-
+        final String groupId = ConsumerUtil.toGroupId(destinationName, patterns);
 
         final Meter receivedEventsMeter = metricsCollector.meter("receivedEvents");
         final Meter receivedEventsSizeMeter = metricsCollector.meter("receivedEventsSizeBytes");
@@ -94,7 +93,7 @@ public class BulkConsumerPool {
                 String.valueOf(id.getAndIncrement()),
                 consumerProperties,
                 sinkProperties,
-                streamPattern,
+                patterns,
                 groupId,
                 status,
                 senderSupplier,
