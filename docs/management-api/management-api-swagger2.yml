@@ -94,6 +94,34 @@ paths:
           $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'
+  /streams/info:
+    get:
+      tags:
+        - stream
+      summary: Stream info
+      description: Stream info
+      operationId: streamInfo
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - name: stream
+          in: query
+          description: Stream name
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/createStreamRequest'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/unauthorized'
+        '404':
+          $ref: '#/responses/notFound'
   /timelines/create:
     post:
       tags:
@@ -166,9 +194,37 @@ paths:
             items:
               type: string
         '400':
-          $ref: '#/responses/badRequest' 
+          $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'        
+          $ref: '#/responses/unauthorized'
+  /timelines/info:
+    get:
+      tags:
+        - timeline
+      summary: Timeline info
+      description: Timeline info
+      operationId: timelineInfo
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - name: timeline
+          in: query
+          description: Timeline name
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/createTimelineRequest'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/unauthorized'
+        '404':
+          $ref: '#/responses/notFound'
   /rules/set:
     post:
       tags:
@@ -196,7 +252,7 @@ paths:
           description: Combination of read, write and modified rights
           required: true
           type: string
-          enum: 
+          enum:
             - '---'
             - 'r--'
             - '-w-'
@@ -233,7 +289,7 @@ paths:
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'        
+          $ref: '#/responses/unauthorized'
   /blacklist/add:
     post:
       tags:
@@ -255,7 +311,7 @@ paths:
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'       
+          $ref: '#/responses/unauthorized'
   /blacklist/remove:
     post:
       tags:
@@ -299,7 +355,7 @@ paths:
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'        
+          $ref: '#/responses/unauthorized'
 definitions:
   createStreamRequest:
     type: object
@@ -368,11 +424,11 @@ responses:
     description: Bad request
   forbidden:
     description: Forbidden for this API-key
-  notFound: 
+  notFound:
     description: Not Found
-  notFoundSourceStreams: 
+  notFoundSourceStreams:
     description: Source streams not found
-  conflict:    
+  conflict:
     description: Conflict. Entity already exists
   success:
     description: OK

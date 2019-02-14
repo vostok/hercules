@@ -81,4 +81,9 @@ public class PatternMatcher {
     public static Pattern matcherListToRegexp(final List<PatternMatcher> matchers) {
         return Pattern.compile(matchersListToRegexpString(matchers));
     }
+
+    public static String toString(List<PatternMatcher> patternMatchers) {
+        return CollectionUtil.isNullOrEmpty(patternMatchers)
+                ? "" : patternMatchers.stream().map(x -> x.pattern).collect(Collectors.joining(","));
+    }
 }
