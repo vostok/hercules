@@ -27,20 +27,5 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-kafka-util</artifactId>
         </dependency>
-        <dependency>
-            <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-gate-client</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-        </dependency>
     </dependencies>
-
-
 </project>

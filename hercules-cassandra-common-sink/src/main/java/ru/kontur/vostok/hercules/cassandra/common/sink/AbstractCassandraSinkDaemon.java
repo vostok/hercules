@@ -55,6 +55,4 @@ public abstract class AbstractCassandraSinkDaemon extends AbstractSingleSinkDaem
             LOGGER.error("Error on stopping cassandra connector sink", t);
         }
     }
-
-
 }
