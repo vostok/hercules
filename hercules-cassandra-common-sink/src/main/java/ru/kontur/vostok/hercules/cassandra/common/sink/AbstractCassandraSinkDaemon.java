@@ -30,6 +30,7 @@ public abstract class AbstractCassandraSinkDaemon extends AbstractSingleSinkDaem
 
     @Override
     protected ServicePinger createPinger(Properties sinkProperties) {
+        // TODO: Create adequate pinger for cassandra. For now we assume that all ping return true
         return () -> true;
     }
 
