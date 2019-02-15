@@ -63,6 +63,7 @@
         <module>hercules-http</module>
         <module>hercules-http-jetty</module>
         <module>hercules-client</module>
+        <module>hercules-cassandra-common-sink</module>
     </modules>
 
     <dependencyManagement>
@@ -311,6 +312,16 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-http</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-cassandra-common-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-gate-client</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 
