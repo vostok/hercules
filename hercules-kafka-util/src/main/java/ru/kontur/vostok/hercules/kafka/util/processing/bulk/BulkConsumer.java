@@ -38,6 +38,7 @@ import java.util.function.Supplier;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class BulkConsumer implements Runnable {
 
     private static class Props {

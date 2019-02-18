@@ -63,6 +63,8 @@
         <module>hercules-http</module>
         <module>hercules-http-jetty</module>
         <module>hercules-client</module>
+        <module>hercules-sink</module>
+        <module>hercules-elastic-sink</module>
     </modules>
 
     <dependencyManagement>
@@ -311,6 +313,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-http</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sink</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 

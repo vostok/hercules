@@ -9,6 +9,7 @@ import java.util.Collection;
  *
  * @param <Value> Kafka record value type
  */
+@Deprecated
 public interface BulkSender<Value> extends AutoCloseable {
 
     /**

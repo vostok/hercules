@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 /**
  * CommonBulkEventSink - common class for bulk processing of kafka streams content
  */
+@Deprecated
 public class CommonBulkEventSink {
 
     private static class Props {
