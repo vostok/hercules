@@ -42,7 +42,8 @@ public abstract class AbstractSinkDaemon {
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
-        Properties senderProperties = PropertiesUtil.ofScope(properties, Scopes.SENDER);
+
+        Properties senderProperties = PropertiesUtil.ofScope(sinkProperties, Scopes.SENDER);
 
         String daemonId = getDaemonId();
         ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
