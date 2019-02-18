@@ -197,8 +197,13 @@ public class ElasticSender extends Sender {
                 .withDefaultValue(3)
                 .build();
 
+        static final PropertyDescription<Boolean> RETRY_ON_UNKNOWN_ERRORS = PropertyDescriptions
+                .booleanProperty("retryOnUnknownErrors")
+                .withDefaultValue(Boolean.FALSE)
+                .build();
+
         static final PropertyDescription<HttpHost[]> HOSTS = PropertyDescriptions
-                .propertyOfType(HttpHost[].class, "elasticsearch.hosts")
+                .propertyOfType(HttpHost[].class, "elastic.hosts")
                 .withParser(Parsers.parseArray(HttpHost.class, s -> {
                     try {
                         return Result.ok(HttpHost.create(s));
@@ -209,48 +214,43 @@ public class ElasticSender extends Sender {
                 .build();
 
         static final PropertyDescription<Integer> MAX_CONNECTIONS = PropertyDescriptions
-                .integerProperty("elasticsearch.maxConnections")
+                .integerProperty("elastic.maxConnections")
                 .withValidator(Validators.greaterThan(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL)
                 .build();
 
         static final PropertyDescription<Integer> MAX_CONNECTIONS_PER_ROUTE = PropertyDescriptions
-                .integerProperty("elasticsearch.maxConnectionsPerRoute")
+                .integerProperty("elastic.maxConnectionsPerRoute")
                 .withValidator(Validators.greaterThan(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE)
                 .build();
 
         static final PropertyDescription<Integer> RETRY_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("elasticsearch.retryTimeoutMs")
+                .integerProperty("elastic.retryTimeoutMs")
                 .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("elasticsearch.connectionTimeoutMs")
+                .integerProperty("elastic.connectionTimeoutMs")
                 .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> CONNECTION_REQUEST_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("elasticsearch.connectionRequestTimeoutMs")
+                .integerProperty("elastic.connectionRequestTimeoutMs")
                 .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> SOCKET_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("elasticsearch.socketTimeoutMs")
+                .integerProperty("elastic.socketTimeoutMs")
                 .withValidator(Validators.greaterOrEquals(0))
                 .withDefaultValue(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
                 .build();
 
-        static final PropertyDescription<Boolean> RETRY_ON_UNKNOWN_ERRORS = PropertyDescriptions
-                .booleanProperty("retryOnUnknownErrors")
-                .withDefaultValue(Boolean.FALSE)
-                .build();
-
         static final PropertyDescription<Boolean> MERGE_PROPERTIES_TAG_TO_ROOT = PropertyDescriptions
-                .booleanProperty("elasticsearch.mergePropertiesTagToRoot")
+                .booleanProperty("elastic.mergePropertiesTagToRoot")
                 .withDefaultValue(Boolean.FALSE)
                 .build();
     }
