@@ -38,7 +38,7 @@ public abstract class Sender {
     }
 
     /**
-     * Start sender.
+     * Start sender. Activate periodical update availability status.
      */
     public void start() {
         executor.scheduleAtFixedRate(this::updateStatus, pingPeriodMs, pingPeriodMs, TimeUnit.MILLISECONDS);
@@ -46,7 +46,7 @@ public abstract class Sender {
     }
 
     /**
-     * Stop sender.
+     * Stop sender. Disable periodical update availability status.
      *
      * @param timeout maximum time to wait
      * @param unit    time unit of the timeout
@@ -70,7 +70,7 @@ public abstract class Sender {
     public final SenderResult process(List<Event> events) {
         try {
             int processedEvents = send(events);
-            return SenderResult.ok(processedEvents, processedEvents - events.size());
+            return SenderResult.ok(processedEvents, events.size() - processedEvents);
         } catch (BackendServiceFailedException ex) {
             status = SenderStatus.UNAVAILABLE;
             return SenderResult.fail();

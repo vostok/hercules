@@ -9,6 +9,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -24,6 +25,8 @@ import java.util.concurrent.ExecutorService;
  */
 public class SimpleSink extends Sink {
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleSink.class);
+    private static final Logger DROPPED_EVENTS_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
+
 
     private final Sender sender;
 
@@ -86,6 +89,9 @@ public class SimpleSink extends Sink {
                             Event event = record.value();
                             if (event == null) {// Received non-deserializable data, should be ignored
                                 droppedEvents++;
+                                if (DROPPED_EVENTS_LOGGER.isDebugEnabled()) {
+                                    DROPPED_EVENTS_LOGGER.trace("{}", record.key());
+                                }
                                 continue;
                             }
                             events.add(event);

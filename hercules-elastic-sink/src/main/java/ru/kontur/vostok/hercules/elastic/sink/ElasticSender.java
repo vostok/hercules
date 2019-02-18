@@ -25,6 +25,7 @@ import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Collections;
@@ -179,9 +180,9 @@ public class ElasticSender extends Sender {
             for (Event event : events) {
                 boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
                 if (result) {
-                    ElasticUtil.writeNewLine(stream);
+                    stream.write('\n');
                     EventToElasticJsonWriter.writeEvent(stream, event, mergePropertiesTagToRoot);
-                    ElasticUtil.writeNewLine(stream);
+                    stream.write('\n');
                 } else {
                     droppedCount++;
                     DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());

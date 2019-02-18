@@ -9,12 +9,19 @@ import java.util.Properties;
 import java.util.function.Supplier;
 
 /**
+ * Sink pool.
+ *
  * @author Gregory Koshelev
  */
 public class SinkPool {
     private final int poolSize;
     private final List<Sink> sinks;
 
+    /**
+     *
+     * @param poolSize size of pool
+     * @param sinkSupplier supplier must provide new Sink instance on each invoke of get()
+     */
     public SinkPool(int poolSize, Supplier<Sink> sinkSupplier) {
         this.poolSize = poolSize;
 

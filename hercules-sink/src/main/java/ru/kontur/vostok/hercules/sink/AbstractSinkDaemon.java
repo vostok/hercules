@@ -21,6 +21,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Base implementation of Sink daemon. Uses pool of SimpleSink for concurrent processing.
+ *
  * @author Gregory Koshelev
  */
 public abstract class AbstractSinkDaemon {
@@ -61,7 +63,7 @@ public abstract class AbstractSinkDaemon {
         sender.start();
 
         int poolSize = Props.POOL_SIZE.extract(sinkProperties);
-        this.executor = Executors.newFixedThreadPool(poolSize);
+        this.executor = Executors.newFixedThreadPool(poolSize);//TODO: Provide custom ThreadFactory
 
         Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
         Meter processedEventsMeter = metricsCollector.meter("processedEvents");
@@ -87,8 +89,18 @@ public abstract class AbstractSinkDaemon {
 
     protected abstract Sender createSender(Properties senderProperties, MetricsCollector metricsCollector);
 
+    /**
+     * Application id is used to identify across Hercules Cluster. E.g. in metrics, logging and others.
+     *
+     * @return application id
+     */
     protected abstract String getDaemonId();
 
+    /**
+     * Human readable application name.
+     *
+     * @return application name
+     */
     protected abstract String getDaemonName();
 
     private void shutdown() {
