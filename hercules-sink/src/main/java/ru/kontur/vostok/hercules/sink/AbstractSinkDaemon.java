@@ -36,55 +36,66 @@ public abstract class AbstractSinkDaemon {
     protected MetricsCollector metricsCollector;
 
     protected void run(String[] args) {
-        Map<String, String> parameters = ArgsParser.parse(args);
+        long start = System.currentTimeMillis();
+        LOGGER.info("Starting {}", getDaemonName());
 
-        Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "applicationProperties"));
+        try {
+            Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
-        Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-        Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-        Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
+            Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "applicationProperties"));
 
-        Properties senderProperties = PropertiesUtil.ofScope(sinkProperties, Scopes.SENDER);
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+            Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
+            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+            Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
 
-        String daemonId = getDaemonId();
-        ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
+            Properties senderProperties = PropertiesUtil.ofScope(sinkProperties, Scopes.SENDER);
 
-        metricsCollector = new MetricsCollector(metricsProperties);
-        metricsCollector.start();
-        CommonMetrics.registerCommonMetrics(
-                metricsCollector,
-                Props.THREAD_GROUP_REGEXP.extract(metricsProperties));
+            String daemonId = getDaemonId();
+            ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
 
-        applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
-        applicationStatusHttpServer.start();
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+            CommonMetrics.registerCommonMetrics(
+                    metricsCollector,
+                    Props.THREAD_GROUP_REGEXP.extract(metricsProperties));
 
-        this.sender = createSender(senderProperties, metricsCollector);
-        sender.start();
+            applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
+            applicationStatusHttpServer.start();
 
-        int poolSize = Props.POOL_SIZE.extract(sinkProperties);
-        this.executor = Executors.newFixedThreadPool(poolSize);//TODO: Provide custom ThreadFactory
+            this.sender = createSender(senderProperties, metricsCollector);
+            sender.start();
 
-        Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
-        Meter processedEventsMeter = metricsCollector.meter("processedEvents");
-        Meter rejectedEventsMeter = metricsCollector.meter("rejectedEvents");
-        Meter totalEventsMeter = metricsCollector.meter("totalEvents");
+            int poolSize = Props.POOL_SIZE.extract(sinkProperties);
+            this.executor = Executors.newFixedThreadPool(poolSize);//TODO: Provide custom ThreadFactory
 
-        this.sinkPool =
-                new SinkPool(
-                        poolSize,
-                        () -> new SimpleSink(
-                                executor,
-                                daemonId,
-                                sinkProperties,
-                                sender,
-                                droppedEventsMeter,
-                                processedEventsMeter,
-                                rejectedEventsMeter,
-                                totalEventsMeter));
-        sinkPool.start();
+            Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
+            Meter processedEventsMeter = metricsCollector.meter("processedEvents");
+            Meter rejectedEventsMeter = metricsCollector.meter("rejectedEvents");
+            Meter totalEventsMeter = metricsCollector.meter("totalEvents");
+
+            this.sinkPool =
+                    new SinkPool(
+                            poolSize,
+                            () -> new SimpleSink(
+                                    executor,
+                                    daemonId,
+                                    sinkProperties,
+                                    sender,
+                                    droppedEventsMeter,
+                                    processedEventsMeter,
+                                    rejectedEventsMeter,
+                                    totalEventsMeter));
+            sinkPool.start();
+        } catch (Throwable throwable) {
+            LOGGER.error("Cannot start application due to error", throwable);
+            shutdown();
+            return;
+        }
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
+
+        LOGGER.info("{} started for {} millis", getDaemonName(), System.currentTimeMillis() - start);
     }
 
     protected abstract Sender createSender(Properties senderProperties, MetricsCollector metricsCollector);
@@ -104,6 +115,9 @@ public abstract class AbstractSinkDaemon {
     protected abstract String getDaemonName();
 
     private void shutdown() {
+        long start = System.currentTimeMillis();
+        LOGGER.info("Start {} shutdown", getDaemonName());
+
         try {
             if (sinkPool != null) {
                 sinkPool.stop();
@@ -144,6 +158,8 @@ public abstract class AbstractSinkDaemon {
         } catch (Throwable t) {
             LOGGER.error("Error on stopping metrics collector", t);
         }
+
+        LOGGER.info("Finished {} shutdown for {} millis", getDaemonName(), System.currentTimeMillis() - start);
     }
 
     private static class Props {
