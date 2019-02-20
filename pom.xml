@@ -64,6 +64,7 @@
         <module>hercules-http-jetty</module>
         <module>hercules-client</module>
         <module>hercules-cassandra-common-sink</module>
+        <module>hercules-tracing-sink</module>
     </modules>
 
     <dependencyManagement>

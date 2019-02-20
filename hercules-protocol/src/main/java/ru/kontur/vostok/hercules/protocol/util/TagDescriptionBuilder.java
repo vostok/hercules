@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.protocol.Vector;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -71,6 +72,11 @@ public class TagDescriptionBuilder<T> {
             .addScalarExtractor(Type.SHORT, o -> ((Short) o).longValue())
             .addScalarExtractor(Type.INTEGER, o -> ((Integer) o).longValue())
             .addScalarExtractor(Type.LONG, o -> (Long) o);
+    }
+
+    public static TagDescriptionBuilder<UUID> uuid(final String name) {
+        return new TagDescriptionBuilder<UUID>(name)
+            .addScalarExtractor(Type.UUID, o -> (UUID) o);
     }
 
     public TagDescriptionBuilder<T> addScalarExtractor(Type type, Function<Object, ? extends T> extractor) {
