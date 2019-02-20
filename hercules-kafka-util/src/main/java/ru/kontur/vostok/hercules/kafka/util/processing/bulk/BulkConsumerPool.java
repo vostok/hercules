@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class BulkConsumerPool {
 
     private static class Props {

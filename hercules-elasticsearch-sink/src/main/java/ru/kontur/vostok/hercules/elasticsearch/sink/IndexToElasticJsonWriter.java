@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Deprecated
 public final class IndexToElasticJsonWriter {
 
     private static final Charset ENCODING = StandardCharsets.UTF_8;

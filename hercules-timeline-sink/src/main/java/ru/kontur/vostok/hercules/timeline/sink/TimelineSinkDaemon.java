@@ -103,6 +103,14 @@ public class TimelineSinkDaemon {
         }
 
         try {
+            if (Objects.nonNull(cassandraConnector)) {
+                cassandraConnector.close();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping cassandra connector sink", t);
+        }
+
+        try {
             if (curatorClient != null) {
                 curatorClient.stop();
             }

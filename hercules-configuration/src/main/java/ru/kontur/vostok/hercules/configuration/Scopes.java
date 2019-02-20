@@ -25,6 +25,8 @@ public final class Scopes {
 
     public static final String GATE_CLIENT = "gate.client";
 
+    public static final String SENDER = "sender";
+
     private Scopes() {
 
     }
