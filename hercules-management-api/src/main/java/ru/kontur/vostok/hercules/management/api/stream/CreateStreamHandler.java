@@ -10,11 +10,13 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
+import ru.kontur.vostok.hercules.meta.stream.validation.StreamValidators;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -25,6 +27,7 @@ import java.util.Optional;
 public class CreateStreamHandler implements HttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateStreamHandler.class);
+    private static final Validator<Stream> STREAM_VALIDATOR = StreamValidators.streamValidatorForHandler();
 
     private final AuthManager authManager;
     private final StreamTaskRepository repository;
@@ -51,6 +54,12 @@ public class CreateStreamHandler implements HttpHandler {
         exchange.getRequestReceiver().receiveFullBytes((exch, bytes) -> {
             try {
                 Stream stream = deserializer.readValue(bytes);
+
+                Optional<String> streamError = STREAM_VALIDATOR.validate(stream);
+                if(streamError.isPresent()) {
+                    ResponseUtil.badRequest(exch);
+                    return;
+                }
 
                 AuthResult authResult = authManager.authManage(apiKey, stream.getName());
                 if (!authResult.isSuccess()) {
