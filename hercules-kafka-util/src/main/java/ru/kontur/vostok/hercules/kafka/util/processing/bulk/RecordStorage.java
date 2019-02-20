@@ -17,6 +17,7 @@ import java.util.function.Function;
  * @param <Key> kafka record key type
  * @param <Value> kafka record value type
  */
+@Deprecated
 public class RecordStorage<Key, Value> {
 
     private final int storageSize;

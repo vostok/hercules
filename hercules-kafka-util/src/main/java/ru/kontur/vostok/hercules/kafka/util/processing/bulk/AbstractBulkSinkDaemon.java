@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Abstract sink daemon implementation
  */
+@Deprecated
 public abstract class AbstractBulkSinkDaemon {
 
     private static class MetricsProps {

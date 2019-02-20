@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.elasticsearch.sink;
+package ru.kontur.vostok.hercules.elastic.sink;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-@Deprecated
 public final class EventToElasticJsonWriter {
 
     @FunctionalInterface

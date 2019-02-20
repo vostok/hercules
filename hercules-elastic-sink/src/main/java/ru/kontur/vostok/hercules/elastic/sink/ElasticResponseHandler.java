@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.elasticsearch.sink;
+package ru.kontur.vostok.hercules.elastic.sink;
 
 import com.codahale.metrics.Meter;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -24,8 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
-@Deprecated
-public class BulkResponseHandler {
+public class ElasticResponseHandler {
 
     public static class Result {
 
@@ -232,7 +231,7 @@ public class BulkResponseHandler {
             "too_many_buckets_exception"
     ));
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkResponseHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticResponseHandler.class);
 
     private static final String METRIC_PREFIX = "bulkResponseHandler.";
 
@@ -248,7 +247,7 @@ public class BulkResponseHandler {
     private final Meter unknownErrorsMeter;
 
 
-    public BulkResponseHandler(final MetricsCollector metricsCollector) {
+    public ElasticResponseHandler(final MetricsCollector metricsCollector) {
         this.metricsCollector = metricsCollector;
 
         this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "retryableErrors");

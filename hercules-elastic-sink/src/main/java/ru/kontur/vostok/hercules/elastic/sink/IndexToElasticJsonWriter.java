@@ -1,10 +1,10 @@
-package ru.kontur.vostok.hercules.elasticsearch.sink;
+package ru.kontur.vostok.hercules.elastic.sink;
 
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
-import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.IOException;
@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@Deprecated
 public final class IndexToElasticJsonWriter {
 
     private static final Charset ENCODING = StandardCharsets.UTF_8;

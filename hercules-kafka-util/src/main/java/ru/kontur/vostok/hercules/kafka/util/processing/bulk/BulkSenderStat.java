@@ -5,6 +5,7 @@ package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class BulkSenderStat {
 
     public static final BulkSenderStat ZERO = new BulkSenderStat(0, 0);
