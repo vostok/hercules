@@ -13,7 +13,7 @@ import java.util.UUID;
  */
 public final class ObjectUtil {
 
-    public static final UUID NULL_UUID = new UUID(0, 0);
+    public static final UUID NIL_UUID = new UUID(0, 0);
 
     public static <T> T firstNonNull(T ... values) {
         for (T value : values) {
@@ -28,9 +28,9 @@ public final class ObjectUtil {
      * Convert null to UUID null value
      */
     @NotNull
-    public static UUID nullToNullUuidValue(@Nullable final UUID uuid) {
+    public static UUID nullToNilUuidValue(@Nullable final UUID uuid) {
         if (Objects.isNull(uuid)) {
-            return NULL_UUID;
+            return NIL_UUID;
         } else {
             return uuid;
         }
@@ -40,8 +40,8 @@ public final class ObjectUtil {
      * Convert null UUID value to null
      */
     @Nullable
-    public static UUID nullUuidValueToNull(@NotNull final UUID uuid) {
-        if (NULL_UUID.equals(uuid)) {
+    public static UUID nilUuidValueToNull(@NotNull final UUID uuid) {
+        if (NIL_UUID.equals(uuid)) {
             return null;
         } else {
             return uuid;

@@ -38,7 +38,7 @@ public class TracingCassandraSender extends AbstractCassandraSender {
 
         return Optional.of(new Object[]{
             traceId.get(),
-            ObjectUtil.nullToNullUuidValue(parentSpanId.orElse(null)),
+            ObjectUtil.nullToNilUuidValue(parentSpanId.orElse(null)),
             spanId.get(),
             payload
         });
