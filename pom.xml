@@ -66,6 +66,7 @@
         <module>hercules-sink</module>
         <module>hercules-elastic-sink</module>
         <module>hercules-cassandra-common-sink</module>
+        <module>hercules-tracing-sink</module>
     </modules>
 
     <dependencyManagement>
