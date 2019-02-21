@@ -8,11 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.validation.StreamValidators;
+import ru.kontur.vostok.hercules.meta.task.TaskFuture;
+import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
-import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
@@ -20,6 +20,7 @@ import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
@@ -30,13 +31,13 @@ public class CreateStreamHandler implements HttpHandler {
     private static final Validator<Stream> STREAM_VALIDATOR = StreamValidators.streamValidatorForHandler();
 
     private final AuthManager authManager;
-    private final StreamTaskRepository repository;
+    private final TaskQueue<StreamTask> taskQueue;
 
     private final ObjectReader deserializer;
 
-    public CreateStreamHandler(AuthManager authManager, StreamTaskRepository repository) {
+    public CreateStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue) {
         this.authManager = authManager;
-        this.repository = repository;
+        this.taskQueue = taskQueue;
 
         ObjectMapper objectMapper = new ObjectMapper();
         this.deserializer = objectMapper.readerFor(Stream.class);
@@ -56,7 +57,7 @@ public class CreateStreamHandler implements HttpHandler {
                 Stream stream = deserializer.readValue(bytes);
 
                 Optional<String> streamError = STREAM_VALIDATOR.validate(stream);
-                if(streamError.isPresent()) {
+                if (streamError.isPresent()) {
                     ResponseUtil.badRequest(exch);
                     return;
                 }
@@ -72,18 +73,27 @@ public class CreateStreamHandler implements HttpHandler {
                 }
                 //TODO: Auth sources if needed
 
-                CreationResult creationResult =
-                        repository.create(new StreamTask(stream, StreamTaskType.CREATE), stream.getName());
-                if (!creationResult.isSuccess()) {
-                    if (creationResult.getStatus() == CreationResult.Status.ALREADY_EXIST) {
-                        ResponseUtil.conflict(exch);
-                    } else {
-                        ResponseUtil.internalServerError(exch);
-                    }
+
+                TaskFuture taskFuture =
+                        taskQueue.submit(
+                                new StreamTask(stream, StreamTaskType.CREATE),
+                                stream.getName(),
+                                10_000L,//TODO: Move to properties
+                                TimeUnit.MILLISECONDS);
+                if (!taskFuture.isFailed()) {
+                    ResponseUtil.internalServerError(exch);
                     return;
                 }
 
-                //TODO: Wait for result if needed
+                if (ExchangeUtil.extractQueryParam(exch, "sync").isPresent()) {
+                    taskFuture.await();
+                    if (taskFuture.isDone()) {
+                        ResponseUtil.ok(exch);
+                        return;
+                    }
+                    ResponseUtil.internalServerError(exch);
+                    return;
+                }
                 ResponseUtil.ok(exch);
             } catch (IOException e) {
                 LOGGER.error("Error on processing request", e);

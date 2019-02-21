@@ -25,6 +25,8 @@ import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
+import ru.kontur.vostok.hercules.meta.task.TaskQueue;
+import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
@@ -60,7 +62,7 @@ public class HttpServer {
             AuthManager authManager,
             StreamRepository streamRepository,
             TimelineRepository timelineRepository,
-            StreamTaskRepository streamTaskRepository,
+            TaskQueue<StreamTask> streamTaskQueue,
             TimelineTaskRepository timelineTaskRepository,
             BlacklistRepository blacklistRepository,
             RuleRepository ruleRepository,
@@ -72,8 +74,8 @@ public class HttpServer {
 
         AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
 
-        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskRepository);
-        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskRepository);
+        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue);
+        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
         InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
 

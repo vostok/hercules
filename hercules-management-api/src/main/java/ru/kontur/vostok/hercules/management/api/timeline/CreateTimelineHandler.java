@@ -66,7 +66,7 @@ public class CreateTimelineHandler implements HttpHandler {
                 CreationResult creationResult =
                         repository.create(new TimelineTask(timeline, TimelineTaskType.CREATE), timeline.getName());
                 if (!creationResult.isSuccess()) {
-                    if (creationResult.getStatus() == CreationResult.Status.ALREADY_EXIST) {
+                    if (creationResult.status() == CreationResult.Status.ALREADY_EXIST) {
                         ResponseUtil.conflict(exch);
                     } else {
                         ResponseUtil.internalServerError(exch);

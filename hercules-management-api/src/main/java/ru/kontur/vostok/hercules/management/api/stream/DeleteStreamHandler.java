@@ -6,6 +6,8 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
+import ru.kontur.vostok.hercules.meta.task.TaskFuture;
+import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
@@ -13,17 +15,18 @@ import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
  */
 public class DeleteStreamHandler implements HttpHandler {
     private final AuthManager authManager;
-    private final StreamTaskRepository repository;
+    private final TaskQueue<StreamTask> taskQueue;
 
-    public DeleteStreamHandler(AuthManager authManager, StreamTaskRepository repository) {
+    public DeleteStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue) {
         this.authManager = authManager;
-        this.repository = repository;
+        this.taskQueue = taskQueue;
     }
 
     @Override
@@ -54,14 +57,26 @@ public class DeleteStreamHandler implements HttpHandler {
         BaseStream stub = new BaseStream();
         stub.setName(stream);
 
-        CreationResult creationResult =
-                repository.create(new StreamTask(stub, StreamTaskType.DELETE), stub.getName());
-        if (!creationResult.isSuccess()) {
+        TaskFuture taskFuture =
+                taskQueue.submit(
+                        new StreamTask(stub, StreamTaskType.DELETE),
+                        stub.getName(),
+                10_000L,//TODO: Move to Properties
+                TimeUnit.MILLISECONDS);
+        if (!taskFuture.isFailed()) {
             ResponseUtil.internalServerError(exchange);
             return;
         }
 
-        //TODO: Wait for result if needed
+        if (ExchangeUtil.extractQueryParam(exchange, "sync").isPresent()) {
+            taskFuture.await();
+            if (taskFuture.isDone()) {
+                ResponseUtil.ok(exchange);
+                return;
+            }
+            ResponseUtil.internalServerError(exchange);
+            return;
+        }
         ResponseUtil.ok(exchange);
     }
 }

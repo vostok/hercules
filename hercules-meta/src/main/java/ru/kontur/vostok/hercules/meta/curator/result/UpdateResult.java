@@ -14,7 +14,7 @@ public class UpdateResult {
         return status == Status.OK;
     }
 
-    public Status getStatus() {
+    public Status status() {
         return status;
     }
 
