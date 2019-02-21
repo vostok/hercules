@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSender;
 
 import java.util.Properties;
 
+@Deprecated
 public class ElasticSearchSinkDaemon extends AbstractBulkSinkDaemon {
 
     public static void main(String[] args) {

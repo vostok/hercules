@@ -6,7 +6,7 @@
     <groupId>ru.kontur.vostok.hercules</groupId>
     <artifactId>hercules</artifactId>
     <packaging>pom</packaging>
-    <version>0.18.1-SNAPSHOT</version>
+    <version>0.19.0-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,7 +14,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <hercules.version>0.18.1-SNAPSHOT</hercules.version>
+        <hercules.version>0.19.0-SNAPSHOT</hercules.version>
 
         <kafka.version>2.0.0</kafka.version>
         <zookeeper.version>3.4.13</zookeeper.version>
@@ -63,6 +63,8 @@
         <module>hercules-http</module>
         <module>hercules-http-jetty</module>
         <module>hercules-client</module>
+        <module>hercules-sink</module>
+        <module>hercules-elastic-sink</module>
         <module>hercules-cassandra-common-sink</module>
         <module>hercules-tracing-sink</module>
     </modules>
@@ -313,6 +315,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-http</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sink</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>

@@ -20,6 +20,7 @@ import java.util.function.Supplier;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class BulkSenderPool<Key, Value> {
 
     private static class Props {

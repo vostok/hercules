@@ -11,6 +11,7 @@ import java.util.Objects;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class BulkSenderRunnable<Key, Value> implements Runnable {
 
     private final BulkSender<Value> sender;

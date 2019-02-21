@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+@Deprecated
 public final class EventToElasticJsonWriter {
 
     @FunctionalInterface

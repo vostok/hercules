@@ -20,6 +20,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class BulkQueue<Key, Value> {
 
     public static class RunResult<Key, Value> {

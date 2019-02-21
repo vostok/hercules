@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
+@Deprecated
 public class ElasticSearchEventSender implements BulkSender<Event> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchEventSender.class);
 

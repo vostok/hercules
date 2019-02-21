@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
+@Deprecated
 public class BulkResponseHandler {
 
     public static class Result {
