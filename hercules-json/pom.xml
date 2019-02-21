@@ -21,6 +21,4 @@
             <artifactId>jackson-core</artifactId>
         </dependency>
     </dependencies>
-
-
 </project>

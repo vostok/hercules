@@ -1,5 +1,6 @@
 package ru.kontur.hercules.tracing.api;
 
+import com.datastax.driver.core.exceptions.PagingStateException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -12,6 +13,7 @@ import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -47,10 +49,28 @@ public class GetTraceHandler implements HttpHandler {
             return;
         }
 
-        final PagedResult<Event> traceSpansByTraceId = cassandraTracingReader.getTraceSpansByTraceId(traceIdResult.get(), DEFAULT_COUNT, null);
+        final Result<Integer, String> countResult = ExchangeUtil.extractQueryParam(exchange, "count")
+            .map(Parsers::parseInteger)
+            .orElse(Result.ok(DEFAULT_COUNT));
 
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-        exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));
-        exchange.endExchange();
+        if (!countResult.isOk()) {
+            ResponseUtil.badRequest(exchange, String.format("Parameter count has illegal value: %s", countResult.getError()));
+        }
+
+        final Optional<String> pagingState = ExchangeUtil.extractQueryParam(exchange, "pagingState");
+
+        try {
+            final PagedResult<Event> traceSpansByTraceId = cassandraTracingReader.getTraceSpansByTraceId(
+                traceIdResult.get(),
+                countResult.get(),
+                pagingState.orElse(null)
+            );
+
+            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
+            exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));
+            exchange.endExchange();
+        } catch (PagingStateException e) {
+            ResponseUtil.badRequest(exchange, "Incorrect pagingState value");
+        }
     }
 }

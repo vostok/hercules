@@ -15,12 +15,11 @@ import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * CassandraTracingReader
@@ -63,9 +62,16 @@ public class CassandraTracingReader {
 
         final ResultSet resultSet = session.execute(simpleStatement);
 
-        final List<Event> events = StreamSupport.stream(resultSet.spliterator(), false)
-            .map(CassandraTracingReader::convert)
-            .collect(Collectors.toList());
+        int remaining = resultSet.getAvailableWithoutFetching();
+        final List<Event> events = new ArrayList<>(remaining);
+        for (Row row : resultSet) {
+            events.add(convert(row));
+
+            // Cassandra will fetch next records on iteration, so we need to prevent this behavior
+            if (--remaining == 0) {
+                break;
+            }
+        }
 
         final PagingState pagingState = resultSet.getExecutionInfo().getPagingState();
 
