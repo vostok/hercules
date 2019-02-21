@@ -5,6 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import ru.kontur.hercules.tracing.api.cassandra.PagedResult;
+import ru.kontur.hercules.tracing.api.json.EventToJsonConverter;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
@@ -49,6 +50,7 @@ public class GetTraceHandler implements HttpHandler {
         final PagedResult<Event> traceSpansByTraceId = cassandraTracingReader.getTraceSpansByTraceId(traceIdResult.get(), DEFAULT_COUNT, null);
 
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-        exchange.getResponseSender().send(objectMapper.writeValueAsString(traceSpansByTraceId));
+        exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));
+        exchange.endExchange();
     }
 }

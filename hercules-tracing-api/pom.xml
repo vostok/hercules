@@ -35,6 +35,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-configuration</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-json</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.undertow</groupId>

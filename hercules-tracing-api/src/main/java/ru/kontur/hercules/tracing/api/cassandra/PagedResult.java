@@ -12,16 +12,16 @@ import java.util.List;
  */
 public class PagedResult<T> {
 
-    private final List<T> data;
+    private final List<T> result;
     private final String pagingState;
 
-    public PagedResult(@NotNull List<T> data, @Nullable String pagingState) {
-        this.data = data;
+    public PagedResult(@NotNull List<T> result, @Nullable String pagingState) {
+        this.result = result;
         this.pagingState = pagingState;
     }
 
-    public List<T> getData() {
-        return data;
+    public List<T> getResult() {
+        return result;
     }
 
     public String getPagingState() {
