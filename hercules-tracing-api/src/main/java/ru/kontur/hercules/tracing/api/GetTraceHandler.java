@@ -24,17 +24,14 @@ import java.util.UUID;
  */
 public class GetTraceHandler implements HttpHandler {
 
-    private static final int DEFAULT_COUNT = 100;
+    private static final int DEFAULT_COUNT = 10_000;
 
     private final CassandraTracingReader cassandraTracingReader;
-    private final ObjectMapper objectMapper;
 
     public GetTraceHandler(
-        CassandraTracingReader cassandraTracingReader,
-        ObjectMapper objectMapper
+        CassandraTracingReader cassandraTracingReader
     ) {
         this.cassandraTracingReader = cassandraTracingReader;
-        this.objectMapper = objectMapper;
     }
 
     @Override

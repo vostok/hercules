@@ -1,6 +1,5 @@
 package ru.kontur.hercules.tracing.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
@@ -66,10 +65,7 @@ public class TracingApiApplication {
             server = new HttpServer(
                 httpServerProperties,
                 authManager,
-                new GetTraceHandler(
-                    cassandraTracingReader,
-                    new ObjectMapper()
-                ),
+                new GetTraceHandler(cassandraTracingReader),
                 metricsCollector
             );
             server.start();
