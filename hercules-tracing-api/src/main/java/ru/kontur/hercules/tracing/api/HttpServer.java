@@ -26,7 +26,7 @@ public class HttpServer {
 
         static final PropertyDescription<Integer> PORT = PropertyDescriptions
             .integerProperty("port")
-            .withDefaultValue(6308)
+            .withDefaultValue(6310)
             .withValidator(Validators.portValidator())
             .build();
     }
