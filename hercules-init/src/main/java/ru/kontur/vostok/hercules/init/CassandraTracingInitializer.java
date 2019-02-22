@@ -82,17 +82,17 @@ public class CassandraTracingInitializer {
             session.execute(
                 "CREATE TABLE IF NOT EXISTS " + keyspace + ".tracing_spans (\n" +
                     "        trace_id uuid,\n" +
-                    "        parentSpanId uuid,\n" +
+                    "        parent_span_id uuid,\n" +
                     "        span_id uuid,\n" +
                     "        payload blob,\n" +
                     "        PRIMARY KEY (\n" +
                     "            (trace_id),\n" +
-                    "            parentSpanId,\n" +
+                    "            parent_span_id,\n" +
                     "            span_id\n" +
                     "        )\n" +
                     "    )\n" +
                     "    WITH\n" +
-                    "        CLUSTERING ORDER BY (parentSpanId ASC, span_id ASC)\n" +
+                    "        CLUSTERING ORDER BY (parent_span_id ASC, span_id ASC)\n" +
                     "        AND comment = 'Tracing span storage'\n" +
                     "        AND default_time_to_live = " + ttl + "\n" +
                     "        AND bloom_filter_fp_chance = 0.01\n" +

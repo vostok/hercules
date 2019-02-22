@@ -97,7 +97,7 @@ public class CassandraTracingReader {
         @Nullable final String pagingStateString
     ) {
         final SimpleStatement simpleStatement = new SimpleStatement(
-            "SELECT payload FROM tracing_spans WHERE trace_id = ? AND parentspanid = ?",
+            "SELECT payload FROM tracing_spans WHERE trace_id = ? AND parent_span_id = ?",
             traceId,
             parentSpanId
         );
