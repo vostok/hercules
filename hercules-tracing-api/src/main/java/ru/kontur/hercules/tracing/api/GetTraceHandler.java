@@ -1,7 +1,6 @@
 package ru.kontur.hercules.tracing.api;
 
 import com.datastax.driver.core.exceptions.PagingStateException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
@@ -64,7 +63,7 @@ public class GetTraceHandler implements HttpHandler {
             .orElse(Result.ok(DEFAULT_COUNT));
 
         if (!limitResult.isOk()) {
-            ResponseUtil.badRequest(exchange, String.format("Parameter count has illegal value: %s", limitResult.getError()));
+            ResponseUtil.badRequest(exchange, String.format("Parameter limit has illegal value: %s", limitResult.getError()));
         }
 
         // TODO: Replace with good parameters extractor
