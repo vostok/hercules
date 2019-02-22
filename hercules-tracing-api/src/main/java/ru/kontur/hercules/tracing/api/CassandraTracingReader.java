@@ -12,13 +12,11 @@ import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
-import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -51,33 +49,11 @@ public class CassandraTracingReader {
         final int count,
         @Nullable final String pagingStateString
     ) {
-        final SimpleStatement simpleStatement = new SimpleStatement(
+        return select(
             "SELECT payload FROM tracing_spans WHERE trace_id = ?",
+            count,
+            pagingStateString,
             traceId
-        );
-        simpleStatement.setFetchSize(count);
-        if (Objects.nonNull(pagingStateString)) {
-            simpleStatement.setPagingState(PagingState.fromString(pagingStateString));
-        }
-
-        final ResultSet resultSet = session.execute(simpleStatement);
-
-        int remaining = resultSet.getAvailableWithoutFetching();
-        final List<Event> events = new ArrayList<>(remaining);
-        for (Row row : resultSet) {
-            events.add(convert(row));
-
-            // Cassandra will fetch next records on iteration, so we need to prevent this behavior
-            if (--remaining == 0) {
-                break;
-            }
-        }
-
-        final PagingState pagingState = resultSet.getExecutionInfo().getPagingState();
-
-        return new PagedResult<>(
-            events,
-            Objects.nonNull(pagingState) ? pagingState.toString() : null
         );
     }
 
@@ -96,11 +72,27 @@ public class CassandraTracingReader {
         final int count,
         @Nullable final String pagingStateString
     ) {
-        final SimpleStatement simpleStatement = new SimpleStatement(
+        return select(
             "SELECT payload FROM tracing_spans WHERE trace_id = ? AND parent_span_id = ?",
+            count,
+            pagingStateString,
             traceId,
             parentSpanId
         );
+    }
+
+    private PagedResult<Event> select(
+        @NotNull final String selectRequest,
+        final int count,
+        @Nullable final String pagingStateString,
+        Object ... params
+    ) {
+
+        final SimpleStatement simpleStatement = new SimpleStatement(
+            selectRequest,
+            params
+        );
+
         simpleStatement.setFetchSize(count);
         if (Objects.nonNull(pagingStateString)) {
             simpleStatement.setPagingState(PagingState.fromString(pagingStateString));
@@ -125,10 +117,6 @@ public class CassandraTracingReader {
             events,
             Objects.nonNull(pagingState) ? pagingState.toString() : null
         );
-    }
-
-    public Optional<Event> getTraceSpanByTraceIdAndSpanId(final UUID traceUd, final UUID spanId) {
-        throw new NotImplementedException();
     }
 
     private static Event convert(final Row row) {

@@ -4,12 +4,10 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import ru.kontur.hercules.tracing.api.cassandra.PagedResult;
 import ru.kontur.vostok.hercules.json.EventToJsonWriter;
-import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.Objects;
 
