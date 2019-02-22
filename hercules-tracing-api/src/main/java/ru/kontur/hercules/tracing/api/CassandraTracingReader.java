@@ -40,18 +40,18 @@ public class CassandraTracingReader {
      * Get trace spans by trace id
      *
      * @param traceId trace id
-     * @param count count of events
+     * @param limit max count of fetched events
      * @param pagingStateString page state returned in previous fetch or null on first fetch
      * @return list of events
      */
     public PagedResult<Event> getTraceSpansByTraceId(
         @NotNull final UUID traceId,
-        final int count,
+        final int limit,
         @Nullable final String pagingStateString
     ) {
         return select(
             "SELECT payload FROM tracing_spans WHERE trace_id = ?",
-            count,
+            limit,
             pagingStateString,
             traceId
         );
@@ -62,19 +62,19 @@ public class CassandraTracingReader {
      *
      * @param traceId trace id
      * @param parentSpanId parent span id
-     * @param count count
+     * @param limit max count of fetched events
      * @param pagingStateString page state returned in previous fetch or null on first fetch
      * @return list of events
      */
     public PagedResult<Event> getTraceSpansByTraceIdAndParentSpanId(
         @NotNull final UUID traceId,
         @NotNull final UUID parentSpanId,
-        final int count,
+        final int limit,
         @Nullable final String pagingStateString
     ) {
         return select(
             "SELECT payload FROM tracing_spans WHERE trace_id = ? AND parent_span_id = ?",
-            count,
+            limit,
             pagingStateString,
             traceId,
             parentSpanId
@@ -83,7 +83,7 @@ public class CassandraTracingReader {
 
     private PagedResult<Event> select(
         @NotNull final String selectRequest,
-        final int count,
+        final int limit,
         @Nullable final String pagingStateString,
         Object ... params
     ) {
@@ -93,19 +93,20 @@ public class CassandraTracingReader {
             params
         );
 
-        simpleStatement.setFetchSize(count);
+        simpleStatement.setFetchSize(limit);
         if (Objects.nonNull(pagingStateString)) {
             simpleStatement.setPagingState(PagingState.fromString(pagingStateString));
         }
 
         final ResultSet resultSet = session.execute(simpleStatement);
 
+        // Cassandra will fetch next records on iteration, so we need to forcibly break the iteration
         int remaining = resultSet.getAvailableWithoutFetching();
         final List<Event> events = new ArrayList<>(remaining);
         for (Row row : resultSet) {
             events.add(convert(row));
 
-            // Cassandra will fetch next records on iteration, so we need to prevent this behavior
+            // Forcibly break the iteration
             if (--remaining == 0) {
                 break;
             }

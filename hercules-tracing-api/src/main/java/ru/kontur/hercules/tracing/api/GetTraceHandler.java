@@ -59,12 +59,12 @@ public class GetTraceHandler implements HttpHandler {
         }
 
         // TODO: Replace with good parameters extractor
-        final Result<Integer, String> countResult = ExchangeUtil.extractQueryParam(exchange, "count")
+        final Result<Integer, String> limitResult = ExchangeUtil.extractQueryParam(exchange, "limit")
             .map(Parsers::parseInteger)
             .orElse(Result.ok(DEFAULT_COUNT));
 
-        if (!countResult.isOk()) {
-            ResponseUtil.badRequest(exchange, String.format("Parameter count has illegal value: %s", countResult.getError()));
+        if (!limitResult.isOk()) {
+            ResponseUtil.badRequest(exchange, String.format("Parameter count has illegal value: %s", limitResult.getError()));
         }
 
         // TODO: Replace with good parameters extractor
@@ -75,7 +75,7 @@ public class GetTraceHandler implements HttpHandler {
                 final PagedResult<Event> traceSpansByTraceIdAndParentSpanId = cassandraTracingReader.getTraceSpansByTraceIdAndParentSpanId(
                     traceIdResult.get(),
                     parentSpanIdResult.get(),
-                    countResult.get(),
+                    limitResult.get(),
                     pagingState.orElse(null)
                 );
 
@@ -85,7 +85,7 @@ public class GetTraceHandler implements HttpHandler {
             } else {
                 final PagedResult<Event> traceSpansByTraceId = cassandraTracingReader.getTraceSpansByTraceId(
                     traceIdResult.get(),
-                    countResult.get(),
+                    limitResult.get(),
                     pagingState.orElse(null)
                 );
 
