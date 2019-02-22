@@ -13,6 +13,7 @@ import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,6 +50,15 @@ public class GetTraceHandler implements HttpHandler {
             return;
         }
 
+        final Result<UUID, String> parentSpanIdResult = ExchangeUtil.extractQueryParam(exchange, "parentSpanId")
+            .map(Parsers::parseUuid)
+            .orElse(Result.ok(null));
+
+        if (!parentSpanIdResult.isOk()) {
+            ResponseUtil.badRequest(exchange, String.format("Parameter parentTraceId has illegal value: %s", traceIdResult.getError()));
+            return;
+        }
+
         final Result<Integer, String> countResult = ExchangeUtil.extractQueryParam(exchange, "count")
             .map(Parsers::parseInteger)
             .orElse(Result.ok(DEFAULT_COUNT));
@@ -60,15 +70,28 @@ public class GetTraceHandler implements HttpHandler {
         final Optional<String> pagingState = ExchangeUtil.extractQueryParam(exchange, "pagingState");
 
         try {
-            final PagedResult<Event> traceSpansByTraceId = cassandraTracingReader.getTraceSpansByTraceId(
-                traceIdResult.get(),
-                countResult.get(),
-                pagingState.orElse(null)
-            );
+            if (Objects.isNull(parentSpanIdResult.get())) {
+                final PagedResult<Event> traceSpansByTraceId = cassandraTracingReader.getTraceSpansByTraceId(
+                    traceIdResult.get(),
+                    countResult.get(),
+                    pagingState.orElse(null)
+                );
 
-            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-            exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));
-            exchange.endExchange();
+                exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
+                exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));
+                exchange.endExchange();
+            } else {
+                final PagedResult<Event> traceSpansByTraceIdAndParentSpanId = cassandraTracingReader.getTraceSpansByTraceIdAndParentSpanId(
+                    traceIdResult.get(),
+                    parentSpanIdResult.get(),
+                    countResult.get(),
+                    pagingState.orElse(null)
+                );
+
+                exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
+                exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceIdAndParentSpanId));
+                exchange.endExchange();
+            }
         } catch (PagingStateException e) {
             ResponseUtil.badRequest(exchange, "Incorrect pagingState value");
         }

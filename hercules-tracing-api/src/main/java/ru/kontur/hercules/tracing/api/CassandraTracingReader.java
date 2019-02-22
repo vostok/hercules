@@ -52,7 +52,7 @@ public class CassandraTracingReader {
         @Nullable final String pagingStateString
     ) {
         final SimpleStatement simpleStatement = new SimpleStatement(
-            "SELECT payload FROM tracing_spans where trace_id = ?",
+            "SELECT payload FROM tracing_spans WHERE trace_id = ?",
             traceId
         );
         simpleStatement.setFetchSize(count);
@@ -81,8 +81,50 @@ public class CassandraTracingReader {
         );
     }
 
-    public PagedResult<Event> getTraceSpansByTraceIdAndParentSpanId(final UUID traceId, final UUID parentSpanId, final PageInfo pageInfo) {
-        throw new NotImplementedException();
+    /**
+     * Get trace spans by span id and parent span id
+     *
+     * @param traceId trace id
+     * @param parentSpanId parent span id
+     * @param count count
+     * @param pagingStateString page state returned in previous fetch or null on first fetch
+     * @return list of events
+     */
+    public PagedResult<Event> getTraceSpansByTraceIdAndParentSpanId(
+        @NotNull final UUID traceId,
+        @NotNull final UUID parentSpanId,
+        final int count,
+        @Nullable final String pagingStateString
+    ) {
+        final SimpleStatement simpleStatement = new SimpleStatement(
+            "SELECT payload FROM tracing_spans WHERE trace_id = ? AND parentspanid = ?",
+            traceId,
+            parentSpanId
+        );
+        simpleStatement.setFetchSize(count);
+        if (Objects.nonNull(pagingStateString)) {
+            simpleStatement.setPagingState(PagingState.fromString(pagingStateString));
+        }
+
+        final ResultSet resultSet = session.execute(simpleStatement);
+
+        int remaining = resultSet.getAvailableWithoutFetching();
+        final List<Event> events = new ArrayList<>(remaining);
+        for (Row row : resultSet) {
+            events.add(convert(row));
+
+            // Cassandra will fetch next records on iteration, so we need to prevent this behavior
+            if (--remaining == 0) {
+                break;
+            }
+        }
+
+        final PagingState pagingState = resultSet.getExecutionInfo().getPagingState();
+
+        return new PagedResult<>(
+            events,
+            Objects.nonNull(pagingState) ? pagingState.toString() : null
+        );
     }
 
     public Optional<Event> getTraceSpanByTraceIdAndSpanId(final UUID traceUd, final UUID spanId) {
