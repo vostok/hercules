@@ -2,7 +2,6 @@ package ru.kontur.hercules.tracing.api;
 
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
-import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.undertow.util.handlers.HerculesRoutingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
@@ -35,7 +34,6 @@ public class HttpServer {
 
     public HttpServer(
         Properties properties,
-        AuthManager authManager,
         GetTraceHandler getTraceHandler,
         MetricsCollector metricsCollector
     ) {

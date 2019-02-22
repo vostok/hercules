@@ -2,7 +2,6 @@ package ru.kontur.hercules.tracing.api;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
@@ -28,7 +27,6 @@ public class TracingApiApplication {
     private static HttpServer server;
     private static CuratorClient curatorClient;
     private static CassandraConnector cassandraConnector;
-    private static AuthManager authManager;
     private static MetricsCollector metricsCollector;
     private static CassandraTracingReader cassandraTracingReader;
 
@@ -56,15 +54,12 @@ public class TracingApiApplication {
 
             cassandraTracingReader = new CassandraTracingReader(cassandraConnector);
 
-            authManager = new AuthManager(curatorClient);
-
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
             server = new HttpServer(
                 httpServerProperties,
-                authManager,
                 new GetTraceHandler(cassandraTracingReader),
                 metricsCollector
             );
@@ -108,14 +103,6 @@ public class TracingApiApplication {
         } catch (Throwable t) {
             LOGGER.error("Error on stopping curator client", t);
             //TODO: Process error
-        }
-
-        try {
-            if (authManager != null) {
-                authManager.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping auth manager", t);
         }
 
         try {
