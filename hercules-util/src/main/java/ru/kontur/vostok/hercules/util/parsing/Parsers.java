@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.IntFunction;
 
 /**
@@ -91,6 +92,21 @@ public final class Parsers {
         }
 
         return Result.error(String.format("Invalid boolean '%s'", s));
+    }
+
+    /**
+     * Parse UUID
+     *
+     * @param s string
+     * @return parsed UUID or error description
+     */
+    public static Result<UUID, String> parseUuid(String s) {
+        s = s.trim();
+        try {
+            return Result.ok(UUID.fromString(s));
+        } catch (IllegalArgumentException e) {
+            return Result.error(String.format("Invalid UUID '%s'", s));
+        }
     }
 
     /**
