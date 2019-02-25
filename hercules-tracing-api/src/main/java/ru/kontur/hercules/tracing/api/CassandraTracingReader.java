@@ -100,6 +100,10 @@ public class CassandraTracingReader {
 
         final ResultSet resultSet = session.execute(simpleStatement);
 
+        // https://docs.datastax.com/en/developer/java-driver/3.5/manual/paging/
+        // Cassandra breaks result set into pages, thus ResultSet may contain less records than the limit
+        // FIXME: Change this logic if this behavior is unexpected (suppose client sees fewer records and thinks that no more records)
+        //
         // Cassandra will fetch next records on iteration, so we need to forcibly break the iteration
         int remaining = resultSet.getAvailableWithoutFetching();
         final List<Event> events = new ArrayList<>(remaining);
