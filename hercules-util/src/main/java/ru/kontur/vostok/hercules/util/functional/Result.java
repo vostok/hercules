@@ -1,6 +1,8 @@
 package ru.kontur.vostok.hercules.util.functional;
 
+import javax.swing.text.html.Option;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
@@ -45,6 +47,14 @@ public class Result<R, E> {
 
     public <E1> Result<R, E1> mapError(Function<E, E1> errorConverter) {
         return map(Function.identity(), errorConverter);
+    }
+
+    public <R1> Result<R1, E> flatMap(final Function<R, Result<R1, E>> converter) {
+        if (isOk()) {
+            return converter.apply(result);
+        } else {
+            return Result.error(error);
+        }
     }
 
     public static <R, E> Result<R, E> ok(R result) {

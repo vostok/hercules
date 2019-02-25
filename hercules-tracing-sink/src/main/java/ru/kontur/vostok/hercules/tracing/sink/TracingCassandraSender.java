@@ -48,7 +48,7 @@ public class TracingCassandraSender extends AbstractCassandraSender {
     protected String getPreparedStatement() {
         return "INSERT INTO " + TABLE_NAME + " (" +
             "  trace_id," +
-            "  parentSpanId," +
+            "  parent_span_id," +
             "  span_id," +
             "  payload" +
             ") " +
