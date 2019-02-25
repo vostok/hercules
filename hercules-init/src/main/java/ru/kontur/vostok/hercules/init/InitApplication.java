@@ -55,5 +55,14 @@ public class InitApplication {
                 e.printStackTrace();
             }
         }
+
+        if (StringUtil.tryParseBoolean(parameters.get("init-tracing-cassandra"), false)) {
+            try {
+                new CassandraTracingInitializer(PropertiesUtil.ofScope(properties, "tracing.cassandra")).init();
+            } catch (Exception e) {
+                System.out.println("Cassandra initialization fails with exception " + e.toString());
+                e.printStackTrace();
+            }
+        }
     }
 }
