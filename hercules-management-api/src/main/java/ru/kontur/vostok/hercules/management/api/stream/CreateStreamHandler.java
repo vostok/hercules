@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.validation.StreamValidators;
 import ru.kontur.vostok.hercules.meta.task.TaskFuture;
@@ -71,8 +72,21 @@ public class CreateStreamHandler implements HttpHandler {
                     ResponseUtil.forbidden(exch);
                     return;
                 }
-                //TODO: Auth sources if needed
 
+                if (stream instanceof DerivedStream) {// Auth source streams for DerivedStream
+                    String[] streams = ((DerivedStream) stream).getStreams();
+                    if (streams == null || streams.length == 0) {
+                        ResponseUtil.badRequest(exch);
+                        return;
+                    }
+                    for (String sourceStream : streams) {
+                        authResult = authManager.authRead(apiKey, sourceStream);
+                        if (!authResult.isSuccess()) {
+                            ResponseUtil.forbidden(exch);
+                            return;
+                        }
+                    }
+                }
 
                 TaskFuture taskFuture =
                         taskQueue.submit(
