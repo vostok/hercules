@@ -46,7 +46,6 @@
         <module>hercules-timeline-sink</module>
         <module>hercules-kafka-util</module>
         <module>hercules-stream-api</module>
-        <module>hercules-elasticsearch-sink</module>
         <module>hercules-timeline-api</module>
         <module>hercules-uuid</module>
         <module>hercules-cassandra-util</module>
