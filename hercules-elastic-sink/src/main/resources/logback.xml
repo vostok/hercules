@@ -1,5 +1,4 @@
 <configuration scan="true">
-
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -10,9 +9,9 @@
         <encoder>
             <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
-        <file>hercules_elasticsearch_sink.log</file>
+        <file>hercules_elastic_sink.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>hercules_elasticsearch_sink_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>hercules_elastic_sink_%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>3</maxHistory>
         </rollingPolicy>
     </appender>
@@ -21,9 +20,9 @@
         <encoder>
             <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
         </encoder>
-        <file>hercules_elasticsearch_sink_received_events.log</file>
+        <file>hercules_elastic_sink_received_events.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>hercules_elasticsearch_sink_received_events_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>hercules_elastic_sink_received_events_%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>3</maxHistory>
         </rollingPolicy>
     </appender>
@@ -32,9 +31,9 @@
         <encoder>
             <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
         </encoder>
-        <file>hercules_elasticsearch_sink_processed_events.log</file>
+        <file>hercules_elastic_sink_processed_events.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>hercules_elasticsearch_sink_processed_events_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>hercules_elastic_sink_processed_events_%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>3</maxHistory>
         </rollingPolicy>
     </appender>
@@ -43,9 +42,9 @@
         <encoder>
             <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
         </encoder>
-        <file>hercules_elasticsearch_sink_dropped_events.log</file>
+        <file>hercules_elastic_sink_dropped_events.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>hercules_elasticsearch_sink_dropped_events_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>hercules_elastic_sink_dropped_events_%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>3</maxHistory>
         </rollingPolicy>
     </appender>
