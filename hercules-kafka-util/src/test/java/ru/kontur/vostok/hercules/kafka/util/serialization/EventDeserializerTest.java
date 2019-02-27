@@ -11,9 +11,6 @@ import java.util.Collections;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Gregory Koshelev
- */
 public class EventDeserializerTest {
 
     private static final String TOPIC_STUB = null;
