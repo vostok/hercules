@@ -2,9 +2,9 @@ package ru.kontur.vostok.hercules.meta.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorException;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 
 import java.util.List;
@@ -14,7 +14,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
  * @author Gregory Koshelev

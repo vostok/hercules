@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.meta.curator;
+package ru.kontur.vostok.hercules.curator;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -9,13 +9,12 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorException;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorUnknownException;
-import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
-import ru.kontur.vostok.hercules.meta.curator.result.DeletionResult;
-import ru.kontur.vostok.hercules.meta.curator.result.ReadResult;
-import ru.kontur.vostok.hercules.meta.curator.result.UpdateResult;
+import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.curator.result.CreationResult;
+import ru.kontur.vostok.hercules.curator.result.DeletionResult;
+import ru.kontur.vostok.hercules.curator.result.ReadResult;
+import ru.kontur.vostok.hercules.curator.result.UpdateResult;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.Validators;
@@ -30,45 +29,6 @@ import java.util.stream.Collectors;
  * @author Gregory Koshelev
  */
 public class CuratorClient {
-
-    private static class Props {
-
-        static final PropertyDescription<String> CONNECT_STRING = PropertyDescriptions
-                .stringProperty("connectString")
-                .withDefaultValue("localhost:2181")
-                .build();
-
-        static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("connectionTimeout")
-                .withDefaultValue(10_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
-
-        static final PropertyDescription<Integer> SESSION_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("sessionTimeout")
-                .withDefaultValue(30_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
-
-        static final PropertyDescription<Integer> BASE_SLEEP_TIME_MS = PropertyDescriptions
-                .integerProperty("retryPolicy.baseSleepTime")
-                .withDefaultValue(1_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
-
-        static final PropertyDescription<Integer> MAX_RETRIES = PropertyDescriptions
-                .integerProperty("retryPolicy.maxRetries")
-                .withDefaultValue(5)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
-
-        static final PropertyDescription<Integer> MAX_SLEEP_TIME_MS = PropertyDescriptions
-                .integerProperty("retryPolicy.maxSleepTime")
-                .withDefaultValue(8_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
-    }
-
     private static final Logger LOGGER = LoggerFactory.getLogger(CuratorClient.class);
 
     private final CuratorFramework curatorFramework;
@@ -204,5 +164,42 @@ public class CuratorClient {
                 .retryPolicy(retryPolicy)
                 .build();
         return curatorFramework;
+    }
+
+    private static class Props {
+        static final PropertyDescription<String> CONNECT_STRING = PropertyDescriptions
+                .stringProperty("connectString")
+                .withDefaultValue("localhost:2181")
+                .build();
+
+        static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("connectionTimeout")
+                .withDefaultValue(10_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> SESSION_TIMEOUT_MS = PropertyDescriptions
+                .integerProperty("sessionTimeout")
+                .withDefaultValue(30_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> BASE_SLEEP_TIME_MS = PropertyDescriptions
+                .integerProperty("retryPolicy.baseSleepTime")
+                .withDefaultValue(1_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> MAX_RETRIES = PropertyDescriptions
+                .integerProperty("retryPolicy.maxRetries")
+                .withDefaultValue(5)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+
+        static final PropertyDescription<Integer> MAX_SLEEP_TIME_MS = PropertyDescriptions
+                .integerProperty("retryPolicy.maxSleepTime")
+                .withDefaultValue(8_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
     }
 }

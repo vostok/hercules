@@ -2,9 +2,9 @@ package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -48,7 +48,7 @@ public abstract class AbstractBulkSinkDaemon {
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+        Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
         Properties streamProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);

@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
+import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.validation.StreamValidators;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
