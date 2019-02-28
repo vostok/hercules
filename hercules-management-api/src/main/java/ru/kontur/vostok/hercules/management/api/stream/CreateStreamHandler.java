@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
+import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.stream.validation.StreamValidators;
 import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
@@ -33,12 +34,14 @@ public class CreateStreamHandler implements HttpHandler {
 
     private final AuthManager authManager;
     private final TaskQueue<StreamTask> taskQueue;
+    private final StreamRepository streamRepository;
 
     private final ObjectReader deserializer;
 
-    public CreateStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue) {
+    public CreateStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
         this.authManager = authManager;
         this.taskQueue = taskQueue;
+        this.streamRepository = streamRepository;
 
         ObjectMapper objectMapper = new ObjectMapper();
         this.deserializer = objectMapper.readerFor(Stream.class);
@@ -86,6 +89,11 @@ public class CreateStreamHandler implements HttpHandler {
                             return;
                         }
                     }
+                }
+
+                if (streamRepository.exists(stream.getName())) {
+                    ResponseUtil.conflict(exch);
+                    return;
                 }
 
                 TaskFuture taskFuture =

@@ -74,8 +74,8 @@ public class HttpServer {
 
         AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
 
-        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue);
-        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue);
+        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue, streamRepository);
+        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue, streamRepository);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
         InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
 

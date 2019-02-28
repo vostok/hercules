@@ -4,12 +4,11 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
+import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
-import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
@@ -23,10 +22,12 @@ import java.util.concurrent.TimeUnit;
 public class DeleteStreamHandler implements HttpHandler {
     private final AuthManager authManager;
     private final TaskQueue<StreamTask> taskQueue;
+    private final StreamRepository streamRepository;
 
-    public DeleteStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue) {
+    public DeleteStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
         this.authManager = authManager;
         this.taskQueue = taskQueue;
+        this.streamRepository = streamRepository;
     }
 
     @Override
@@ -51,6 +52,11 @@ public class DeleteStreamHandler implements HttpHandler {
                 return;
             }
             ResponseUtil.forbidden(exchange);
+            return;
+        }
+
+        if (!streamRepository.exists(stream)) {
+            ResponseUtil.notFound(exchange);
             return;
         }
 

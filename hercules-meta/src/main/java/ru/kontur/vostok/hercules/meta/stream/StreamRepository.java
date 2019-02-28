@@ -52,5 +52,9 @@ public class StreamRepository {
         return curatorClient.update(zPrefix + '/' + stream.getName(), serializer.serialize(stream));
     }
 
+    public boolean exists(String name) throws CuratorUnknownException {
+        return curatorClient.exists(zPrefix + '/' + name);
+    }
+
     private static String zPrefix = "/hercules/streams";
 }
