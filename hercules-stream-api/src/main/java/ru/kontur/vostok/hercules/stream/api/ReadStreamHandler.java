@@ -76,6 +76,16 @@ public class ReadStreamHandler implements HttpHandler {
                         return;
                     }
 
+                    Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(exchange);
+                    if (!optionalContentLength.isPresent()) {
+                        ResponseUtil.lengthRequired(exchange);
+                        return;
+                    }
+                    if (optionalContentLength.get() < 0) {
+                        ResponseUtil.badRequest(exchange);
+                        return;
+                    }
+
                     Optional<String> optionalShardIndex = ExchangeUtil.extractQueryParam(exchange, PARAM_SHARD_INDEX);
                     if (!optionalShardIndex.isPresent()) {
                         ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_SHARD_INDEX);
