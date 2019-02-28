@@ -68,7 +68,7 @@ public class DeleteStreamHandler implements HttpHandler {
             return;
         }
 
-        if (ExchangeUtil.extractQueryParam(exchange, "sync").isPresent()) {
+        if (!ExchangeUtil.extractQueryParam(exchange, "async").isPresent()) {
             taskFuture.await();
             if (taskFuture.isDone()) {
                 ResponseUtil.ok(exchange);

@@ -99,7 +99,7 @@ public class CreateStreamHandler implements HttpHandler {
                     return;
                 }
 
-                if (ExchangeUtil.extractQueryParam(exch, "sync").isPresent()) {
+                if (!ExchangeUtil.extractQueryParam(exch, "async").isPresent()) {
                     taskFuture.await();
                     if (taskFuture.isDone()) {
                         ResponseUtil.ok(exch);

@@ -71,7 +71,7 @@ public class TaskFuture {
         synchronized (mutex) {
             while (isInProgress() && (nanoTime = System.nanoTime()) < expirationNanoTime) {
                 try {
-                    mutex.wait(TimeUnit.NANOSECONDS.toMillis(nanoTime - expirationNanoTime));
+                    mutex.wait(TimeUnit.NANOSECONDS.toMillis(expirationNanoTime - nanoTime));
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     return !isInProgress();
