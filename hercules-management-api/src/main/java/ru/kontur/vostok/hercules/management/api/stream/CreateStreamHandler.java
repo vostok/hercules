@@ -94,7 +94,7 @@ public class CreateStreamHandler implements HttpHandler {
                                 stream.getName(),
                                 10_000L,//TODO: Move to properties
                                 TimeUnit.MILLISECONDS);
-                if (!taskFuture.isFailed()) {
+                if (taskFuture.isFailed()) {
                     ResponseUtil.internalServerError(exch);
                     return;
                 }
