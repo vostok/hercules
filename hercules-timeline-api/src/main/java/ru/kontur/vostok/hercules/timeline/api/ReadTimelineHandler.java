@@ -38,19 +38,20 @@ public class ReadTimelineHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange httpServerExchange) throws Exception {
+
+        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(httpServerExchange);
+        if (!optionalContentLength.isPresent()) {
+            ResponseUtil.lengthRequired(httpServerExchange);
+            return;
+        }
+        if (optionalContentLength.get() < 0) {
+            ResponseUtil.badRequest(httpServerExchange);
+            return;
+        }
+
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
                 try {
-                    Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(exchange);
-                    if (!optionalContentLength.isPresent()) {
-                        ResponseUtil.lengthRequired(exchange);
-                        return;
-                    }
-                    if (optionalContentLength.get() < 0) {
-                        ResponseUtil.badRequest(exchange);
-                        return;
-                    }
-
                     Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
                     String timelineName = queryParameters.get("timeline").getFirst();
                     int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
