@@ -1,6 +1,10 @@
+# Log files
+*.log
+
+# mvn target directory
+target
+
+# IDE specific resources
 target
 *.iml
 .idea
-
-# Log files
-*.log
