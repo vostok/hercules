@@ -14,7 +14,7 @@ public class DeletionResult {
         return status == Status.OK;
     }
 
-    public Status getStatus() {
+    public Status status() {
         return status;
     }
 

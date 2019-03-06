@@ -59,6 +59,17 @@ public class TaskRepository<T> {
                 CreateMode.PERSISTENT_SEQUENTIAL);
     }
 
+    /**
+     * Check task existence by full name
+     *
+     * @param fullName task's full name
+     * @return {@code true} if task exists, {@code false} otherwise
+     * @throws CuratorUnknownException
+     */
+    public boolean exists(String fullName) throws CuratorUnknownException {
+        return curatorClient.exists(zPrefix + '/' + fullName);
+    }
+
     public List<String> list() throws Exception {
         return curatorClient.children(zPrefix);
     }

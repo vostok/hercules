@@ -18,7 +18,7 @@ public class ReadResult {
         return status == Status.OK || status == Status.NOT_FOUND;
     }
 
-    public Status getStatus() {
+    public Status status() {
         return status;
     }
 
