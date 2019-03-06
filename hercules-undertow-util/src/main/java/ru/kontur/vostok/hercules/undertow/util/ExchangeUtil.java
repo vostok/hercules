@@ -46,6 +46,18 @@ public class ExchangeUtil {
         return getFirstValueIfExists(values);
     }
 
+    public static Optional<Integer> extractIntegerQueryParam(HttpServerExchange exchange, String name) {
+        Optional<String> param = extractQueryParam(exchange, name);
+        if (!param.isPresent()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Integer.valueOf(param.get()));
+        } catch (NumberFormatException ex) {
+            return Optional.empty();
+        }
+    }
+
     private static Optional<String> getFirstValueIfExists(Deque<String> values) {
         if (values == null || values.isEmpty()) {
             return Optional.empty();

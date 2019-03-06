@@ -49,6 +49,11 @@ public class ResponseUtil {
         exchange.endExchange();
     }
 
+    public static void requestTimeout(HttpServerExchange exchange) {
+        exchange.setStatusCode(408);
+        exchange.endExchange();
+    }
+
     public static void conflict(HttpServerExchange exchange) {
         exchange.setStatusCode(409);
         exchange.endExchange();

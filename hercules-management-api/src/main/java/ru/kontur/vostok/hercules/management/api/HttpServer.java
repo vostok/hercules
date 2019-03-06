@@ -13,6 +13,7 @@ import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
 import ru.kontur.vostok.hercules.management.api.sink.sentry.DeleteProjectHandler;
 import ru.kontur.vostok.hercules.management.api.sink.sentry.ListProjectHandler;
 import ru.kontur.vostok.hercules.management.api.sink.sentry.SetProjectHandler;
+import ru.kontur.vostok.hercules.management.api.stream.IncreasePartitionsStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.InfoStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.CreateStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.DeleteStreamHandler;
@@ -76,6 +77,8 @@ public class HttpServer {
 
         CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue, streamRepository);
         DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue, streamRepository);
+        IncreasePartitionsStreamHandler increasePartitionsStreamHandler =
+                new IncreasePartitionsStreamHandler(authManager, streamTaskQueue, streamRepository);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
         InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
 
@@ -98,6 +101,7 @@ public class HttpServer {
         HttpHandler handler = new HerculesRoutingHandler(metricsCollector)
                 .post("/streams/create", createStreamHandler)
                 .post("/streams/delete", deleteStreamHandler)
+                .post("/streams/increasePartitions", increasePartitionsStreamHandler)
                 .get("/streams/list", listStreamHandler)
                 .get("/streams/info", infoStreamHandler)
                 .post("/timelines/create", createTimelineHandler)
