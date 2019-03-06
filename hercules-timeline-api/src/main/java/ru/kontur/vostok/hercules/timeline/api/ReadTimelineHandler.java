@@ -12,6 +12,8 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
+import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
+import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -36,6 +38,17 @@ public class ReadTimelineHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange httpServerExchange) throws Exception {
+
+        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(httpServerExchange);
+        if (!optionalContentLength.isPresent()) {
+            ResponseUtil.lengthRequired(httpServerExchange);
+            return;
+        }
+        if (optionalContentLength.get() < 0) {
+            ResponseUtil.badRequest(httpServerExchange);
+            return;
+        }
+
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
                 try {

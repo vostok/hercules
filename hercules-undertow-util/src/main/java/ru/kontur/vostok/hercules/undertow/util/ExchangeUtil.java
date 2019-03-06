@@ -10,21 +10,21 @@ import java.util.Optional;
  * @author Gregory Koshelev
  */
 public class ExchangeUtil {
-    public static int extractContentLength(HttpServerExchange exchange) {
+    public static Optional<Integer> extractContentLength(HttpServerExchange exchange) {
         HeaderValues header = exchange.getRequestHeaders().get("Content-Length");
         if (header == null || header.isEmpty()) {
-            return -1;
+            return Optional.empty();
         }
 
         String value = header.getFirst();
         if (value == null || value.isEmpty()) {
-            return -1;
+            return Optional.of(-1);
         }
 
         try {
-            return Integer.valueOf(value);
+            return Optional.of(Integer.valueOf(value));
         } catch (NumberFormatException ex) {
-            return -1;
+            return Optional.of(-1);
         }
     }
 
