@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.meta.auth.validation;
 
+import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.ZnodeValidator;
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 
 import java.util.List;
 

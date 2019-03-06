@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.meta.curator.result;
+package ru.kontur.vostok.hercules.curator.result;
 
 /**
  * @author Gregory Koshelev
@@ -14,7 +14,7 @@ public class UpdateResult {
         return status == Status.OK;
     }
 
-    public Status getStatus() {
+    public Status status() {
         return status;
     }
 

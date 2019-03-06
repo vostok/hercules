@@ -1,4 +1,6 @@
-package ru.kontur.vostok.hercules.meta.curator.result;
+package ru.kontur.vostok.hercules.curator.result;
+
+import ru.kontur.vostok.hercules.curator.ZkUtil;
 
 /**
  * @author Gregory Koshelev
@@ -6,18 +8,28 @@ package ru.kontur.vostok.hercules.meta.curator.result;
 public class CreationResult {
     private final Status status;
     private final String path;
+    private final String node;
 
     private CreationResult(Status status, String path) {
         this.status = status;
         this.path = path;
+        this.node = ZkUtil.getLeafNodeFromPath(path);
     }
 
     public boolean isSuccess() {
         return status == Status.OK;
     }
 
-    public Status getStatus() {
+    public Status status() {
         return status;
+    }
+
+    public String path() {
+        return path;
+    }
+
+    public String node() {
+        return node;
     }
 
     public enum Status {

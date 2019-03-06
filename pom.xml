@@ -68,6 +68,7 @@
         <module>hercules-tracing-sink</module>
         <module>hercules-tracing-api</module>
         <module>hercules-json</module>
+        <module>hercules-curator</module>
     </modules>
 
     <dependencyManagement>
@@ -336,6 +337,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-json</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-curator</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 

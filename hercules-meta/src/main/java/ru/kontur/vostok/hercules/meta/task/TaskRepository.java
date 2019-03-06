@@ -1,12 +1,12 @@
 package ru.kontur.vostok.hercules.meta.task;
 
 import org.apache.zookeeper.CreateMode;
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorUnknownException;
-import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
-import ru.kontur.vostok.hercules.meta.curator.result.DeletionResult;
-import ru.kontur.vostok.hercules.meta.curator.result.ReadResult;
+import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.curator.result.CreationResult;
+import ru.kontur.vostok.hercules.curator.result.DeletionResult;
+import ru.kontur.vostok.hercules.curator.result.ReadResult;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.serialization.Deserializer;
 import ru.kontur.vostok.hercules.meta.serialization.SerializationException;
@@ -57,6 +57,17 @@ public class TaskRepository<T> {
                 zPrefix + '/' + name + TaskConstants.SEQUENCE_DELIMITER,
                 serializer.serialize(task),
                 CreateMode.PERSISTENT_SEQUENTIAL);
+    }
+
+    /**
+     * Check task existence by full name
+     *
+     * @param fullName task's full name
+     * @return {@code true} if task exists, {@code false} otherwise
+     * @throws CuratorUnknownException
+     */
+    public boolean exists(String fullName) throws CuratorUnknownException {
+        return curatorClient.exists(zPrefix + '/' + fullName);
     }
 
     public List<String> list() throws Exception {

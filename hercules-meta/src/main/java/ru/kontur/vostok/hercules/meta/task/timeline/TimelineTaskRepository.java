@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.meta.task.timeline;
 
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.task.TaskRepository;
 
 /**

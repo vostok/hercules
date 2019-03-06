@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
+import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskType;
@@ -77,7 +77,7 @@ public class CreateTimelineHandler implements HttpHandler {
                 CreationResult creationResult =
                         repository.create(new TimelineTask(timeline, TimelineTaskType.CREATE), timeline.getName());
                 if (!creationResult.isSuccess()) {
-                    if (creationResult.getStatus() == CreationResult.Status.ALREADY_EXIST) {
+                    if (creationResult.status() == CreationResult.Status.ALREADY_EXIST) {
                         ResponseUtil.conflict(exch);
                     } else {
                         ResponseUtil.internalServerError(exch);

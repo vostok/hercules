@@ -2,8 +2,8 @@ package ru.kontur.vostok.hercules.auth;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.Blacklist;
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
 import ru.kontur.vostok.hercules.util.schedule.Scheduler;
