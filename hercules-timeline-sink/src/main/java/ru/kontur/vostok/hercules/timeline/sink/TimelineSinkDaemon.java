@@ -3,11 +3,12 @@ package ru.kontur.vostok.hercules.timeline.sink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
@@ -44,7 +45,7 @@ public class TimelineSinkDaemon {
 
         Map<String, String> parameters = ArgsParser.parse(args);
 
-        Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "application.properties"));
+        Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
         Properties streamsProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
         Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);

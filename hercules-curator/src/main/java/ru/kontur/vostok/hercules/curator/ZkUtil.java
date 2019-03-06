@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.meta.curator;
+package ru.kontur.vostok.hercules.curator;
 
 /**
  * @author Gregory Koshelev

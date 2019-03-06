@@ -3,9 +3,9 @@ package ru.kontur.vostok.hercules.sink;
 import com.codahale.metrics.Meter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -42,7 +42,7 @@ public abstract class AbstractSinkDaemon {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties properties = PropertiesReader.read(parameters.getOrDefault("application.properties", "applicationProperties"));
+            Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://applicationProperties"));
 
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);

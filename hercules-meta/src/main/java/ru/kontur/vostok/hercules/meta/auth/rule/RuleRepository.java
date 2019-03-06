@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.meta.auth.rule;
 
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
+import ru.kontur.vostok.hercules.curator.CuratorClient;
 
 import java.util.List;
 
