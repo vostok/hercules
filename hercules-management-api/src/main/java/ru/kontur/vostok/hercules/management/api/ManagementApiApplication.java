@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
@@ -45,6 +46,7 @@ public class ManagementApiApplication {
     private static HttpServer server;
     private static CuratorClient curatorClient;
     private static TaskQueue<StreamTask> streamTaskQueue;
+    private static TaskQueue<TimelineTask> timelineTaskQueue;
     private static AuthManager authManager;
     private static MetricsCollector metricsCollector;
 
@@ -69,12 +71,12 @@ public class ManagementApiApplication {
             StreamRepository streamRepository = new StreamRepository(curatorClient);
             TimelineRepository timelineRepository = new TimelineRepository(curatorClient);
 
-            TimelineTaskRepository timelineTaskRepository = new TimelineTaskRepository(curatorClient);
             BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
             RuleRepository ruleRepository = new RuleRepository(curatorClient);
             SentryProjectRepository sentryProjectRepository = new SentryProjectRepository(curatorClient);
 
             streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
+            timelineTaskQueue  = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
 
             AdminAuthManager adminAuthManager = new AdminAuthManager(Props.ADMIN_KEYS.extract(properties));
 
@@ -92,7 +94,7 @@ public class ManagementApiApplication {
                     streamRepository,
                     timelineRepository,
                     streamTaskQueue,
-                    timelineTaskRepository,
+                    timelineTaskQueue,
                     blacklistRepository,
                     ruleRepository,
                     sentryProjectRepository,
@@ -127,7 +129,15 @@ public class ManagementApiApplication {
                 streamTaskQueue.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
-            LOGGER.error("Error on task queue stopping", e);
+            LOGGER.error("Error on stream's task queue stopping", e);
+        }
+
+        try {
+            if (timelineTaskQueue != null) {
+                timelineTaskQueue.stop(5_000, TimeUnit.MILLISECONDS);
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Error on timeline's task queue stopping", e);
         }
 
         try {

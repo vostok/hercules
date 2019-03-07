@@ -27,8 +27,7 @@ import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
-import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
-import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
+import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
 import ru.kontur.vostok.hercules.undertow.util.handlers.HerculesRoutingHandler;
@@ -63,7 +62,7 @@ public class HttpServer {
             StreamRepository streamRepository,
             TimelineRepository timelineRepository,
             TaskQueue<StreamTask> streamTaskQueue,
-            TimelineTaskRepository timelineTaskRepository,
+            TaskQueue<TimelineTask> timelineTaskQueue,
             BlacklistRepository blacklistRepository,
             RuleRepository ruleRepository,
             SentryProjectRepository sentryProjectRepository,
@@ -79,8 +78,8 @@ public class HttpServer {
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
         InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
 
-        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineTaskRepository);
-        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineTaskRepository);
+        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
+        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
         InfoTimelineHandler infoTimelineHandler = new InfoTimelineHandler(timelineRepository, authManager);
 

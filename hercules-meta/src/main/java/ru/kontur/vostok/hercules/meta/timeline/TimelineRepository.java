@@ -47,5 +47,9 @@ public class TimelineRepository {
         return curatorClient.delete(zPrefix + '/' + name);
     }
 
+    public boolean exists(String name) throws CuratorUnknownException {
+        return curatorClient.exists(zPrefix + '/' + name);
+    }
+
     private static String zPrefix = "/hercules/timelines";
 }
