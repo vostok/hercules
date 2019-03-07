@@ -87,6 +87,11 @@ public class CreateStreamHandler implements HttpHandler {
                     return;
                 }
 
+                if (streamRepository.exists(stream.getName())) {
+                    ResponseUtil.conflict(exch);
+                    return;
+                }
+
                 if (stream instanceof DerivedStream) {// Auth source streams for DerivedStream
                     String[] streams = ((DerivedStream) stream).getStreams();
                     if (streams == null || streams.length == 0) {
@@ -100,11 +105,6 @@ public class CreateStreamHandler implements HttpHandler {
                             return;
                         }
                     }
-                }
-
-                if (streamRepository.exists(stream.getName())) {
-                    ResponseUtil.conflict(exch);
-                    return;
                 }
 
                 TaskFuture taskFuture =
