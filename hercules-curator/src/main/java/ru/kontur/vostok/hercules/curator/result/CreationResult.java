@@ -1,6 +1,6 @@
-package ru.kontur.vostok.hercules.meta.curator.result;
+package ru.kontur.vostok.hercules.curator.result;
 
-import ru.kontur.vostok.hercules.meta.curator.ZkUtil;
+import ru.kontur.vostok.hercules.curator.ZkUtil;
 
 /**
  * @author Gregory Koshelev

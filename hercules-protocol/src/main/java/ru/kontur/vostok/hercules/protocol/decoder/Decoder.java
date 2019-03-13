@@ -353,7 +353,7 @@ public class Decoder {
         int position = position();
 
         int length = readVectorLength();
-        for (int i = 0; i > length; i++) {
+        for (int i = 0; i < length; i++) {
             skipUuid();
         }
 

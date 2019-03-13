@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.meta.curator.result;
+package ru.kontur.vostok.hercules.curator.result;
 
 import java.util.Optional;
 
@@ -27,12 +27,14 @@ public class ReadResult {
     }
 
     public static ReadResult notFound() {
-        return new ReadResult(Status.NOT_FOUND, null);
+        return NOT_FOUND;
     }
 
     public static ReadResult found(byte[] data) {
         return new ReadResult(Status.OK, data);
     }
+
+    private static ReadResult NOT_FOUND = new ReadResult(Status.NOT_FOUND, null);
 
     public enum Status {
         OK,

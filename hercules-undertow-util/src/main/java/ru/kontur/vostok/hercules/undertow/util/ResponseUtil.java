@@ -59,6 +59,11 @@ public class ResponseUtil {
         exchange.endExchange();
     }
 
+    public static void lengthRequired(HttpServerExchange exchange) {
+        exchange.setStatusCode(411);
+        exchange.endExchange();
+    }
+
     public static void requestEntityTooLarge(HttpServerExchange exchange) {
         exchange.setStatusCode(413);
         exchange.endExchange();
