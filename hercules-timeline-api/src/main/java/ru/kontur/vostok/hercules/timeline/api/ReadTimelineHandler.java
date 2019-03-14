@@ -49,23 +49,23 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
+        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
+        String timelineName = queryParameters.get("timeline").getFirst();
+        int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
+        int shardCount = Integer.valueOf(queryParameters.get("shardCount").getFirst());
+        int take = Integer.valueOf(queryParameters.get("take").getFirst());
+        long from = Long.valueOf(queryParameters.get("from").getFirst());
+        long to = Long.valueOf(queryParameters.get("to").getFirst());
+
+        Optional<Timeline> timeline = timelineRepository.read(timelineName);
+        if (!timeline.isPresent()) {
+            ResponseUtil.notFound(httpServerExchange);
+            return;
+        }
+
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
                 try {
-                    Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
-                    String timelineName = queryParameters.get("timeline").getFirst();
-                    int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
-                    int shardCount = Integer.valueOf(queryParameters.get("shardCount").getFirst());
-                    int take = Integer.valueOf(queryParameters.get("take").getFirst());
-                    long from = Long.valueOf(queryParameters.get("from").getFirst());
-                    long to = Long.valueOf(queryParameters.get("to").getFirst());
-
-                    Optional<Timeline> timeline = timelineRepository.read(timelineName);
-                    if (!timeline.isPresent()) {
-                        exchange.setStatusCode(404);
-                        return;
-                    }
-
                     TimelineState readState = STATE_READER.read(new Decoder(message));
 
                     TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, shardIndex, shardCount, take, from, to);

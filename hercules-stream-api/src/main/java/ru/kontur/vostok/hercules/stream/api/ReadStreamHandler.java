@@ -57,71 +57,71 @@ public class ReadStreamHandler implements HttpHandler {
             return;
         }
 
+        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(httpServerExchange, "apiKey");
+        if (!optionalApiKey.isPresent()) {
+            ResponseUtil.unauthorized(httpServerExchange);
+            return;
+        }
+
+        Optional<String> optionalStreamName = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_STREAM);
+        if (!optionalStreamName.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_STREAM);
+            return;
+        }
+
+        String apiKey = optionalApiKey.get();
+        String streamName = optionalStreamName.get();
+
+        AuthResult authResult = authManager.authRead(apiKey, streamName);
+
+        if (!authResult.isSuccess()) {
+            if (authResult.isUnknown()) {
+                ResponseUtil.unauthorized(httpServerExchange);
+                return;
+            }
+            ResponseUtil.forbidden(httpServerExchange);
+            return;
+        }
+
+        Optional<String> optionalShardIndex = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_SHARD_INDEX);
+        if (!optionalShardIndex.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_SHARD_INDEX);
+            return;
+        }
+
+        Result<Integer, String> shardIndex = Parsers.parseInteger(optionalShardIndex.get());
+        if (!shardIndex.isOk()) {
+            ResponseUtil.badRequest(httpServerExchange, shardIndex.getError() + " in parameter " + PARAM_SHARD_INDEX);
+            return;
+        }
+
+        Optional<String> optionalShardCount = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_SHARD_COUNT);
+        if (!optionalShardCount.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_SHARD_COUNT);
+            return;
+        }
+
+        Result<Integer, String> shardCount = Parsers.parseInteger(optionalShardCount.get());
+        if (!shardCount.isOk()) {
+            ResponseUtil.badRequest(httpServerExchange, shardCount.getError() + " in parameter " + PARAM_SHARD_COUNT);
+            return;
+        }
+
+        Optional<String> optionalTake = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TAKE);
+        if (!optionalTake.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TAKE);
+            return;
+        }
+
+        Result<Integer, String> take = Parsers.parseInteger(optionalTake.get());
+        if (!take.isOk()) {
+            ResponseUtil.badRequest(httpServerExchange, take.getError() + " in parameter " + PARAM_TAKE);
+            return;
+        }
+
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
                 try {
-                    Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-                    if (!optionalApiKey.isPresent()) {
-                        ResponseUtil.unauthorized(exchange);
-                        return;
-                    }
-
-                    Optional<String> optionalStreamName = ExchangeUtil.extractQueryParam(exchange, PARAM_STREAM);
-                    if (!optionalStreamName.isPresent()) {
-                        ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_STREAM);
-                        return;
-                    }
-
-                    String apiKey = optionalApiKey.get();
-                    String streamName = optionalStreamName.get();
-
-                    AuthResult authResult = authManager.authRead(apiKey, streamName);
-
-                    if (!authResult.isSuccess()) {
-                        if (authResult.isUnknown()) {
-                            ResponseUtil.unauthorized(exchange);
-                            return;
-                        }
-                        ResponseUtil.forbidden(exchange);
-                        return;
-                    }
-
-                    Optional<String> optionalShardIndex = ExchangeUtil.extractQueryParam(exchange, PARAM_SHARD_INDEX);
-                    if (!optionalShardIndex.isPresent()) {
-                        ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_SHARD_INDEX);
-                        return;
-                    }
-
-                    Result<Integer, String> shardIndex = Parsers.parseInteger(optionalShardIndex.get());
-                    if (!shardIndex.isOk()) {
-                        ResponseUtil.badRequest(exchange, shardIndex.getError() + " in parameter " + PARAM_SHARD_INDEX);
-                        return;
-                    }
-
-                    Optional<String> optionalShardCount = ExchangeUtil.extractQueryParam(exchange, PARAM_SHARD_COUNT);
-                    if (!optionalShardCount.isPresent()) {
-                        ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_SHARD_COUNT);
-                        return;
-                    }
-
-                    Result<Integer, String> shardCount = Parsers.parseInteger(optionalShardCount.get());
-                    if (!shardCount.isOk()) {
-                        ResponseUtil.badRequest(exchange, shardCount.getError() + " in parameter " + PARAM_SHARD_COUNT);
-                        return;
-                    }
-
-                    Optional<String> optionalTake = ExchangeUtil.extractQueryParam(exchange, PARAM_TAKE);
-                    if (!optionalTake.isPresent()) {
-                        ResponseUtil.badRequest(exchange, REASON_MISSING_PARAM + PARAM_TAKE);
-                        return;
-                    }
-
-                    Result<Integer, String> take = Parsers.parseInteger(optionalTake.get());
-                    if (!take.isOk()) {
-                        ResponseUtil.badRequest(exchange, take.getError() + " in parameter " + PARAM_TAKE);
-                        return;
-                    }
-
                     ByteStreamContent streamContent = streamReader.getStreamContent(
                             streamName,
                             STATE_READER.read(new Decoder(message)),
