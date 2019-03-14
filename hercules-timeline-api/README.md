@@ -1,36 +1,19 @@
-# Hercules Gate
-Gate is used to transmit events from clients to Apache Kafka.
+# Hercules Timeline Api
+Timeline Api is used for reading timelines from Apache Kafka.
 
 ## Settings
 Application is configured through properties file.
 
-### HTTP Server settings
-`http.server.host` - server host, default value: `0.0.0.0`
+### Apache Cassandra settings
+See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
-`http.server.port` - server port, default value: `6306`
+`cassandra.nodes` - default value: `127.0.0.1`
 
-`http.server.maxContentLength` - max Content-Length in POST-request
+`cassandra.port` - default value: `9042`
 
-`http.server.throttling.capacity` - default value: `100000000`
+`cassandra.keyspace` - default value: `hercules`
 
-`http.server.throttling.requestTimeout` - timeout for request, which capacity throttling more then permissible, default value: `5000`
-
-### Kafka Producer settings
-See Producer's Config from Apache Kafka documentation. Main settings are presented below.
-
-`producer.bootstrap.servers`
-
-`producer.acks`
-
-`producer.batch.size`
-
-`producer.linger.ms`
-
-`producer.buffer.memory`
-
-`producer.retries`
-
-`producer.retry.backoff.ms`
+`cassandra.readTimeoutMs` - default value: `12000`
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -56,6 +39,11 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
+### HTTP Server settings
+`http.server.host` - server host, default value: `"0.0.0.0"`
+
+`http.server.port` - server port
+
 ### Application context settings
 `context.instance.id` - id of instance
 
@@ -64,7 +52,7 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 `context.zone` - id of zone
 
 ## Command line
-`java $JAVA_OPTS -jar hercules-gate.jar application.properties=file://path/to/file/application.properties`
+`java $JAVA_OPTS -jar hercules-timeline-api.jar application.properties=file://path/to/file/application.properties`
 
 Also, ZooKeeper can be used as source of `application.properties` file:  
 ```
@@ -73,35 +61,30 @@ zk://zk_host_1:port[,zk_host_2:port,...]/path/to/znode/application.properties
 
 ## Quick start
 ### Initialization
-Gate uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should be configured by [Hercules Init](../hercules-init/README.md). See Hercules Init for details.
+Timeline Api uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should be configured by [Hercules Init](../hercules-init/README.md). See Hercules Init for details.
 
 ### `application.properties` sample:
 ```properties
-http.server.host=0.0.0.0
-http.server.port=6306
-http.server.maxContentLength=25165824
-http.server.throttling.capacity=1073741824
-http.server.throttling.requestTimeout=10000
-
-producer.bootstrap.servers=localhost:9092
-producer.acks=all
-producer.batch.size=65536
-producer.linger.ms=1
-producer.buffer.memory=335544320
-producer.retries=4
-producer.retry.backoff.ms=250
+cassandra.nodes=localhost:2181,localhost:2182,localhost:2183
+cassandra.port=9042
+cassandra.keyspace=hercules
+cassandra.readTimeoutMs=12000
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000
 curator.sessionTimeout=30000
 curator.retryPolicy.baseSleepTime=1000
-curator.retryPolicy.maxRetries=3
-curator.retryPolicy.maxSleepTime=3000
+curator.retryPolicy.maxRetries=5
+curator.retryPolicy.maxSleepTime=8000
+
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
+
+http.server.host=0.0.0.0
+http.server.port=6306
 
 context.instance.id=1
 context.environment=dev
