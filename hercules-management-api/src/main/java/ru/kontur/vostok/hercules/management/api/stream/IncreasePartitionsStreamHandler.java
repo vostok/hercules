@@ -88,7 +88,7 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
         }
         Stream stream = optionalStream.get();
 
-        if (newPartitions >= stream.getPartitions()) {
+        if (newPartitions <= stream.getPartitions()) {
             ResponseUtil.conflict(exchange);
             return;
         }
