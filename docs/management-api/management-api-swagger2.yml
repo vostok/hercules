@@ -1,22 +1,30 @@
 swagger: '2.0'
 info:
   description: 'Management api for Hercules. Uses for create, midify, delete streams and timelines'
-  version: 0.1.0
+  version: 0.20.0
   title: Hercules management API
-host: 'vostok05:6307'
-tags: []
+host: 'vm-hercules05:6507'
 schemes:
   - http
 paths:
   /ping:
     get:
-      tags: []
       summary: Ping
       description: Check server status
-      operationId: Ping
+      operationId: ping
       responses:
         '200':
           $ref: '#/responses/success'
+  /about:
+    get:
+      summary: About
+      description: Check server description
+      operationId: about
+      responses:
+        '200':
+          description: Info about service
+          schema:
+            $ref: '#/definitions/About'
   /streams/create:
     post:
       tags:
@@ -32,7 +40,7 @@ paths:
           in: body
           description: CreateStreamRequest
           schema:
-            $ref: '#/definitions/createStreamRequest'
+            $ref: '#/definitions/Stream'
       responses:
         '200':
           $ref: '#/responses/success'
@@ -94,6 +102,35 @@ paths:
           $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'
+  /streams/increasePartitions:
+    post:
+      tags:
+        - stream
+      summary: Increase stream partition count
+      description: Increase stream partition count
+      operationId: increasePartitions
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - name: stream
+          in: query
+          description: Stream name
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+        - name: newPartitions
+          in: query
+          description: new partitions count
+          required: true
+          type: integer
+      responses:
+        '200':
+          $ref: '#/responses/success'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/unauthorized'
   /streams/info:
     get:
       tags:
@@ -115,7 +152,7 @@ paths:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/createStreamRequest'
+            $ref: '#/definitions/Stream'
         '400':
           $ref: '#/responses/badRequest'
         '401':
@@ -135,7 +172,7 @@ paths:
           in: body
           description: CreateTimelineRequest
           schema:
-            $ref: '#/definitions/createTimelineRequest'
+            $ref: '#/definitions/Timeline'
       responses:
         '200':
           $ref: '#/responses/success'
@@ -218,7 +255,7 @@ paths:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/createTimelineRequest'
+            $ref: '#/definitions/Timeline'
         '400':
           $ref: '#/responses/badRequest'
         '401':
@@ -233,7 +270,7 @@ paths:
       description: Set rules
       operationId: setRules
       parameters:
-        - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/masterApiKey'
         - name: key
           in: query
           description: API key for which rule is set
@@ -246,7 +283,7 @@ paths:
           required: true
           type: string
           pattern: '[a-z0-9_\*\?]+'
-          example: proj_name_*
+          #example: proj_name_*
         - name: rights
           in: query
           description: Combination of read, write and modified rights
@@ -278,7 +315,7 @@ paths:
       produces:
         - application/json
       parameters:
-        - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/masterApiKey'
       responses:
         '200':
           description: List of rules
@@ -298,7 +335,7 @@ paths:
       description: Add apiKey to blacklist
       operationId: addApiKeyToBlacklist
       parameters:
-        - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/masterApiKey'
         - name: key
           in: query
           description: API key for adding to blacklist
@@ -320,7 +357,7 @@ paths:
       description: Remove apiKey from blacklist
       operationId: removeApiKeyFromBlacklist
       parameters:
-        - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/masterApiKey'
         - name: key
           in: query
           description: API key for adding to blacklist
@@ -344,7 +381,7 @@ paths:
       produces:
         - application/json
       parameters:
-        - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/masterApiKey'
       responses:
         '200':
           description: List of blacklist API-keys
@@ -357,7 +394,7 @@ paths:
         '401':
           $ref: '#/responses/unauthorized'
 definitions:
-  createStreamRequest:
+  Stream:
     type: object
     properties:
       type:
@@ -372,30 +409,33 @@ definitions:
         type: integer
       shardingKey:
         type: array
-        description: Stream name
         items:
           type: string
       ttl:
         type: integer
-      sources:
-        type: string
+      streams:
+        type: array
+        description: sources stream names
+        items:
+          type: string
       filters:
-        type: string
+        type: array
+        items:
+          type: string
     example:
       type: base
-      name: msl_teststream_2
+      name: project_test_stream_0
       partitions: 1
       shardingKey: []
       ttl: 3600000
-  createTimelineRequest:
+  Timeline:
     type: object
     properties:
       name:
         type: string
       slices:
-        type: string
+        type: integer
       shardingKey:
-        description: todo
         type: array
         items:
           type: string
@@ -403,9 +443,32 @@ definitions:
         type: integer
       timetrapSize:
         type: integer
-      sources:
-        type: string
+      streams:
+        type: array
+        items:
+          type: string
       filters:
+        type: array
+        items:
+          type: string
+  About:
+    type: object
+    properties:
+      applicationName:
+        type: string
+      applicationId:
+        type: string
+      version:
+        type: string
+      commitId:
+        type: string
+      environment:
+        type: string
+      zone:
+        type: string
+      hostName:
+        type: string
+      instanceId:
         type: string
 parameters:
   apiKey:
@@ -415,6 +478,13 @@ parameters:
     pattern: '^\d{3}-\d{2}-\d{4}$'
     required: true
     description: API key for authorization
+  masterApiKey:
+    name: masterApiKey
+    in: header
+    type: string
+    pattern: '^\d{3}-\d{2}-\d{4}$'
+    required: true
+    description: API key for rules management
 responses:
   unauthorized:
     description: Unauthorized
