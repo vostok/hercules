@@ -93,6 +93,8 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
             return;
         }
 
+        stream.setPartitions(newPartitions);
+
         TaskFuture taskFuture =
                 taskQueue.submit(
                         new StreamTask(stream, StreamTaskType.INCREASE_PARTITIONS),
