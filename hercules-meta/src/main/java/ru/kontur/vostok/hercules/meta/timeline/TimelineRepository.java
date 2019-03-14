@@ -1,11 +1,11 @@
 package ru.kontur.vostok.hercules.meta.timeline;
 
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.meta.curator.exception.CuratorUnknownException;
-import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
-import ru.kontur.vostok.hercules.meta.curator.result.DeletionResult;
-import ru.kontur.vostok.hercules.meta.curator.result.ReadResult;
+import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.curator.result.CreationResult;
+import ru.kontur.vostok.hercules.curator.result.DeletionResult;
+import ru.kontur.vostok.hercules.curator.result.ReadResult;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.serialization.Deserializer;
 import ru.kontur.vostok.hercules.meta.serialization.SerializationException;
@@ -45,6 +45,10 @@ public class TimelineRepository {
 
     public DeletionResult delete(String name) throws CuratorUnknownException, CuratorInternalException {
         return curatorClient.delete(zPrefix + '/' + name);
+    }
+
+    public boolean exists(String name) throws CuratorUnknownException {
+        return curatorClient.exists(zPrefix + '/' + name);
     }
 
     private static String zPrefix = "/hercules/timelines";

@@ -88,7 +88,12 @@ public class GateHandler implements HttpHandler {
         }
 
         // Check content length
-        int contentLength = ExchangeUtil.extractContentLength(exchange);
+        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(exchange);
+        if (!optionalContentLength.isPresent()) {
+            ResponseUtil.lengthRequired(exchange);
+            return;
+        }
+        int contentLength = optionalContentLength.get();
         if (contentLength < 0) {
             ResponseUtil.badRequest(exchange);
             return;

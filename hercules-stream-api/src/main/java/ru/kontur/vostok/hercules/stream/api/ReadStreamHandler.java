@@ -47,6 +47,16 @@ public class ReadStreamHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange httpServerExchange) throws Exception {
 
+        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(httpServerExchange);
+        if (!optionalContentLength.isPresent()) {
+            ResponseUtil.lengthRequired(httpServerExchange);
+            return;
+        }
+        if (optionalContentLength.get() < 0) {
+            ResponseUtil.badRequest(httpServerExchange);
+            return;
+        }
+
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
                 try {

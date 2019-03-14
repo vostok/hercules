@@ -15,11 +15,41 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class CassandraInitializer {
+    private final String[] nodes;
+    private final int port;
+    private final String keyspace;
+    private final short replicationFactor;
+
+    public CassandraInitializer(Properties properties) {
+        this.nodes = Props.NODES.extract(properties);
+        this.port = Props.PORT.extract(properties);
+        this.keyspace = Props.KEYSPACE.extract(properties);
+        this.replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
+    }
+
+    public void init() {
+        Cluster.Builder builder = Cluster.builder().addContactPoints(nodes).withPort(port).withoutJMXReporting();
+
+        for (String node : nodes) {
+            builder.addContactPoint(node);
+        }
+
+        try (Cluster cluster = builder.build(); Session session = cluster.connect()) {
+            // Create keyspace if it doesn't exist
+            session.execute(
+                    "CREATE KEYSPACE IF NOT EXISTS " + keyspace +
+                            " WITH REPLICATION = { " +
+                            "  'class' : 'SimpleStrategy', " +
+                            "  'replication_factor' : " + replicationFactor +
+                            "};"
+            );
+        }
+    }
 
     private static class Props {
-        static final PropertyDescription<List<String>> NODES = PropertyDescriptions
-                .listOfStringsProperty("nodes")
-                .withDefaultValue(Collections.singletonList(CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS))
+        static final PropertyDescription<String[]> NODES = PropertyDescriptions
+                .arrayOfStringsProperty("nodes")
+                .withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS})
                 .build();
 
         static final PropertyDescription<Integer> PORT = PropertyDescriptions
@@ -38,36 +68,5 @@ public class CassandraInitializer {
                 .withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR)
                 .withValidator(Validators.greaterThan((short) 0))
                 .build();
-    }
-
-    private final List<String> nodes;
-    private final int port;
-    private final String keyspace;
-    private final short replicationFactor;
-
-    public CassandraInitializer(Properties properties) {
-        this.nodes = Props.NODES.extract(properties);
-        this.port = Props.PORT.extract(properties);
-        this.keyspace = Props.KEYSPACE.extract(properties);
-        this.replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
-    }
-
-    public void init() {
-        Cluster.Builder builder = Cluster.builder().withPort(port).withoutJMXReporting();
-
-        for (String node : nodes) {
-            builder.addContactPoint(node);
-        }
-
-        try (Cluster cluster = builder.build(); Session session = cluster.connect()) {
-            // Create keyspace if it doesn't exist
-            session.execute(
-                    "CREATE KEYSPACE IF NOT EXISTS " + keyspace +
-                            " WITH REPLICATION = { " +
-                            "  'class' : 'SimpleStrategy', " +
-                            "  'replication_factor' : " + replicationFactor +
-                            "};"
-            );
-        }
     }
 }

@@ -1,8 +1,8 @@
 package ru.kontur.vostok.hercules.gate;
 
+import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.auth.validation.Validation;
 import ru.kontur.vostok.hercules.meta.auth.validation.ValidationSerializer;
-import ru.kontur.vostok.hercules.meta.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
 
 import java.util.Collections;

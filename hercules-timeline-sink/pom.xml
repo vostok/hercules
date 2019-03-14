@@ -3,7 +3,7 @@
     <parent>
         <artifactId>hercules</artifactId>
         <groupId>ru.kontur.vostok.hercules</groupId>
-        <version>0.19.1-SNAPSHOT</version>
+        <version>0.20.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -75,7 +75,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>ru.kontur.vostok.hercules.stream.sink.StreamSinkDaemon</mainClass>
+                                    <mainClass>ru.kontur.vostok.hercules.timeline.sink.TimelineSinkDaemon</mainClass>
                                 </transformer>
                             </transformers>
                             <createDependencyReducedPom>false</createDependencyReducedPom>

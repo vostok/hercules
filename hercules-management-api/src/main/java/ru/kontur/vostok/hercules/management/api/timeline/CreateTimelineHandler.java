@@ -8,16 +8,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
-import ru.kontur.vostok.hercules.meta.curator.result.CreationResult;
+import ru.kontur.vostok.hercules.meta.task.TaskFuture;
+import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
-import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskType;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
+import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
@@ -27,12 +29,14 @@ public class CreateTimelineHandler implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTimelineHandler.class);
 
     private final AuthManager authManager;
-    private final TimelineTaskRepository repository;
+    private final TaskQueue<TimelineTask> taskQueue;
+    private final TimelineRepository repository;
 
     private final ObjectReader deserializer;
 
-    public CreateTimelineHandler(AuthManager authManager, TimelineTaskRepository repository) {
+    public CreateTimelineHandler(AuthManager authManager, TaskQueue<TimelineTask> taskQueue, TimelineRepository repository) {
         this.authManager = authManager;
+        this.taskQueue = taskQueue;
         this.repository = repository;
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -44,6 +48,17 @@ public class CreateTimelineHandler implements HttpHandler {
         Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
         if (!optionalApiKey.isPresent()) {
             ResponseUtil.unauthorized(exchange);
+            return;
+        }
+
+        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(exchange);
+        if (!optionalContentLength.isPresent()) {
+            ResponseUtil.lengthRequired(exchange);
+            return;
+        }
+        int contentLength = optionalContentLength.get();
+        if (contentLength < 0) {
+            ResponseUtil.badRequest(exchange);
             return;
         }
 
@@ -61,20 +76,45 @@ public class CreateTimelineHandler implements HttpHandler {
                     ResponseUtil.forbidden(exch);
                     return;
                 }
-                //TODO: Auth sources
 
-                CreationResult creationResult =
-                        repository.create(new TimelineTask(timeline, TimelineTaskType.CREATE), timeline.getName());
-                if (!creationResult.isSuccess()) {
-                    if (creationResult.getStatus() == CreationResult.Status.ALREADY_EXIST) {
-                        ResponseUtil.conflict(exch);
-                    } else {
-                        ResponseUtil.internalServerError(exch);
-                    }
+                if (repository.exists(timeline.getName())) {
+                    ResponseUtil.conflict(exch);
                     return;
                 }
 
-                //TODO: Wait for result if needed
+                String[] streams = timeline.getStreams();
+                if (streams == null || streams.length == 0) {
+                    ResponseUtil.badRequest(exch);
+                    return;
+                }
+                for (String stream : streams) {
+                    authResult = authManager.authRead(apiKey, stream);
+                    if (!authResult.isSuccess()) {
+                        ResponseUtil.forbidden(exch);
+                        return;
+                    }
+                }
+
+                TaskFuture taskFuture =
+                        taskQueue.submit(
+                                new TimelineTask(timeline, TimelineTaskType.CREATE),
+                                timeline.getName(),
+                                10_000L,//TODO: Move to properties
+                                TimeUnit.MILLISECONDS);
+                if (taskFuture.isFailed()) {
+                    ResponseUtil.internalServerError(exch);
+                    return;
+                }
+
+                if (!ExchangeUtil.extractQueryParam(exch, "async").isPresent()) {
+                    taskFuture.await();
+                    if (taskFuture.isDone()) {
+                        ResponseUtil.ok(exch);
+                        return;
+                    }
+                    ResponseUtil.internalServerError(exch);
+                    return;
+                }
                 ResponseUtil.ok(exch);
             } catch (IOException e) {
                 LOGGER.error("Error on performing request", e);
