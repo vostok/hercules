@@ -5,48 +5,48 @@ Elastic Sink is used to move Log Events from Kafka to Elasticsearch.
 Application is configured through properties file.
 
 ### Sink settings
-`sink.poolSize` - number of threads reading from Apache Kafka, default value: `1`
+`sink.poolSize` - number of threads are reading from Apache Kafka, default value: `1`
 
-`sink.senderTimeoutMs` - time of processing Log Events by elastic, default value: `2000`
+`sink.senderTimeoutMs` - time quota to process Log Events by elastic, default value: `2000`
 
-`sink.pollTimeoutMs` - time of waiting poll from Apache Kafka, default value: `6000`
+`sink.pollTimeoutMs` - poll duration when read from Apache Kafka, default value: `6000`
 
 `sink.batchSize` - size of batch with Log Events, default value: `1000`
 
-`sink.pattern` - pattern of stream, which consumers are listening 
+`sink.pattern` - pattern of streams are subscribed by consumers 
 
 `sink.consumer.bootstrap.servers` - list of Apache Kafka hosts
 
 `sink.consumer.max.partition.fetch.bytes` - max batch size for reading from one partition
 
-`sink.consumer.max.poll.interval.ms` - time, after which Apache Kafka will exclude the consumer from group if he doesnt't do poll or commit 
+`sink.consumer.max.poll.interval.ms` - time, after which Apache Kafka will exclude the consumer from group if it doesn't poll or commit
 
 `sink.sender.elastic.hosts` - list of elastic hosts
 
-`sink.sender.elastic.retryTimeoutMs` - timeout for retry elastic client, default value: `30000`
+`sink.sender.elastic.retryTimeoutMs` - backoff timeout to retry send to elastic, default value: `30000`
 
-`sink.sender.elastic.connectionTimeoutMs` - timeout for connection elastic client, default value: `1000`
+`sink.sender.elastic.connectionTimeoutMs` - connection timeout of elastic client, default value: `1000`
 
-`sink.sender.elastic.connectionRequestTimeoutMs` - timeout for request connection elastic client, default value: `500`
+`sink.sender.elastic.connectionRequestTimeoutMs` - timeout for request connection of elastic client, default value: `500`
 
 `sink.sender.elastic.socketTimeoutMs` - timeout for response from elastic, default value: `30000`
 
-`sink.sender.pingPeriodMs` - time of ping period elastic server ,default value: `5000`
+`sink.sender.pingPeriodMs` - elastic server ping period, default value: `5000`
 
-`sink.sender.retryOnUnknownErrors` - flag for rewriting batch with unknown error, default value: `false`
+`sink.sender.retryOnUnknownErrors` - should retry request to elastic in case of unknown errors, default value: `false`
 
 `sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
 
 `sink.sender.elastic.mergePropertiesTagToRoot` - flag for moving the contents of the properties container to the root of the object, default value: `false`
 
 ### Graphite metrics reporter settings
-`metrics.graphite.server.addr` - hostname of graphite instance to which metrics are sent, default value: `localhost`
+`metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
 
 `metrics.graphite.server.port` - port of graphite instance, default value: `2003`
 
-`metrics.graphite.prefix` - prefix added to metric name
+`metrics.graphite.prefix` - prefix is added to metric name
 
-`metrics.period` - the period with which metrics are sent to graphite, default value: `60`
+`metrics.period` - the period to send metrics to graphite, default value: `60`
 
 ### HTTP Server settings
 `http.server.host` - server host, default value: `"0.0.0.0"`
@@ -56,7 +56,7 @@ Application is configured through properties file.
 ### Application context settings
 `context.instance.id` - id of instance
 
-`context.environment` - id of environment
+`context.environment` - deployment environment (production, staging and so on)
 
 `context.zone` - id of zone
 
