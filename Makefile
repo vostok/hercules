@@ -18,17 +18,17 @@ TIMELINEAPIBUILDERFILE := timelineApi.Dockerfile
 TIMELINEMANAGERBUILDERFILE := timelineManager.Dockerfile
 TRACINGSINKBUILDERFILE := tracingSink.Dockerfile
 
-ELASTICSINKIMAGE := tsypaev/elasticSink
+ELASTICSINKIMAGE := tsypaev/elastic.sink
 GATEIMAGE := tsypaev/gate
-GRAPHITESINKIMAGE := tsypaev/graphiteSink
-MANAGEMENTAPIIMAGE := tsypaev/managementApi
-SENTRYSINKIMAGE := tsypaev/sentrySink
-STREAMAPIIMAGE := tsypaev/streamApi
-STREAMMANAGERIMAGE := tsypaev/streamManager
-STREAMSINKIMAGE := tsypaev/tsypaev/streamSink
-TIMELINEAPIIMAGE := tsypaev/timelineApi
-TIMELINEMANAGERIMAGE := tsypaev/timelineManager
-TRACINGSINKIMAGE := tsypaev/tracingSink
+GRAPHITESINKIMAGE := tsypaev/graphite.sink
+MANAGEMENTAPIIMAGE := tsypaev/management.api
+SENTRYSINKIMAGE := tsypaev/sentry.sink
+STREAMAPIIMAGE := tsypaev/stream.api
+STREAMMANAGERIMAGE := tsypaev/stream.manager
+STREAMSINKIMAGE := tsypaev/tsypaev/stream.sink
+TIMELINEAPIIMAGE := tsypaev/timeline.api
+TIMELINEMANAGERIMAGE := tsypaev/timeline.manager
+TRACINGSINKIMAGE := tsypaev/tracing.sink
 
 pushelasticsink:
 	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t $(JAVAIMAGENAME) -f $(ELASTICSINKBUILDERFILE) .
