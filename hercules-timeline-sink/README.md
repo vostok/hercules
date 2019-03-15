@@ -68,7 +68,7 @@ zk://zk_host_1:port[,zk_host_2:port,...]/path/to/znode/application.properties
 
 ## Quick start
 ### Initialization
-Timeline Sink uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should be configured by [Hercules Init](../hercules-init/README.md). See Hercules Init for details.
+Timeline Sink uses Timeline's and Stream's metadata from ZooKeeper. Thus, ZK should be configured by [Hercules Init](../hercules-init/README.md). See Hercules Init for details.
 
 ### `application.properties` sample:
 ```properties
