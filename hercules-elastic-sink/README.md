@@ -70,7 +70,7 @@ zk://zk_host_1:port[,zk_host_2:port,...]/path/to/znode/application.properties
 
 ## Quick start
 ### Initialization
-Elastic Sink uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should be configured by Hercules Init. See [Hercules Init](../hercules-init/README.md) for details.
+Streams with log events should be predefined.
 
 ### `application.properties` sample:
 ```properties
