@@ -11,6 +11,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -286,6 +287,7 @@ public class GateClient implements Closeable {
                 .custom()
                 .setSocketTimeout(requestTimeout)
                 .setConnectTimeout(connectionTimeout)
+                .setConnectionRequestTimeout(connectionTimeout)
                 .build();
 
         return HttpClientBuilder
@@ -293,6 +295,7 @@ public class GateClient implements Closeable {
                 .setDefaultRequestConfig(requestConfig)
                 .setMaxConnPerRoute(connectionCount)
                 .setMaxConnTotal(connectionCount)
+                .setRetryHandler(new DefaultHttpRequestRetryHandler(0, false))
                 .build();
     }
 
