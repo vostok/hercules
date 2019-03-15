@@ -44,7 +44,7 @@ zk://zk_host_1:port[,zk_host_2:port,...]/path/to/znode/application.properties
 
 ## Quick start
 ### Initialization
-Stream Manager uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should be configured by [Hercules Init](../hercules-init/README.md). See Hercules Init for details.
+Stream Manager uses Stream's metadata. Thus, ZK should be configured by [Hercules Init](../hercules-init/README.md). See Hercules Init for details.
 
 ### `application.properties` sample:
 ```properties
