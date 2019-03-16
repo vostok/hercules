@@ -96,4 +96,7 @@ pushtracingsink:
 	@docker push ${TRACINGSINKIMAGE}
 .PHONY: pushtracingsink
 
+pushallimages: pushelasticsink pushgate pushgraphitesink pushmanagementapi pushsentrysink pushstreamapi pushatreammanager pushstreamsink pushtimelineapi pushtimelinemanager pushtracingsink
+.PHONY: pushallimages
+
 
