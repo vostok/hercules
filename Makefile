@@ -96,18 +96,4 @@ pushtracingsink:
 	@docker push ${TRACINGSINKIMAGE}
 .PHONY: pushtracingsink
 
-pushallimages:
-	make pushelasticsink
-	make pushgate
-	make pushgraphitesink
-	make pushmanagementapi
-	make pushsentrysink
-	make pushstreamapi
-	make pushatreammanager
-	make pushstreamsink
-	make pushtimelineapi
-	make pushtimelinemanager
-	make pushtracingsink
-.PHONY: pushallimages
-
 

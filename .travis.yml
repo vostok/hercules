@@ -8,4 +8,4 @@ deploy:
     provider: script
     skip_cleanup: true
     script:
-    - make pushallimages
+    - make
