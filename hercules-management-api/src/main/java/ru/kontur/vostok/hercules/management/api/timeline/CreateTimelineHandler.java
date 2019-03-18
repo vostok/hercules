@@ -101,6 +101,12 @@ public class CreateTimelineHandler implements HttpHandler {
                                 timeline.getName(),
                                 10_000L,//TODO: Move to properties
                                 TimeUnit.MILLISECONDS);
+
+                if (taskFuture.isExpired()) {
+                    ResponseUtil.requestTimeout(exch);
+                    return;
+                }
+
                 if (taskFuture.isFailed()) {
                     ResponseUtil.internalServerError(exch);
                     return;
