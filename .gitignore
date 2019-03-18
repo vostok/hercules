@@ -2,6 +2,6 @@
 target
 
 # IDE specific resources
-target
 *.iml
 .idea
+
