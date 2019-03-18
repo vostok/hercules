@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ru.kontur.vostok.hercules</groupId>
+    <artifactId>hercules</artifactId>
+    <packaging>pom</packaging>
+    <version>0.20.0-SNAPSHOT</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+
+        <hercules.version>0.20.0-SNAPSHOT</hercules.version>
+
+        <kafka.version>2.0.0</kafka.version>
+        <zookeeper.version>3.4.13</zookeeper.version>
+        <curator.version>4.0.1</curator.version>
+        <cassandra-driver.version>3.5.1</cassandra-driver.version>
+        <undertow.version>2.0.13.Final</undertow.version>
+        <jetty.version>9.4.11.v20180605</jetty.version>
+        <metrics.version>4.0.2</metrics.version>
+        <jackson.version>2.9.7</jackson.version>
+        <guava.version>20.0</guava.version>
+        <elasticsearch-client.version>6.2.4</elasticsearch-client.version>
+        <apache-httpclient.version>4.5.3</apache-httpclient.version>
+        <slf4j.version>1.7.25</slf4j.version>
+        <log4j.version>2.11.0</log4j.version>
+        <logback.version>1.2.3</logback.version>
+        <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
+    </properties>
+
+    <modules>
+        <module>hercules-util</module>
+        <module>hercules-configuration</module>
+        <module>hercules-protocol</module>
+        <module>hercules-partitioner</module>
+        <module>hercules-throttling</module>
+        <module>hercules-meta</module>
+        <module>hercules-auth</module>
+        <module>hercules-gate</module>
+        <module>hercules-stream-sink</module>
+        <module>hercules-timeline-sink</module>
+        <module>hercules-kafka-util</module>
+        <module>hercules-stream-api</module>
+        <module>hercules-timeline-api</module>
+        <module>hercules-uuid</module>
+        <module>hercules-cassandra-util</module>
+        <module>hercules-management-api</module>
+        <module>hercules-sentry-sink</module>
+        <module>hercules-graphite-sink</module>
+        <module>hercules-undertow-util</module>
+        <module>hercules-health</module>
+        <module>hercules-gate-client</module>
+        <module>hercules-timeline-manager</module>
+        <module>hercules-stream-manager</module>
+        <module>hercules-init</module>
+        <module>hercules-tags</module>
+        <module>hercules-http</module>
+        <module>hercules-http-jetty</module>
+        <module>hercules-client</module>
+        <module>hercules-sink</module>
+        <module>hercules-elastic-sink</module>
+        <module>hercules-cassandra-common-sink</module>
+        <module>hercules-tracing-sink</module>
+        <module>hercules-tracing-api</module>
+        <module>hercules-json</module>
+        <module>hercules-curator</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Jetbrains Annotations -->
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${jetbrains-annotations.version}</version>
+            </dependency>
+
+            <!-- Logging libraries -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jcl-over-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
+            <!-- Apache Http client -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${apache-httpclient.version}</version>
+            </dependency>
+
+            <!-- Apache Kafka client -->
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-streams</artifactId>
+                <version>${kafka.version}</version>
+            </dependency>
+
+            <!-- Apache ZooKeeper client -->
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${zookeeper.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!-- Apache Curator -->
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-client</artifactId>
+                <version>${curator.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${curator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
+                <version>${curator.version}</version>
+            </dependency>
+
+            <!-- Apache Cassandra driver -->
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>${cassandra-driver.version}</version>
+            </dependency>
+
+            <!-- Undertow - HTTP-server -->
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-core</artifactId>
+                <version>${undertow.version}</version>
+            </dependency>
+
+            <!-- Jetty - HTTP-server -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+
+            <!-- Metrics -->
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${metrics.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-graphite</artifactId>
+                <version>${metrics.version}</version>
+            </dependency>
+
+            <!-- Jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <!-- Google Guava -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+
+            <!-- Elasticsearch client -->
+            <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-client</artifactId>
+                <version>${elasticsearch-client.version}</version>
+            </dependency>
+
+            <!-- Sentry client -->
+            <dependency>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry</artifactId>
+                <version>1.7.5</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-configuration</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-throttling</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-undertow-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-protocol</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-protocol</artifactId>
+                <version>${hercules.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-partitioner</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-meta</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-auth</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-kafka-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-uuid</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-cassandra-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-health</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-gateway-client</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-tags</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-http</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-cassandra-common-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-gate-client</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-json</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-curator</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+
+            <!-- Test libraries -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.12</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>2.19.0</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>2.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.5.3</version>
+                    <configuration>
+                        <goals>deploy</goals>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>pl.project13.maven</groupId>
+                    <artifactId>git-commit-id-plugin</artifactId>
+                    <version>2.2.5</version>
+
+                    <executions>
+                        <execution>
+                            <id>get-the-git-infos</id>
+                            <goals>
+                                <goal>revision</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>validate-the-git-infos</id>
+                            <goals>
+                                <goal>validateRevision</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+
+                    <configuration>
+                        <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                        <verbose>true</verbose>
+                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                        <format>properties</format>
+                        <includeOnlyProperties>
+                            <includeOnlyProperty>^git.build.version$</includeOnlyProperty>
+                            <includeOnlyProperty>^git.commit.id$</includeOnlyProperty>
+                        </includeOnlyProperties>
+                        <useNativeGit>false</useNativeGit>
+                        <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>3.0.0</version>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>validate</phase>
+                            <configuration>
+                                <logViolationsToConsole>true</logViolationsToConsole>
+                                <consoleOutput>true</consoleOutput>
+                                <failOnViolation>true</failOnViolation>
+                                <configLocation>checkstyle.xml</configLocation>
+                            </configuration>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>8.14</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

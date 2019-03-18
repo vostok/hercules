@@ -1,0 +1,70 @@
+<configuration scan="true">
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <file>hercules_gate.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>hercules_gate_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>3</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="RECEIVED_EVENTS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
+        </encoder>
+        <file>hercules_gate_received_events.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>hercules_gate_received_events_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>3</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="PROCESSED_EVENTS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
+        </encoder>
+        <file>hercules_gate_processed_events.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>hercules_gate_processed_events_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>3</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="DROPPED_EVENTS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} %msg%n</pattern>
+        </encoder>
+        <file>hercules_gate_dropped_events.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>hercules_gate_dropped_events_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>3</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <logger name="RECEIVED_EVENTS" level="off" additivity="false">
+        <appender-ref ref="RECEIVED_EVENTS_FILE" />
+    </logger>
+
+    <logger name="PROCESSED_EVENTS" level="off" additivity="false">
+        <appender-ref ref="PROCESSED_EVENTS_FILE" />
+    </logger>
+
+    <logger name="DROPPED_EVENTS" level="off" additivity="false">
+        <appender-ref ref="DROPPED_EVENTS_FILE" />
+    </logger>
+
+    <root level="info">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+    </root>
+
+</configuration>
