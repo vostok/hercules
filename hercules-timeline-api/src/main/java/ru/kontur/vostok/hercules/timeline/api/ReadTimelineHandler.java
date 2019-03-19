@@ -30,9 +30,9 @@ public class ReadTimelineHandler implements HttpHandler {
     private static final TimelineStateReader STATE_READER = new TimelineStateReader();
     private static final TimelineByteContentWriter CONTENT_WRITER = new TimelineByteContentWriter();
 
-    private final AuthManager authManager;
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
+    private final AuthManager authManager;
 
     public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager) {
         this.timelineRepository = timelineRepository;
@@ -58,9 +58,9 @@ public class ReadTimelineHandler implements HttpHandler {
             ResponseUtil.unauthorized(httpServerExchange);
             return;
         }
-        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
-
         String apiKey = optionalApiKey.get();
+
+        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
         String timelineName = queryParameters.get("timeline").getFirst();
 
         AuthResult authResult = authManager.authRead(apiKey, timelineName);
