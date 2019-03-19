@@ -70,12 +70,6 @@ public class DeleteTimelineHandler implements HttpHandler {
                         stub.getName(),
                         10_000L,//TODO: Move to Properties
                         TimeUnit.MILLISECONDS);
-
-        if (taskFuture.isExpired()) {
-            ResponseUtil.requestTimeout(exchange);
-            return;
-        }
-
         if (taskFuture.isFailed()) {
             ResponseUtil.internalServerError(exchange);
             return;
@@ -87,7 +81,7 @@ public class DeleteTimelineHandler implements HttpHandler {
                 ResponseUtil.ok(exchange);
                 return;
             }
-            ResponseUtil.internalServerError(exchange);
+            ResponseUtil.requestTimeout(exchange);
             return;
         }
         ResponseUtil.ok(exchange);

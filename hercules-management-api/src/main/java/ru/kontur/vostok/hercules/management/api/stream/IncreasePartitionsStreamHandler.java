@@ -101,12 +101,6 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
                         stream.getName(),
                         10_000L,//TODO: Move to Properties or add timeout query param
                         TimeUnit.MILLISECONDS);
-
-        if (taskFuture.isExpired()) {
-            ResponseUtil.requestTimeout(exchange);
-            return;
-        }
-
         if (taskFuture.isFailed()) {
             ResponseUtil.internalServerError(exchange);
             return;
