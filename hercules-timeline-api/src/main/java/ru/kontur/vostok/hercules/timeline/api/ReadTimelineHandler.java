@@ -41,7 +41,7 @@ public class ReadTimelineHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange httpServerExchange) throws  Exception {
+    public void handleRequest(HttpServerExchange httpServerExchange) throws Exception {
 
         Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(httpServerExchange);
         if (!optionalContentLength.isPresent()) {
