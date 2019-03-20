@@ -18,6 +18,9 @@ TIMELINEAPI := timelineapi
 TIMELINEMANAGER := timelinemanager
 TRACINGSINK := tracingsink
 
+.PHONY: pushallimages
+pushallimages: pushelasticsink pushgate pushgraphitesink pushmanagementapi pushsentrysink pushstreamapi pushatreammanager pushstreamsink pushtimelineapi pushtimelinemanager pushtracingsink
+
 pushelasticsink:
 	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t ${PREFIX}${ELASTICSINK} -f $(ELASTICSINK).Dockerfile .
 	@docker push ${PREFIX}${ELASTICSINK}
@@ -72,8 +75,3 @@ pushtracingsink:
 	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t ${PREFIX}${TRACINGSINK} -f $(TRACINGSINKBUILDERFILE) .
 	@docker push ${PREFIX}${TRACINGSINK}
 .PHONY: pushtracingsink
-
-pushallimages: pushelasticsink pushgate pushgraphitesink pushmanagementapi pushsentrysink pushstreamapi pushatreammanager pushstreamsink pushtimelineapi pushtimelinemanager pushtracingsink
-.PHONY: pushallimages
-
-
