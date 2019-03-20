@@ -44,7 +44,7 @@ TIMELINEMANAGERIMAGE := tsypaev/timeline.manager
 TRACINGSINKIMAGE := tsypaev/tracing.sink
 
 pushelasticsink:
-	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t $(ELASTICSINK) -f $(ELASTICSINK).Dockerfile .
+	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t ${PREFIX}${ELASTICSINK} -f $(ELASTICSINK).Dockerfile .
 	@docker push ${PREFIX}${ELASTICSINK}
 .PHONY: pushelasticsink
 
