@@ -5,6 +5,19 @@ VERSION := 0.20.0-SNAPSHOT
 JAVAOPTS := ""
 SETTINGS := ""
 WORKDIR := /tmp
+PREFIX := tsypaev/
+
+ELASTICSINK := elasticsink
+GATE := gate
+GRAPHITESINK := graphitesink
+MANAGEMENTAPI := managementapi
+SENTRYSINK := sentrysink
+STREAMAPI := streamapi
+STREAMMANAGER := streammanager
+STREAMSINK := streamsink
+TIMELINEAPI := timelineapi
+TIMELINEMANAGER := timelinemanager
+TRACINGSINK := tracingsink
 
 ELASTICSINKBUILDERFILE := elasticSink.Dockerfile
 GATEBUILDERFILE := gate.Dockerfile
@@ -31,8 +44,8 @@ TIMELINEMANAGERIMAGE := tsypaev/timeline.manager
 TRACINGSINKIMAGE := tsypaev/tracing.sink
 
 pushelasticsink:
-	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t $(VERSION) -f $(ELASTICSINKBUILDERFILE) .
-	@docker push ${ELASTICSINKIMAGE}
+	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t $(ELASTICSINK) -f $(ELASTICSINK).Dockerfile .
+	@docker push ${PREFIX}${ELASTICSINK}
 .PHONY: pushelasticsink
 
 pushgate:
