@@ -33,13 +33,13 @@ public final class TimeTrapUtil {
      * Determine list of Time Trap (i.e. it's offset) covering time interval (parameter from inclusive,
      * parameter to exclusive)
      *
-     * @param from left bound
-     * @param to right bound
-     * @param timetrapSize timetrap size
-     * @return list of Time Trap
+     * @param from left bound in 100-ns ticks from Unix epoch
+     * @param to right bound inclusive in 100-ns ticks from Unix epoch
+     * @param timetrapSize timetrap size in millis
+     * @return list of Time Trap offsets
      */
     public static long[] getTimetrapOffsets(long from, long to, long timetrapSize) {
-        long fromTimetrap = ru.kontur.vostok.hercules.meta.timeline.TimelineUtil.calculateTimetrapOffset(from, timetrapSize);
+        long fromTimetrap = TimelineUtil.calculateTimetrapOffset(from, timetrapSize);
         long toTimetrapExclusive = TimelineUtil.calculateNextTimetrapOffset(to, timetrapSize);
 
         int size = (int)((toTimetrapExclusive - fromTimetrap) / timetrapSize);
