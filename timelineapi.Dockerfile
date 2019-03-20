@@ -9,9 +9,15 @@ ENV VERSION=${VERSION}
 ENV JAVAOPTS=""
 ENV SETTINGS="/etc/hercules-timeline-api/properties"
 
+RUN useradd packer
+
 COPY hercules-timeline-api/target/hercules-timeline-api-${VERSION}.jar ${WORKDIR}/hercules-timeline-api-${VERSION}.jar
 
 WORKDIR ${WORKDIR}
+
+RUN chown -R packer ${WORKDIR}
+
+USER packer
 
 ENTRYPOINT java ${JAVAOPTS} -jar hercules-timeline-api-${VERSION}.jar application.properties=${SETTINGS} 
 
