@@ -4,6 +4,8 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
@@ -30,10 +32,12 @@ public class ReadTimelineHandler implements HttpHandler {
 
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
+    private final AuthManager authManager;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader) {
+    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager) {
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
+        this.authManager = authManager;
     }
 
     @Override
@@ -49,8 +53,27 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
+        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(httpServerExchange, "apiKey");
+        if (!optionalApiKey.isPresent()) {
+            ResponseUtil.unauthorized(httpServerExchange);
+            return;
+        }
+        String apiKey = optionalApiKey.get();
+
         Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
         String timelineName = queryParameters.get("timeline").getFirst();
+
+        AuthResult authResult = authManager.authRead(apiKey, timelineName);
+
+        if (!authResult.isSuccess()) {
+            if (authResult.isUnknown()) {
+                ResponseUtil.unauthorized(httpServerExchange);
+                return;
+            }
+            ResponseUtil.forbidden(httpServerExchange);
+            return;
+        }
+
         int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
         int shardCount = Integer.valueOf(queryParameters.get("shardCount").getFirst());
         int take = Integer.valueOf(queryParameters.get("take").getFirst());
