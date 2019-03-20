@@ -16,10 +16,11 @@ STREAMMANAGER := streammanager
 STREAMSINK := streamsink
 TIMELINEAPI := timelineapi
 TIMELINEMANAGER := timelinemanager
+TIMELINESINK := timelinesink
 TRACINGSINK := tracingsink
 
 .PHONY: pushallimages
-pushallimages: pushelasticsink pushgate pushgraphitesink pushmanagementapi pushsentrysink pushstreamapi pushatreammanager pushstreamsink pushtimelineapi pushtimelinemanager pushtracingsink
+pushallimages: pushelasticsink pushgate pushgraphitesink pushmanagementapi pushsentrysink pushstreamapi pushatreammanager pushstreamsink pushtimelineapi pushtimelinemanager pushtimelinesink pushtracingsink
 
 pushelasticsink:
 	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t ${PREFIX}${ELASTICSINK} -f $(ELASTICSINK).Dockerfile .
@@ -70,6 +71,11 @@ pushtimelinemanager:
 	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t ${PREFIX}${TIMELINEMANAGER} -f $(TIMELINEMANAGER).Dockerfile .
 	@docker push ${PREFIX}${TIMELINEMANAGER}
 .PHONY: pushtimelinemanager
+
+pushtimelinesink:
+	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t ${PREFIX}${TIMELINESINK} -f $(TIMELINESINK).Dockerfile .
+	@docker push ${PREFIX}${TIMELINESINK}
+.PHONY: pushtimelinesink
 
 pushtracingsink:
 	@docker build --no-cache --build-arg VERSION=${VERSION} --build-arg WORKDIR=${WORKDIR} --build-arg JAVAOPTS=${JAVAOPTS} --build-arg SETTINGS=${SETTINGS} -t ${PREFIX}${TRACINGSINK} -f $(TRACINGSINK).Dockerfile .
