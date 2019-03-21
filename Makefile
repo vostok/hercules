@@ -6,26 +6,24 @@ SETTINGS := ""
 WORKDIR := /tmp
 PREFIX := tsypaev/
 
-ELK := hercules-elastic-sink 
-
-ELASTICSINK := elasticsink
-GATE := gate
-GRAPHITESINK := graphitesink
-MANAGEMENTAPI := managementapi
-SENTRYSINK := sentrysink
-STREAMAPI := streamapi
-STREAMMANAGER := streammanager
-STREAMSINK := streamsink
-TIMELINEAPI := timelineapi
-TIMELINEMANAGER := timelinemanager
-TIMELINESINK := timelinesink
-TRACINGSINK := tracingsink
+ELASTICSINK := hercules-elastic-sink 
+GATE := hercules-gate
+GRAPHITESINK := hercules-graphite-sink
+MANAGEMENTAPI := hercules-management-api
+SENTRYSINK := hercules-sentry-sink
+STREAMAPI := hercules-stream-api
+STREAMMANAGER := hercules-stream-manager
+STREAMSINK := hercules-stream-sink
+TIMELINEAPI := hercules-timeline-api
+TIMELINEMANAGER := hercules-timeline-manager
+TIMELINESINK := hercules-timeline-sink
+TRACINGSINK := hercules-tracing-sink
 
 pushallimages: pushelasticsink pushgate pushgraphitesink pushmanagementapi pushsentrysink pushstreamapi pushatreammanager pushstreamsink pushtimelineapi pushtimelinemanager pushtimelinesink pushtracingsink
 .PHONY: pushallimages
 
 pushelasticsink:
-	@docker build --build-arg VERSION=${VERSION} --build-arg PROJECTNAME=${ELK} -t ${PREFIX}${ELASTICSINK} -f $(ELASTICSINK).Dockerfile .
+	@docker build --build-arg VERSION=${VERSION} --build-arg SERVICENAME=${ELASTICSINK} -t ${PREFIX}${ELASTICSINK} -f template.Dockerfile .
 	@docker push ${PREFIX}${ELASTICSINK}
 .PHONY: pushelasticsink
 
