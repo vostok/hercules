@@ -1,13 +1,15 @@
 FROM openjdk:8-jre-alpine
 
-WORKDIR "/usr/lib/hercules-elastic-sink"
+ARG PROJECTNAME="unknown"
 ARG VERSION="unknown"
+
+WORKDIR "/usr/lib/hercules-elastic-sink"
 
 ENV VERSION=${VERSION}
 ENV JAVAOPTS=""
 ENV SETTINGS="/etc/hercules-elastic-sink/properties"
 
-COPY hercules-elastic-sink/target/hercules-elastic-sink-${VERSION}.jar ${WORKDIR}/hercules-elastic-sink-${VERSION}.jar
+COPY ${PROJECTNAME}/target/${PROJECTNAME}-${VERSION}.jar ${WORKDIR}/${PROJECTNAME}-${VERSION}.jar
 
-ENTRYPOINT java ${JAVAOPTS} -jar hercules-elastic-sink-${VERSION}.jar application.properties=${SETTINGS} 
+ENTRYPOINT java ${JAVAOPTS} -jar ${PROJECTNAME}-${VERSION}.jar application.properties=${SETTINGS} 
 

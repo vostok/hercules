@@ -6,6 +6,8 @@ SETTINGS := ""
 WORKDIR := /tmp
 PREFIX := tsypaev/
 
+ELK := hercules-elastic-sink 
+
 ELASTICSINK := elasticsink
 GATE := gate
 GRAPHITESINK := graphitesink
@@ -23,7 +25,7 @@ pushallimages: pushelasticsink pushgate pushgraphitesink pushmanagementapi pushs
 .PHONY: pushallimages
 
 pushelasticsink:
-	@docker build --build-arg VERSION=${VERSION} -t ${PREFIX}${ELASTICSINK} -f $(ELASTICSINK).Dockerfile .
+	@docker build --build-arg VERSION=${VERSION} --build-arg PROJECTNAME=${ELK} -t ${PREFIX}${ELASTICSINK} -f $(ELASTICSINK).Dockerfile .
 	@docker push ${PREFIX}${ELASTICSINK}
 .PHONY: pushelasticsink
 
