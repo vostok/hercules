@@ -2,14 +2,11 @@ FROM openjdk:8-jre-alpine
 
 ARG SERVICENAME="unknown"
 ARG VERSION="unknown"
-
-WORKDIR "/usr/lib/${SERVICENAME}"
-
-ENV VERSION=${VERSION}
-ENV JAVAOPTS=""
-ENV SETTINGS="/etc/${SERVICENAME}"
+ARG WORKDIR="/usr/lib/hercules/${SERVICENAME}"
 
 COPY ${SERVICENAME}/target/${SERVICENAME}-${VERSION}.jar ${WORKDIR}/app.jar
+COPY ${SERVICENAME}/target/application.properties /etc/hercules/application.properties
 
-ENTRYPOINT java ${JAVAOPTS} -jar app.jar application.properties=${SETTINGS} 
+WORKDIR ${WORKDIR}
 
+ENTRYPOINT java $JAVA_OPTIONS -jar app.jar application.properties=file:///etc/hercules/application.propertie
