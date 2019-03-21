@@ -18,7 +18,7 @@ SERVICES=$(ELASTICSINK) $(GATE) $(GRAPHITESINK) $(MANAGEMENTAPI) $(SENTRYSINK) $
 push_all_images:
 	for service in $(SERVICES) ; do \
 		docker build --build-arg VERSION=$(VERSION) --build-arg SERVICENAME=$$service -t $(REPOSITORYNAME)/$$service:$(VERSION) -f Dockerfile . ; \
-		docker push $(REPOSITORYNAME)/;$$service:$(VERSION) ; \
+		docker push $(REPOSITORYNAME)/$$service:$(VERSION) ; \
 	done
 
 
