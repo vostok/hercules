@@ -19,7 +19,7 @@ SERVICES=$(ELASTICSINK) $(GATE) $(GRAPHITESINK) $(MANAGEMENTAPI) $(SENTRYSINK) $
 .PHONY: push_all_images
 push_all_images:
 	for service in $(SERVICES) ; do \
-		docker build --build-arg VERSION=${VERSION} --build-arg SERVICENAME=$$service -t ${PREFIX}/$$service:${VERSION} -f Dockerfile . ; \
-		docker push ${PREFIX}/$$service:${VERSION} ; \
+		docker build --build-arg VERSION=$(VERSION) --build-arg SERVICENAME=$$service -t $(PREFIX)/$$service:$(VERSION) -f Dockerfile . ; \
+		docker push $(PREFIX)/$$service:$(VERSION) ; \
 	done
 
