@@ -5,7 +5,7 @@ ARG VERSION="unknown"
 ARG WORKDIR="/usr/lib/hercules/${SERVICENAME}"
 
 COPY ${SERVICENAME}/target/${SERVICENAME}-${VERSION}.jar ${WORKDIR}/app.jar
-COPY ${SERVICENAME}/target/application.properties /etc/hercules/application.properties
+COPY ${SERVICENAME}/application.properties /etc/hercules/application.properties
 
 WORKDIR ${WORKDIR}
 

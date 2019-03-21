@@ -3,7 +3,6 @@ REPOSITORYNAME := tsypaev
 
 ELASTICSINK := hercules-elastic-sink 
 GATE := hercules-gate
-GRAPHITESINK := hercules-graphite-sink
 MANAGEMENTAPI := hercules-management-api
 SENTRYSINK := hercules-sentry-sink
 STREAMAPI := hercules-stream-api
