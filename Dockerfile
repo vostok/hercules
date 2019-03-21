@@ -9,4 +9,4 @@ COPY ${SERVICENAME}/application.properties /etc/hercules/application.properties
 
 WORKDIR ${WORKDIR}
 
-ENTRYPOINT java $JAVA_OPTIONS -jar app.jar application.properties=file:///etc/hercules/application.propertie
+ENTRYPOINT java $JAVA_OPTIONS -jar app.jar application.properties=file:///etc/hercules/application.properties
