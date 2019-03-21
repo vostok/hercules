@@ -14,7 +14,6 @@ import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServ
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -77,7 +76,7 @@ public class TimelineManagerApplication {
         LOGGER.info("Started Timeline Manager shutdown");
 
         try {
-            if (Objects.nonNull(applicationStatusHttpServer)) {
+            if (applicationStatusHttpServer != null) {
                 applicationStatusHttpServer.stop();
             }
         } catch (Throwable t) {
