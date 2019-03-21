@@ -19,6 +19,13 @@ TIMELINEMANAGER := hercules-timeline-manager
 TIMELINESINK := hercules-timeline-sink
 TRACINGSINK := hercules-tracing-sink
 
+.PHONY: push_all_images
+push_all_images:
+    for service in "hercules-elastic-sink" "hercules-gate"; do \
+        @docker build --build-arg VERSION=${VERSION} --build-arg SERVICENAME=$$service -t ${PREFIX}$$service -f template.Dockerfile . ; \
+	@docker push ${PREFIX}$$service ; \
+    done
+
 pushallimages: pushelasticsink pushgate pushgraphitesink pushmanagementapi pushsentrysink pushstreamapi pushatreammanager pushstreamsink pushtimelineapi pushtimelinemanager pushtimelinesink pushtracingsink
 .PHONY: pushallimages
 
