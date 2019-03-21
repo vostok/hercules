@@ -1,23 +1,13 @@
-FROM openjdk:8
+FROM openjdk:8-jre-alpine
 
-EXPOSE 8080
-
-ARG WORKDIR="usr/src"
+WORKDIR "/usr/lib/hercules-elastic-sink"
 ARG VERSION="unknown"
 
 ENV VERSION=${VERSION}
 ENV JAVAOPTS=""
 ENV SETTINGS="/etc/hercules-elastic-sink/properties"
 
-RUN useradd packer
-
 COPY hercules-elastic-sink/target/hercules-elastic-sink-${VERSION}.jar ${WORKDIR}/hercules-elastic-sink-${VERSION}.jar
-
-WORKDIR ${WORKDIR}
-
-RUN chown -R packer ${WORKDIR}
-
-USER packer
 
 ENTRYPOINT java ${JAVAOPTS} -jar hercules-elastic-sink-${VERSION}.jar application.properties=${SETTINGS} 
 
