@@ -1,5 +1,5 @@
 VERSION := $(shell mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout)
-PREFIX := tsypaev/
+PREFIX := hercules
 
 ELASTICSINK := hercules-elastic-sink 
 GATE := hercules-gate
@@ -19,7 +19,7 @@ SERVICES=$(ELASTICSINK) $(GATE) $(GRAPHITESINK) $(MANAGEMENTAPI) $(SENTRYSINK) $
 .PHONY: push_all_images
 push_all_images:
 	for service in $(SERVICES) ; do \
-		docker build --build-arg VERSION=${VERSION} --build-arg SERVICENAME=$$service -t ${PREFIX}$$service -f template.Dockerfile . ; \
-		docker push ${PREFIX}$$service ; \
+		docker build --build-arg VERSION=${VERSION} --build-arg SERVICENAME=$$service -t ${PREFIX}/$$service:${VERSION} -f Dockerfile . ; \
+		docker push ${PREFIX}/$$service:${VERSION} ; \
 	done
 
