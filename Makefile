@@ -1,4 +1,4 @@
-VERSION := $(shell echo "0.20.0-SNAPSHOT")
+VERSION := $(shell mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version | grep -v INFO | grep SNAPSHOT)
 REPOSITORYNAME := tsypaev
 
 ELASTICSINK := hercules-elastic-sink 
