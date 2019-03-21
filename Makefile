@@ -1,4 +1,4 @@
-VERSION := $(shell mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version | grep -v INFO)
+VERSION := $(shell echo "0.20.0-SNAPSHOT")
 REPOSITORYNAME := tsypaev
 
 ELASTICSINK := hercules-elastic-sink 
@@ -17,11 +17,10 @@ SERVICES=$(ELASTICSINK) $(GATE) $(GRAPHITESINK) $(MANAGEMENTAPI) $(SENTRYSINK) $
 
 .PHONY: push_all_images
 push_all_images:
-	mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version
-	#for service in $(SERVICES) ; do \
-	#	docker build --build-arg VERSION=$(VERSION) --build-arg SERVICENAME=$$service -t $(REPOSITORYNAME)/$$service:$(VERSION) -f Dockerfile . ; \
-	#	docker push $(REPOSITORYNAME)/$$service:$(VERSION) ; \
-	#done
+	for service in $(SERVICES) ; do \
+		docker build --build-arg VERSION=$(VERSION) --build-arg SERVICENAME=$$service -t $(REPOSITORYNAME)/$$service:$(VERSION) -f Dockerfile . ; \
+		docker push $(REPOSITORYNAME)/$$service:$(VERSION) ; \
+	done
 
 .PHONY: push_gate
 
