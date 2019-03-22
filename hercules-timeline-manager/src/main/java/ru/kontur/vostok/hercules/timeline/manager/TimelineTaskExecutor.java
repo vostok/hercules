@@ -30,7 +30,7 @@ public class TimelineTaskExecutor extends TaskExecutor<TimelineTask> {
     protected boolean execute(TimelineTask task) {
         switch (task.getType()) {
             case CREATE:
-                cassandraManager.createTable(task.getTimeline().getName());//TODO: process creation error
+                cassandraManager.createTable(task.getTimeline().getName(), task.getTimeline().getTtl());//TODO: process creation error
                 LOGGER.info("Created table '{}'", task.getTimeline().getName());
                 try {
                     timelineRepository.create(task.getTimeline());

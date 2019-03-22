@@ -112,7 +112,7 @@ public class CreateTimelineHandler implements HttpHandler {
                         ResponseUtil.ok(exch);
                         return;
                     }
-                    ResponseUtil.internalServerError(exch);
+                    ResponseUtil.requestTimeout(exch);
                     return;
                 }
                 ResponseUtil.ok(exch);

@@ -85,7 +85,7 @@ public class TimelineReaderTest {
                 1,
                 10,
                 0,
-                1_000
+                10_000_000
         );
 
         verify(session).execute(argThat(cql(".+ slice = 0 .+")));
@@ -101,7 +101,7 @@ public class TimelineReaderTest {
                 1,
                 1,
                 0,
-                1_000
+                10_000_000
         );
 
         verify(session).execute(argThat(cql(
@@ -120,7 +120,7 @@ public class TimelineReaderTest {
                 1,
                 1,
                 0,
-                1_000
+                10_000_000
         );
 
         verify(session).execute(argThat(cql(

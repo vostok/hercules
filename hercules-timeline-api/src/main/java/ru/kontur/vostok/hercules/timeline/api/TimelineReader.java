@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
+import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
@@ -169,29 +170,30 @@ public class TimelineReader {
      * Read timeline content from Cassandra cluster
      * @param timeline timeline info
      * @param readState offsets data
-     * @param k parameter for logical partitioning
-     * @param n parameter for logical partitioning
+     * @param shardIndex parameter for logical partitioning
+     * @param shardCount parameter for logical partitioning
      * @param take fetch size
-     * @param from lower timestamp bound
-     * @param to upper timestamp bound exclusive
+     * @param from lower timestamp bound in 100-ns ticks from Unix epoch
+     * @param to upper timestamp bound exclusive in 100-ns ticks from Unix epoch
      * @return timeline content
      */
     public TimelineByteContent readTimeline(
             Timeline timeline,
             TimelineState readState,
-            int k,
-            int n,
+            int shardIndex,
+            int shardCount,
             int take,
             long from,
             long to
     ) {
         long toInclusive = to - 1;
+        long timetrapSize = timeline.getTimetrapSize();
 
-        int[] partitions = LogicalPartitioner.getPartitionsForLogicalSharding(timeline, k, n);
+        int[] partitions = LogicalPartitioner.getPartitionsForLogicalSharding(timeline, shardIndex, shardCount);
         if (partitions.length == 0) {
             return new TimelineByteContent(readState, new byte[][]{});
         }
-        long[] timetrapOffsets = TimeTrapUtil.getTimetrapOffsets(from, toInclusive, timeline.getTimetrapSize());
+        long[] timetrapOffsets = TimeTrapUtil.getTimetrapOffsets(from, toInclusive, timetrapSize);
 
         Map<Integer, TimelineShardReadStateOffset> offsetMap = toMap(readState);
 

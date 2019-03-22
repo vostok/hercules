@@ -13,6 +13,7 @@ import java.util.UUID;
 public class EventUtil {
     private static char[] HEX = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     private static char ZERO = '0';
+    private static UUID NIL = new UUID(0, 0);
 
     private static final int ID_SIZE_IN_BYTES = 24;
 
@@ -31,6 +32,10 @@ public class EventUtil {
 
     public static String eventIdAsHexString(long timestamp, UUID random) {
         return eventIdOfBytesAsHexString(eventIdAsBytes(timestamp, random));
+    }
+
+    public static byte[] minEventIdForTimestampAsBytes(long timestamp) {
+        return eventIdAsBytes(timestamp, NIL);
     }
 
     /**
