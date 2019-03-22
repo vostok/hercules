@@ -3,9 +3,10 @@ jdk: oraclejdk8
 install: true
 script: mvn package
 before_deploy:
-- echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
+    - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
 deploy:
     provider: script
     skip_cleanup: true
     script:
-    - make
+        - make
+
