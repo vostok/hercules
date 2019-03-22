@@ -71,6 +71,10 @@ public class CreateStreamHandler implements HttpHandler {
             try {
                 Stream stream = deserializer.readValue(bytes);
 
+                if (stream.getShardingKey() == null) {
+                    stream.setShardingKey(new String[0]);
+                }
+
                 Optional<String> streamError = STREAM_VALIDATOR.validate(stream);
                 if (streamError.isPresent()) {
                     ResponseUtil.badRequest(exch);
