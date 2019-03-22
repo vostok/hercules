@@ -1,18 +1,18 @@
 VERSION := $(shell mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 REPOSITORYNAME := tsypaev
 
-ELASTICSINK := hercules-elastic-sink 
-GATE := hercules-gate
-MANAGEMENTAPI := hercules-management-api
-SENTRYSINK := hercules-sentry-sink
-STREAMAPI := hercules-stream-api
-STREAMMANAGER := hercules-stream-manager
-STREAMSINK := hercules-stream-sink
-TIMELINEAPI := hercules-timeline-api
-TIMELINEMANAGER := hercules-timeline-manager
-TIMELINESINK := hercules-timeline-sink
-
-SERVICES=$(ELASTICSINK) $(GATE) $(GRAPHITESINK) $(MANAGEMENTAPI) $(SENTRYSINK) $(STREAMAPI) $(STREAMMANAGER) $(STREAMSINK) $(TIMELINEAPI) $(TIMELINEMANAGER) $(TIMELINESINK) $(TRACINGSINK) 
+SERVICES := hercules-elastic-sink \
+	    hercules-gate \
+	    hercules-sentry-sink \
+	    hercules-stream-api \
+	    hercules-stream-manager \
+	    hercules-stream-sink \
+	    hercules-timeline-api \
+	    hercules-timeline-manager \
+	    hercules-timeline-sink \
+	    hercules-graphite-sink \
+	    hercules-tracing-sink \
+	    hercules-tracing-api 
 
 .PHONY: push_all_images
 push_all_images:
