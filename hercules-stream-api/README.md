@@ -88,7 +88,7 @@ curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
 
 http.server.host=0.0.0.0
-http.server.port=6306
+http.server.port=6307
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
