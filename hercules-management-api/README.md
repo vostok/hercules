@@ -112,7 +112,7 @@ metrics.graphite.prefix=hercules
 metrics.period=60
 
 http.server.host=0.0.0.0
-http.server.port=6306
+http.server.port=6309
 
 context.instance.id=1
 context.environment=dev
