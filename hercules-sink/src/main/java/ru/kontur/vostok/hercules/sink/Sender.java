@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.sink;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -16,6 +18,8 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public abstract class Sender {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Sender.class);
+
     private volatile SenderStatus status = SenderStatus.AVAILABLE;
     private final Object mutex = new Object();
 
@@ -72,6 +76,7 @@ public abstract class Sender {
             int processedEvents = send(events);
             return SenderResult.ok(processedEvents, events.size() - processedEvents);
         } catch (BackendServiceFailedException ex) {
+            LOGGER.error("Backend failed with exception", ex);
             status = SenderStatus.UNAVAILABLE;
             return SenderResult.fail();
         }

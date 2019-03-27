@@ -10,6 +10,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -125,15 +126,19 @@ public class ElasticSender extends Sender {
             int retryCount = retryLimit;
             boolean needToRetry;
             do {
-                long start = System.currentTimeMillis();
-                Response response = restClient.performRequest(
-                        "POST",
-                        "/_bulk",
-                        Collections.emptyMap(),
-                        body
+                Response response;
+                try (AutoMetricStopwatch requestTime = new AutoMetricStopwatch(elasticsearchRequestTimeTimer, TimeUnit.MILLISECONDS)) {
+                    response = restClient.performRequest(
+                            "POST",
+                            "/_bulk",
+                            Collections.emptyMap(),
+                            body
 
-                );
-                elasticsearchRequestTimeTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
+                    );
+                } catch (IOException ex) {
+                    elasticsearchRequestErrorsMeter.mark();
+                    throw ex;
+                }
                 if (response.getStatusLine().getStatusCode() != 200) {
                     elasticsearchRequestErrorsMeter.mark();
                     throw new RuntimeException("Bad response");
@@ -155,7 +160,7 @@ public class ElasticSender extends Sender {
                         }
                     }
                 }
-                needToRetry = result.hasRetryableErrors() || result.hasUnknownErrors() && retryOnUnknownErrors;
+                needToRetry = result.hasRetryableErrors() || (result.hasUnknownErrors() && retryOnUnknownErrors);
             } while (0 < retryCount-- && needToRetry);
             if (needToRetry) {
                 throw new Exception("Have retryable errors in elasticsearch response");
