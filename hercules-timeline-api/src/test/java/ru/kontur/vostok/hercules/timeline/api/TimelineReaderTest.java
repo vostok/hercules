@@ -9,10 +9,11 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
+import javax.naming.LimitExceededException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
@@ -72,7 +73,7 @@ public class TimelineReaderTest {
     }
 
     @Test
-    public void shouldRequestTwoSlices() {
+    public void shouldRequestTwoSlices() throws LimitExceededException {
         Timeline timeline = new Timeline();
         timeline.setName("test-timeline");
         timeline.setSlices(2);
@@ -85,7 +86,8 @@ public class TimelineReaderTest {
                 1,
                 10,
                 0,
-                10_000_000
+                10_000_000,
+                2
         );
 
         verify(session).execute(argThat(cql(".+ slice = 0 .+")));
@@ -93,7 +95,7 @@ public class TimelineReaderTest {
     }
 
     @Test
-    public void shouldIncludeMinimalEventIdInRequestIfNoPartitionReadStatePassed() {
+    public void shouldIncludeMinimalEventIdInRequestIfNoPartitionReadStatePassed() throws LimitExceededException {
         timelineReader.readTimeline(
                 TIMELINE,
                 new TimelineState(new TimelineSliceState[]{}),
@@ -101,7 +103,8 @@ public class TimelineReaderTest {
                 1,
                 1,
                 0,
-                10_000_000
+                10_000_000,
+                2
         );
 
         verify(session).execute(argThat(cql(
@@ -110,7 +113,7 @@ public class TimelineReaderTest {
     }
 
     @Test
-    public void shouldNotIncludeMinimalEventIdInRequestIfPartitionReadStatePassed() {
+    public void shouldNotIncludeMinimalEventIdInRequestIfPartitionReadStatePassed() throws LimitExceededException {
         timelineReader.readTimeline(
                 TIMELINE,
                 new TimelineState(new TimelineSliceState[]{
@@ -120,12 +123,29 @@ public class TimelineReaderTest {
                 1,
                 1,
                 0,
-                10_000_000
+                10_000_000,
+                2
         );
 
         verify(session).execute(argThat(cql(
                 ".+  event_id > " + EVENT_ID_REGEXP + " AND  event_id < " + EVENT_ID_REGEXP + " .+"
         )));
+    }
+
+    @Test(expected = LimitExceededException.class)
+    public void shouldReturnException() throws LimitExceededException{
+        timelineReader.readTimeline(
+                TIMELINE,
+                new TimelineState(new TimelineSliceState[]{
+                        new TimelineSliceState(0, 0, EventUtil.eventIdAsBytes(122_192_928_000_000_000L, UUID.fromString("13814000-1dd2-11b2-8000-000000000000")))
+                }),
+                0,
+                1,
+                1,
+                0,
+                100_000_000,
+                9
+        );
     }
 
     public static <T> void mockIterable(Iterable<T> iterable, T... values) {

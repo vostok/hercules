@@ -9,15 +9,15 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
-import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
+import javax.naming.LimitExceededException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -184,8 +184,9 @@ public class TimelineReader {
             int shardCount,
             int take,
             long from,
-            long to
-    ) {
+            long to,
+            int requestLimitCount
+    ) throws LimitExceededException {
         long toInclusive = to - 1;
         long timetrapSize = timeline.getTimetrapSize();
 
@@ -194,6 +195,10 @@ public class TimelineReader {
             return new TimelineByteContent(readState, new byte[][]{});
         }
         long[] timetrapOffsets = TimeTrapUtil.getTimetrapOffsets(from, toInclusive, timetrapSize);
+
+        if (timetrapOffsets.length > requestLimitCount){
+            throw new LimitExceededException();
+        }
 
         Map<Integer, TimelineShardReadStateOffset> offsetMap = toMap(readState);
 

@@ -62,7 +62,7 @@ public class TimelineApiApplication {
             server = new HttpServer(
                     httpServerProperties,
                     authManager,
-                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader, authManager),
+                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader, authManager, cassandraProperties),
                     metricsCollector
             );
             server.start();
