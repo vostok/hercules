@@ -184,9 +184,8 @@ public class TimelineReader {
             int shardCount,
             int take,
             long from,
-            long to,
-            int requestLimitCount
-    ) throws LimitExceededException {
+            long to
+    ) {
         long toInclusive = to - 1;
         long timetrapSize = timeline.getTimetrapSize();
 
@@ -195,10 +194,6 @@ public class TimelineReader {
             return new TimelineByteContent(readState, new byte[][]{});
         }
         long[] timetrapOffsets = TimeTrapUtil.getTimetrapOffsets(from, toInclusive, timetrapSize);
-
-        if (timetrapOffsets.length > requestLimitCount){
-            throw new LimitExceededException();
-        }
 
         Map<Integer, TimelineShardReadStateOffset> offsetMap = toMap(readState);
 

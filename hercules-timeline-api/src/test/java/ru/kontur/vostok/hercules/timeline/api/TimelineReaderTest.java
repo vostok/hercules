@@ -86,8 +86,7 @@ public class TimelineReaderTest {
                 1,
                 10,
                 0,
-                10_000_000,
-                2
+                10_000_000
         );
 
         verify(session).execute(argThat(cql(".+ slice = 0 .+")));
@@ -103,8 +102,7 @@ public class TimelineReaderTest {
                 1,
                 1,
                 0,
-                10_000_000,
-                2
+                10_000_000
         );
 
         verify(session).execute(argThat(cql(
@@ -123,29 +121,12 @@ public class TimelineReaderTest {
                 1,
                 1,
                 0,
-                10_000_000,
-                2
+                10_000_000
         );
 
         verify(session).execute(argThat(cql(
                 ".+  event_id > " + EVENT_ID_REGEXP + " AND  event_id < " + EVENT_ID_REGEXP + " .+"
         )));
-    }
-
-    @Test(expected = LimitExceededException.class)
-    public void shouldReturnException() throws LimitExceededException{
-        timelineReader.readTimeline(
-                TIMELINE,
-                new TimelineState(new TimelineSliceState[]{
-                        new TimelineSliceState(0, 0, EventUtil.eventIdAsBytes(122_192_928_000_000_000L, UUID.fromString("13814000-1dd2-11b2-8000-000000000000")))
-                }),
-                0,
-                1,
-                1,
-                0,
-                100_000_000,
-                9
-        );
     }
 
     public static <T> void mockIterable(Iterable<T> iterable, T... values) {

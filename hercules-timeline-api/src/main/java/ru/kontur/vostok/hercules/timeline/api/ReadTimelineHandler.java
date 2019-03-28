@@ -18,17 +18,13 @@ import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
-
-import javax.naming.LimitExceededException;
 
 public class ReadTimelineHandler implements HttpHandler {
 
@@ -49,13 +45,17 @@ public class ReadTimelineHandler implements HttpHandler {
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
     private final AuthManager authManager;
-    private final Properties cassandraProperties;
+    private final int requestLimitCount;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, Properties cassandraProperties) {
+    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int requestLimitCount) {
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
         this.authManager = authManager;
-        this.cassandraProperties = cassandraProperties;
+        this.requestLimitCount = requestLimitCount;
+    }
+
+    public static boolean getRequestLimit(long from, long to, long timetrapSize, int requestLimitCount) {
+        return (TimeUtil.ticksToMillis(to - from) >= requestLimitCount * timetrapSize);
     }
 
     @Override
@@ -158,7 +158,10 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        int requestLimitCount = Props.LIMIT_REQUEST.extract(cassandraProperties);
+        if (getRequestLimit(from.get(), to.get(), timeline.get().getTimetrapSize(), requestLimitCount)) {
+            ResponseUtil.badRequest(httpServerExchange, "Limit for request to Cassandra was reached");
+            return;
+        }
 
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
@@ -171,28 +174,18 @@ public class ReadTimelineHandler implements HttpHandler {
                             shardCount.get(),
                             take.get(),
                             from.get(),
-                            to.get(),
-                            requestLimitCount);
+                            to.get());
 
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     Encoder encoder = new Encoder(stream);
                     CONTENT_WRITER.write(encoder, byteContent);
 
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
-                } catch (LimitExceededException e) {
-                    ResponseUtil.badRequest(exchange, "Limit for request to Cassandra was reached");
                 } catch (Exception e) {
                     LOGGER.error("Error on processing request", e);
                     ResponseUtil.internalServerError(exchange);
                 }
             });
         });
-    }
-
-    private static class Props {
-        static final PropertyDescription<Integer> LIMIT_REQUEST = PropertyDescriptions
-                .integerProperty("limitRequest")
-                .withDefaultValue(30)
-                .build();
     }
 }
