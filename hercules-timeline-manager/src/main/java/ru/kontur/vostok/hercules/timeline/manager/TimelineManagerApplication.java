@@ -10,6 +10,8 @@ import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
+import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.util.Map;
 import java.util.Properties;
@@ -25,6 +27,7 @@ public class TimelineManagerApplication {
     private static CassandraConnector cassandraConnector;
     private static CuratorClient curatorClient;
     private static TimelineTaskExecutor timelineTaskExecutor;
+    private static ApplicationStatusHttpServer applicationStatusHttpServer;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -35,6 +38,10 @@ public class TimelineManagerApplication {
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
             Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+            Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+
+            ApplicationContextHolder.init("Hercules Timeline manager", "timeline-manager", contextProperties);
 
             cassandraConnector = new CassandraConnector(cassandraProperties);
             cassandraConnector.connect();
@@ -50,6 +57,9 @@ public class TimelineManagerApplication {
             timelineTaskExecutor =
                     new TimelineTaskExecutor(timelineTaskRepository, 5_000, cassandraManager, timelineRepository);
             timelineTaskExecutor.start();
+
+            applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
+            applicationStatusHttpServer.start();
         } catch (Throwable t) {
             LOGGER.error("Error on starting Timeline Manager", t);
             shutdown();
@@ -64,6 +74,15 @@ public class TimelineManagerApplication {
     private static void shutdown() {
         long start = System.currentTimeMillis();
         LOGGER.info("Started Timeline Manager shutdown");
+
+        try {
+            if (applicationStatusHttpServer != null) {
+                applicationStatusHttpServer.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping server", t);
+            //TODO: Process error
+        }
 
         try {
             if (timelineTaskExecutor != null) {

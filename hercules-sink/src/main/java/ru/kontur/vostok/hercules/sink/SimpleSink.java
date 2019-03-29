@@ -59,56 +59,56 @@ public class SimpleSink extends Sink {
     public void run() {
         while (isRunning()) {
             try {
-                if (!sender.isAvailable()) {
-                    return;
-                }
-                subscribe();
+                if (sender.isAvailable()) {
 
-                while (sender.isAvailable()) {
-                    ConsumerRecords<UUID, Event> pollResult;
-                    try {
-                        pollResult = poll();
-                    } catch (WakeupException ex) {
-                        /*
-                         * WakeupException is used to terminate polling
-                         */
-                        return;
-                    }
+                    subscribe();
 
-                    Set<TopicPartition> partitions = pollResult.partitions();
+                    while (sender.isAvailable()) {
+                        ConsumerRecords<UUID, Event> pollResult;
+                        try {
+                            pollResult = poll();
+                        } catch (WakeupException ex) {
+                            /*
+                             * WakeupException is used to terminate polling
+                             */
+                            return;
+                        }
 
-                    // ConsumerRecords::count works for O(n), where n is partition count
-                    int eventCount = pollResult.count();
-                    List<Event> events = new ArrayList<>(eventCount);
+                        Set<TopicPartition> partitions = pollResult.partitions();
 
-                    int droppedEvents = 0;
+                        // ConsumerRecords::count works for O(n), where n is partition count
+                        int eventCount = pollResult.count();
+                        List<Event> events = new ArrayList<>(eventCount);
 
-                    for (TopicPartition partition : partitions) {
-                        List<ConsumerRecord<UUID, Event>> records = pollResult.records(partition);
-                        for (ConsumerRecord<UUID, Event> record : records) {
-                            Event event = record.value();
-                            if (event == null) {// Received non-deserializable data, should be ignored
-                                droppedEvents++;
-                                if (DROPPED_EVENTS_LOGGER.isDebugEnabled()) {
-                                    DROPPED_EVENTS_LOGGER.trace("{}", record.key());
+                        int droppedEvents = 0;
+
+                        for (TopicPartition partition : partitions) {
+                            List<ConsumerRecord<UUID, Event>> records = pollResult.records(partition);
+                            for (ConsumerRecord<UUID, Event> record : records) {
+                                Event event = record.value();
+                                if (event == null) {// Received non-deserializable data, should be ignored
+                                    droppedEvents++;
+                                    if (DROPPED_EVENTS_LOGGER.isDebugEnabled()) {
+                                        DROPPED_EVENTS_LOGGER.trace("{}", record.key());
+                                    }
+                                    continue;
                                 }
+                                events.add(event);
+                            }
+                        }
+
+                        SenderResult result = sender.process(events);
+                        if (result.isSuccess()) {
+                            try {
+                                commit();
+                                droppedEventsMeter.mark(droppedEvents);
+                                processedEventsMeter.mark(result.getProcessedEvents());
+                                rejectedEventsMeter.mark(result.getRejectedEvents());
+                                totalEventsMeter.mark(events.size());
+                            } catch (CommitFailedException ex) {
+                                LOGGER.warn("Commit failed due to rebalancing", ex);
                                 continue;
                             }
-                            events.add(event);
-                        }
-                    }
-
-                    SenderResult result = sender.process(events);
-                    if (result.isSuccess()) {
-                        try {
-                            commit();
-                            droppedEventsMeter.mark(droppedEvents);
-                            processedEventsMeter.mark(result.getProcessedEvents());
-                            rejectedEventsMeter.mark(result.getRejectedEvents());
-                            totalEventsMeter.mark(events.size());
-                        } catch (CommitFailedException ex) {
-                            LOGGER.warn("Commit failed due to rebalancing", ex);
-                            continue;
                         }
                     }
                 }
