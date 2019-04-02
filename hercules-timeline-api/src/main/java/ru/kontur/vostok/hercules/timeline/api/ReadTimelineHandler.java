@@ -21,8 +21,6 @@ import ru.kontur.vostok.hercules.util.parsing.Parsers;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.util.Deque;
-import java.util.Map;
 import java.util.Optional;
 
 public class ReadTimelineHandler implements HttpHandler {
@@ -71,10 +69,13 @@ public class ReadTimelineHandler implements HttpHandler {
         }
         String apiKey = optionalApiKey.get();
 
-        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
-        String timelineName = queryParameters.get(PARAM_TIMELINE).getFirst();
+        Optional<String> optionalTimelineName = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TIMELINE);
+        if (!optionalTimelineName.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TIMELINE);
+            return;
+        }
 
-        AuthResult authResult = authManager.authRead(apiKey, timelineName);
+        AuthResult authResult = authManager.authRead(apiKey, optionalTimelineName.get());
 
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
@@ -145,7 +146,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        Optional<Timeline> timeline = timelineRepository.read(timelineName);
+        Optional<Timeline> timeline = timelineRepository.read(optionalTimelineName.get());
         if (!timeline.isPresent()) {
             ResponseUtil.notFound(httpServerExchange);
             return;
