@@ -7,14 +7,30 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * SentryProjectMappingRecord record from sentry registry
+ * A record stores correspondence of fields in Hercules and Sentry concepts
  *
  * @author Kirill Sulim
  */
 public class SentryProjectMappingRecord {
 
+    /**
+     * A project in Hercules concept
+     */
     private final String project;
+
+    /**
+     * A service in Hercules concept
+     */
     private final String service;
+
+    /**
+     * A organisation in Sentry concept
+     */
     private final String sentryOrganization;
+
+    /**
+     * A project in Sentry concept
+     */
     private final String sentryProject;
 
     @JsonCreator

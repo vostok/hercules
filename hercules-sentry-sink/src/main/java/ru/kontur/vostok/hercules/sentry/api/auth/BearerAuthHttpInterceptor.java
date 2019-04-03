@@ -10,6 +10,7 @@ import java.io.IOException;
 
 /**
  * BearerAuthHttpInterceptor
+ * The interceptor is used when authentication is performed by a token.
  *
  * @author Kirill Sulim
  */

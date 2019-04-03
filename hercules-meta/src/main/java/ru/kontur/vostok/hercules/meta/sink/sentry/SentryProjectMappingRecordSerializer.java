@@ -11,6 +11,12 @@ import java.util.Objects;
  */
 public class SentryProjectMappingRecordSerializer {
 
+    /**
+     * Deserialize String to record for sentry registry
+     *
+     * @param record Record as String
+     * @return Record as SentryProjectMappingRecord
+     */
     static SentryProjectMappingRecord deserialize(final String record) {
         String[] split = record.split(":");
         if (split.length != 4) {
@@ -30,6 +36,12 @@ public class SentryProjectMappingRecordSerializer {
         );
     }
 
+    /**
+     * Serialize record from sentry registry to String
+     *
+     * @param record Record as SentryProjectMappingRecord
+     * @return Record as string
+     */
     static String serialize(final SentryProjectMappingRecord record) {
         final String project = Objects.requireNonNull(record.getProject());
         final String service = StringUtil.nullToEmpty(record.getService());
