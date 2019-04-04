@@ -7,11 +7,17 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 
 /**
  * SentryStackTraceElementConverter
+ * Allows to convert exception stack frames from a Hercules event
+ * to a Sentry stacktrace in a Sentry event
  *
  * @author Kirill Sulim
  */
 public class SentryStackTraceElementConverter {
 
+    /**
+     * @param container A container with values of the StackFrame tags of a hercules event
+     * @return A Sentry stacktrace element
+     */
     public static SentryStackTraceElement convert(final Container container) {
 
         final String file = ContainerUtil.extract(container, StackFrameTags.FILE_TAG).orElse(null);
