@@ -45,13 +45,13 @@ public class ReadTimelineHandler implements HttpHandler {
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
     private final AuthManager authManager;
-    private final int requestLimitCount;
+    private final int requestCountLimit;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int requestLimitCount) {
+    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int requestCountLimit) {
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
         this.authManager = authManager;
-        this.requestLimitCount = requestLimitCount;
+        this.requestCountLimit = requestCountLimit;
     }
 
     public static boolean getRequestLimit(long from, long to, long timetrapSize, int requestLimitCount) {
@@ -158,8 +158,8 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        if (getRequestLimit(from.get(), to.get(), timeline.get().getTimetrapSize(), requestLimitCount)) {
-            ResponseUtil.badRequest(httpServerExchange, "Limit for request to Cassandra was reached");
+        if (getRequestLimit(from.get(), to.get(), timeline.get().getTimetrapSize(), requestCountLimit)) {
+            ResponseUtil.badRequest(httpServerExchange, "Limit for request count to Cassandra was reached");
             return;
         }
 
@@ -184,6 +184,8 @@ public class ReadTimelineHandler implements HttpHandler {
                 } catch (Exception e) {
                     LOGGER.error("Error on processing request", e);
                     ResponseUtil.internalServerError(exchange);
+                } finally {
+                    exchange.endExchange();
                 }
             });
         });

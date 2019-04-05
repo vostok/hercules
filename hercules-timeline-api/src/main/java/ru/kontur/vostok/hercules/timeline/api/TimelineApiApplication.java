@@ -44,7 +44,7 @@ public class TimelineApiApplication {
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
-            final Integer requestLimitCount = Props.REQUEST_LIMIT_COUNT.extract(properties);
+            final Integer requestCountLimit = Props.REQUEST_COUNT_LIMIT.extract(properties);
 
             ApplicationContextHolder.init("Hercules timeline API", "timeline-api", contextProperties);
 
@@ -66,7 +66,7 @@ public class TimelineApiApplication {
             server = new HttpServer(
                     httpServerProperties,
                     authManager,
-                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader, authManager, requestLimitCount),
+                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader, authManager, requestCountLimit),
                     metricsCollector
             );
             server.start();
@@ -139,8 +139,8 @@ public class TimelineApiApplication {
     }
     private static class Props {
 
-        static final PropertyDescription<Integer> REQUEST_LIMIT_COUNT = PropertyDescriptions
-                .integerProperty("timelineApi.limitRequestToCassandra")
+        static final PropertyDescription<Integer> REQUEST_COUNT_LIMIT = PropertyDescriptions
+                .integerProperty("timelineApi.requestCountLimit")
                 .withDefaultValue(30)
                 .build();
     }
