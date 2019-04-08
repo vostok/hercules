@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.timeline.manager;
 
+import com.codahale.metrics.Meter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.task.TaskExecutor;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
@@ -15,15 +17,20 @@ public class TimelineTaskExecutor extends TaskExecutor<TimelineTask> {
 
     private final CassandraManager cassandraManager;
     private final TimelineRepository timelineRepository;
+    private final Meter createdTimelineCount;
+    private final Meter deletedTimelineCount;
 
     protected TimelineTaskExecutor(
             TimelineTaskRepository timelineTaskRepository,
             long pollingTimeoutMillis,
             CassandraManager cassandraManager,
-            TimelineRepository timelineRepository) {
+            TimelineRepository timelineRepository,
+            MetricsCollector metricsCollector) {
         super(timelineTaskRepository, pollingTimeoutMillis);
         this.cassandraManager = cassandraManager;
         this.timelineRepository = timelineRepository;
+        this.createdTimelineCount = metricsCollector.meter("createdTimelineCount");
+        this.deletedTimelineCount = metricsCollector.meter("deletedTimelineCount");
     }
 
     @Override
@@ -38,6 +45,7 @@ public class TimelineTaskExecutor extends TaskExecutor<TimelineTask> {
                     LOGGER.error("Timeline creation failed with exception", e);
                     return false;
                 }
+                createdTimelineCount.mark();
                 return true;
             case DELETE:
                 try {
@@ -48,6 +56,7 @@ public class TimelineTaskExecutor extends TaskExecutor<TimelineTask> {
                 }
                 cassandraManager.deleteTable(task.getTimeline().getName());//TODO: process deletion error
                 LOGGER.info("Deleted table '{}'", task.getTimeline().getName());
+                deletedTimelineCount.mark();
                 return true;
             default:
                 LOGGER.error("Unknown task type {}", task.getType());
