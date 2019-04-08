@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.elastic.sink;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 public final class IndexToElasticJsonWriter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IndexToElasticJsonWriter.class);
 
     private static final Charset ENCODING = StandardCharsets.UTF_8;
 
@@ -28,17 +31,23 @@ public final class IndexToElasticJsonWriter {
     private static final byte[] END_BYTES = "\"}}".getBytes(ENCODING);
 
     public static boolean tryWriteIndex(OutputStream stream, Event event) throws IOException {
-        final Optional<String> index = extractIndex(event);
-        if (index.isPresent()) {
-            stream.write(START_BYTES);
-            stream.write(index.get().getBytes(ENCODING));
-            stream.write(MIDDLE_BYTES);
-            stream.write(EventUtil.extractStringId(event).getBytes(ENCODING));
-            stream.write(END_BYTES);
-            return true;
-        } else {
+        Optional<String> index;
+        try {
+            index = extractIndex(event);
+        } catch (Exception ex) {
+            LOGGER.warn("Cannot extract index from event", ex);
             return false;
         }
+        if (!index.isPresent()) {
+            return false;
+        }
+
+        stream.write(START_BYTES);
+        stream.write(index.get().getBytes(ENCODING));
+        stream.write(MIDDLE_BYTES);
+        stream.write(EventUtil.extractStringId(event).getBytes(ENCODING));
+        stream.write(END_BYTES);
+        return true;
     }
 
     private static Optional<String> extractIndex(final Event event) {
