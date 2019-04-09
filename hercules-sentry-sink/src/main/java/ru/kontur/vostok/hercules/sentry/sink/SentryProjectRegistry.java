@@ -39,9 +39,9 @@ public class SentryProjectRegistry {
     /**
      * Get project name in Sentry concept by project name and service name in Hercules concept
      *
-     * @param project Project name in Hercules concept
-     * @param service Service name in Hercules concept
-     * @return project name in Sentry concept
+     * @param project the project name in Hercules concept
+     * @param service the service name in Hercules concept
+     * @return the project name in Sentry concept
      */
     public Optional<String> getSentryProjectName(@NotNull final String project, @Nullable final String service) {
         return Optional.ofNullable(registry.get(ProjectServicePair.of(project, service)));
@@ -79,8 +79,8 @@ public class SentryProjectRegistry {
     /**
      * Get project-service pair in Hercules concept from record with project mapping from Zookeeper
      *
-     * @param record SentryProjectMappingRecord record
-     * @return project-service pair
+     * @param record the {@link SentryProjectMappingRecord} record
+     * @return the project-service pair
      */
     private static ProjectServicePair getKey(final SentryProjectMappingRecord record) {
         return ProjectServicePair.of(record.getProject(), record.getService());
@@ -89,8 +89,8 @@ public class SentryProjectRegistry {
     /**
      * Get organisation/project pair in Sentry concept from record with project mapping from Zookeeper
      *
-     * @param record SentryProjectMappingRecord record
-     * @return organisation/project pair
+     * @param record the {@link SentryProjectMappingRecord} record
+     * @return the organisation/project pair
      */
     private static String getValue(final SentryProjectMappingRecord record) {
         return record.getSentryOrganization() + "/" + record.getSentryProject();

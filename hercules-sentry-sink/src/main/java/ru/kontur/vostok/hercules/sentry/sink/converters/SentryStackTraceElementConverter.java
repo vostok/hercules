@@ -15,8 +15,8 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 public class SentryStackTraceElementConverter {
 
     /**
-     * @param container A container with values of the StackFrame tags of a hercules event
-     * @return A Sentry stacktrace element
+     * @param container the container with values of the StackFrame tags of a Hercules event
+     * @return the Sentry stacktrace element
      */
     public static SentryStackTraceElement convert(final Container container) {
 

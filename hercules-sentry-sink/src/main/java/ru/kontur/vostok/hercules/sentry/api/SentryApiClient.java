@@ -66,19 +66,19 @@ public class SentryApiClient {
     }
 
     /**
-     * Get the projects witch match the client
+     * Get the projects which match the Sentry client
      *
-     * @return the Result with a list of projects
+     * @return the {@link Result} object  with a list of projects
      */
     public Result<List<ProjectInfo>, String> getProjects() {
         return pagedRequest(new HttpGet(PROJECTS_URL), new TypeReference<List<ProjectInfo>>() {});
     }
 
     /**
-     * Get a list of public DSN witch match the project
+     * Get a list of public DSN which match the project
      *
-     * @param project For this project a list of public DSN is requested
-     * @return the Result with a list of public DSN
+     * @param project the project for which a list of public DSN is requested
+     * @return the {@link Result} object with a list of public DSN
      */
     public Result<List<KeyInfo>, String> getPublicDsn(ProjectInfo project) {
         Optional<String> projectSlug = Optional.ofNullable(project.getSlug());
@@ -97,8 +97,8 @@ public class SentryApiClient {
     /**
      * Create new organisation in the Sentry
      *
-     * @param name Name of organisation
-     * @return Result with response entity or error
+     * @param name the name of organisation
+     * @return the {@link Result} object with response entity or error
      */
     public Result<Void, String> createOrganization(String name) {
         HttpPost post = new HttpPost(ORGANIZATIONS_URL);

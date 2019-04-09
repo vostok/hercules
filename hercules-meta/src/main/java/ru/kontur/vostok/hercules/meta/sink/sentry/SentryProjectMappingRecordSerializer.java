@@ -37,7 +37,7 @@ public class SentryProjectMappingRecordSerializer {
     }
 
     /**
-     * Serialize record from sentry registry to String
+     * Serialize record from Sentry registry to String
      *
      * @param record Record as SentryProjectMappingRecord
      * @return Record as string

@@ -51,8 +51,8 @@ public class SentryClientHolder {
     /**
      * Get Sentry client by project name
      *
-     * @param name Project name
-     * @return an {@link Optional} describing SentryClient matching the project
+     * @param name the project name
+     * @return the {@link Optional} describing SentryClient matching the project
      */
     public Optional<SentryClient> getClient(String name) {
         return Optional.ofNullable(clients.get().get(name));
@@ -60,7 +60,7 @@ public class SentryClientHolder {
 
     /**
      * Update clients in this class by information about clients from Sentry.
-     * This method executes by schedule when Sentry Sink is working.
+     * This method executes by schedule
      */
     private void update() {
         try {
@@ -105,8 +105,8 @@ public class SentryClientHolder {
      * Apply settings to dsn
      * Sentry uses dsn to pass properties to client
      *
-     * @param dsn source dsn
-     * @return dsn with settings
+     * @param dsn the source dsn
+     * @return the dsn with settings
      */
     private String applySettings(String dsn) {
         return dsn + "?" + String.join("&",

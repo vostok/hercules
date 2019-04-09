@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * SentryProjectMappingRecord record from sentry registry
+ * SentryProjectMappingRecord record from Sentry registry
  * A record stores correspondence of fields in Hercules and Sentry concepts
  *
  * @author Kirill Sulim

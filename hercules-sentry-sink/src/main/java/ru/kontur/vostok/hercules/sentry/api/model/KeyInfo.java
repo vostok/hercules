@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * KeyInfo
+ * The key with DSN
  *
  * @author Kirill Sulim
  */
