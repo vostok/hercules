@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 /**
  * SentryProjectRegistry stores dictionary project tag value -> "${sentry-organization}/${sentry-project-name}"
+ * <p>
  * The class stores actual Sentry project registry
  *
  * @author Kirill Sulim

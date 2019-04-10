@@ -6,7 +6,6 @@ import ru.kontur.vostok.hercules.tags.StackFrameTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 
 /**
- * SentryStackTraceElementConverter
  * Allows to convert exception stack frames from a Hercules event
  * to a Sentry stacktrace in a Sentry event
  *

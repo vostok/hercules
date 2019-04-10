@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.sentry.api.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * KeyInfo
  * The key with DSN
  *
  * @author Kirill Sulim

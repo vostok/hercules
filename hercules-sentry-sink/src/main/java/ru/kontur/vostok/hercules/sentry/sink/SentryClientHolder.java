@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Sentry client holder
+ * Sentry client holder.
  * The class stores actual Sentry clients
  *
  * @author Kirill Sulim
