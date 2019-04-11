@@ -54,8 +54,8 @@ public class ReadTimelineHandler implements HttpHandler {
         this.requestCountLimit = requestCountLimit;
     }
 
-    public static boolean getRequestLimit(long from, long to, long timetrapSize, int requestLimitCount) {
-        return (TimeUtil.ticksToMillis(to - from) >= requestLimitCount * timetrapSize);
+    public static boolean getRequestLimit(long from, long to, long timetrapSize, int requestCountLimit) {
+        return (TimeUtil.ticksToMillis(to - from) >= requestCountLimit * timetrapSize);
     }
 
     @Override
