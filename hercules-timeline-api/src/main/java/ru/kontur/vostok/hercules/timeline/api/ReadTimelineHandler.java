@@ -45,17 +45,17 @@ public class ReadTimelineHandler implements HttpHandler {
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
     private final AuthManager authManager;
-    private final int requestCountLimit;
+    private final int timetrapCountLimit;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int requestCountLimit) {
+    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int timetrapCountLimit) {
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
         this.authManager = authManager;
-        this.requestCountLimit = requestCountLimit;
+        this.timetrapCountLimit = timetrapCountLimit;
     }
 
-    public static boolean isRequestLimitReached(long from, long to, long timetrapSize, int requestCountLimit) {
-        return (TimeUtil.ticksToMillis(to - from) >= requestCountLimit * timetrapSize);
+    public static boolean isTimetrapCountLimitReached(long from, long to, long timetrapSize, int timetrapCountLimit) {
+        return (TimeUtil.ticksToMillis(to - from) >= timetrapCountLimit * timetrapSize);
     }
 
     @Override
@@ -158,8 +158,8 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        if (isRequestLimitReached(from.get(), to.get(), timeline.get().getTimetrapSize(), requestCountLimit)) {
-            ResponseUtil.badRequest(httpServerExchange, "Limit for request count to Cassandra was reached");
+        if (isTimetrapCountLimitReached(from.get(), to.get(), timeline.get().getTimetrapSize(), timetrapCountLimit)) {
+            ResponseUtil.badRequest(httpServerExchange, "Limit for timetrap count for sending to Cassandra was reached");
             return;
         }
 
