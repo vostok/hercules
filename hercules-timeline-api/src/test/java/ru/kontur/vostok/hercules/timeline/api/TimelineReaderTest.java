@@ -13,7 +13,6 @@ import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
-import javax.naming.LimitExceededException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
@@ -73,7 +72,7 @@ public class TimelineReaderTest {
     }
 
     @Test
-    public void shouldRequestTwoSlices() throws LimitExceededException {
+    public void shouldRequestTwoSlices() {
         Timeline timeline = new Timeline();
         timeline.setName("test-timeline");
         timeline.setSlices(2);
@@ -94,7 +93,7 @@ public class TimelineReaderTest {
     }
 
     @Test
-    public void shouldIncludeMinimalEventIdInRequestIfNoPartitionReadStatePassed() throws LimitExceededException {
+    public void shouldIncludeMinimalEventIdInRequestIfNoPartitionReadStatePassed() {
         timelineReader.readTimeline(
                 TIMELINE,
                 new TimelineState(new TimelineSliceState[]{}),
@@ -111,7 +110,7 @@ public class TimelineReaderTest {
     }
 
     @Test
-    public void shouldNotIncludeMinimalEventIdInRequestIfPartitionReadStatePassed() throws LimitExceededException {
+    public void shouldNotIncludeMinimalEventIdInRequestIfPartitionReadStatePassed() {
         timelineReader.readTimeline(
                 TIMELINE,
                 new TimelineState(new TimelineSliceState[]{
