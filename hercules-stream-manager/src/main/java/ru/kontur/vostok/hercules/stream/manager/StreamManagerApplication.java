@@ -7,6 +7,8 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.health.CommonMetrics;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
@@ -39,6 +41,7 @@ public class StreamManagerApplication {
     private static CuratorClient curatorClient;
     private static StreamTaskExecutor streamTaskExecutor;
     private static ApplicationStatusHttpServer applicationStatusHttpServer;
+    private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -51,6 +54,7 @@ public class StreamManagerApplication {
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+            Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
             final short replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
 
@@ -64,8 +68,17 @@ public class StreamManagerApplication {
             StreamTaskRepository streamTaskRepository = new StreamTaskRepository(curatorClient);
             StreamRepository streamRepository = new StreamRepository(curatorClient);
 
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+            CommonMetrics.registerCommonMetrics(metricsCollector);
+
             streamTaskExecutor =
-                    new StreamTaskExecutor(streamTaskRepository, 5_000, kafkaManager, streamRepository);
+                    new StreamTaskExecutor(
+                            streamTaskRepository,
+                            5_000,
+                            kafkaManager,
+                            streamRepository,
+                            metricsCollector);
             streamTaskExecutor.start();
 
             applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
@@ -85,7 +98,7 @@ public class StreamManagerApplication {
         long start = System.currentTimeMillis();
         LOGGER.info("Started Stream Manager shutdown");
         try {
-            if (Objects.nonNull(applicationStatusHttpServer)) {
+            if (applicationStatusHttpServer != null) {
                 applicationStatusHttpServer.stop();
             }
         } catch (Throwable t) {
@@ -118,6 +131,14 @@ public class StreamManagerApplication {
         } catch (Throwable t) {
             LOGGER.error("Error on stopping stream manager", t);
             //TODO: Process error
+        }
+
+        try {
+            if (metricsCollector != null) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping metrics collector", t);
         }
 
         LOGGER.info("Finished Stream Manager shutdown for {} millis", System.currentTimeMillis() - start);

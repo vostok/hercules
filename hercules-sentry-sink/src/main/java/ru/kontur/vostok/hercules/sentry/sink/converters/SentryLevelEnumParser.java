@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.util.functional.Result;
 import java.util.Optional;
 
 /**
- * SentryLevelEnumParser
+ * Allows to convert a String value of the level tag of a Hercules event to a Sentry event level
  *
  * @author Kirill Sulim
  */

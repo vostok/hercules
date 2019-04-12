@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Convert hercules event to sentry event builder
+ * Convert Hercules event to Sentry event builder
  */
 public class SentryEventConverter {
 

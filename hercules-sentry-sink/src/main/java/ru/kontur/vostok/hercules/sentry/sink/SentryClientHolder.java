@@ -22,11 +22,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
- * SentryClientHolder
+ * Sentry client holder.
+ * The class stores actual Sentry clients
  *
  * @author Kirill Sulim
  */
@@ -49,10 +48,20 @@ public class SentryClientHolder {
     }
 
     // TODO: Add default client
+    /**
+     * Get Sentry client by project name
+     *
+     * @param name the project name
+     * @return the {@link Optional} describing SentryClient matching the project
+     */
     public Optional<SentryClient> getClient(String name) {
         return Optional.ofNullable(clients.get().get(name));
     }
 
+    /**
+     * Update clients in this class by information about clients from Sentry.
+     * This method executes by schedule
+     */
     private void update() {
         try {
             Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects();
@@ -66,7 +75,7 @@ public class SentryClientHolder {
             for (ProjectInfo projectInfo : projects.get()) {
                 Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(projectInfo);
                 if (!publicDsn.isOk()) {
-                    LOGGER.error("Cannot get public dns for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
+                    LOGGER.error("Cannot get public dsn for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
                     return;
                 }
 
@@ -92,8 +101,12 @@ public class SentryClientHolder {
         }
     }
 
-    /*
+    /**
+     * Apply settings to dsn
      * Sentry uses dsn to pass properties to client
+     *
+     * @param dsn the source dsn
+     * @return the dsn with settings
      */
     private String applySettings(String dsn) {
         return dsn + "?" + String.join("&",

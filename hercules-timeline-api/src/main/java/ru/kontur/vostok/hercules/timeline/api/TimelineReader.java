@@ -210,7 +210,7 @@ public class TimelineReader {
                 offset = offsetMap.get(params.slice);
             }
 
-            SimpleStatement statement = generateStatement(timeline, params, offset, take);
+            SimpleStatement statement = generateStatement(timeline, params, offset, take, from, to);
             statement.setFetchSize(Integer.MAX_VALUE); // fetch size defined by 'take' parameter
 
             LOGGER.info("Executing '{}'", statement.toString());
@@ -242,7 +242,7 @@ public class TimelineReader {
         return new TimelineShardReadStateOffset(ttOffset, NIL);
     }
 
-    private static SimpleStatement generateStatement(Timeline timeline, Parameters params, TimelineShardReadStateOffset offset, int take) {
+    private static SimpleStatement generateStatement(Timeline timeline, Parameters params, TimelineShardReadStateOffset offset, int take, long from, long to) {
         if (!isNil(offset.eventId)) {
             return new SimpleStatement(String.format(
                     SELECT_EVENTS,
@@ -250,7 +250,7 @@ public class TimelineReader {
                     params.slice,
                     params.ttOffset,
                     EventUtil.eventIdOfBytesAsHexString(offset.eventId),
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.minEventIdForTimestampAsHexString(Math.min(to, TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize()))),
                     take
             ));
         } else {
@@ -259,8 +259,8 @@ public class TimelineReader {
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset)),
-                    EventUtil.minEventIdForTimestampAsHexString(TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize())),
+                    EventUtil.minEventIdForTimestampAsHexString(Math.min(from, TimeUtil.millisToTicks(params.ttOffset))),
+                    EventUtil.minEventIdForTimestampAsHexString(Math.min(to, TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize()))),
                     take
             ));
         }
