@@ -54,7 +54,7 @@ public class ReadTimelineHandler implements HttpHandler {
         this.requestCountLimit = requestCountLimit;
     }
 
-    public static boolean getRequestLimit(long from, long to, long timetrapSize, int requestCountLimit) {
+    public static boolean isRequestLimitReached(long from, long to, long timetrapSize, int requestCountLimit) {
         return (TimeUtil.ticksToMillis(to - from) >= requestCountLimit * timetrapSize);
     }
 
@@ -158,7 +158,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        if (getRequestLimit(from.get(), to.get(), timeline.get().getTimetrapSize(), requestCountLimit)) {
+        if (isRequestLimitReached(from.get(), to.get(), timeline.get().getTimetrapSize(), requestCountLimit)) {
             ResponseUtil.badRequest(httpServerExchange, "Limit for request count to Cassandra was reached");
             return;
         }

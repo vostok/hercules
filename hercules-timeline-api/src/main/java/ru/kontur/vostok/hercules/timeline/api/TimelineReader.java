@@ -17,7 +17,6 @@ import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
-import javax.naming.LimitExceededException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
