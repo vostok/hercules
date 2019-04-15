@@ -28,8 +28,11 @@ import ru.kontur.vostok.hercules.util.validation.Validators;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +61,8 @@ public class ElasticSender extends Sender {
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
 
+    private final Set<String> redefinedExceptions;
+
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
@@ -70,6 +75,9 @@ public class ElasticSender extends Sender {
         final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
         final int connectionRequestTimeout = Props.CONNECTION_REQUEST_TIMEOUT_MS.extract(properties);
         final int socketTimeout = Props.SOCKET_TIMEOUT_MS.extract(properties);
+        final String exceptionsForOverriding = Props.REDEFINED_EXCEPTIONS.extract(properties);
+
+        this.redefinedExceptions = new HashSet<>(Arrays.asList(exceptionsForOverriding.split(",")));
 
         this.restClient = RestClient.builder(hosts)
                 .setMaxRetryTimeoutMillis(retryTimeoutMs)
@@ -143,7 +151,7 @@ public class ElasticSender extends Sender {
                     elasticsearchRequestErrorsMeter.mark();
                     throw new RuntimeException("Bad response");
                 }
-                result = elasticResponseHandler.process(response.getEntity());
+                result = elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
                 if (result.getTotalErrors() != 0) {
                     LOGGER.info(
                             "Error statistics (retryanble/non retyable/unknown/total): {}/{}/{}/{}",
@@ -258,6 +266,11 @@ public class ElasticSender extends Sender {
         static final PropertyDescription<Boolean> MERGE_PROPERTIES_TAG_TO_ROOT = PropertyDescriptions
                 .booleanProperty("elastic.mergePropertiesTagToRoot")
                 .withDefaultValue(Boolean.FALSE)
+                .build();
+
+        static final PropertyDescription<String> REDEFINED_EXCEPTIONS = PropertyDescriptions
+                .stringProperty("elastic.redefinedExceptions")
+                .withDefaultValue("")
                 .build();
     }
 }
