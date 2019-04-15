@@ -2,6 +2,7 @@ language: java
 jdk: oraclejdk8
 install: true
 script: mvn package
+#test
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
 deploy:
