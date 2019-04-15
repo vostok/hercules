@@ -81,7 +81,7 @@ public class DeleteTimelineHandler implements HttpHandler {
                 ResponseUtil.ok(exchange);
                 return;
             }
-            ResponseUtil.internalServerError(exchange);
+            ResponseUtil.requestTimeout(exchange);
             return;
         }
         ResponseUtil.ok(exchange);

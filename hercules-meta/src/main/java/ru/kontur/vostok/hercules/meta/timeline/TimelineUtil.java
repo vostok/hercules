@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.meta.timeline;
 
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
+
 /**
  * Utility class for timelines
  */
@@ -15,11 +17,12 @@ public final class TimelineUtil {
      * Example: if timestamp = 1530023393 (26-Jun-18 14:29:53 UTC) and timetrap size = 3600,
      * timestamp belong to the timetrap offset 1530021600 (26-Jun-18 14:00:00 UTC)
      *
-     * @param timestamp timestamp
-     * @param timetrapSize timetrap size
+     * @param ticks timestamp in 100-ns ticks from Unix epoch
+     * @param timetrapSize timetrap size in millis
      * @return timetrap offset
      */
-    public static long calculateTimetrapOffset(long timestamp, long timetrapSize) {
+    public static long calculateTimetrapOffset(long ticks, long timetrapSize) {
+        long timestamp = TimeUtil.ticksToMillis(ticks);
         return timestamp - (timestamp % timetrapSize);
     }
 
@@ -29,12 +32,12 @@ public final class TimelineUtil {
      * Example: if timestamp = 42 and timetrap size = 100, timestamp belong to the timetrap offset 0,
      * but we are looking for the next timetrap, so result will be 100
      *
-     * @param timestamp timestamp
-     * @param timetrapSize timetrap size
+     * @param ticks timestamp in 100-ns ticks from Unix epoch
+     * @param timetrapSize timetrap size in millis
      * @return next timetrap offset
      */
-    public static long calculateNextTimetrapOffset(long timestamp, long timetrapSize) {
-        return calculateTimetrapOffset(timestamp, timetrapSize) + timetrapSize;
+    public static long calculateNextTimetrapOffset(long ticks, long timetrapSize) {
+        return calculateTimetrapOffset(ticks, timetrapSize) + timetrapSize;
     }
 
     private TimelineUtil() {

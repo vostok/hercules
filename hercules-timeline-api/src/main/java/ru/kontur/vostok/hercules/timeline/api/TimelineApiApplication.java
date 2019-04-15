@@ -53,6 +53,7 @@ public class TimelineApiApplication {
             timelineReader = new TimelineReader(cassandraConnector);
 
             authManager = new AuthManager(curatorClient);
+            authManager.start();
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
@@ -61,7 +62,7 @@ public class TimelineApiApplication {
             server = new HttpServer(
                     httpServerProperties,
                     authManager,
-                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader),
+                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader, authManager),
                     metricsCollector
             );
             server.start();
@@ -73,12 +74,12 @@ public class TimelineApiApplication {
 
         Runtime.getRuntime().addShutdownHook(new Thread(TimelineApiApplication::shutdown));
 
-        LOGGER.info("Stream API started for {} millis", System.currentTimeMillis() - start);
+        LOGGER.info("Timeline API started for {} millis", System.currentTimeMillis() - start);
     }
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
-        LOGGER.info("Started Stream API shutdown");
+        LOGGER.info("Started Timeline API shutdown");
         try {
             if (server != null) {
                 server.stop();
@@ -130,6 +131,6 @@ public class TimelineApiApplication {
             LOGGER.error("Error on stopping time line reader", t);
             //TODO: Process error
         }
-        LOGGER.info("Finished Stream API shutdown for {} millis", System.currentTimeMillis() - start);
+        LOGGER.info("Finished Timeline API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 }
