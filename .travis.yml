@@ -8,8 +8,8 @@ deploy:
   - provider: releases
     api_key:
       secure: ULXgbcJa5cohthuydkqYf6eolgxDl3mMKXTiGZ/bsRc6FMSiLDYgSchYBuUH6xmt2LZgrZQirIU5L+soI2h8+M01xZ/E94lRwfhTMM1meVd//pDq+wQb0LSdiJ1xKJzfBPO4zfuS5VC/ut/+GlEC8w+SYMgV/z4M4gqBK/6eY8LFhJh/6vSUdMFzORouSrEQe7PJ+kG4N2IGYKSxy8w4lJvaR9lZSyGJ680hOoANnv0S9rDSDZsu1fx3nRb6/7/TqCXOjkFAlBoZgBFEWMIIWRgs60Y7x3M31dZTEk4Dv8dKdzNJ9xJM/22zD4GgBDKLwfFyLxCHZhSJfVTg7BTYjZ4c0VTCYZ8vecjnz6CGW3T6njekVWvr3DsQwY6nuF4upnxt4Nq2zu1lEmF+V28y7NpZk8mL7vjNNyk7lutNA67sFxjm2Wo7XLwZsN+Mia1g4z/mTYj7BGywkc4BogCNjsYYw/eR4gemJNSJMklw33wl2ZecsqXLMvBbwI5BlycBaNQFNNO73cQTSzfu1A1UCPu2MAHOJrbn40ZB6NF4gqB7VG+LXJByFM1YXb8Nz7hLSSjTl2gKt6KIZgFBOVqfERGbWOcngc0nbcQwgezyJBVa5rMFcaE2g9UfkRhWm70smpxy8NnhGLDH+148a8sCEpPejxO2PeSgqUg6WhRbk3U=
-    file:
-      - "hercules-gate/target/*.jar"
+    file_glob: true
+    file: hercules-gate/target/*.jar
     skip_cleanup: true
     on:
       tags: true
