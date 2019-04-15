@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -42,11 +43,17 @@ public class ReadTimelineHandler implements HttpHandler {
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
     private final AuthManager authManager;
+    private final int timetrapCountLimit;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager) {
+    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int timetrapCountLimit) {
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
         this.authManager = authManager;
+        this.timetrapCountLimit = timetrapCountLimit;
+    }
+
+    public static boolean isTimetrapCountLimitReached(long from, long to, long timetrapSize, int timetrapCountLimit) {
+        return (TimeUtil.ticksToMillis(to - from) >= timetrapCountLimit * timetrapSize);
     }
 
     @Override
@@ -152,6 +159,11 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
+        if (isTimetrapCountLimitReached(from.get(), to.get(), timeline.get().getTimetrapSize(), timetrapCountLimit)) {
+            ResponseUtil.badRequest(httpServerExchange, "Limit for timetrap count for sending to Cassandra was reached");
+            return;
+        }
+
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
                 try {
@@ -172,7 +184,7 @@ public class ReadTimelineHandler implements HttpHandler {
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
                 } catch (Exception e) {
                     LOGGER.error("Error on processing request", e);
-                    exchange.setStatusCode(500);
+                    ResponseUtil.internalServerError(exchange);
                 } finally {
                     exchange.endExchange();
                 }

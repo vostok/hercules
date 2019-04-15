@@ -9,8 +9,8 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
 import java.util.Arrays;
