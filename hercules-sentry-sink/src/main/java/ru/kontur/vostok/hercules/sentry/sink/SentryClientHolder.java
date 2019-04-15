@@ -36,6 +36,10 @@ public class SentryClientHolder {
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
     private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
+    /**
+     * The clients stores the {@link Map} with the {@link String} "organisation/project" (in the Sentry concept) as a key
+     * and the {@link SentryClient} as a value
+     */
     private final AtomicReference<Map<String, SentryClient>> clients = new AtomicReference<>(Collections.emptyMap());
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
@@ -49,17 +53,17 @@ public class SentryClientHolder {
 
     // TODO: Add default client
     /**
-     * Get Sentry client by project name
+     * Get Sentry client by pair of an organisation and a project
      *
-     * @param name the project name
-     * @return the {@link Optional} describing SentryClient matching the project
+     * @param orgAndProjectPair the pair of an organisation and a project
+     * @return the {@link Optional} describing SentryClient matching an organisation and a project
      */
-    public Optional<SentryClient> getClient(String name) {
-        return Optional.ofNullable(clients.get().get(name));
+    public Optional<SentryClient> getClient(String orgAndProjectPair) {
+        return Optional.ofNullable(clients.get().get(orgAndProjectPair));
     }
 
     /**
-     * Update clients in this class by information about clients from Sentry.
+     * Update clients in this class by information about project clients from Sentry.
      * This method executes by schedule
      */
     private void update() {

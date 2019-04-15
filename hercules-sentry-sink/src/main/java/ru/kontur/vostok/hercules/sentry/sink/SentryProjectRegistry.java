@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class SentryProjectRegistry {
 
     private final Scheduler scheduler;

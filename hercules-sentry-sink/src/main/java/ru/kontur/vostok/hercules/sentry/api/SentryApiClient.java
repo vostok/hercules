@@ -66,7 +66,7 @@ public class SentryApiClient {
     }
 
     /**
-     * Get the projects which match the Sentry client
+     * Get the projects which match the Sentry client with token
      *
      * @return the {@link Result} object  with a list of projects
      */

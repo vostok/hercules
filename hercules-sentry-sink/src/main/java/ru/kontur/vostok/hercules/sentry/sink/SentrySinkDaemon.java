@@ -36,7 +36,6 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySinkDaemon.class);
 
     private CuratorClient curatorClient;
-    private SentryProjectRegistry sentryProjectRegistry;
 
     /**
      * Main starting point
@@ -52,10 +51,7 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
 
         return new SentrySyncProcessor(
                 sinkProperties,
-                new SentryClientHolder(
-                        new SentryApiClient(sentryUrl, sentryToken)
-                ),
-                sentryProjectRegistry
+                new SentryClientHolder(new SentryApiClient(sentryUrl, sentryToken))
         );
     }
 
@@ -87,22 +83,12 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
 
         curatorClient = new CuratorClient(curatorProperties);
         curatorClient.start();
-
-        sentryProjectRegistry = new SentryProjectRegistry(new SentryProjectRepository(curatorClient));
-        sentryProjectRegistry.start();
     }
 
     @Override
     protected void shutdownSink() {
         super.shutdownSink();
 
-        try {
-            if (Objects.nonNull(sentryProjectRegistry)) {
-                sentryProjectRegistry.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping sentry project registry", t);
-        }
         try {
             if (Objects.nonNull(curatorClient)) {
                 curatorClient.stop();
