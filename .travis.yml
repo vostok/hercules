@@ -4,7 +4,7 @@ install: true
 script: mvn package
 before_deploy:
 - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
-#Test1
+#Test
 deploy:
   - provider: releases
   api_key:
