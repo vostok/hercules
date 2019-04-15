@@ -9,10 +9,7 @@ SERVICES := hercules-elastic-sink \
 	    hercules-timeline-api \
 	    hercules-timeline-manager \
 	    hercules-timeline-sink \
-<<<<<<< HEAD
-=======
 	    hercules-management-api \
->>>>>>> 378eeb7cafa050d95b91ba1e0f0df38dc9149deb
 	    hercules-graphite-sink \
 	    hercules-tracing-sink \
 	    hercules-tracing-api 
