@@ -13,8 +13,7 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-
-      - provider: script
+  - provider: script
   skip_cleanup: true
   script:
     - make
