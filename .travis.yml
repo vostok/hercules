@@ -6,6 +6,7 @@ script:
   - git config --local user.name "Tsypaev"
   - git config --local user.email "tsypaevova@yandex.ru"
   - git tag 7
+  - git push origin 7
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
 deploy:
