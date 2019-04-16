@@ -4,7 +4,7 @@ install: true
 script:
   - mvn package
   - git config --local user.name "tsypaev"
-  - git config --local user.email "tsypaevova@yandex.ru"
+  - git config --local user.email "tsypaev@skbkontur.ru"
   - git tag 7
   - git push origin 7
 before_deploy:
