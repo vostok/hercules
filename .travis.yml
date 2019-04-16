@@ -4,6 +4,8 @@ install: true
 script: mvn package
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
+  - git tag 7
+  - git push origin 7
 deploy:
   - provider: releases
     api_key:
@@ -16,7 +18,7 @@ deploy:
   - provider: script
     skip_cleanup: true
     script:
-      - make
+      - make services_images
     on:
       tags: true
 notifications:
