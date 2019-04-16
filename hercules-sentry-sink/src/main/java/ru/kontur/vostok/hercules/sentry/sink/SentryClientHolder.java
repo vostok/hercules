@@ -37,10 +37,12 @@ public class SentryClientHolder {
     private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
     /**
-     * The clients stores the {@link Map} with the {@link String} "organisation/project" (in the Sentry concept) as a key
-     * and the {@link SentryClient} as a value
+     * The clients stores the Map with the "organisation" Strings as keys
+     * and the Maps as a values.
+     * The nested Map matching this organisation contains the "project" Strings as a keys
+     * and the SentryClients as values.
      */
-    private final AtomicReference<Map<String, SentryClient>> clients = new AtomicReference<>(Collections.emptyMap());
+    private final AtomicReference<Map<String, Map<String, SentryClient>>> clients = new AtomicReference<>(Collections.emptyMap());
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
     private final SentryApiClient sentryApiClient;
@@ -55,11 +57,14 @@ public class SentryClientHolder {
     /**
      * Get Sentry client by pair of an organisation and a project
      *
-     * @param orgAndProjectPair the pair of an organisation and a project
+     * @param organisation the organisation
+     * @param project the project
      * @return the {@link Optional} describing SentryClient matching an organisation and a project
      */
-    public Optional<SentryClient> getClient(String orgAndProjectPair) {
-        return Optional.ofNullable(clients.get().get(orgAndProjectPair));
+    public Optional<SentryClient> getClient(String organisation, String project) {
+
+//TODO проверять, есть ли организация или проект. Если нет, то - создавать
+        return Optional.ofNullable(clients.get().get(organisation).get(project));
     }
 
     /**
@@ -74,7 +79,7 @@ public class SentryClientHolder {
                 return;
             }
 
-            Map<String, SentryClient> updatedClients = new HashMap<>();
+            Map<String, Map<String, SentryClient>> organisationMap = new HashMap<>();
 
             for (ProjectInfo projectInfo : projects.get()) {
                 Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(projectInfo);
@@ -83,7 +88,10 @@ public class SentryClientHolder {
                     return;
                 }
 
-                Optional<String> dsn = publicDsn.get().stream().findAny().map(KeyInfo::getDsn).map(DsnInfo::getPublicDsn);
+                Optional<String> dsn = publicDsn.get().stream()
+                        .findAny()
+                        .map(KeyInfo::getDsn)
+                        .map(DsnInfo::getPublicDsn);
                 if (dsn.isPresent()) {
                     String dsnString = dsn.get();
                     try {
@@ -91,14 +99,20 @@ public class SentryClientHolder {
                     } catch (MalformedURLException e) {
                         throw new Exception(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
                     }
-                    updatedClients.put(
-                            String.format("%s/%s", projectInfo.getOrganization().getSlug(), projectInfo.getSlug()),
-                            SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory)
-                    );
+
+                    String organization = projectInfo.getOrganization().getSlug();
+                    Map<String, SentryClient> projectMap = organisationMap.get(organization);
+                    if (projectMap == null) {
+                        projectMap = new HashMap<>();
+                        organisationMap.put(organization, projectMap);
+                    }
+
+                    String project = projectInfo.getSlug();
+                    projectMap.put(project, SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory));
                 }
             }
 
-            clients.set(updatedClients);
+            clients.set(organisationMap);
         } catch (Throwable t) {
             LOGGER.error("Error in scheduled thread", t);
             System.exit(1);

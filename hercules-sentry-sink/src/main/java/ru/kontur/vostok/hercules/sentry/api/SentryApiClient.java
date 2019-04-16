@@ -5,15 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
@@ -25,12 +26,11 @@ import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -44,9 +44,11 @@ public class SentryApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(SentryApiClient.class);
 
     private static final String API_URL = "/api/0/";
-    private static final String PROJECTS_URL = API_URL + "projects/";
-    private static final String ORGANIZATIONS_URL = API_URL + "organizations/";
-    private static final String KEYS_URL_TEMPLATE = PROJECTS_URL + "%s/%s/keys/";
+    private static final String PROJECTS_URL = "projects/";
+    private static final String TEAM_URL = "teams/";
+    private static final String ORGANIZATIONS_URL = "organizations/";
+    private static final String KEYS_URL = "keys/";
+    private static final String DEFAULT_TEAM_URL = "default_team/";
 
     private final ObjectMapper objectMapper;
     private final HttpHost sentryHost;
@@ -71,7 +73,7 @@ public class SentryApiClient {
      * @return the {@link Result} object  with a list of projects
      */
     public Result<List<ProjectInfo>, String> getProjects() {
-        return pagedRequest(new HttpGet(PROJECTS_URL), new TypeReference<List<ProjectInfo>>() {});
+        return pagedRequest(new HttpGet(API_URL + PROJECTS_URL), new TypeReference<List<ProjectInfo>>() {});
     }
 
     /**
@@ -89,7 +91,7 @@ public class SentryApiClient {
         }
 
         return pagedRequest(
-                new HttpGet(String.format(KEYS_URL_TEMPLATE, organizationSlug.get(), projectSlug.get())),
+                new HttpGet(API_URL + PROJECTS_URL + organizationSlug.get() + "/" +  projectSlug.get() + "/" + KEYS_URL),
                 new TypeReference<List<KeyInfo>>() {}
         );
     }
@@ -101,11 +103,25 @@ public class SentryApiClient {
      * @return the {@link Result} object with response entity or error
      */
     public Result<Void, String> createOrganization(String name) {
-        HttpPost post = new HttpPost(ORGANIZATIONS_URL);
+        URIBuilder uriBuilder = new URIBuilder();
+        uriBuilder.setPath(API_URL + ORGANIZATIONS_URL)
+                .setParameter("name", name)
+                .setParameter("slug", name)
+                .setParameter("agreeTerms", "false");
+        return request(new HttpPost(uriBuilder.toString()), new TypeReference<Void>() {});
+
+/*        HttpPost post = new HttpPost(ORGANIZATIONS_URL);
         post.getParams().setParameter("name", name);
         post.getParams().setParameter("slug", name);
         post.getParams().setParameter("agreeTerms", false);
+        return request(post, new TypeReference<Void>() {});*/
+    }
 
+    public Result<Void, String> createProject(String organization, String project) {
+        String body = "{ \"name\": \"" + project + "\" }";
+        String uri = API_URL + TEAM_URL + organization + "/" + DEFAULT_TEAM_URL + PROJECTS_URL;
+        HttpPost post = new HttpPost(uri);
+        post.setEntity(new ByteArrayEntity(body.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_JSON));
         return request(post, new TypeReference<Void>() {});
     }
 
