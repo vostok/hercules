@@ -5,10 +5,9 @@ script:
   - mvn package
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
-  - git config --local user.name "tsypaev"
-  - git config --local user.email "tsypaev@skbkontur.ru"
-  - git tag -f 7
-  - git push origin 7
+  - git config --local user.name "Travis CI"
+  - git config --local user.email "builds@travis-ci.com"
+  - git tag 7
 deploy:
   - provider: releases
     api_key:
