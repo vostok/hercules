@@ -8,6 +8,7 @@ before_deploy:
   - git config --local user.name "tsypaev"
   - git config --local user.email "tsypaev@skbkontur.ru"
   - git tag -f 7
+  - git push origin 7
 deploy:
   - provider: releases
     api_key:
