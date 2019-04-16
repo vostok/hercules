@@ -75,9 +75,9 @@ public class ElasticSender extends Sender {
         final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
         final int connectionRequestTimeout = Props.CONNECTION_REQUEST_TIMEOUT_MS.extract(properties);
         final int socketTimeout = Props.SOCKET_TIMEOUT_MS.extract(properties);
-        final String exceptionsForOverriding = Props.REDEFINED_EXCEPTIONS.extract(properties);
+        final String[] redefinedExceptionsString = Props.REDEFINED_EXCEPTIONS.extract(properties);
 
-        this.redefinedExceptions = new HashSet<>(Arrays.asList(exceptionsForOverriding.split(",")));
+        this.redefinedExceptions = new HashSet<>(Arrays.asList(redefinedExceptionsString));
 
         this.restClient = RestClient.builder(hosts)
                 .setMaxRetryTimeoutMillis(retryTimeoutMs)
@@ -268,9 +268,9 @@ public class ElasticSender extends Sender {
                 .withDefaultValue(Boolean.FALSE)
                 .build();
 
-        static final PropertyDescription<String> REDEFINED_EXCEPTIONS = PropertyDescriptions
-                .stringProperty("elastic.redefinedExceptions")
-                .withDefaultValue("")
+        static final PropertyDescription<String[]> REDEFINED_EXCEPTIONS = PropertyDescriptions
+                .arrayOfStringsProperty("elastic.redefinedExceptions")
+                .withDefaultValue(new String[]{})
                 .build();
     }
 }
