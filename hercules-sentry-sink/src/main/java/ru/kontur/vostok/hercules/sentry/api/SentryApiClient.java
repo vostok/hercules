@@ -107,10 +107,12 @@ public class SentryApiClient {
         uriBuilder.setPath(API_URL + ORGANIZATIONS_URL)
                 .setParameter("name", name)
                 .setParameter("slug", name)
-                .setParameter("agreeTerms", "false");
+                .setParameter("agreeTerms", "true");
+        LOGGER.info("Creating of new organisation in Sentry");
         return request(new HttpPost(uriBuilder.toString()), new TypeReference<Void>() {});
 
-/*        HttpPost post = new HttpPost(ORGANIZATIONS_URL);
+/*   public Result<Void, String> createOrganization(String name) {
+        HttpPost post = new HttpPost(ORGANIZATIONS_URL);
         post.getParams().setParameter("name", name);
         post.getParams().setParameter("slug", name);
         post.getParams().setParameter("agreeTerms", false);
@@ -118,10 +120,12 @@ public class SentryApiClient {
     }
 
     public Result<Void, String> createProject(String organization, String project) {
-        String body = "{ \"name\": \"" + project + "\" }";
+        String body = "{ \"name\": \"" + project + "\", " +
+                "\"slug\": \"" + project + "\" }";
         String uri = API_URL + TEAM_URL + organization + "/" + DEFAULT_TEAM_URL + PROJECTS_URL;
         HttpPost post = new HttpPost(uri);
         post.setEntity(new ByteArrayEntity(body.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_JSON));
+        LOGGER.info("Creating of new organisation in Sentry");
         return request(post, new TypeReference<Void>() {});
     }
 

@@ -63,8 +63,57 @@ public class SentryClientHolder {
      */
     public Optional<SentryClient> getClient(String organisation, String project) {
 
-//TODO проверять, есть ли организация или проект. Если нет, то - создавать
-        return Optional.ofNullable(clients.get().get(organisation).get(project));
+        Map<String, SentryClient> projectMap;
+        SentryClient sentryClient;
+        boolean triedToUpdateOrg = false;
+        boolean triedToCreateOrg = false;
+        boolean triedToUpdateProj = false;
+        boolean triedToCreateProj = false;
+        while(true) {
+            projectMap = clients.get().get(organisation);
+            if (projectMap == null) {
+                //TODO add org validation
+                LOGGER.info(String.format("Cannot find organization '%s'", organisation));
+                if (!triedToUpdateOrg) {
+                    LOGGER.info(String.format("Force update Sentry clients to find organization '%s'", organisation));
+                    update();
+                    triedToUpdateOrg = true;
+                    continue;
+                } else if (!triedToCreateOrg) {
+                    LOGGER.info(String.format("Creating organization '%s'", organisation));
+                    sentryApiClient.createOrganization(organisation);
+                    triedToCreateOrg = true;
+                    LOGGER.info("Force update Sentry clients to pull differences from Sentry");
+                    update();
+                    continue;
+                } else {
+                    LOGGER.error(String.format("Error of creating in Sentry or updating into Sentry Sink of organisation %s", organisation));
+                    return Optional.empty();
+                }
+            }
+            sentryClient = projectMap.get(project);
+            if (sentryClient == null) {
+                //TODO add project validation
+                LOGGER.info(String.format("Cannot find project '%s' in organisation '%s'", project, organisation));
+                if (!triedToUpdateProj) {
+                    LOGGER.info(String.format("Force update Sentry clients to find project %s", project));
+                    update();
+                    triedToUpdateProj = true;
+                } else if (!triedToCreateProj) {
+                    LOGGER.info(String.format("Creating project '%s' in organisation '%s'", project, organisation));
+                    sentryApiClient.createProject(organisation, project);
+                    triedToCreateProj = true;
+                    LOGGER.info("Force update Sentry clients to pull differences from Sentry");
+                    update();
+                } else {
+                    LOGGER.error(String.format("Error of creating in Sentry or updating into Sentry Sink of project '%s'", project));
+                    return Optional.empty();
+                }
+            } else {
+                break;
+            }
+        }
+        return Optional.of(sentryClient);
     }
 
     /**

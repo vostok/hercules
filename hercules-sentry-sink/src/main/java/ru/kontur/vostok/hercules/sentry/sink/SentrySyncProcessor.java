@@ -76,9 +76,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
 
         Optional<SentryClient> sentryClient = sentryClientHolder.getClient(organisationName.get(), sentryProjectName.get());
         if (!sentryClient.isPresent()) {
-            //TODO if client is not present, it must be created in sentryClientHolder
-            //TODO It means this if-block is not needed
-            LOGGER.warn(String.format("Missing client for Sentry organisation/project '{%s/%s}'",
+            LOGGER.warn(String.format("Cannot get client for Sentry organisation/project '{%s/%s}'",
                     organisationName.get(), sentryProjectName.get()));
             return false;
         }
