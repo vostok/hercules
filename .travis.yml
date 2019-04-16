@@ -3,7 +3,7 @@ jdk: oraclejdk8
 install: true
 script:
   - mvn package
-  - git config --local user.name "Tsypaev"
+  - git config --local user.name "tsypaev"
   - git config --local user.email "tsypaevova@yandex.ru"
   - git tag 7
   - git push origin 7
