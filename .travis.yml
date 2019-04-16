@@ -3,11 +3,11 @@ jdk: oraclejdk8
 install: true
 script:
   - mvn package
-before_deploy:
-  - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
   - git config --local user.name "Tsypaev"
   - git config --local user.email "tsypaevova@yandex.ru"
   - git tag 7
+before_deploy:
+  - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
 deploy:
   - provider: releases
     api_key:
