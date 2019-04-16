@@ -11,10 +11,10 @@ import java.util.Map;
  * @author Gregory Koshelev
  */
 public class RouteHandlerBuilder {
-    private final Map<String, Map<HttpMethod, AsyncHttpHandler>> handlers = new HashMap<>();
+    private final Map<String, Map<HttpMethod, HttpHandler>> handlers = new HashMap<>();
 
-    public void addHandler(String path, HttpMethod method, AsyncHttpHandler handler) {
-        Map<HttpMethod, AsyncHttpHandler> map = handlers.computeIfAbsent(path, s -> new HashMap<>());
+    public void addHandler(String path, HttpMethod method, HttpHandler handler) {
+        Map<HttpMethod, HttpHandler> map = handlers.computeIfAbsent(path, s -> new HashMap<>());
         map.putIfAbsent(method, handler);
     }
 

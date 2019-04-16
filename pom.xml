@@ -60,7 +60,6 @@
         <module>hercules-init</module>
         <module>hercules-tags</module>
         <module>hercules-http</module>
-        <module>hercules-http-jetty</module>
         <module>hercules-client</module>
         <module>hercules-sink</module>
         <module>hercules-elastic-sink</module>

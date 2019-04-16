@@ -29,6 +29,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-undertow-util</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-http</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>ch.qos.logback</groupId>

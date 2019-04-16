@@ -1,6 +1,8 @@
 package ru.kontur.vostok.hercules.http;
 
 /**
+ * HTTP Request abstraction.
+ *
  * @author Gregory Koshelev
  */
 public interface HttpServerRequest {
