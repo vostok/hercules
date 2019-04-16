@@ -7,7 +7,7 @@ before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
   - git config --local user.name "Travis CI"
   - git config --local user.email "builds@travis-ci.com"
-  - git tag 7
+  - git tag 8
 deploy:
   - provider: releases
     api_key:
