@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.sentry.sink;
+package ru.kontur.vostok.hercules.sentry.sink.sentryclientfactory;
 
 import io.sentry.DefaultSentryClientFactory;
 import io.sentry.marshaller.json.JsonMarshaller;

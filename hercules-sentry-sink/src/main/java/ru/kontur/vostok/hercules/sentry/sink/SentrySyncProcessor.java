@@ -37,7 +37,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
     private static final String DEFAULT_SENTRY_PROJECT = "default_project";
-    private static final String DEFAULT_ORGANISATION = "default_organisation";
+    private static final String DEFAULT_ORGANIZATION = "default_organization";
 
     private final Level requiredLevel;
     private final SentryClientHolder sentryClientHolder;
@@ -64,9 +64,9 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             return false;
         }
 
-        Optional<String> organisationName = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
-        if (!organisationName.isPresent()) {
-            organisationName = Optional.of(DEFAULT_ORGANISATION);
+        Optional<String> organizationName = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
+        if (!organizationName.isPresent()) {
+            organizationName = Optional.of(DEFAULT_ORGANIZATION);
         }
 
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), ScopeTags.SCOPE_TAG);
@@ -74,10 +74,10 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             sentryProjectName = Optional.of(DEFAULT_SENTRY_PROJECT);
         }
 
-        Optional<SentryClient> sentryClient = sentryClientHolder.getClient(organisationName.get(), sentryProjectName.get());
+        Optional<SentryClient> sentryClient = sentryClientHolder.getClient(organizationName.get(), sentryProjectName.get());
         if (!sentryClient.isPresent()) {
-            LOGGER.warn(String.format("Cannot get client for Sentry organisation/project '{%s/%s}'",
-                    organisationName.get(), sentryProjectName.get()));
+            LOGGER.warn(String.format("Cannot get client for Sentry organization/project '{%s/%s}'",
+                    organizationName.get(), sentryProjectName.get()));
             return false;
         }
 

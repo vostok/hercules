@@ -109,9 +109,9 @@ public class SentryApiClient {
     }
 
     /**
-     * Create new organisation in the Sentry
+     * Create new organization in the Sentry
      *
-     * @param organization the name of an organisation
+     * @param organization the name of an organization
      * @return the {@link Result} object with created organization or error
      */
     public Result<OrganizationInfo, String> createOrganization(String organization) {
