@@ -13,6 +13,8 @@ import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.sentry.sink.sentryclientfactory.CustomClientFactory;
 import ru.kontur.vostok.hercules.util.functional.Result;
+import ru.kontur.vostok.hercules.util.validation.StringValidators;
+import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,6 +42,9 @@ public class SentryClientHolder {
     private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
     private static final String DEFAULT_TEAM = "default_team";
+
+    private static final String regex = "[a-z0-9_\\-]+";
+    private static final Validator<String> slugValidator = StringValidators.matchesWith(regex);
 
     /**
      * Clients is a {@link AtomicReference} with a base of Sentry clients and their organizations and projects.<p>
@@ -90,8 +95,14 @@ public class SentryClientHolder {
         while(true) {
             projectMap = clients.get().get(organization);
             if (projectMap == null) {
-                //TODO add org validation
                 LOGGER.info(String.format("Cannot find organization '%s'", organization));
+
+                Optional<String> slugError = slugValidator.validate(organization);
+                if (slugError.isPresent()) {
+                    LOGGER.error("Invalid organization slug (name): " + slugError.get());
+                    return Optional.empty();
+                }
+
                 if (!triedToUpdate) {
                     LOGGER.info(String.format("Force update Sentry clients to find organization '%s'", organization));
                     update();
@@ -119,8 +130,14 @@ public class SentryClientHolder {
             }
             sentryClient = projectMap.get(project);
             if (sentryClient == null) {
-                //TODO add project validation
                 LOGGER.info(String.format("Cannot find project '%s' in organization '%s'", project, organization));
+
+                Optional<String> slugError = slugValidator.validate(project);
+                if (slugError.isPresent()) {
+                    LOGGER.error("Invalid project slug (name): " + slugError.get());
+                    return Optional.empty();
+                }
+
                 if (!triedToUpdate) {
                     LOGGER.info(String.format("Force update Sentry clients to find project %s", project));
                     update();
