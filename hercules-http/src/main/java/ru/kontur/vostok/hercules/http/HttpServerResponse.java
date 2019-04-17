@@ -18,6 +18,13 @@ public interface HttpServerResponse {
     void setStatusCode(int code);
 
     /**
+     * Get HTTP status code.
+     *
+     * @return the status code of the response
+     */
+    int getStatusCode();
+
+    /**
      * Set HTTP header to the response.
      *
      * @param header the header's name
@@ -26,7 +33,7 @@ public interface HttpServerResponse {
     void setHeader(String header, String value);
 
     /**
-     * Send the data to the client.
+     * Send the data to the client. The Request is ended when done.
      *
      * @param data    the data to send
      * @param charset the encoding is used to send the data
@@ -34,7 +41,7 @@ public interface HttpServerResponse {
     void send(String data, Charset charset);
 
     /**
-     * Send the data to the client.
+     * Send the data to the client. The Request is ended when done.
      * <p>
      * Use UTF-8 encoding to send the data.
      *
@@ -45,7 +52,7 @@ public interface HttpServerResponse {
     }
 
     /**
-     * Send the buffer to the client.
+     * Send the buffer to the client. The Request is ended when done.
      *
      * @param buffer the buffer to send
      */

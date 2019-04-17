@@ -18,6 +18,26 @@ public class RouteHandlerBuilder {
         map.putIfAbsent(method, handler);
     }
 
+    public RouteHandlerBuilder get(String path, HttpHandler handler) {
+        addHandler(path, HttpMethod.GET, handler);
+        return this;
+    }
+
+    public RouteHandlerBuilder post(String path, HttpHandler handler) {
+        addHandler(path, HttpMethod.POST, handler);
+        return this;
+    }
+
+    public RouteHandlerBuilder put(String path, HttpHandler handler) {
+        addHandler(path, HttpMethod.PUT, handler);
+        return this;
+    }
+
+    public RouteHandlerBuilder delete(String path, HttpHandler handler) {
+        addHandler(path, HttpMethod.DELETE, handler);
+        return this;
+    }
+
     public RouteHandler build() {
         return new RouteHandler(handlers);
     }

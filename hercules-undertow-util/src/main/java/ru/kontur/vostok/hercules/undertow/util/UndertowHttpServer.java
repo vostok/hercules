@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.undertow.util;
 
 import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
+import org.xnio.Options;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -23,10 +24,16 @@ public class UndertowHttpServer extends HttpServer {
     protected void startInternal() {
         int port = Props.PORT.extract(properties);
         String host = Props.HOST.extract(properties);
+        int connectionThreshold = Props.CONNECTION_THRESHOLD.extract(properties);
 
-        undertow = Undertow.builder().addHttpListener(port, host).setHandler(exchange -> {
-            handler.handle(wrap(exchange));
-        }).build();
+        undertow = Undertow.builder().
+                addHttpListener(port, host).
+                setHandler(exchange -> handler.handle(wrap(exchange))).
+                setSocketOption(Options.CONNECTION_HIGH_WATER, connectionThreshold).
+                setSocketOption(Options.CONNECTION_LOW_WATER, connectionThreshold).
+                build();
+
+        undertow.start();
     }
 
     @Override

@@ -1,25 +1,27 @@
 package ru.kontur.vostok.hercules.undertow.util;
 
 import io.undertow.server.HttpServerExchange;
+import ru.kontur.vostok.hercules.http.ErrorCallback;
 import ru.kontur.vostok.hercules.http.HttpMethod;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpServerRequestException;
 import ru.kontur.vostok.hercules.http.HttpServerResponse;
 import ru.kontur.vostok.hercules.http.NotSupportedHttpMethodException;
+import ru.kontur.vostok.hercules.http.ReadBodyCallback;
+import ru.kontur.vostok.hercules.http.RequestCompletionListener;
 import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
-
-import java.util.Collections;
 
 /**
  * @author Gregory Koshelev
  */
 public class UndertowHttpServerRequest implements HttpServerRequest {
     private final HttpServerExchange exchange;
+    private final HttpServerResponse response;
     private volatile HttpMethod method;
-    private volatile HttpServerResponse response;
 
     public UndertowHttpServerRequest(HttpServerExchange exchange) {
         this.exchange = exchange;
+        this.response = new UndertowHttpServerResponse(exchange);
     }
 
     @Override
@@ -48,17 +50,39 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
-    public byte[] readBody() throws HttpServerRequestException {
-        return new byte[0];
+    public void dispatchAsync(Runnable runnable) {
+        exchange.dispatch(runnable);
+    }
+
+    @Override
+    public void readBodyAsync(ReadBodyCallback callback, ErrorCallback errorCallback) {
+        try {
+            exchange.getRequestReceiver().receiveFullBytes(
+                    (exchange, bytes) -> callback.dispatch(this, bytes),
+                    (exchange, exception) -> errorCallback.error(this, new HttpServerRequestException(exception)));
+        } catch (Throwable throwable) {
+            errorCallback.error(this, new HttpServerRequestException(throwable));
+        }
     }
 
     @Override
     public HttpServerResponse getResponse() {
-        return response != null ? response : (response = new UndertowHttpServerResponse(exchange));
+        return response;
     }
 
     @Override
     public void complete() {
         exchange.endExchange();
+    }
+
+    @Override
+    public void addRequestCompletionListener(RequestCompletionListener listener) {
+        exchange.addExchangeCompleteListener((exch, nextListener) -> {
+            try {
+                listener.onComplete(this);
+            } finally {
+                nextListener.proceed();
+            }
+        });
     }
 }

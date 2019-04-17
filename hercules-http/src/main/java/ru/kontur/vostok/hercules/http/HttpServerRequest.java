@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.http;
 
+import java.util.Optional;
+
 /**
  * HTTP Request abstraction.
  *
@@ -45,11 +47,30 @@ public interface HttpServerRequest {
     String[] getParameterValues(String name);
 
     /**
-     * Get complete request body as byte array. Can be called once since content is read as stream.
-     *
-     * @return request body byte array
+     * Asynchronously dispatch HTTP request.
      */
-    byte[] readBody() throws HttpServerRequestException;
+    void dispatchAsync(Runnable runnable);
+
+    /**
+     * Asynchronously read request's body to byte array.
+     *
+     * @param callback      the callback is called to process request's body
+     * @param errorCallback the callback is called in case of errors
+     */
+    void readBodyAsync(ReadBodyCallback callback, ErrorCallback errorCallback);
+
+    /**
+     * Asynchronously read request's body to byte array.
+     *
+     * @param callback the callback is called to process request's body
+     */
+    default void readBodyAsync(ReadBodyCallback callback) {
+        readBodyAsync(
+                callback,
+                (request, exception) -> {
+                    request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+                });
+    }
 
     /**
      * Get corresponding response.
@@ -72,4 +93,21 @@ public interface HttpServerRequest {
         getResponse().setStatusCode(code);
         complete();
     }
+
+    default Optional<Integer> getContentLength() {
+        String headerValue = getHeader(HttpHeaders.CONTENT_LENGTH);
+
+        if (headerValue == null || headerValue.isEmpty()) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(Integer.valueOf(headerValue));
+        } catch (NumberFormatException ex) {
+            return Optional.of(-1);
+        }
+
+    }
+
+    void addRequestCompletionListener(RequestCompletionListener listener);
 }

@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.http;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
@@ -75,12 +76,11 @@ public abstract class HttpServer {
                         withValidator(LongValidators.positive()).
                         build();
 
-        public static final PropertyDescription<Long> CONNECTION_THRESHOLD =
-                PropertyDescriptions.longProperty("connection.threshold").
+        public static final PropertyDescription<Integer> CONNECTION_THRESHOLD =
+                PropertyDescriptions.integerProperty("connection.threshold").
                         withDefaultValue(HttpServerDefaults.DEFAULT_CONNECTION_THRESHOLD).
-                        withValidator(LongValidators.positive()).
+                        withValidator(IntegerValidators.positive()).
                         build();
-
 
         private Props() {
             /* static class */

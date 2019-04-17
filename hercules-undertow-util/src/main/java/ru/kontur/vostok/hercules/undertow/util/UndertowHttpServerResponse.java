@@ -23,6 +23,11 @@ public class UndertowHttpServerResponse implements HttpServerResponse {
     }
 
     @Override
+    public int getStatusCode() {
+        return exchange.getStatusCode();
+    }
+
+    @Override
     public void setHeader(String header, String value) {
         exchange.getResponseHeaders().put(HttpString.tryFromString(header), value);
     }

@@ -21,7 +21,6 @@
         <curator.version>4.0.1</curator.version>
         <cassandra-driver.version>3.5.1</cassandra-driver.version>
         <undertow.version>2.0.13.Final</undertow.version>
-        <jetty.version>9.4.11.v20180605</jetty.version>
         <metrics.version>4.0.2</metrics.version>
         <jackson.version>2.9.7</jackson.version>
         <guava.version>20.0</guava.version>
@@ -172,13 +171,6 @@
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-core</artifactId>
                 <version>${undertow.version}</version>
-            </dependency>
-
-            <!-- Jetty - HTTP-server -->
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-server</artifactId>
-                <version>${jetty.version}</version>
             </dependency>
 
             <!-- Metrics -->
