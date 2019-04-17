@@ -78,7 +78,7 @@ public class SentryApiClient {
      * Get the projects which match the organization
      *
      * @param organization the organization
-     * @return the {@link Result} object  with a list of projects
+     * @return the {@link Result} object with a list of projects
      */
     public Result<List<ProjectInfo>, String> getProjects(String organization) {
         String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + PROJECTS_URL;
@@ -88,7 +88,7 @@ public class SentryApiClient {
     /**
      * Get a list of public DSN which match the project
      *
-     * @param organization the project organization
+     * @param organization the organization of the project
      * @param project the project for which a list of public DSN is requested
      * @return the {@link Result} object with a list of public DSN
      */
@@ -97,6 +97,12 @@ public class SentryApiClient {
         return pagedRequest(new HttpGet(uri), new TypeReference<List<KeyInfo>>() {} );
     }
 
+    /**
+     * Get the teams which match the organization
+     *
+     * @param organization the organization
+     * @return the {@link Result} object with a list of teams
+     */
     public Result<List<TeamInfo>, String> getTeams(String organization) {
         String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + TEAM_URL;
         return pagedRequest(new HttpGet(uri), new TypeReference<List<TeamInfo>>() {} );
@@ -105,8 +111,8 @@ public class SentryApiClient {
     /**
      * Create new organisation in the Sentry
      *
-     * @param organization the name of organisation
-     * @return the {@link Result} object with response entity or error
+     * @param organization the name of an organisation
+     * @return the {@link Result} object with created organization or error
      */
     public Result<OrganizationInfo, String> createOrganization(String organization) {
         OrganizationCreateModel organizationModel = new OrganizationCreateModel(organization);
@@ -124,6 +130,13 @@ public class SentryApiClient {
         return request(post, new TypeReference<OrganizationInfo>() {});
     }
 
+    /**
+     * Create new team in the Sentry
+     *
+     * @param organization the organization where need to create a team
+     * @param team the team name
+     * @return the {@link Result} object with created team or error
+     */
     public Result<TeamInfo, String> createTeam(String organization, String team) {
         TeamCreateModel teamModel = new TeamCreateModel(team);
         ObjectMapper objectMapper = new ObjectMapper();
@@ -140,6 +153,14 @@ public class SentryApiClient {
         return request(post, new TypeReference<TeamInfo>() {});
     }
 
+    /**
+     * Create new project in the Sentry
+     *
+     * @param organization the organization where need to create a project
+     * @param team the team where need to create a project
+     * @param project the project name
+     * @return the {@link Result} object with created project or error
+     */
     public Result<ProjectInfo, String> createProject(String organization, String team, String project) {
         ProjectCreateModel projectModel = new ProjectCreateModel(project);
         ObjectMapper objectMapper = new ObjectMapper();

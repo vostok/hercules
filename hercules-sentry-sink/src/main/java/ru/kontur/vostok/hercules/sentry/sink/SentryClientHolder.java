@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Sentry client holder.
- * The class stores actual Sentry clients
+ * The class stores actual Sentry clients for event sending to the Sentry
  *
  * @author Kirill Sulim
  */
@@ -41,10 +41,11 @@ public class SentryClientHolder {
     private static final String DEFAULT_TEAM = "default_team";
 
     /**
-     * The clients stores the Map with the "organisation" Strings as keys
-     * and the Maps as a values.
-     * The nested Map matching this organisation contains the "project" Strings as a keys
-     * and the SentryClients as values.
+     * Clients is a {@link AtomicReference} with a base of Sentry clients and their organisations and projects.<p>
+     * The clients stores the Map with the String of organisation as a key
+     * and the Map as a value. <p>
+     * The nested Map matching this organisation contains the String of project as a key
+     * and the {@link SentryClient} as a value.
      */
     private final AtomicReference<Map<String, Map<String, SentryClient>>> clients = new AtomicReference<>(Collections.emptyMap());
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
@@ -61,19 +62,19 @@ public class SentryClientHolder {
      * Get Sentry client by pair of an organisation and a project.
      * <p>
      * If the organisation and the project of event exist,
-     * it is the case of the cheapest operation.
+     * it is the case of the cheapest and simplest operation.
      * <p>
-     * If the organisation or the project of event does not exist,
+     * If the organisation or the project of event does not exist in clients,
      * the method updates clients from the Sentry
      * and then makes one another attempt to get Sentry client.
      * <p>
-     * If the organisation of event does not exist,
+     * If the organisation of event does not exist in the Sentry,
      * the method creates new organisation and default team
      * and then makes one another attempt to get Sentry client.
      * <p>
-     * If the project of event does not exist,
+     * If the project of event does not exist in the Sentry,
      * the method finds default team or create it, then create new project
-     * and then makes one another attempt to get Sentry client.     *
+     * and then makes one another attempt to get Sentry client.
      *
      * @param organisation the organisation
      * @param project the project
@@ -146,6 +147,13 @@ public class SentryClientHolder {
         return Optional.of(sentryClient);
     }
 
+    /**
+     * Check default team existence in the organisation.
+     * If default team does not exist the method create new team.
+     *
+     * @param organisation the organisation
+     * @return the {@link Result} object with success information.
+     */
     private Result<Void, String> checkDefaultTeamExistenceOrCreate(String organisation) {
         Result<List<TeamInfo>, String> teamListResult = sentryApiClient.getTeams(organisation);
         if (!teamListResult.isOk()) {

@@ -1,5 +1,11 @@
 package ru.kontur.vostok.hercules.sentry.api.model;
 
+/**
+ * The model of project in Sentry.
+ * It is a model which may be sent as JSON into Sentry for project creation
+ *
+ * @author Petr Demenev
+ */
 public class ProjectCreateModel {
 
     private String name;
