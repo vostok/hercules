@@ -38,6 +38,8 @@ public class SentryClientHolder {
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
     private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
+    private static final String DEFAULT_TEAM = "default_team";
+
     /**
      * The clients stores the Map with the "organisation" Strings as keys
      * and the Maps as a values.
@@ -55,16 +57,29 @@ public class SentryClientHolder {
         this.scheduledExecutor.scheduleAtFixedRate(this::update, 0,10000, TimeUnit.MILLISECONDS);
     }
 
-    // TODO: Add default client
     /**
-     * Get Sentry client by pair of an organisation and a project
+     * Get Sentry client by pair of an organisation and a project.
+     * <p>
+     * If the organisation and the project of event exist,
+     * it is the case of the cheapest operation.
+     * <p>
+     * If the organisation or the project of event does not exist,
+     * the method updates clients from the Sentry
+     * and then makes one another attempt to get Sentry client.
+     * <p>
+     * If the organisation of event does not exist,
+     * the method creates new organisation and default team
+     * and then makes one another attempt to get Sentry client.
+     * <p>
+     * If the project of event does not exist,
+     * the method finds default team or create it, then create new project
+     * and then makes one another attempt to get Sentry client.     *
      *
      * @param organisation the organisation
      * @param project the project
      * @return the {@link Optional} describing SentryClient matching an organisation and a project
      */
     public Optional<SentryClient> getClient(String organisation, String project) {
-
         Map<String, SentryClient> projectMap;
         SentryClient sentryClient;
         boolean triedToUpdate = false;
@@ -86,7 +101,7 @@ public class SentryClientHolder {
                         LOGGER.error(String.format("Cannot create organization '%s'", organisation), orgCreationResult.getError());
                         return Optional.empty();
                     }
-                    Result<TeamInfo, String> teamCreationResult = sentryApiClient.createTeam(organisation);
+                    Result<TeamInfo, String> teamCreationResult = sentryApiClient.createTeam(organisation, DEFAULT_TEAM);
                     if (!teamCreationResult.isOk()){
                         LOGGER.error(String.format("Cannot create default team in organisation '%s'", organisation), teamCreationResult.getError());
                         return Optional.empty();
@@ -109,8 +124,11 @@ public class SentryClientHolder {
                     update();
                     triedToUpdate = true;
                 } else if (!triedToCreateProj) {
-                    //TODO find team
-                    Result<ProjectInfo, String> projectCreationResult = sentryApiClient.createProject(organisation, project);
+                    Result<Void, String> checkResult = checkDefaultTeamExistenceOrCreate(organisation);
+                    if (!checkResult.isOk()) {
+                        return Optional.empty();
+                    }
+                    Result<ProjectInfo, String> projectCreationResult = sentryApiClient.createProject(organisation, DEFAULT_TEAM, project);
                     if (!projectCreationResult.isOk()) {
                         LOGGER.error(String.format("Cannot create project %s", project), projectCreationResult.getError());
                     }
@@ -126,6 +144,25 @@ public class SentryClientHolder {
             }
         }
         return Optional.of(sentryClient);
+    }
+
+    private Result<Void, String> checkDefaultTeamExistenceOrCreate(String organisation) {
+        Result<List<TeamInfo>, String> teamListResult = sentryApiClient.getTeams(organisation);
+        if (!teamListResult.isOk()) {
+            LOGGER.error(String.format("Cannot get teams of organisation '%s' for search default team", organisation), teamListResult.getError());
+            return Result.error(teamListResult.getError());
+        }
+        for (TeamInfo teamInfo : teamListResult.get()) {
+            if (teamInfo.getSlug().equals(DEFAULT_TEAM)) {
+                return Result.ok();
+            }
+        }
+        Result<TeamInfo, String> creationResult = sentryApiClient.createTeam(organisation, DEFAULT_TEAM);
+        if (!creationResult.isOk()) {
+            LOGGER.error(String.format("Cannot create default team in organisation '%s'", organisation), creationResult.getError());
+            return Result.error(teamListResult.getError());
+        }
+        return Result.ok();
     }
 
     /**

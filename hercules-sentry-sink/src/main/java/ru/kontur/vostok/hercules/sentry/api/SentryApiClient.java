@@ -52,8 +52,6 @@ public class SentryApiClient {
     private static final String ORGANIZATIONS_URL = "organizations/";
     private static final String KEYS_URL = "keys/";
 
-    private static final String DEFAULT_TEAM = "default_team";
-
     private final ObjectMapper objectMapper;
     private final HttpHost sentryHost;
     private final CloseableHttpClient httpClient;
@@ -99,6 +97,11 @@ public class SentryApiClient {
         return pagedRequest(new HttpGet(uri), new TypeReference<List<KeyInfo>>() {} );
     }
 
+    public Result<List<TeamInfo>, String> getTeams(String organization) {
+        String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + TEAM_URL;
+        return pagedRequest(new HttpGet(uri), new TypeReference<List<TeamInfo>>() {} );
+    }
+
     /**
      * Create new organisation in the Sentry
      *
@@ -114,7 +117,6 @@ public class SentryApiClient {
         } catch (JsonProcessingException e) {
             LOGGER.error("Cannot create JSON from model for organization creation", e);
         }
-
         String uri = API_URL + ORGANIZATIONS_URL;
         HttpPost post = new HttpPost(uri);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -122,7 +124,7 @@ public class SentryApiClient {
         return request(post, new TypeReference<OrganizationInfo>() {});
     }
 
-    public Result<TeamInfo, String> createTeam(String team, String organization) {
+    public Result<TeamInfo, String> createTeam(String organization, String team) {
         TeamCreateModel teamModel = new TeamCreateModel(team);
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] body = {};
@@ -138,11 +140,7 @@ public class SentryApiClient {
         return request(post, new TypeReference<TeamInfo>() {});
     }
 
-    public Result<TeamInfo, String> createTeam(String organization) {
-        return createTeam(DEFAULT_TEAM, organization);
-    }
-
-    public Result<ProjectInfo, String> createProject(String organization, String project) {
+    public Result<ProjectInfo, String> createProject(String organization, String team, String project) {
         ProjectCreateModel projectModel = new ProjectCreateModel(project);
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] body = {};
@@ -151,7 +149,7 @@ public class SentryApiClient {
         } catch (JsonProcessingException e) {
             LOGGER.error("Cannot create JSON from model for project creation", e);
         }
-        String uri = API_URL + TEAM_URL + organization + "/" + DEFAULT_TEAM + "/" + PROJECTS_URL;
+        String uri = API_URL + TEAM_URL + organization + "/" + team + "/" + PROJECTS_URL;
         HttpPost post = new HttpPost(uri);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
         LOGGER.info(String.format("Creating of new project '%s' in Sentry", project));
