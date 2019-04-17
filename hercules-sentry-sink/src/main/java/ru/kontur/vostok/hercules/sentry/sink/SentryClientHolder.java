@@ -65,23 +65,22 @@ public class SentryClientHolder {
 
         Map<String, SentryClient> projectMap;
         SentryClient sentryClient;
-        boolean triedToUpdateOrg = false;
+        boolean triedToUpdate = false;
         boolean triedToCreateOrg = false;
-        boolean triedToUpdateProj = false;
         boolean triedToCreateProj = false;
         while(true) {
             projectMap = clients.get().get(organisation);
             if (projectMap == null) {
                 //TODO add org validation
                 LOGGER.info(String.format("Cannot find organization '%s'", organisation));
-                if (!triedToUpdateOrg) {
+                if (!triedToUpdate) {
                     LOGGER.info(String.format("Force update Sentry clients to find organization '%s'", organisation));
                     update();
-                    triedToUpdateOrg = true;
+                    triedToUpdate = true;
                     continue;
                 } else if (!triedToCreateOrg) {
-                    LOGGER.info(String.format("Creating organization '%s'", organisation));
                     sentryApiClient.createOrganization(organisation);
+                    sentryApiClient.createTeam(organisation);
                     triedToCreateOrg = true;
                     LOGGER.info("Force update Sentry clients to pull differences from Sentry");
                     update();
@@ -95,12 +94,12 @@ public class SentryClientHolder {
             if (sentryClient == null) {
                 //TODO add project validation
                 LOGGER.info(String.format("Cannot find project '%s' in organisation '%s'", project, organisation));
-                if (!triedToUpdateProj) {
+                if (!triedToUpdate) {
                     LOGGER.info(String.format("Force update Sentry clients to find project %s", project));
                     update();
-                    triedToUpdateProj = true;
+                    triedToUpdate = true;
                 } else if (!triedToCreateProj) {
-                    LOGGER.info(String.format("Creating project '%s' in organisation '%s'", project, organisation));
+                    //TODO find team
                     sentryApiClient.createProject(organisation, project);
                     triedToCreateProj = true;
                     LOGGER.info("Force update Sentry clients to pull differences from Sentry");

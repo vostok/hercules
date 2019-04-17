@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.sentry.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
@@ -12,7 +13,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -22,11 +22,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.sentry.api.auth.BearerAuthHttpInterceptor;
 import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.OrganizationCreateModel;
 import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.ProjectCreateModel;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.TeamCreateModel;
+import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,7 +51,8 @@ public class SentryApiClient {
     private static final String TEAM_URL = "teams/";
     private static final String ORGANIZATIONS_URL = "organizations/";
     private static final String KEYS_URL = "keys/";
-    private static final String DEFAULT_TEAM_URL = "default_team/";
+
+    private static final String DEFAULT_TEAM = "default_team";
 
     private final ObjectMapper objectMapper;
     private final HttpHost sentryHost;
@@ -99,34 +103,60 @@ public class SentryApiClient {
     /**
      * Create new organisation in the Sentry
      *
-     * @param name the name of organisation
+     * @param organization the name of organisation
      * @return the {@link Result} object with response entity or error
      */
-    public Result<Void, String> createOrganization(String name) {
-        URIBuilder uriBuilder = new URIBuilder();
-        uriBuilder.setPath(API_URL + ORGANIZATIONS_URL)
-                .setParameter("name", name)
-                .setParameter("slug", name)
-                .setParameter("agreeTerms", "true");
-        LOGGER.info("Creating of new organisation in Sentry");
-        return request(new HttpPost(uriBuilder.toString()), new TypeReference<Void>() {});
+    public Result<OrganizationInfo, String> createOrganization(String organization) {
+        OrganizationCreateModel organizationModel = new OrganizationCreateModel(organization);
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] body = {};
+        try {
+            body = objectMapper.writeValueAsBytes(organizationModel);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Cannot create JSON from model for organization creation", e);
+        }
 
-/*   public Result<Void, String> createOrganization(String name) {
-        HttpPost post = new HttpPost(ORGANIZATIONS_URL);
-        post.getParams().setParameter("name", name);
-        post.getParams().setParameter("slug", name);
-        post.getParams().setParameter("agreeTerms", false);
-        return request(post, new TypeReference<Void>() {});*/
+        String uri = API_URL + ORGANIZATIONS_URL;
+        HttpPost post = new HttpPost(uri);
+        post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+        LOGGER.info(String.format("Creating of new organization '%s' in Sentry", organization));
+        return request(post, new TypeReference<OrganizationInfo>() {});
     }
 
-    public Result<Void, String> createProject(String organization, String project) {
-        String body = "{ \"name\": \"" + project + "\", " +
-                "\"slug\": \"" + project + "\" }";
-        String uri = API_URL + TEAM_URL + organization + "/" + DEFAULT_TEAM_URL + PROJECTS_URL;
+    public Result<TeamInfo, String> createTeam(String team, String organization) {
+        TeamCreateModel teamModel = new TeamCreateModel(team);
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] body = {};
+        try {
+            body = objectMapper.writeValueAsBytes(teamModel);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Cannot create JSON from model for team creation", e);
+        }
+        String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + TEAM_URL;
         HttpPost post = new HttpPost(uri);
-        post.setEntity(new ByteArrayEntity(body.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_JSON));
-        LOGGER.info("Creating of new organisation in Sentry");
-        return request(post, new TypeReference<Void>() {});
+        post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+        LOGGER.info(String.format("Creating of new team '%s' in Sentry", team));
+        return request(post, new TypeReference<TeamInfo>() {});
+    }
+
+    public Result<TeamInfo, String> createTeam(String organization) {
+        return createTeam(DEFAULT_TEAM, organization);
+    }
+
+    public Result<ProjectInfo, String> createProject(String organization, String project) {
+        ProjectCreateModel projectModel = new ProjectCreateModel(project);
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] body = {};
+        try {
+            body = objectMapper.writeValueAsBytes(projectModel);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Cannot create JSON from model for project creation", e);
+        }
+        String uri = API_URL + TEAM_URL + organization + "/" + DEFAULT_TEAM + "/" + PROJECTS_URL;
+        HttpPost post = new HttpPost(uri);
+        post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+        LOGGER.info(String.format("Creating of new project '%s' in Sentry", project));
+        return request(post, new TypeReference<ProjectInfo>() {});
     }
 
     private <T> Result<T, String> request(HttpUriRequest request, TypeReference<T> typeReference) {
