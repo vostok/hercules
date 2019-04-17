@@ -252,7 +252,7 @@ public class ElasticResponseHandler {
     }
 
     // TODO: Replace with a good parser
-    public Result process(HttpEntity httpEntity) {
+    public Result process(HttpEntity httpEntity, Set<String> redefinedExceptions) {
         return toUnchecked(() -> {
             int retryableErrorCount = 0;
             int nonRetryableErrorCount = 0;
@@ -282,7 +282,7 @@ public class ElasticResponseHandler {
                 }
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
-                    final ErrorType errorType = processError(MAPPER.readTree(parser), currentId, currentIndex);
+                    final ErrorType errorType = processError(MAPPER.readTree(parser), currentId, currentIndex, redefinedExceptions);
                     switch (errorType) {
                         case RETRYABLE:
                             retryableErrorCount++;
@@ -317,9 +317,10 @@ public class ElasticResponseHandler {
      * @param errorNode JSON node with error data
      * @param id event id
      * @param index index
+     * @param redefinedExceptions exceptions for overriding
      * @return error type, which determines retryability of the error
      */
-    private ErrorType processError(TreeNode errorNode, String id, String index) {
+    private ErrorType processError(TreeNode errorNode, String id, String index, Set<String> redefinedExceptions) {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
             LOGGER.error("Original error: {}", error);
@@ -336,8 +337,10 @@ public class ElasticResponseHandler {
             //TODO: Build "caused by" trace
 
             errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
-
-            if (RETRYABLE_ERRORS_CODES.contains(type)) {
+            if (redefinedExceptions.contains(type)){
+                LOGGER.error("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                return ErrorType.NON_RETRYABLE;
+            } else if (RETRYABLE_ERRORS_CODES.contains(type)) {
                 LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
                 return ErrorType.RETRYABLE;
             } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
