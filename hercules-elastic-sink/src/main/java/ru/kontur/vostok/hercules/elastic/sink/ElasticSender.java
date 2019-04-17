@@ -75,9 +75,8 @@ public class ElasticSender extends Sender {
         final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
         final int connectionRequestTimeout = Props.CONNECTION_REQUEST_TIMEOUT_MS.extract(properties);
         final int socketTimeout = Props.SOCKET_TIMEOUT_MS.extract(properties);
-        final String[] redefinedExceptionsStrings = Props.REDEFINED_EXCEPTIONS.extract(properties);
 
-        this.redefinedExceptions = new HashSet<>(Arrays.asList(redefinedExceptionsStrings));
+        this.redefinedExceptions = new HashSet<>(Arrays.asList(Props.REDEFINED_EXCEPTIONS.extract(properties)));
 
         this.restClient = RestClient.builder(hosts)
                 .setMaxRetryTimeoutMillis(retryTimeoutMs)
