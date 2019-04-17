@@ -71,33 +71,32 @@ public class SentryApiClient {
         return request(new HttpHead(API_URL), new TypeReference<Void>() {});
     }
 
+    public Result<List<OrganizationInfo>, String> getOrganizations() {
+        String uri = API_URL + ORGANIZATIONS_URL;
+        return pagedRequest(new HttpGet(uri), new TypeReference<List<OrganizationInfo>>() {});
+    }
+
     /**
-     * Get the projects which match the Sentry client with token
+     * Get the projects which match the organization
      *
+     * @param organization the organization
      * @return the {@link Result} object  with a list of projects
      */
-    public Result<List<ProjectInfo>, String> getProjects() {
-        return pagedRequest(new HttpGet(API_URL + PROJECTS_URL), new TypeReference<List<ProjectInfo>>() {});
+    public Result<List<ProjectInfo>, String> getProjects(String organization) {
+        String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + PROJECTS_URL;
+        return pagedRequest(new HttpGet(uri), new TypeReference<List<ProjectInfo>>() {});
     }
 
     /**
      * Get a list of public DSN which match the project
      *
+     * @param organization the project organization
      * @param project the project for which a list of public DSN is requested
      * @return the {@link Result} object with a list of public DSN
      */
-    public Result<List<KeyInfo>, String> getPublicDsn(ProjectInfo project) {
-        Optional<String> projectSlug = Optional.ofNullable(project.getSlug());
-        Optional<String> organizationSlug = Optional.ofNullable(project.getOrganization()).map(OrganizationInfo::getSlug);
-
-        if (!projectSlug.isPresent() || !organizationSlug.isPresent()) {
-            return Result.error("Not enough info");
-        }
-
-        return pagedRequest(
-                new HttpGet(API_URL + PROJECTS_URL + organizationSlug.get() + "/" +  projectSlug.get() + "/" + KEYS_URL),
-                new TypeReference<List<KeyInfo>>() {}
-        );
+    public Result<List<KeyInfo>, String> getPublicDsn(String organization, String project) {
+        String uri = API_URL + PROJECTS_URL + organization + "/" +  project + "/" + KEYS_URL;
+        return pagedRequest(new HttpGet(uri), new TypeReference<List<KeyInfo>>() {} );
     }
 
     /**

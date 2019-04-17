@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.sentry.api.model.DsnInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.net.MalformedURLException;
@@ -79,8 +81,16 @@ public class SentryClientHolder {
                     triedToUpdate = true;
                     continue;
                 } else if (!triedToCreateOrg) {
-                    sentryApiClient.createOrganization(organisation);
-                    sentryApiClient.createTeam(organisation);
+                    Result<OrganizationInfo, String> orgCreationResult = sentryApiClient.createOrganization(organisation);
+                    if (!orgCreationResult.isOk()){
+                        LOGGER.error(String.format("Cannot create organization '%s'", organisation), orgCreationResult.getError());
+                        return Optional.empty();
+                    }
+                    Result<TeamInfo, String> teamCreationResult = sentryApiClient.createTeam(organisation);
+                    if (!teamCreationResult.isOk()){
+                        LOGGER.error(String.format("Cannot create default team in organisation '%s'", organisation), teamCreationResult.getError());
+                        return Optional.empty();
+                    }
                     triedToCreateOrg = true;
                     LOGGER.info("Force update Sentry clients to pull differences from Sentry");
                     update();
@@ -100,7 +110,10 @@ public class SentryClientHolder {
                     triedToUpdate = true;
                 } else if (!triedToCreateProj) {
                     //TODO find team
-                    sentryApiClient.createProject(organisation, project);
+                    Result<ProjectInfo, String> projectCreationResult = sentryApiClient.createProject(organisation, project);
+                    if (!projectCreationResult.isOk()) {
+                        LOGGER.error(String.format("Cannot create project %s", project), projectCreationResult.getError());
+                    }
                     triedToCreateProj = true;
                     LOGGER.info("Force update Sentry clients to pull differences from Sentry");
                     update();
@@ -117,50 +130,60 @@ public class SentryClientHolder {
 
     /**
      * Update clients in this class by information about project clients from Sentry.
+     * <p>
+     * This method firstly updates organizations,<p>
+     * then updates projects of every organization,<p>
+     * then updates dsn-keys of every project,<p>
+     * then updates clients by dsn-keys.
+     * <p>
      * This method executes by schedule
      */
     private void update() {
         try {
-            Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects();
-            if (!projects.isOk()) {
-                LOGGER.error("Cannot update project info due to: {}", projects.getError());
+            Result<List<OrganizationInfo>, String> organizations = sentryApiClient.getOrganizations();
+            if (!organizations.isOk()) {
+                LOGGER.error("Cannot update organizations info due to: {}", organizations.getError());
                 return;
             }
 
-            Map<String, Map<String, SentryClient>> organisationMap = new HashMap<>();
+            Map<String, Map<String, SentryClient>> organizationMap = new HashMap<>();
+            for (OrganizationInfo organizationInfo : organizations.get()) {
 
-            for (ProjectInfo projectInfo : projects.get()) {
-                Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(projectInfo);
-                if (!publicDsn.isOk()) {
-                    LOGGER.error("Cannot get public dsn for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
+                Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects(organizationInfo.getSlug());
+                if (!projects.isOk()) {
+                    LOGGER.error("Cannot update projects info due to: {}", projects.getError());
                     return;
                 }
 
-                Optional<String> dsn = publicDsn.get().stream()
-                        .findAny()
-                        .map(KeyInfo::getDsn)
-                        .map(DsnInfo::getPublicDsn);
-                if (dsn.isPresent()) {
-                    String dsnString = dsn.get();
-                    try {
-                        new URL(dsnString);
-                    } catch (MalformedURLException e) {
-                        throw new Exception(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
+                Map<String, SentryClient> projectMap = new HashMap<>();
+                organizationMap.put(organizationInfo.getSlug(), projectMap);
+
+                for (ProjectInfo projectInfo : projects.get()) {
+
+                    Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(organizationInfo.getSlug(), projectInfo.getSlug());
+                    if (!publicDsn.isOk()) {
+                        LOGGER.error("Cannot get public dsn for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
+                        return;
+                    }
+                    Optional<String> dsn = publicDsn.get().stream()
+                            .findAny()
+                            .map(KeyInfo::getDsn)
+                            .map(DsnInfo::getPublicDsn);
+                    String dsnString = "";
+                    if (dsn.isPresent()) {
+                        dsnString = dsn.get();
+                        try {
+                            new URL(dsnString);
+                        } catch (MalformedURLException e) {
+                            throw new Exception(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
+                        }
                     }
 
-                    String organization = projectInfo.getOrganization().getSlug();
-                    Map<String, SentryClient> projectMap = organisationMap.get(organization);
-                    if (projectMap == null) {
-                        projectMap = new HashMap<>();
-                        organisationMap.put(organization, projectMap);
-                    }
-
-                    String project = projectInfo.getSlug();
-                    projectMap.put(project, SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory));
+                    projectMap.put(projectInfo.getSlug(), SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory));
                 }
             }
 
-            clients.set(organisationMap);
+            clients.set(organizationMap);
         } catch (Throwable t) {
             LOGGER.error("Error in scheduled thread", t);
             System.exit(1);

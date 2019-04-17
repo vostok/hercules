@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TeamInfo {
 
-    private String name;
+    private String slug;
 
-    public void setName(String name) {
-        this.name = name;
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 }
