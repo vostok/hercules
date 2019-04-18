@@ -88,11 +88,14 @@ public class SentryClientHolder {
      */
     public Optional<SentryClient> getClient(String organization, String project) {
         Map<String, SentryClient> projectMap;
-        SentryClient sentryClient;
+        SentryClient sentryClient = null;
+
         boolean triedToUpdate = false;
         boolean triedToCreateOrg = false;
         boolean triedToCreateProj = false;
-        while(true) {
+
+        boolean success = false;
+        while(!success) {
             projectMap = clients.get().get(organization);
             if (projectMap == null) {
                 LOGGER.info(String.format("Cannot find organization '%s'", organization));
@@ -100,7 +103,7 @@ public class SentryClientHolder {
                 Optional<String> slugError = slugValidator.validate(organization);
                 if (slugError.isPresent()) {
                     LOGGER.error("Invalid organization slug (name): " + slugError.get());
-                    return Optional.empty();
+                    break;
                 }
 
                 if (!triedToUpdate) {
@@ -112,12 +115,12 @@ public class SentryClientHolder {
                     Result<OrganizationInfo, String> orgCreationResult = sentryApiClient.createOrganization(organization);
                     if (!orgCreationResult.isOk()){
                         LOGGER.error(String.format("Cannot create organization '%s'", organization), orgCreationResult.getError());
-                        return Optional.empty();
+                        break;
                     }
                     Result<TeamInfo, String> teamCreationResult = sentryApiClient.createTeam(organization, DEFAULT_TEAM);
                     if (!teamCreationResult.isOk()){
                         LOGGER.error(String.format("Cannot create default team in organization '%s'", organization), teamCreationResult.getError());
-                        return Optional.empty();
+                        break;
                     }
                     triedToCreateOrg = true;
                     LOGGER.info("Force update Sentry clients to pull differences from Sentry");
@@ -125,7 +128,7 @@ public class SentryClientHolder {
                     continue;
                 } else {
                     LOGGER.error(String.format("Error of creating in Sentry or updating into Sentry Sink of organization %s", organization));
-                    return Optional.empty();
+                    break;
                 }
             }
             sentryClient = projectMap.get(project);
@@ -135,7 +138,7 @@ public class SentryClientHolder {
                 Optional<String> slugError = slugValidator.validate(project);
                 if (slugError.isPresent()) {
                     LOGGER.error("Invalid project slug (name): " + slugError.get());
-                    return Optional.empty();
+                    break;
                 }
 
                 if (!triedToUpdate) {
@@ -145,7 +148,7 @@ public class SentryClientHolder {
                 } else if (!triedToCreateProj) {
                     Result<Void, String> checkResult = checkDefaultTeamExistenceOrCreate(organization);
                     if (!checkResult.isOk()) {
-                        return Optional.empty();
+                        break;
                     }
                     Result<ProjectInfo, String> projectCreationResult = sentryApiClient.createProject(organization, DEFAULT_TEAM, project);
                     if (!projectCreationResult.isOk()) {
@@ -156,11 +159,15 @@ public class SentryClientHolder {
                     update();
                 } else {
                     LOGGER.error(String.format("Error of creating in Sentry or updating into Sentry Sink of project '%s'", project));
-                    return Optional.empty();
+                    break;
                 }
             } else {
-                break;
+                success = true;
             }
+        }
+
+        if(sentryClient == null) {
+            return Optional.empty();
         }
         return Optional.of(sentryClient);
     }
@@ -211,38 +218,37 @@ public class SentryClientHolder {
 
             Map<String, Map<String, SentryClient>> organizationMap = new HashMap<>();
             for (OrganizationInfo organizationInfo : organizations.get()) {
+                String organization = organizationInfo.getSlug();
 
-                Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects(organizationInfo.getSlug());
+                Result<List<ProjectInfo>, String> projects = sentryApiClient.getProjects(organization);
                 if (!projects.isOk()) {
                     LOGGER.error("Cannot update projects info due to: {}", projects.getError());
                     return;
                 }
 
                 Map<String, SentryClient> projectMap = new HashMap<>();
-                organizationMap.put(organizationInfo.getSlug(), projectMap);
+                organizationMap.put(organization, projectMap);
 
                 for (ProjectInfo projectInfo : projects.get()) {
+                    String project = projectInfo.getSlug();
 
-                    Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(organizationInfo.getSlug(), projectInfo.getSlug());
-                    if (!publicDsn.isOk()) {
-                        LOGGER.error("Cannot get public dsn for project '{}' due to: {}", projectInfo.getSlug(), publicDsn.getError());
-                        return;
-                    }
-                    Optional<String> dsn = publicDsn.get().stream()
-                            .findAny()
-                            .map(KeyInfo::getDsn)
-                            .map(DsnInfo::getPublicDsn);
-                    String dsnString = "";
-                    if (dsn.isPresent()) {
-                        dsnString = dsn.get();
-                        try {
-                            new URL(dsnString);
-                        } catch (MalformedURLException e) {
-                            throw new Exception(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
+                    Result<List<KeyInfo>, String> publicDsn = sentryApiClient.getPublicDsn(organization, project);
+                    if (publicDsn.isOk()) {
+                        Optional<String> dsn = publicDsn.get().stream()
+                                .findAny()
+                                .map(KeyInfo::getDsn)
+                                .map(DsnInfo::getPublicDsn);
+                        if (dsn.isPresent()) {
+                            String dsnString = dsn.get();
+                            try {
+                                new URL(dsnString);
+                            } catch (MalformedURLException e) {
+                                throw new Exception(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
+                            }
+                            SentryClient sentryClient = SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory);
+                            projectMap.put(project, sentryClient);
                         }
                     }
-
-                    projectMap.put(projectInfo.getSlug(), SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory));
                 }
             }
 
