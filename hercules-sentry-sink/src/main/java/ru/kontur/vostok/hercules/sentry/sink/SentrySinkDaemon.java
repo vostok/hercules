@@ -51,7 +51,8 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
 
         return new SentrySyncProcessor(
                 sinkProperties,
-                new SentryClientHolder(new SentryApiClient(sentryUrl, sentryToken))
+                new SentryClientHolder(sinkProperties,
+                        new SentryApiClient(sentryUrl, sentryToken))
         );
     }
 

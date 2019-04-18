@@ -32,21 +32,24 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                 .withParser(SentryLevelEnumParser::parseAsResult)
                 .withDefaultValue(Level.WARNING)
                 .build();
+        static final PropertyDescription<String> DEFAULT_PROJECT = PropertyDescriptions
+                .stringProperty("sentry.default.project")
+                .withDefaultValue("default_project")
+                .build();
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
-    private static final String DEFAULT_SENTRY_PROJECT = "default_project";
-    private static final String DEFAULT_ORGANIZATION = "default_organization";
-
     private final Level requiredLevel;
+    private final String defaultSentryProject;
     private final SentryClientHolder sentryClientHolder;
 
     public SentrySyncProcessor(
-            Properties properties,
+            Properties sinkProperties,
             SentryClientHolder sentryClientHolder
     ) {
-        this.requiredLevel = Props.REQUIRED_LEVEL.extract(properties);
+        this.requiredLevel = Props.REQUIRED_LEVEL.extract(sinkProperties);
+        this.defaultSentryProject = Props.DEFAULT_PROJECT.extract(sinkProperties);
         this.sentryClientHolder = sentryClientHolder;
     }
 
@@ -66,12 +69,13 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
 
         Optional<String> organizationName = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
         if (!organizationName.isPresent()) {
-            organizationName = Optional.of(DEFAULT_ORGANIZATION);
+            LOGGER.warn("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
+            return false;
         }
 
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), ScopeTags.SCOPE_TAG);
         if (!sentryProjectName.isPresent()) {
-            sentryProjectName = Optional.of(DEFAULT_SENTRY_PROJECT);
+            sentryProjectName = Optional.of(defaultSentryProject);
         }
 
         Optional<SentryClient> sentryClient = sentryClientHolder.getClient(organizationName.get(), sentryProjectName.get());

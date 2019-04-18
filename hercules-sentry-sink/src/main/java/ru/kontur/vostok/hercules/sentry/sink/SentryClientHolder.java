@@ -13,8 +13,11 @@ import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.sentry.sink.sentryclientfactory.CustomClientFactory;
 import ru.kontur.vostok.hercules.util.functional.Result;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
 import ru.kontur.vostok.hercules.util.validation.Validator;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,8 +45,6 @@ public class SentryClientHolder {
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
     private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
-    private static final String DEFAULT_TEAM = "default_team";
-
     private static final String regex = "[a-z0-9_\\-]+";
     private static final Validator<String> slugValidator = StringValidators.matchesWith(regex);
 
@@ -58,10 +60,14 @@ public class SentryClientHolder {
 
     private final SentryApiClient sentryApiClient;
     private final SentryClientFactory sentryClientFactory = new CustomClientFactory();
+    private final String defaultTeam;
 
-    public SentryClientHolder(SentryApiClient sentryApiClient) {
+    public SentryClientHolder(Properties sinkProperties,
+                              SentryApiClient sentryApiClient) {
         this.sentryApiClient = sentryApiClient;
-        this.scheduledExecutor.scheduleAtFixedRate(this::update, 0,10000, TimeUnit.MILLISECONDS);
+        this.defaultTeam = Props.DEFAULT_TEAM.extract(sinkProperties);
+        int updateRateMs = Props.UPDATE_RATE_MS.extract(sinkProperties);
+        this.scheduledExecutor.scheduleAtFixedRate(this::update, 0,updateRateMs, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -117,7 +123,7 @@ public class SentryClientHolder {
                         LOGGER.error(String.format("Cannot create organization '%s'", organization), orgCreationResult.getError());
                         break;
                     }
-                    Result<TeamInfo, String> teamCreationResult = sentryApiClient.createTeam(organization, DEFAULT_TEAM);
+                    Result<TeamInfo, String> teamCreationResult = sentryApiClient.createTeam(organization, defaultTeam);
                     if (!teamCreationResult.isOk()){
                         LOGGER.error(String.format("Cannot create default team in organization '%s'", organization), teamCreationResult.getError());
                         break;
@@ -150,7 +156,7 @@ public class SentryClientHolder {
                     if (!checkResult.isOk()) {
                         break;
                     }
-                    Result<ProjectInfo, String> projectCreationResult = sentryApiClient.createProject(organization, DEFAULT_TEAM, project);
+                    Result<ProjectInfo, String> projectCreationResult = sentryApiClient.createProject(organization, defaultTeam, project);
                     if (!projectCreationResult.isOk()) {
                         LOGGER.error(String.format("Cannot create project %s", project), projectCreationResult.getError());
                     }
@@ -186,11 +192,11 @@ public class SentryClientHolder {
             return Result.error(teamListResult.getError());
         }
         for (TeamInfo teamInfo : teamListResult.get()) {
-            if (teamInfo.getSlug().equals(DEFAULT_TEAM)) {
+            if (teamInfo.getSlug().equals(defaultTeam)) {
                 return Result.ok();
             }
         }
-        Result<TeamInfo, String> creationResult = sentryApiClient.createTeam(organization, DEFAULT_TEAM);
+        Result<TeamInfo, String> creationResult = sentryApiClient.createTeam(organization, defaultTeam);
         if (!creationResult.isOk()) {
             LOGGER.error(String.format("Cannot create default team in organization '%s'", organization), creationResult.getError());
             return Result.error(teamListResult.getError());
@@ -271,5 +277,18 @@ public class SentryClientHolder {
             DISABLE_UNCAUGHT_EXCEPTION_HANDLING,
             DISABLE_IN_APP_WARN_MESSAGE
         );
+    }
+
+    private static class Props {
+        static final PropertyDescription<Integer> UPDATE_RATE_MS = PropertyDescriptions
+                .integerProperty("update.rate")
+                .withDefaultValue(10_000)
+                .withValidator(Validators.greaterOrEquals(0))
+                .build();
+        static final PropertyDescription<String> DEFAULT_TEAM = PropertyDescriptions
+                .stringProperty("sentry.default.team")
+                .withDefaultValue("default_team")
+                .withValidator(slugValidator)
+                .build();
     }
 }
