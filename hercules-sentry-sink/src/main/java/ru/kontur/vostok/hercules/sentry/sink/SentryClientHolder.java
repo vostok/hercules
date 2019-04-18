@@ -56,6 +56,7 @@ public class SentryClientHolder {
      * and the {@link SentryClient} as a value.
      */
     private final AtomicReference<Map<String, Map<String, SentryClient>>> clients = new AtomicReference<>(Collections.emptyMap());
+
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
     private final SentryApiClient sentryApiClient;

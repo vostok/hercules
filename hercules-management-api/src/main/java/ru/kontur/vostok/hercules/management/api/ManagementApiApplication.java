@@ -13,7 +13,6 @@ import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
-import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
@@ -73,7 +72,6 @@ public class ManagementApiApplication {
 
             BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
             RuleRepository ruleRepository = new RuleRepository(curatorClient);
-            SentryProjectRepository sentryProjectRepository = new SentryProjectRepository(curatorClient);
 
             streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
             timelineTaskQueue  = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
@@ -97,7 +95,6 @@ public class ManagementApiApplication {
                     timelineTaskQueue,
                     blacklistRepository,
                     ruleRepository,
-                    sentryProjectRepository,
                     metricsCollector
             );
             server.start();

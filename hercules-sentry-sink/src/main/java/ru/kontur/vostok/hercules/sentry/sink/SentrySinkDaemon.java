@@ -8,7 +8,6 @@ import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.kafka.util.processing.ServicePinger;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.AbstractSingleSinkDaemon;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.SingleSender;
-import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
