@@ -52,8 +52,8 @@ public class ReadTimelineHandler implements HttpHandler {
         this.timetrapCountLimit = timetrapCountLimit;
     }
 
-    public static boolean isTimetrapCountLimitReached(long from, long to, long timetrapSize, int timetrapCountLimit) {
-        return (TimeUtil.ticksToMillis(to - from) >= timetrapCountLimit * timetrapSize);
+    public static boolean isTimetrapCountLimitExceeded(long from, long to, long timetrapSize, int timetrapCountLimit) {
+        return (to - from) >= TimeUtil.millisToTicks(timetrapCountLimit * timetrapSize);
     }
 
     @Override
@@ -153,14 +153,17 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        Optional<Timeline> timeline = timelineRepository.read(optionalTimelineName.get());
-        if (!timeline.isPresent()) {
+        Optional<Timeline> optionalTimeline = timelineRepository.read(optionalTimelineName.get());
+        if (!optionalTimeline.isPresent()) {
             ResponseUtil.notFound(httpServerExchange);
             return;
         }
 
-        if (isTimetrapCountLimitReached(from.get(), to.get(), timeline.get().getTimetrapSize(), timetrapCountLimit)) {
-            ResponseUtil.badRequest(httpServerExchange, "Limit for timetrap count for sending to Cassandra was reached");
+        Timeline timeline = optionalTimeline.get();
+        if (isTimetrapCountLimitExceeded(from.get(), to.get(), timeline.getTimetrapSize(), timetrapCountLimit)) {
+            ResponseUtil.badRequest(
+                    httpServerExchange,
+                    "Time interval should not exceeded " + TimeUtil.millisToTicks(timetrapCountLimit * timeline.getTimetrapSize()) + " ticks, but requested " + (to.get() - from.get()) + " ticks");
             return;
         }
 
@@ -169,7 +172,7 @@ public class ReadTimelineHandler implements HttpHandler {
                 try {
                     TimelineState readState = STATE_READER.read(new Decoder(message));
 
-                    TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(),
+                    TimelineByteContent byteContent = timelineReader.readTimeline(optionalTimeline.get(),
                             readState,
                             shardIndex.get(),
                             shardCount.get(),
