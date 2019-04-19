@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.stream.manager;
 
+import com.codahale.metrics.Meter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.TaskExecutor;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
@@ -15,11 +17,22 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
 
     private final KafkaManager kafkaManager;
     private final StreamRepository streamRepository;
+    private final Meter createdStreamCount;
+    private final Meter deletedStreamCount;
+    private final Meter updatedStreamCount;
 
-    protected StreamTaskExecutor(StreamTaskRepository streamTaskRepository, long pollingTimeoutMillis, KafkaManager kafkaManager, StreamRepository streamRepository) {
+    protected StreamTaskExecutor(
+            StreamTaskRepository streamTaskRepository,
+            long pollingTimeoutMillis,
+            KafkaManager kafkaManager,
+            StreamRepository streamRepository,
+            MetricsCollector metricsCollector) {
         super(streamTaskRepository, pollingTimeoutMillis);
         this.kafkaManager = kafkaManager;
         this.streamRepository = streamRepository;
+        this.createdStreamCount = metricsCollector.meter("createdStreamCount");
+        this.deletedStreamCount = metricsCollector.meter("deletedStreamCount");
+        this.updatedStreamCount = metricsCollector.meter("updatedStreamCount");
     }
 
     @Override
@@ -34,6 +47,7 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
                     LOGGER.error("Stream creation failed with exception", e);
                     return false;
                 }
+                createdStreamCount.mark();
                 return true;
             case DELETE:
                 try {
@@ -44,6 +58,7 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
                 }
                 kafkaManager.deleteTopic(task.getStream().getName());//TODO: process deletion error
                 LOGGER.info("Deleted topic '{}'", task.getStream().getName());
+                deletedStreamCount.mark();
                 return true;
             case INCREASE_PARTITIONS:
                 kafkaManager.increasePartitions(task.getStream().getName(), task.getStream().getPartitions());//TODO: process error
@@ -54,6 +69,7 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
                     LOGGER.error("Stream update failed with exception", e);
                     return false;
                 }
+                updatedStreamCount.mark();
                 return true;
             default:
                 LOGGER.error("Unknown task type {}", task.getType());

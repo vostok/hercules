@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * DsnInfo
+ * The DSN (Data Source Name) is a client key of the Sentry project.
+ * <p>
+ * It looks a lot like a standard URL.
+ * It includes the protocol, public key, the server address, and the project identifier.
  *
  * @author Kirill Sulim
  */

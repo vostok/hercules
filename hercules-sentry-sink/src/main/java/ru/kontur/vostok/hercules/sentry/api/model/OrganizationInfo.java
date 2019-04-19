@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.sentry.api.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * OrganizationInfo
+ * The organization in Sentry
  *
  * @author Kirill Sulim
  */

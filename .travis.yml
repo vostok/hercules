@@ -3,10 +3,12 @@ jdk: oraclejdk8
 install: true
 script: mvn package
 before_deploy:
-    - echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
+- echo "$DOCKER_PASSWORD" | docker login -u="$DOCKER_USERNAME" --password-stdin
 deploy:
-    provider: script
-    skip_cleanup: true
-    script:
-        - make
-
+  provider: script
+  skip_cleanup: true
+  script:
+  - make services_images
+notifications:
+  slack:
+    secure: 6TPq5PaOr2jW2/DUF5AcWmw48s+MVmRfknA1G93VxObGerkXAO4qZjVAFX+1tHJicGNwD0K2ELiwkbDRlBf1HuA2muVR9lWVH08XyssVrLfU5OZMv9v9HCoUW3IqiNwVr2vwNp/yL+3Sa3HgV37npj9njT62R+QLxfat63vndIcbJFxwlFW5ozIjjEOsJn0FwbHAcXm5Kr6BzQ/wJk/wu7oARjuzY1BFfzz3cOLwF1qAte7FG+TErIY1QtYXCLxGgjoXb2ZTtnm4JalR/mxTLL9kdVbo9Iu6zbvaEylIOUv1c4zDUsEYlSegVaoEgZE1iE5rH5HBididq2CKIXO5bcOr7r0/XdicLarcay64FduUVr0Dg7UoliEoGeR03vFentKXuAQBL2MYv9wXrY08ZGWyPsAVHuhZY8hxL4XdWAv2o66C9Mq5DSeSvgeVWOqtzY2cxh1xRCMVdbwjaQB10MTPjN2WRs76AdUj6gVjLhBLxuStoS/ALxWNhgGsOIzbZV6zqCKDpNbmePP+S3Xoo3ctTMV55KzIG0BFibYeAFyd4k5HT76psBI51gVT7vpXdm7xxLi+Ad+snJFzRm0j7/5fb2DGyV9skpTlEIooE0YnPolIEkikDSG2GgetlQRif5TQ3mOm0hVqU3AufTBGQJufFV+VoQqS1uYVQQmLnSU=

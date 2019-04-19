@@ -18,11 +18,10 @@ import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.util.Deque;
-import java.util.Map;
 import java.util.Optional;
 
 public class ReadTimelineHandler implements HttpHandler {
@@ -44,11 +43,17 @@ public class ReadTimelineHandler implements HttpHandler {
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
     private final AuthManager authManager;
+    private final int timetrapCountLimit;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager) {
+    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int timetrapCountLimit) {
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
         this.authManager = authManager;
+        this.timetrapCountLimit = timetrapCountLimit;
+    }
+
+    public static boolean isTimetrapCountLimitExceeded(long from, long to, long timetrapSize, int timetrapCountLimit) {
+        return (to - from) >= TimeUtil.millisToTicks(timetrapCountLimit * timetrapSize);
     }
 
     @Override
@@ -71,10 +76,13 @@ public class ReadTimelineHandler implements HttpHandler {
         }
         String apiKey = optionalApiKey.get();
 
-        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
-        String timelineName = queryParameters.get(PARAM_TIMELINE).getFirst();
+        Optional<String> optionalTimelineName = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TIMELINE);
+        if (!optionalTimelineName.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TIMELINE);
+            return;
+        }
 
-        AuthResult authResult = authManager.authRead(apiKey, timelineName);
+        AuthResult authResult = authManager.authRead(apiKey, optionalTimelineName.get());
 
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
@@ -145,9 +153,17 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        Optional<Timeline> timeline = timelineRepository.read(timelineName);
-        if (!timeline.isPresent()) {
+        Optional<Timeline> optionalTimeline = timelineRepository.read(optionalTimelineName.get());
+        if (!optionalTimeline.isPresent()) {
             ResponseUtil.notFound(httpServerExchange);
+            return;
+        }
+
+        Timeline timeline = optionalTimeline.get();
+        if (isTimetrapCountLimitExceeded(from.get(), to.get(), timeline.getTimetrapSize(), timetrapCountLimit)) {
+            ResponseUtil.badRequest(
+                    httpServerExchange,
+                    "Time interval should not exceeded " + TimeUtil.millisToTicks(timetrapCountLimit * timeline.getTimetrapSize()) + " ticks, but requested " + (to.get() - from.get()) + " ticks");
             return;
         }
 
@@ -156,7 +172,7 @@ public class ReadTimelineHandler implements HttpHandler {
                 try {
                     TimelineState readState = STATE_READER.read(new Decoder(message));
 
-                    TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(),
+                    TimelineByteContent byteContent = timelineReader.readTimeline(optionalTimeline.get(),
                             readState,
                             shardIndex.get(),
                             shardCount.get(),
@@ -171,7 +187,7 @@ public class ReadTimelineHandler implements HttpHandler {
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
                 } catch (Exception e) {
                     LOGGER.error("Error on processing request", e);
-                    exchange.setStatusCode(500);
+                    ResponseUtil.internalServerError(exchange);
                 } finally {
                     exchange.endExchange();
                 }

@@ -44,7 +44,7 @@ public class TracingApiApplication {
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
-            ApplicationContextHolder.init("Hercules timeline API", "timeline-api", contextProperties);
+            ApplicationContextHolder.init("Hercules tracing API", "tracing-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -65,7 +65,7 @@ public class TracingApiApplication {
             );
             server.start();
         } catch (Throwable t) {
-            LOGGER.error("Error on starting timeline api", t);
+            LOGGER.error("Error on starting Tracing API", t);
             shutdown();
             return;
         }
@@ -114,6 +114,6 @@ public class TracingApiApplication {
             //TODO: Process error
         }
 
-        LOGGER.info("Finished Stream API shutdown for {} millis", System.currentTimeMillis() - start);
+        LOGGER.info("Finished Tracing API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 }
