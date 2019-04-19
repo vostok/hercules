@@ -13,6 +13,8 @@ import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Map;
 import java.util.Properties;
@@ -42,6 +44,8 @@ public class TimelineApiApplication {
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
+            final Integer timetrapCountLimit = Props.TIMETRAP_COUNT_LIMIT.extract(properties);
+
             ApplicationContextHolder.init("Hercules timeline API", "timeline-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
@@ -62,7 +66,7 @@ public class TimelineApiApplication {
             server = new HttpServer(
                     httpServerProperties,
                     authManager,
-                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader, authManager),
+                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader, authManager, timetrapCountLimit),
                     metricsCollector
             );
             server.start();
@@ -132,5 +136,12 @@ public class TimelineApiApplication {
             //TODO: Process error
         }
         LOGGER.info("Finished Timeline API shutdown for {} millis", System.currentTimeMillis() - start);
+    }
+    private static class Props {
+
+        static final PropertyDescription<Integer> TIMETRAP_COUNT_LIMIT = PropertyDescriptions
+                .integerProperty("timelineApi.timetrapCountLimit")
+                .withDefaultValue(30)
+                .build();
     }
 }

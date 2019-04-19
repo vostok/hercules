@@ -9,11 +9,10 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.meta.timeline.TimelineUtil;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
-import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -124,39 +123,39 @@ public class TimelineReader {
 
     private static final String SELECT_EVENTS = "" +
             "SELECT" +
-            "  event_id," +
-            "  payload" +
+            " event_id," +
+            " payload" +
             " " +
             "FROM" +
-            "  %s" +
+            " %s" +
             " " +
             "WHERE" +
-            "  slice = %d AND" +
-            "  tt_offset = %d AND" +
-            "  event_id > %s AND" + // Lower bound
-            "  event_id < %s" + // Upper bound
+            " slice = %d AND" +
+            " tt_offset = %d AND" +
+            " event_id > %s AND" + // Lower bound
+            " event_id < %s" + // Upper bound
             " " +
-            "ORDER BY " +
-            "  event_id" +
+            "ORDER BY" +
+            " event_id" +
             " " +
             "LIMIT %d;";
 
     private static final String SELECT_EVENTS_START_READING_SLICE = "" +
             "SELECT" +
-            "  event_id," +
-            "  payload" +
+            " event_id," +
+            " payload" +
             " " +
             "FROM" +
-            "  %s" +
+            " %s" +
             " " +
             "WHERE" +
-            "  slice = %d AND" +
-            "  tt_offset = %d AND" +
-            "  event_id >= %s AND" + // Lower bound
-            "  event_id < %s" + // Upper bound
+            " slice = %d AND" +
+            " tt_offset = %d AND" +
+            " event_id >= %s AND" + // Lower bound
+            " event_id < %s" + // Upper bound
             " " +
-            "ORDER BY " +
-            "  event_id" +
+            "ORDER BY" +
+            " event_id" +
             " " +
             "LIMIT %d;";
 
@@ -260,7 +259,7 @@ public class TimelineReader {
                     timeline.getName(),
                     params.slice,
                     params.ttOffset,
-                    EventUtil.minEventIdForTimestampAsHexString(Math.min(from, TimeUtil.millisToTicks(params.ttOffset))),
+                    EventUtil.minEventIdForTimestampAsHexString(Math.max(from, TimeUtil.millisToTicks(params.ttOffset))),
                     EventUtil.minEventIdForTimestampAsHexString(Math.min(to, TimeUtil.millisToTicks(params.ttOffset + timeline.getTimetrapSize()))),
                     take
             ));

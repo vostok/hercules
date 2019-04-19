@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/vostok/hercules.svg?branch=master)](https://travis-ci.com/vostok/hercules)
+
 # Vostok Hercules
 Event based transport subsystem of Vostok
 
