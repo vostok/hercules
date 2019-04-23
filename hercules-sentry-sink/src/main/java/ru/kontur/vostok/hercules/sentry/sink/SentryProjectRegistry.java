@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 
 /**
  * SentryProjectRegistry stores dictionary project tag value -> "${sentry-organization}/${sentry-project-name}"
+ * <p>
+ * The class stores actual Sentry project registry
  *
  * @author Kirill Sulim
  */
@@ -35,19 +37,36 @@ public class SentryProjectRegistry {
         this.updateTask = scheduler.task(this::update, 60_000, false);
     }
 
+    /**
+     * Get project name in Sentry concept by project name and service name in Hercules concept
+     *
+     * @param project the project name in Hercules concept
+     * @param service the service name in Hercules concept
+     * @return the project name in Sentry concept
+     */
     public Optional<String> getSentryProjectName(@NotNull final String project, @Nullable final String service) {
         return Optional.ofNullable(registry.get(ProjectServicePair.of(project, service)));
     }
 
+    /**
+     * Start updateTask executing by schedule
+     */
     public void start() {
         updateTask.renew();
     }
 
+    /**
+     * Stop updateTask executing by schedule
+     */
     public void stop() {
         updateTask.disable();
         scheduler.shutdown(5_000, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Update the registry in this class by information from Zookeeper.
+     * This method executes by schedule
+     */
     public void update() {
         ThrowableUtil.toUnchecked(() -> {
             registry = sentryProjectRepository.list().stream()
@@ -58,14 +77,29 @@ public class SentryProjectRegistry {
         });
     }
 
+    /**
+     * Get project-service pair in Hercules concept from record with project mapping from Zookeeper
+     *
+     * @param record the {@link SentryProjectMappingRecord} record
+     * @return the project-service pair
+     */
     private static ProjectServicePair getKey(final SentryProjectMappingRecord record) {
         return ProjectServicePair.of(record.getProject(), record.getService());
     }
 
+    /**
+     * Get organisation/project pair in Sentry concept from record with project mapping from Zookeeper
+     *
+     * @param record the {@link SentryProjectMappingRecord} record
+     * @return the organisation/project pair
+     */
     private static String getValue(final SentryProjectMappingRecord record) {
         return record.getSentryOrganization() + "/" + record.getSentryProject();
     }
 
+    /**
+     * Pair of project and Service in Hercules concept
+     */
     private static class ProjectServicePair {
         private final String project;
         private final String service;

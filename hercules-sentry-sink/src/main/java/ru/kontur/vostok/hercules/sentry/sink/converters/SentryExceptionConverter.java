@@ -12,6 +12,7 @@ import java.util.Optional;
 
 /**
  * SentryExceptionConverter
+ * Allows to convert exception details from a Hercules event to a Sentry event
  *
  * @author Kirill Sulim
  */
@@ -19,6 +20,12 @@ public class SentryExceptionConverter {
 
     private static final int NOT_FOUND = -1;
 
+    /**
+     * Convert exception details from a Hercules event to a Sentry event
+     *
+     * @param container the container with values of the exception tags of a Hercules event
+     * @return the Sentry exception
+     */
     public static SentryException convert(final Container container) {
         final String message = ContainerUtil.extract(container, ExceptionTags.MESSAGE_TAG).orElse(null);
 

@@ -9,9 +9,10 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
-import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
+import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -19,6 +20,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -105,7 +107,7 @@ public class TimelineReaderTest {
         );
 
         verify(session).execute(argThat(cql(
-                ".+  event_id >= " + EVENT_ID_REGEXP + " AND  event_id < " + EVENT_ID_REGEXP + " .+"
+                ".+ event_id >= " + EVENT_ID_REGEXP + " AND event_id < " + EVENT_ID_REGEXP + " .+"
         )));
     }
 
@@ -124,8 +126,26 @@ public class TimelineReaderTest {
         );
 
         verify(session).execute(argThat(cql(
-                ".+  event_id > " + EVENT_ID_REGEXP + " AND  event_id < " + EVENT_ID_REGEXP + " .+"
+                ".+ event_id > " + EVENT_ID_REGEXP + " AND event_id < " + EVENT_ID_REGEXP + " .+"
         )));
+    }
+
+    @Test
+    public void shouldReadBetweenFromTimestampAndToTimestamp() {
+        long from = TimeUtil.millisToTicks(100);
+        long to = TimeUtil.millisToTicks(900);
+        timelineReader.readTimeline(
+                TIMELINE,
+                new TimelineState(new  TimelineSliceState[0]),
+                0,
+                1,
+                1,
+                from,
+                to);
+
+        verify(session).execute(argThat(cql(
+                ".+ event_id >= " + EventUtil.minEventIdForTimestampAsHexString(from) + " AND " +
+                        "event_id < " + EventUtil.minEventIdForTimestampAsHexString(to) + " .+")));
     }
 
     public static <T> void mockIterable(Iterable<T> iterable, T... values) {

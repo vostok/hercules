@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * SentryProjectRepository
+ * Repository for Sentry project mapping records in Zookeeper
  *
  * @author Kirill Sulim
  */

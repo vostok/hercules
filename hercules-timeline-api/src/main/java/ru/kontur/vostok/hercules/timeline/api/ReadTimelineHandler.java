@@ -16,11 +16,12 @@ import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.functional.Result;
+import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.util.Deque;
-import java.util.Map;
 import java.util.Optional;
 
 public class ReadTimelineHandler implements HttpHandler {
@@ -30,14 +31,29 @@ public class ReadTimelineHandler implements HttpHandler {
     private static final TimelineStateReader STATE_READER = new TimelineStateReader();
     private static final TimelineByteContentWriter CONTENT_WRITER = new TimelineByteContentWriter();
 
+    private static final String REASON_MISSING_PARAM = "Missing required parameter ";
+
+    private static final String PARAM_TIMELINE = "timeline";
+    private static final String PARAM_SHARD_INDEX = "shardIndex";
+    private static final String PARAM_SHARD_COUNT = "shardCount";
+    private static final String PARAM_TAKE = "take";
+    private static final String PARAM_FROM = "from";
+    private static final String PARAM_TO = "to";
+
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
     private final AuthManager authManager;
+    private final int timetrapCountLimit;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager) {
+    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int timetrapCountLimit) {
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
         this.authManager = authManager;
+        this.timetrapCountLimit = timetrapCountLimit;
+    }
+
+    public static boolean isTimetrapCountLimitExceeded(long from, long to, long timetrapSize, int timetrapCountLimit) {
+        return (to - from) >= TimeUtil.millisToTicks(timetrapCountLimit * timetrapSize);
     }
 
     @Override
@@ -60,10 +76,13 @@ public class ReadTimelineHandler implements HttpHandler {
         }
         String apiKey = optionalApiKey.get();
 
-        Map<String, Deque<String>> queryParameters = httpServerExchange.getQueryParameters();
-        String timelineName = queryParameters.get("timeline").getFirst();
+        Optional<String> optionalTimelineName = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TIMELINE);
+        if (!optionalTimelineName.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TIMELINE);
+            return;
+        }
 
-        AuthResult authResult = authManager.authRead(apiKey, timelineName);
+        AuthResult authResult = authManager.authRead(apiKey, optionalTimelineName.get());
 
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
@@ -74,15 +93,77 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        int shardIndex = Integer.valueOf(queryParameters.get("shardIndex").getFirst());
-        int shardCount = Integer.valueOf(queryParameters.get("shardCount").getFirst());
-        int take = Integer.valueOf(queryParameters.get("take").getFirst());
-        long from = Long.valueOf(queryParameters.get("from").getFirst());
-        long to = Long.valueOf(queryParameters.get("to").getFirst());
+        Optional<String> optionalShardIndex = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_SHARD_INDEX);
+        if (!optionalShardIndex.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_SHARD_INDEX);
+            return;
+        }
 
-        Optional<Timeline> timeline = timelineRepository.read(timelineName);
-        if (!timeline.isPresent()) {
+        Result<Integer, String> shardIndex = Parsers.parseInteger(optionalShardIndex.get());
+        if (!shardIndex.isOk()) {
+            ResponseUtil.badRequest(httpServerExchange, shardIndex.getError() + " in parameter " + PARAM_SHARD_INDEX);
+            return;
+        }
+
+        Optional<String> optionalShardCount = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_SHARD_COUNT);
+        if (!optionalShardCount.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_SHARD_COUNT);
+            return;
+        }
+
+        Result<Integer, String> shardCount = Parsers.parseInteger(optionalShardCount.get());
+        if (!shardCount.isOk()) {
+            ResponseUtil.badRequest(httpServerExchange, shardCount.getError() + " in parameter " + PARAM_SHARD_COUNT);
+            return;
+        }
+
+        Optional<String> optionalTake = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TAKE);
+        if (!optionalTake.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TAKE);
+            return;
+        }
+
+        Result<Integer, String> take = Parsers.parseInteger(optionalTake.get());
+        if (!take.isOk()) {
+            ResponseUtil.badRequest(httpServerExchange, take.getError() + " in parameter " + PARAM_TAKE);
+            return;
+        }
+
+        Optional<String> optionalFrom = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_FROM);
+        if (!optionalFrom.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_FROM);
+            return;
+        }
+
+        Result<Long, String> from = Parsers.parseLong(optionalFrom.get());
+        if (!from.isOk()) {
+            ResponseUtil.badRequest(httpServerExchange, take.getError() + " in parameter " + PARAM_FROM);
+            return;
+        }
+
+        Optional<String> optionalTo = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TO);
+        if (!optionalTo.isPresent()) {
+            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TO);
+            return;
+        }
+
+        Result<Long, String> to = Parsers.parseLong(optionalTo.get());
+        if (!to.isOk()) {
+            ResponseUtil.badRequest(httpServerExchange, take.getError() + " in parameter " + PARAM_TO);
+            return;
+        }
+
+        Optional<Timeline> optionalTimeline = timelineRepository.read(optionalTimelineName.get());
+        if (!optionalTimeline.isPresent()) {
             ResponseUtil.notFound(httpServerExchange);
+            return;
+        }
+
+        Timeline timeline = optionalTimeline.get();
+        if (isTimetrapCountLimitExceeded(from.get(), to.get(), timeline.getTimetrapSize(), timetrapCountLimit)) {
+            ResponseUtil.badRequest(
+                    httpServerExchange,
+                    "Time interval should not exceeded " + TimeUtil.millisToTicks(timetrapCountLimit * timeline.getTimetrapSize()) + " ticks, but requested " + (to.get() - from.get()) + " ticks");
             return;
         }
 
@@ -91,7 +172,13 @@ public class ReadTimelineHandler implements HttpHandler {
                 try {
                     TimelineState readState = STATE_READER.read(new Decoder(message));
 
-                    TimelineByteContent byteContent = timelineReader.readTimeline(timeline.get(), readState, shardIndex, shardCount, take, from, to);
+                    TimelineByteContent byteContent = timelineReader.readTimeline(optionalTimeline.get(),
+                            readState,
+                            shardIndex.get(),
+                            shardCount.get(),
+                            take.get(),
+                            from.get(),
+                            to.get());
 
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     Encoder encoder = new Encoder(stream);
@@ -100,7 +187,7 @@ public class ReadTimelineHandler implements HttpHandler {
                     exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
                 } catch (Exception e) {
                     LOGGER.error("Error on processing request", e);
-                    exchange.setStatusCode(500);
+                    ResponseUtil.internalServerError(exchange);
                 } finally {
                     exchange.endExchange();
                 }
