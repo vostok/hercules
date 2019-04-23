@@ -6,9 +6,10 @@ import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.health.CommonMetrics;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
@@ -39,6 +40,7 @@ public class TimelineSinkDaemon {
     private static CassandraConnector cassandraConnector;
     private static TimelineSink timelineSink;
     private static ApplicationStatusHttpServer applicationStatusHttpServer;
+    private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -52,6 +54,7 @@ public class TimelineSinkDaemon {
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
         Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
         Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+        Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
         ApplicationContextHolder.init("Hercules timeline sink", "sink.timeline", contextProperties);
@@ -60,6 +63,10 @@ public class TimelineSinkDaemon {
         final String timelineName = Props.TIMELINE.extract(sinkProperties);
 
         try {
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+            CommonMetrics.registerCommonMetrics(metricsCollector);
+
             applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
             applicationStatusHttpServer.start();
 
@@ -77,7 +84,12 @@ public class TimelineSinkDaemon {
             }
 
             Timeline timeline = timelineOptional.get();
-            timelineSink = new TimelineSink(streamsProperties, timeline, cassandraConnector);
+            timelineSink = new TimelineSink(
+                    streamsProperties,
+                    timeline,
+                    cassandraConnector,
+                    metricsCollector
+            );
             timelineSink.start();
         } catch (Throwable t) {
             LOGGER.error("Error on starting timeline sink daemon", t);
@@ -127,6 +139,14 @@ public class TimelineSinkDaemon {
         } catch (Throwable t) {
             LOGGER.error("Error on stopping status server", t);
             //TODO: Process error
+        }
+
+        try {
+            if (metricsCollector != null) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping metrics collector", t);
         }
 
         LOGGER.info("Finished Timeline Sink Daemon shutdown for {} millis", System.currentTimeMillis() - start);
