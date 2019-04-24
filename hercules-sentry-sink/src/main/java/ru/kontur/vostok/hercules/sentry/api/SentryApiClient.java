@@ -22,11 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.sentry.api.auth.BearerAuthHttpInterceptor;
 import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
-import ru.kontur.vostok.hercules.sentry.api.model.OrganizationCreateModel;
+import ru.kontur.vostok.hercules.sentry.api.model.Organization;
 import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
-import ru.kontur.vostok.hercules.sentry.api.model.ProjectCreateModel;
+import ru.kontur.vostok.hercules.sentry.api.model.Project;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
-import ru.kontur.vostok.hercules.sentry.api.model.TeamCreateModel;
+import ru.kontur.vostok.hercules.sentry.api.model.Team;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
@@ -47,9 +47,9 @@ public class SentryApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(SentryApiClient.class);
 
     private static final String API_URL = "/api/0/";
-    private static final String PROJECTS_URL = "projects/";
-    private static final String TEAM_URL = "teams/";
     private static final String ORGANIZATIONS_URL = "organizations/";
+    private static final String PROJECTS_URL = "projects/";
+    private static final String TEAMS_URL = "teams/";
     private static final String KEYS_URL = "keys/";
 
     private final ObjectMapper objectMapper;
@@ -69,6 +69,11 @@ public class SentryApiClient {
         return request(new HttpHead(API_URL), new TypeReference<Void>() {});
     }
 
+    /**
+     * Get the organizations for this Semtry API client
+     *
+     * @return the {@link Result} object with a list of organizations
+     */
     public Result<List<OrganizationInfo>, String> getOrganizations() {
         String uri = API_URL + ORGANIZATIONS_URL;
         return pagedRequest(new HttpGet(uri), new TypeReference<List<OrganizationInfo>>() {});
@@ -104,7 +109,7 @@ public class SentryApiClient {
      * @return the {@link Result} object with a list of teams
      */
     public Result<List<TeamInfo>, String> getTeams(String organization) {
-        String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + TEAM_URL;
+        String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + TEAMS_URL;
         return pagedRequest(new HttpGet(uri), new TypeReference<List<TeamInfo>>() {} );
     }
 
@@ -115,7 +120,7 @@ public class SentryApiClient {
      * @return the {@link Result} object with created organization or error
      */
     public Result<OrganizationInfo, String> createOrganization(String organization) {
-        OrganizationCreateModel organizationModel = new OrganizationCreateModel(organization);
+        Organization organizationModel = new Organization(organization);
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] body = {};
         try {
@@ -138,7 +143,7 @@ public class SentryApiClient {
      * @return the {@link Result} object with created team or error
      */
     public Result<TeamInfo, String> createTeam(String organization, String team) {
-        TeamCreateModel teamModel = new TeamCreateModel(team);
+        Team teamModel = new Team(team);
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] body = {};
         try {
@@ -146,7 +151,7 @@ public class SentryApiClient {
         } catch (JsonProcessingException e) {
             LOGGER.error("Cannot create JSON from model for team creation", e);
         }
-        String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + TEAM_URL;
+        String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + TEAMS_URL;
         HttpPost post = new HttpPost(uri);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
         LOGGER.info(String.format("Creating of new team '%s' in Sentry", team));
@@ -162,7 +167,7 @@ public class SentryApiClient {
      * @return the {@link Result} object with created project or error
      */
     public Result<ProjectInfo, String> createProject(String organization, String team, String project) {
-        ProjectCreateModel projectModel = new ProjectCreateModel(project);
+        Project projectModel = new Project(project);
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] body = {};
         try {
@@ -170,7 +175,7 @@ public class SentryApiClient {
         } catch (JsonProcessingException e) {
             LOGGER.error("Cannot create JSON from model for project creation", e);
         }
-        String uri = API_URL + TEAM_URL + organization + "/" + team + "/" + PROJECTS_URL;
+        String uri = API_URL + TEAMS_URL + organization + "/" + team + "/" + PROJECTS_URL;
         HttpPost post = new HttpPost(uri);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
         LOGGER.info(String.format("Creating of new project '%s' in Sentry", project));

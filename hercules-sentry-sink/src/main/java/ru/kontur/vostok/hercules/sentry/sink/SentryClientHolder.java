@@ -11,13 +11,12 @@ import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
-import ru.kontur.vostok.hercules.sentry.sink.sentryclientfactory.CustomClientFactory;
+import ru.kontur.vostok.hercules.sentry.sink.client.CustomClientFactory;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
 import ru.kontur.vostok.hercules.util.validation.Validator;
-import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -27,9 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -45,8 +41,8 @@ public class SentryClientHolder {
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
     private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
-    private static final String regex = "[a-z0-9_\\-]+";
-    private static final Validator<String> slugValidator = StringValidators.matchesWith(regex);
+    private static final String SLUG_REGEX = "[a-z0-9_\\-]+";
+    private static final Validator<String> slugValidator = StringValidators.matchesWith(SLUG_REGEX);
 
     /**
      * Clients is a {@link AtomicReference} with a base of Sentry clients and their organizations and projects.<p>
@@ -57,18 +53,14 @@ public class SentryClientHolder {
      */
     private final AtomicReference<Map<String, Map<String, SentryClient>>> clients = new AtomicReference<>(Collections.emptyMap());
 
-    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
-
     private final SentryApiClient sentryApiClient;
     private final SentryClientFactory sentryClientFactory = new CustomClientFactory();
     private final String defaultTeam;
 
-    public SentryClientHolder(Properties sinkProperties,
-                              SentryApiClient sentryApiClient) {
+    public SentryClientHolder(Properties sinkProperties, SentryApiClient sentryApiClient) {
         this.sentryApiClient = sentryApiClient;
         this.defaultTeam = Props.DEFAULT_TEAM.extract(sinkProperties);
-        int updateRateMs = Props.UPDATE_RATE_MS.extract(sinkProperties);
-        this.scheduledExecutor.scheduleAtFixedRate(this::update, 0,updateRateMs, TimeUnit.MILLISECONDS);
+        update();
     }
 
     /**
@@ -212,8 +204,6 @@ public class SentryClientHolder {
      * then updates projects of every organization,<p>
      * then updates dsn-keys of every project,<p>
      * then updates clients by dsn-keys.
-     * <p>
-     * This method executes by schedule
      */
     private void update() {
         try {
@@ -281,11 +271,6 @@ public class SentryClientHolder {
     }
 
     private static class Props {
-        static final PropertyDescription<Integer> UPDATE_RATE_MS = PropertyDescriptions
-                .integerProperty("update.rate")
-                .withDefaultValue(10_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
         static final PropertyDescription<String> DEFAULT_TEAM = PropertyDescriptions
                 .stringProperty("sentry.default.team")
                 .withDefaultValue("default_team")

@@ -15,8 +15,6 @@ Application is configured through properties file.
 
 `sink.sentry.default.team` - default Sentry team name. This team used to create new Sentry project. Default value: `default_team`
 
-`sink.update.rate` - a period in milliseconds of updating Sentry clients from Sentry to Sentry Sink. Default value: `10000`
-
 ### Apache Curator settings
 See Curator Config from Apache Curator documentation. Main settings are presented below.
 

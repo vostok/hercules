@@ -5,6 +5,7 @@ Common tags can be used in different application and store meta information abou
 ```yaml
 CommonTags:
   project?: String
+  scope?: String
   service?: String
   environment?: String
 ```
@@ -15,10 +16,10 @@ We use two level hierarchy (like GitHub, Sentry etc.).
 Tag `project` represents top level hierarchy, it can be the name of your project,
 group or just the name of your service, in case of monolith project.
 
-Tag `service` represents low leve hierarchy, it can be front-end and back-end part of your project or some additional service,
+Tag `scope` represents low level hierarchy, it can be front-end and back-end part of your project or some additional service,
 e. g. mail service, background worker etc.
 
-Tag service should be used only with tag project.
+Tag `scope` should be used only with tag project.
 
 ## Environment
 

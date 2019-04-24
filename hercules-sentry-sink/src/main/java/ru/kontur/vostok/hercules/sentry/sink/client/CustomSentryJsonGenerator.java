@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.sentry.sink.sentryclientfactory;
+package ru.kontur.vostok.hercules.sentry.sink.client;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.sentry.marshaller.json.SentryJsonGenerator;

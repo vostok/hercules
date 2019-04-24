@@ -6,13 +6,13 @@ package ru.kontur.vostok.hercules.sentry.api.model;
  *
  * @author Petr Demenev
  */
-public class OrganizationCreateModel {
+public class Organization {
 
     private String name;
     private String slug;
     private String agreeTerms;
 
-    public OrganizationCreateModel(String name) {
+    public Organization(String name) {
         this.name = name;
         this.slug = name;
         this.agreeTerms = "true";

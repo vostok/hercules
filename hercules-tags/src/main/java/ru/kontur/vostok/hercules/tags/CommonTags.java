@@ -28,6 +28,13 @@ public final class CommonTags {
             .build();
 
     /**
+     * Scope tag
+     */
+    public static final TagDescription<Optional<String>> SCOPE_TAG = TagDescriptionBuilder.string("scope")
+            .optional()
+            .build();
+
+    /**
      * Service tag
      */
     public static final TagDescription<Optional<String>> SERVICE_TAG = TagDescriptionBuilder.string("service")

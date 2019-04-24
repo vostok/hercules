@@ -13,7 +13,6 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
-import ru.kontur.vostok.hercules.tags.ScopeTags;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -25,18 +24,6 @@ import java.util.UUID;
  * @author Gregory Koshelev
  */
 public class SentrySyncProcessor implements SingleSender<UUID, Event> {
-
-    private static class Props {
-        static final PropertyDescription<Level> REQUIRED_LEVEL = PropertyDescriptions
-                .propertyOfType(Level.class, "sentry.level")
-                .withParser(SentryLevelEnumParser::parseAsResult)
-                .withDefaultValue(Level.WARNING)
-                .build();
-        static final PropertyDescription<String> DEFAULT_PROJECT = PropertyDescriptions
-                .stringProperty("sentry.default.project")
-                .withDefaultValue("default_project")
-                .build();
-    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
@@ -73,7 +60,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             return false;
         }
 
-        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), ScopeTags.SCOPE_TAG);
+        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.SCOPE_TAG);
         if (!sentryProjectName.isPresent()) {
             sentryProjectName = Optional.of(defaultSentryProject);
         }
@@ -96,5 +83,17 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
 
     @Override
     public void close() throws Exception {
+    }
+
+    private static class Props {
+        static final PropertyDescription<Level> REQUIRED_LEVEL = PropertyDescriptions
+                .propertyOfType(Level.class, "sentry.level")
+                .withParser(SentryLevelEnumParser::parseAsResult)
+                .withDefaultValue(Level.WARNING)
+                .build();
+        static final PropertyDescription<String> DEFAULT_PROJECT = PropertyDescriptions
+                .stringProperty("sentry.default.project")
+                .withDefaultValue("default_project")
+                .build();
     }
 }

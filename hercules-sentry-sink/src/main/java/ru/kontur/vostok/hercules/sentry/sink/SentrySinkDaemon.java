@@ -48,11 +48,9 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
         final String sentryUrl = Props.SENTRY_URL.extract(sinkProperties);
         final String sentryToken = Props.SENTRY_TOKEN.extract(sinkProperties);
 
-        return new SentrySyncProcessor(
-                sinkProperties,
-                new SentryClientHolder(sinkProperties,
-                        new SentryApiClient(sentryUrl, sentryToken))
-        );
+        SentryApiClient sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
+        SentryClientHolder sentryClientHolder = new SentryClientHolder(sinkProperties, sentryApiClient);
+        return new SentrySyncProcessor(sinkProperties,sentryClientHolder);
     }
 
     @Override
