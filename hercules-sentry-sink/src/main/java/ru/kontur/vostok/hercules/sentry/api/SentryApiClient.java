@@ -126,7 +126,7 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(organizationModel);
         } catch (JsonProcessingException e) {
-            LOGGER.error("Cannot create JSON from model for organization creation", e);
+            LOGGER.error("Cannot create JSON from model for organization creation: {}", e.getMessage());
         }
         String uri = API_URL + ORGANIZATIONS_URL;
         HttpPost post = new HttpPost(uri);
@@ -149,7 +149,7 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(teamModel);
         } catch (JsonProcessingException e) {
-            LOGGER.error("Cannot create JSON from model for team creation", e);
+            LOGGER.error("Cannot create JSON from model for team creation: {}", e.getMessage());
         }
         String uri = API_URL + ORGANIZATIONS_URL + organization + "/" + TEAMS_URL;
         HttpPost post = new HttpPost(uri);
@@ -173,7 +173,7 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(projectModel);
         } catch (JsonProcessingException e) {
-            LOGGER.error("Cannot create JSON from model for project creation", e);
+            LOGGER.error("Cannot create JSON from model for project creation: {}", e.getMessage());
         }
         String uri = API_URL + TEAMS_URL + organization + "/" + team + "/" + PROJECTS_URL;
         HttpPost post = new HttpPost(uri);
@@ -194,7 +194,7 @@ public class SentryApiClient {
             }
             return Result.ok(value);
         } catch (Exception e) {
-            LOGGER.error("Error on request", e);
+            LOGGER.error("Error on request: {}", e.getMessage());
             return Result.error(e.getMessage());
         }
     }
@@ -219,7 +219,7 @@ public class SentryApiClient {
             } while (nextCursor.isPresent());
             return Result.ok(resultList);
         } catch (Exception e) {
-            LOGGER.error("Error on paged request", e);
+            LOGGER.error("Error on paged request: {}", e.getMessage());
             return Result.error(e.getMessage());
         }
     }

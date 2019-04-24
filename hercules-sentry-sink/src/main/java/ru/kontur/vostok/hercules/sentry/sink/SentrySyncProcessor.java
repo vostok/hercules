@@ -65,9 +65,9 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             sentryProjectName = Optional.of(defaultSentryProject);
         }
 
-        Optional<SentryClient> sentryClient = sentryClientHolder.getClient(organizationName.get(), sentryProjectName.get());
+        Optional<SentryClient> sentryClient = sentryClientHolder.getOrCreateClient(organizationName.get(), sentryProjectName.get());
         if (!sentryClient.isPresent()) {
-            LOGGER.warn(String.format("Cannot get client for Sentry organization/project '{%s/%s}'",
+            LOGGER.error(String.format("Cannot get client for Sentry organization/project '{%s/%s}'",
                     organizationName.get(), sentryProjectName.get()));
             return false;
         }

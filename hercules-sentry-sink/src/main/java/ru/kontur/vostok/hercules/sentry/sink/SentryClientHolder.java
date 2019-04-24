@@ -85,13 +85,16 @@ public class SentryClientHolder {
      * @param project the project
      * @return the {@link Optional} describing SentryClient matching an organization and a project
      */
-    public Optional<SentryClient> getClient(String organization, String project) {
+    public Optional<SentryClient> getOrCreateClient(String organization, String project) {
         Map<String, SentryClient> projectMap;
         SentryClient sentryClient = null;
 
         boolean triedToUpdate = false;
         boolean triedToCreateOrg = false;
+        boolean needNewTryDueOrgConflict = true;
+        boolean needNewTryDueTeamConflict = true;
         boolean triedToCreateProj = false;
+        boolean needNewTryDueProjConflict = true;
 
         boolean success = false;
         while(!success) {
@@ -106,23 +109,31 @@ public class SentryClientHolder {
                 }
 
                 if (!triedToUpdate) {
-                    LOGGER.info(String.format("Force update Sentry clients to find organization '%s'", organization));
                     update();
                     triedToUpdate = true;
                     continue;
                 } else if (!triedToCreateOrg) {
                     Result<OrganizationInfo, String> orgCreationResult = sentryApiClient.createOrganization(organization);
                     if (!orgCreationResult.isOk()){
-                        LOGGER.error(String.format("Cannot create organization '%s'", organization), orgCreationResult.getError());
+                        LOGGER.error(String.format("Cannot create organization '%s': {}", organization), orgCreationResult.getError());
+                        if (orgCreationResult.getError().equals("CONFLICT") && needNewTryDueOrgConflict) {
+                            update();
+                            needNewTryDueOrgConflict = false;
+                            continue;
+                        }
                         break;
                     }
                     Result<TeamInfo, String> teamCreationResult = sentryApiClient.createTeam(organization, defaultTeam);
                     if (!teamCreationResult.isOk()){
-                        LOGGER.error(String.format("Cannot create default team in organization '%s'", organization), teamCreationResult.getError());
+                        LOGGER.error(String.format("Cannot create default team in organization '%s': {}", organization), teamCreationResult.getError());
+                        if(teamCreationResult.getError().equals("CONFLICT") && needNewTryDueTeamConflict) {
+                            update();
+                            needNewTryDueTeamConflict = false;
+                            continue;
+                        }
                         break;
                     }
                     triedToCreateOrg = true;
-                    LOGGER.info("Force update Sentry clients to pull differences from Sentry");
                     update();
                     continue;
                 } else {
@@ -141,20 +152,28 @@ public class SentryClientHolder {
                 }
 
                 if (!triedToUpdate) {
-                    LOGGER.info(String.format("Force update Sentry clients to find project %s", project));
                     update();
                     triedToUpdate = true;
                 } else if (!triedToCreateProj) {
-                    Result<Void, String> checkResult = checkDefaultTeamExistenceOrCreate(organization);
-                    if (!checkResult.isOk()) {
+                    Result<Void, String> existsDefaultTeam = findOrCreateDefaultTeam(organization);
+                    if (!existsDefaultTeam.isOk()) {
+                        if (existsDefaultTeam.getError().equals("CONFLICT") && needNewTryDueTeamConflict) {
+                            update();
+                            needNewTryDueTeamConflict = false;
+                            continue;
+                        }
                         break;
                     }
                     Result<ProjectInfo, String> projectCreationResult = sentryApiClient.createProject(organization, defaultTeam, project);
                     if (!projectCreationResult.isOk()) {
-                        LOGGER.error(String.format("Cannot create project %s", project), projectCreationResult.getError());
+                        LOGGER.error(String.format("Cannot create project %s: {}", project), projectCreationResult.getError());
+                        if (projectCreationResult.getError().equals("CONFLICT") && needNewTryDueProjConflict) {
+                            update();
+                            needNewTryDueProjConflict = false;
+                            continue;
+                        }
                     }
                     triedToCreateProj = true;
-                    LOGGER.info("Force update Sentry clients to pull differences from Sentry");
                     update();
                 } else {
                     LOGGER.error(String.format("Error of creating in Sentry or updating into Sentry Sink of project '%s'", project));
@@ -178,10 +197,10 @@ public class SentryClientHolder {
      * @param organization the organization
      * @return the {@link Result} object with success information.
      */
-    private Result<Void, String> checkDefaultTeamExistenceOrCreate(String organization) {
+    private Result<Void, String> findOrCreateDefaultTeam(String organization) {
         Result<List<TeamInfo>, String> teamListResult = sentryApiClient.getTeams(organization);
         if (!teamListResult.isOk()) {
-            LOGGER.error(String.format("Cannot get teams of organization '%s' for search default team", organization), teamListResult.getError());
+            LOGGER.error(String.format("Cannot get teams of organization '%s' for search default team: {}", organization), teamListResult.getError());
             return Result.error(teamListResult.getError());
         }
         for (TeamInfo teamInfo : teamListResult.get()) {
@@ -191,8 +210,8 @@ public class SentryClientHolder {
         }
         Result<TeamInfo, String> creationResult = sentryApiClient.createTeam(organization, defaultTeam);
         if (!creationResult.isOk()) {
-            LOGGER.error(String.format("Cannot create default team in organization '%s'", organization), creationResult.getError());
-            return Result.error(teamListResult.getError());
+            LOGGER.error(String.format("Cannot create default team in organization '%s': {}", organization), creationResult.getError());
+            return Result.error(creationResult.getError());
         }
         return Result.ok();
     }
@@ -207,6 +226,7 @@ public class SentryClientHolder {
      */
     private void update() {
         try {
+            LOGGER.info("Updating Sentry clients");
             Result<List<OrganizationInfo>, String> organizations = sentryApiClient.getOrganizations();
             if (!organizations.isOk()) {
                 LOGGER.error("Cannot update organizations info due to: {}", organizations.getError());
@@ -251,7 +271,7 @@ public class SentryClientHolder {
 
             clients.set(organizationMap);
         } catch (Throwable t) {
-            LOGGER.error("Error in scheduled thread", t);
+            LOGGER.error("Error of updating Sentry clients: {}", t.getMessage());
             System.exit(1);
         }
     }
