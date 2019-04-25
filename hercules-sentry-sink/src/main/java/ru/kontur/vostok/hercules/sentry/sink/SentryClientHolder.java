@@ -64,17 +64,17 @@ public class SentryClientHolder {
     }
 
     /**
-     * Get Sentry client by pair of an organization and a project.
+     * Get or create Sentry client by pair of an organization and a project.
      * <p>
      * If the organization and the project of event exist,
      * it is the case of the cheapest and simplest operation.
      * <p>
-     * If the organization or the project of event does not exist in clients,
+     * If the organization or the project of event does not exist in the clients in this class,
      * the method updates clients from the Sentry
      * and then makes one another attempt to get Sentry client.
      * <p>
      * If the organization of event does not exist in the Sentry,
-     * the method creates new organization and default team
+     * the method creates new organization
      * and then makes one another attempt to get Sentry client.
      * <p>
      * If the project of event does not exist in the Sentry,
@@ -119,16 +119,6 @@ public class SentryClientHolder {
                         if (orgCreationResult.getError().equals("CONFLICT") && needNewTryDueOrgConflict) {
                             update();
                             needNewTryDueOrgConflict = false;
-                            continue;
-                        }
-                        break;
-                    }
-                    Result<TeamInfo, String> teamCreationResult = sentryApiClient.createTeam(organization, defaultTeam);
-                    if (!teamCreationResult.isOk()){
-                        LOGGER.error(String.format("Cannot create default team in organization '%s': {}", organization), teamCreationResult.getError());
-                        if(teamCreationResult.getError().equals("CONFLICT") && needNewTryDueTeamConflict) {
-                            update();
-                            needNewTryDueTeamConflict = false;
                             continue;
                         }
                         break;

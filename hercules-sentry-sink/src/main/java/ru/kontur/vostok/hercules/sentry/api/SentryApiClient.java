@@ -70,7 +70,7 @@ public class SentryApiClient {
     }
 
     /**
-     * Get the organizations for this Semtry API client
+     * Get the organizations for this Sentry API client
      *
      * @return the {@link Result} object with a list of organizations
      */

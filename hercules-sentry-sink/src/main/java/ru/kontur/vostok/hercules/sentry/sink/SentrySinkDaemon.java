@@ -22,16 +22,6 @@ import java.util.UUID;
  */
 public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
 
-    private static class Props {
-        static final PropertyDescription<String> SENTRY_URL = PropertyDescriptions
-                .stringProperty("sentry.url")
-                .build();
-
-        static final PropertyDescription<String> SENTRY_TOKEN = PropertyDescriptions
-                .stringProperty("sentry.token")
-                .build();
-    }
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySinkDaemon.class);
 
     private CuratorClient curatorClient;
@@ -94,5 +84,15 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
         } catch (Throwable t) {
             LOGGER.error("Error on stopping curator client", t);
         }
+    }
+
+    private static class Props {
+        static final PropertyDescription<String> SENTRY_URL = PropertyDescriptions
+                .stringProperty("sentry.url")
+                .build();
+
+        static final PropertyDescription<String> SENTRY_TOKEN = PropertyDescriptions
+                .stringProperty("sentry.token")
+                .build();
     }
 }
