@@ -91,6 +91,7 @@ public class SentryClientHolder {
             if (sentryClientOptional.isPresent()) {
                 success = true;
             } else {
+                LOGGER.info(String.format("Cannot find client in cache for project '%s' in organization '%s'", organization, project));
                 Result<Void, String> validationResult = validateSlugs(organization, project);
                 if (!validationResult.isOk()) {
                     break;

@@ -65,10 +65,9 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             sentryProjectName = Optional.of(defaultSentryProject);
         }
 
-        sentryClientHolder.update();
         Optional<SentryClient> sentryClient = sentryClientHolder.getOrCreateClient(organizationName.get(), sentryProjectName.get());
         if (!sentryClient.isPresent()) {
-            LOGGER.error(String.format("Cannot get client for Sentry organization/project '{%s/%s}'",
+            LOGGER.error(String.format("Cannot get client for Sentry organization/project '%s/%s'",
                     organizationName.get(), sentryProjectName.get()));
             return false;
         }
@@ -78,9 +77,6 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             sentryClient.get().sendEvent(sentryEvent);
             return true;
         } catch (Exception e) {
-            //FIXME If a project (or DSN, ...) is removed from Sentry but exists in cache, the sentryClient will contain removed data.
-            //FIXME The event will not be received by Sentry with this sentryClient.
-            //FIXME We need to update cache and retry
             throw new BackendServiceFailedException(e);
         }
     }
