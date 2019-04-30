@@ -2,9 +2,6 @@ package ru.kontur.vostok.hercules.sentry.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.kafka.util.processing.ServicePinger;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.AbstractSingleSinkDaemon;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.SingleSender;
@@ -13,7 +10,6 @@ import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
-import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -23,8 +19,6 @@ import java.util.UUID;
 public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySinkDaemon.class);
-
-    private CuratorClient curatorClient;
 
     /**
      * Main starting point
@@ -39,7 +33,7 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
         final String sentryToken = Props.SENTRY_TOKEN.extract(sinkProperties);
 
         SentryApiClient sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
-        SentryClientHolder sentryClientHolder = new SentryClientHolder(sinkProperties, sentryApiClient);
+        SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient);
         sentryClientHolder.update();
         return new SentrySyncProcessor(sinkProperties,sentryClientHolder);
     }
@@ -62,29 +56,6 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
     @Override
     protected String getDaemonId() {
         return "sink.sentry";
-    }
-
-    @Override
-    protected void initSink(Properties properties) {
-        super.initSink(properties);
-
-        Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
-
-        curatorClient = new CuratorClient(curatorProperties);
-        curatorClient.start();
-    }
-
-    @Override
-    protected void shutdownSink() {
-        super.shutdownSink();
-
-        try {
-            if (Objects.nonNull(curatorClient)) {
-                curatorClient.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping curator client", t);
-        }
     }
 
     private static class Props {

@@ -10,12 +10,12 @@ public class Organization {
 
     private String name;
     private String slug;
-    private String agreeTerms;
+    private boolean agreeTerms;
 
     public Organization(String name) {
         this.name = name;
         this.slug = name;
-        this.agreeTerms = "true";
+        this.agreeTerms = true;
     }
 
     public String getName() {
@@ -26,7 +26,7 @@ public class Organization {
         return slug;
     }
 
-    public String getAgreeTerms() {
+    public boolean isAgreeTerms() {
         return agreeTerms;
     }
 }

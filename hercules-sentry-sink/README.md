@@ -13,24 +13,6 @@ Application is configured through properties file.
 
 `sink.sentry.default.project` - default Sentry project mane. It is used to get project client if Hercules-event does not have Scope-tag. Default value: `default_project`
 
-`sink.sentry.default.team` - default Sentry team name. This team used to create new Sentry project. Default value: `default_team`
-
-### Apache Curator settings
-See Curator Config from Apache Curator documentation. Main settings are presented below.
-
-
-`curator.connectString` - default value: `localhost:2181`
-
-`curator.connectionTimeout` - default value: `10000`
-
-`curator.sessionTimeout` - default value: `30000`
-
-`curator.retryPolicy.baseSleepTime` - default value: `1000`
-
-`curator.retryPolicy.maxRetries` - default value: `5`
-
-`curator.retryPolicy.maxSleepTime` - default value: `8000`
-
 ### Stream settings
 `streams.bootstrap.servers` - list of host/port pairs to use for establishing the initial connection to the Kafka cluster
 
@@ -70,8 +52,6 @@ Stream with log events should be predefined.
 sink.sentry.url=https://sentry.io
 sink.sentry.token=1234567890768132cde645f1ba1bcd4ef67ab78cd9ef89801a45be5747c68f87
 sink.sentry.level=warning
-
-curator.connectString=localhost:2181
 
 streams.bootstrap.servers=localhost:9092
 streams.stream.pattern=mystream

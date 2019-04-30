@@ -13,8 +13,6 @@ import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.sentry.sink.client.CustomClientFactory;
 import ru.kontur.vostok.hercules.util.functional.Result;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
@@ -25,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -55,11 +52,9 @@ public class SentryClientHolder {
 
     private final SentryApiClient sentryApiClient;
     private final SentryClientFactory sentryClientFactory = new CustomClientFactory();
-    private final String defaultTeam;
 
-    public SentryClientHolder(Properties sinkProperties, SentryApiClient sentryApiClient) {
+    public SentryClientHolder(SentryApiClient sentryApiClient) {
         this.sentryApiClient = sentryApiClient;
-        this.defaultTeam = Props.DEFAULT_TEAM.extract(sinkProperties);
     }
 
     /**
@@ -80,47 +75,42 @@ public class SentryClientHolder {
      * @return the {@link Optional} describing SentryClient matching an organization and a project
      * or empty {@link Optional} if cannot get or create client
      */
-    public Optional<SentryClient> getOrCreateClient(String organization, String project) {
-        Optional<SentryClient> sentryClientOptional = Optional.empty();
-        boolean needNewTryDueOrgConflict = true;
-        boolean needNewTryDueProjConflict = true;
+    public Result<SentryClient, String> getOrCreateClient(String organization, String project) {
+        Result<SentryClient, String> sentryClientResult = null;
         boolean triedToUpdate = false;
         boolean success = false;
         while (!success) {
-            sentryClientOptional = getClient(organization, project);
-            if (sentryClientOptional.isPresent()) {
+            sentryClientResult = getClient(organization, project);
+            if (sentryClientResult.isOk()) {
                 success = true;
             } else {
-                LOGGER.info(String.format("Cannot find client in cache for project '%s' in organization '%s'", organization, project));
+                LOGGER.info(String.format("Sentry client is not found in cache for project '%s' in organization '%s'", organization, project));
                 Result<Void, String> validationResult = validateSlugs(organization, project);
                 if (!validationResult.isOk()) {
+                    sentryClientResult = Result.error(validationResult.getError());
                     break;
                 }
-                Result<Void, String> orgExists = findOrCreateOrganization(organization);
+                Result<Void, String> orgExists = createOrganizationIfNotExists(organization);
                 if (!orgExists.isOk()) {
-                    if (orgExists.getError().equals("CONFLICT") && needNewTryDueOrgConflict) {
-                        needNewTryDueOrgConflict = false;
-                        continue;
-                    }
+                    sentryClientResult = Result.error(orgExists.getError());
                     break;
                 }
-                Result<Void, String> projectExists = findOrCreateProject(organization, project);
+                Result<Void, String> projectExists = createProjectIfNotExists(organization, project);
                 if (!projectExists.isOk()) {
-                    if (projectExists.getError().equals("CONFLICT") && needNewTryDueProjConflict) {
-                        needNewTryDueProjConflict = false;
-                        continue;
-                    }
+                    sentryClientResult = Result.error(projectExists.getError());
                     break;
                 }
                 if (triedToUpdate) {
-                    LOGGER.error("Error due to update of Sentry clients into Sentry Sink cache");
+                    String errorMessage = "Error due to updating Sentry clients into Sentry Sink cache";
+                    LOGGER.error(errorMessage);
+                    sentryClientResult = Result.error(errorMessage);
                     break;
                 }
                 update();
                 triedToUpdate = true;
             }
         }
-        return sentryClientOptional;
+        return sentryClientResult;
     }
 
     /**
@@ -131,16 +121,16 @@ public class SentryClientHolder {
      * @return the {@link Optional} describing SentryClient
      * or empty {@link Optional} if cannot get client from cache
      */
-    public Optional<SentryClient> getClient(String organization, String project) {
+    public Result<SentryClient, String> getClient(String organization, String project) {
         Map<String, SentryClient> projectMap = clients.get().get(organization);
         if (projectMap == null) {
-            return Optional.empty();
+            return Result.error(String.format("The organization '%s' is not found in the cache", organization));
         }
         SentryClient sentryClient = projectMap.get(project);
         if (sentryClient == null) {
-            return Optional.empty();
+            return Result.error(String.format("The project '%s' is not found in the cache", project));
         }
-        return Optional.of(sentryClient);
+        return Result.ok(sentryClient);
     }
 
     /**
@@ -169,7 +159,7 @@ public class SentryClientHolder {
      * @param organization the organization
      * @return the {@link Result} object with success information
      */
-    public Result<Void, String> findOrCreateOrganization(String organization) {
+    public Result<Void, String> createOrganizationIfNotExists(String organization) {
         Result<List<OrganizationInfo>, String> getListResult = sentryApiClient.getOrganizations();
         if(!getListResult.isOk()) {
             LOGGER.error("Cannot get organizations from Sentry: {}", getListResult.getError());
@@ -197,7 +187,7 @@ public class SentryClientHolder {
      * @param project the project
      * @return the {@link Result} object with success information.
      */
-    public Result<Void, String> findOrCreateProject(String organization, String project) {
+    public Result<Void, String> createProjectIfNotExists(String organization, String project) {
         Result<List<ProjectInfo>, String> getListResult = sentryApiClient.getProjects(organization);
         if (!getListResult.isOk()) {
             LOGGER.error(String.format("Cannot get projects of organization '%s': {}", organization), getListResult.getError());
@@ -208,11 +198,12 @@ public class SentryClientHolder {
                 return Result.ok();
             }
         }
-        Result<Void, String> defaultTeamExists = findOrCreateDefaultTeam(organization);
+        Result<Void, String> defaultTeamExists = createDefaultTeamIfNotExists(organization);
         if (!defaultTeamExists.isOk()) {
             return Result.error(defaultTeamExists.getError());
         }
-        Result<ProjectInfo, String> creationResult = sentryApiClient.createProject(organization, defaultTeam, project);
+        String team = organization;
+        Result<ProjectInfo, String> creationResult = sentryApiClient.createProject(organization, team, project);
         if (!creationResult.isOk()) {
             LOGGER.warn(String.format("Cannot create project '%s' in organization '%s': {}",project, organization), creationResult.getError());
             return Result.error(creationResult.getError());
@@ -227,18 +218,19 @@ public class SentryClientHolder {
      * @param organization the organization
      * @return the {@link Result} object with success information.
      */
-    public Result<Void, String> findOrCreateDefaultTeam(String organization) {
+    public Result<Void, String> createDefaultTeamIfNotExists(String organization) {
         Result<List<TeamInfo>, String> getListResult = sentryApiClient.getTeams(organization);
         if (!getListResult.isOk()) {
             LOGGER.error(String.format("Cannot get teams of organization '%s': {}", organization), getListResult.getError());
             return Result.error(getListResult.getError());
         }
+        String team = organization;
         for (TeamInfo teamInfo : getListResult.get()) {
-            if (teamInfo.getSlug().equals(defaultTeam)) {
+            if (teamInfo.getSlug().equals(team)) {
                 return Result.ok();
             }
         }
-        Result<TeamInfo, String> creationResult = sentryApiClient.createTeam(organization, defaultTeam);
+        Result<TeamInfo, String> creationResult = sentryApiClient.createTeam(organization, team);
         if (!creationResult.isOk()) {
             LOGGER.warn(String.format("Cannot create default team in organization '%s': {}", organization), creationResult.getError());
             return Result.error(creationResult.getError());
@@ -318,13 +310,5 @@ public class SentryClientHolder {
                 DISABLE_UNCAUGHT_EXCEPTION_HANDLING,
                 DISABLE_IN_APP_WARN_MESSAGE
         );
-    }
-
-    private static class Props {
-        static final PropertyDescription<String> DEFAULT_TEAM = PropertyDescriptions
-                .stringProperty("sentry.default.team")
-                .withDefaultValue("default_team")
-                .withValidator(slugValidator)
-                .build();
     }
 }
