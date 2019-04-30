@@ -11,8 +11,6 @@ Application is configured through properties file.
 
 `sink.sentry.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `WARNING`
 
-`sink.sentry.default.project` - default Sentry project mane. It is used to get project client if Hercules-event does not have Scope-tag. Default value: `default_project`
-
 ### Stream settings
 `streams.bootstrap.servers` - list of host/port pairs to use for establishing the initial connection to the Kafka cluster
 
