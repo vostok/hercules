@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.graphite.client;
+package ru.kontur.vostok.hercules.graphite;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

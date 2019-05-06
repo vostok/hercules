@@ -1,11 +1,8 @@
-package ru.kontur.vostok.hercules.graphite.sink;
+package ru.kontur.vostok.hercules.graphite;
 
 import com.codahale.metrics.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.graphite.client.GraphiteClient;
-import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricData;
-import ru.kontur.vostok.hercules.graphite.client.GraphitePinger;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;

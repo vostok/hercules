@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.graphite.sink;
+package ru.kontur.vostok.hercules.graphite;
 
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
