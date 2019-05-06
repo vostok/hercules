@@ -1,31 +1,48 @@
 package ru.kontur.vostok.hercules.graphite.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.Collection;
-import java.util.Locale;
 
-public class GraphiteClient implements GraphiteMetricDataSender {
+public class GraphiteClient implements GraphiteMetricDataSender, AutoCloseable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteConnection.class);
 
-    private final String server;
-    private final int port;
+    private final GraphiteConnectionPool connections;
+    private final int retryAttempts;
 
-    public GraphiteClient(String server, int port) {
-        this.server = server;
-        this.port = port;
+    public GraphiteClient(String server, int port, int retryAttempts) {
+        this.retryAttempts = retryAttempts;
+        connections = new GraphiteConnectionPool(server, port);
     }
 
     @Override
-    public void send(Collection<GraphiteMetricData> data) throws IOException {
-        try (
-                Socket socket = new Socket(server, port);
-                OutputStream stream = socket.getOutputStream();
-                PrintWriter writer = new PrintWriter(stream, true)
-        ) {
-            data.forEach(record -> writer.printf(Locale.ENGLISH, "%s %f %d\n", record.getMetricName(), record.getMetricValue(), record.getMetricUnixTime()));
-            writer.flush();
+    public void send(Collection<GraphiteMetricData> data) throws Exception {
+        Exception lastError = null;
+
+        for (int attempt = 0; attempt < retryAttempts; attempt++) {
+            try {
+                GraphiteConnection connection = connections.acquire();
+                connection.send(data);
+                connections.release(connection);
+            }
+            catch (Exception error) {
+                LOGGER.error("Failed to send metrics to Graphite.", error);
+
+                if (!(error instanceof IOException))
+                    throw error;
+
+                lastError = error;
+            }
         }
+
+        throw lastError;
+    }
+
+    @Override
+    public void close() throws Exception {
+        connections.close();
     }
 }
+

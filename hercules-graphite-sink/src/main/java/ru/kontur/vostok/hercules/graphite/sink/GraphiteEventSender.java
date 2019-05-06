@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.graphite.sink;
 
 import com.codahale.metrics.Timer;
-import ru.kontur.vostok.hercules.graphite.client.DefaultGraphiteClientRetryStrategy;
 import ru.kontur.vostok.hercules.graphite.client.GraphiteClient;
 import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricData;
 import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricDataSender;
@@ -38,7 +37,6 @@ public class GraphiteEventSender implements BulkSender<Event> {
                 .build();
     }
 
-    private final GraphiteMetricDataSender sender;
     private final Timer graphiteClientTimer;
 
     public GraphiteEventSender(
@@ -47,8 +45,6 @@ public class GraphiteEventSender implements BulkSender<Event> {
     ) {
         final String graphiteHost = Props.GRAPHITE_HOST.extract(graphiteProperties);
         final int graphitePort = Props.GRAPHITE_PORT.extract(graphiteProperties);
-
-        this.sender = new DefaultGraphiteClientRetryStrategy(new GraphiteClient(graphiteHost, graphitePort));
 
         graphiteClientTimer = metricsCollector.timer("graphiteClientRequestTimeMs");
     }
@@ -75,13 +71,13 @@ public class GraphiteEventSender implements BulkSender<Event> {
             }
         }
 
-        try {
+//        try {
             long start = System.currentTimeMillis();
-            sender.send(data);
+//            sender.send(data);
             graphiteClientTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
-        } catch (IOException e) {
-            throw new BackendServiceFailedException(e);
-        }
+//        } catch (IOException e) {
+//            throw new BackendServiceFailedException(e);
+//        }
         return new BulkSenderStat(processed, dropped);
     }
 
