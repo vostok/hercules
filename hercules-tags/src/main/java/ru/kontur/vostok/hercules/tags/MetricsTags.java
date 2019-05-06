@@ -1,6 +1,8 @@
 package ru.kontur.vostok.hercules.tags;
 
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.util.StandardExtractors;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 
@@ -22,6 +24,7 @@ public final class MetricsTags {
             .build();
 
     public static final TagDescription<Optional<Double>> METRIC_VALUE_TAG = TagDescriptionBuilder.tag("value", Double.class)
+            .addScalarExtractor(Type.DOUBLE, StandardExtractors::extractDouble)
             .optional()
             .build();
 
