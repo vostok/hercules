@@ -20,21 +20,20 @@
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-kafka-util</artifactId>
+            <artifactId>hercules-tags</artifactId>
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-tags</artifactId>
+            <artifactId>hercules-sink</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-streams</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
