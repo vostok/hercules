@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.tags.MetricsTags;
 import java.util.Optional;
 
 public class MetricEventFilter {
-    public boolean isValid(Event event) {
+    public static boolean isValid(Event event) {
         if (ContainerUtil.extract(event.getPayload(), MetricsTags.AGGREGATION_TYPE_TAG).isPresent())
             return false;
 

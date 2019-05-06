@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.graphite.sink;
 import ru.kontur.vostok.hercules.kafka.util.processing.bulk.AbstractBulkSinkDaemon;
 import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSender;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
 
 import java.util.Properties;
 
@@ -14,7 +15,8 @@ public class GraphiteSinkDaemon extends AbstractBulkSinkDaemon {
 
     @Override
     protected BulkSender<Event> createSender(Properties graphiteProperties) {
-        return new GraphiteEventSender(graphiteProperties, this.metricsCollector);
+        throw new NotImplementedException();
+//        return new GraphiteEventSender(graphiteProperties, this.metricsCollector);
     }
 
     @Override
