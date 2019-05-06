@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 public class GraphiteClient implements GraphiteMetricDataSender, AutoCloseable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteConnection.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteClient.class);
 
     private final GraphiteConnectionPool connections;
     private final int retryAttempts;

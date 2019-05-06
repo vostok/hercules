@@ -13,6 +13,7 @@ import ru.kontur.vostok.hercules.tags.MetricsTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
@@ -51,34 +52,36 @@ public class GraphiteEventSender implements BulkSender<Event> {
 
     @Override
     public BulkSenderStat process(Collection<Event> events) throws BackendServiceFailedException {
-        if (events.size() == 0) {
-            return BulkSenderStat.ZERO;
-        }
+        throw new NotImplementedException();
 
-        List<GraphiteMetricData> data = new ArrayList<>(events.size());
-
-        int processed = 0;
-        int dropped = 0;
-        for (Event event : events) {
-            final long timestamp = TimeUtil.unixTicksToUnixTime(event.getTimestamp());
-            Optional<String> name = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_NAME_TAG);
-            Optional<Double> value = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_VALUE_TAG);
-            if (name.isPresent() && value.isPresent()) {
-                data.add(new GraphiteMetricData(name.get(), timestamp, value.get()));
-                processed++;
-            } else {
-                dropped++;
-            }
-        }
+//        if (events.size() == 0) {
+//            return BulkSenderStat.ZERO;
+//        }
+//
+//        List<GraphiteMetricData> data = new ArrayList<>(events.size());
+//
+//        int processed = 0;
+//        int dropped = 0;
+//        for (Event event : events) {
+//            final long timestamp = TimeUtil.unixTicksToUnixTime(event.getTimestamp());
+//            Optional<String> name = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_NAME_TAG);
+//            Optional<Double> value = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_VALUE_TAG);
+//            if (name.isPresent() && value.isPresent()) {
+//                data.add(new GraphiteMetricData(name.get(), timestamp, value.get()));
+//                processed++;
+//            } else {
+//                dropped++;
+//            }
+//        }
 
 //        try {
-            long start = System.currentTimeMillis();
+//            long start = System.currentTimeMillis();
 //            sender.send(data);
-            graphiteClientTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
+//            graphiteClientTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
 //        } catch (IOException e) {
 //            throw new BackendServiceFailedException(e);
 //        }
-        return new BulkSenderStat(processed, dropped);
+//        return new BulkSenderStat(processed, dropped);
     }
 
     @Override
