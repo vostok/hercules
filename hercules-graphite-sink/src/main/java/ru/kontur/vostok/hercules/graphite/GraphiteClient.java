@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Collection;
 
-public class GraphiteClient implements GraphiteMetricDataSender, AutoCloseable {
+public class GraphiteClient implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteClient.class);
 
     private final GraphiteConnectionPool connections;
@@ -17,7 +17,6 @@ public class GraphiteClient implements GraphiteMetricDataSender, AutoCloseable {
         connections = new GraphiteConnectionPool(server, port);
     }
 
-    @Override
     public void send(Collection<GraphiteMetricData> data) throws Exception {
         Exception lastError = null;
 
