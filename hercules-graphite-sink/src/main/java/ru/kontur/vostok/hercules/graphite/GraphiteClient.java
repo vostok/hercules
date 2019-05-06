@@ -25,8 +25,7 @@ public class GraphiteClient implements AutoCloseable {
                 GraphiteConnection connection = connections.acquire();
                 connection.send(data);
                 connections.release(connection);
-            }
-            catch (Exception error) {
+            } catch (Exception error) {
                 LOGGER.error("Failed to send metrics to Graphite.", error);
 
                 if (!(error instanceof IOException))

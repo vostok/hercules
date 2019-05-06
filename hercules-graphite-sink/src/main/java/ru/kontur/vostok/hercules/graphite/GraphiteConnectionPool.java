@@ -2,6 +2,10 @@ package ru.kontur.vostok.hercules.graphite;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Thread-safe, though assumes non-concurrent usage of returned connections.
+ * Broken connections are not expected to be released back into pool.
+ */
 public class GraphiteConnectionPool implements AutoCloseable {
     private final String server;
     private final int port;
@@ -11,7 +15,7 @@ public class GraphiteConnectionPool implements AutoCloseable {
         this.server = server;
         this.port = port;
 
-        connections = new ConcurrentLinkedQueue<GraphiteConnection>();
+        connections = new ConcurrentLinkedQueue<>();
     }
 
     public GraphiteConnection acquire() {

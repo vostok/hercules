@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.sink.SenderStatus;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class GraphiteEventSender extends Sender {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteEventSender.class);
     private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
     private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
     private static final Logger DROPPED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
@@ -48,23 +49,20 @@ public class GraphiteEventSender extends Sender {
 
     @Override
     protected int send(List<Event> events) throws BackendServiceFailedException {
-        if (events.size() == 0) {
+        if (events.size() == 0)
             return 0;
-        }
 
         if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
             events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
 
         List<GraphiteMetricData> metricsToSend = events.stream()
-                .filter(event -> {
-                    boolean isValid = MetricEventFilter.isValid(event);
-                    if (!isValid)
-                        DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
-                    return isValid;
-                })
+                .filter(this::Validate)
                 .map(MetricEventConverter::convert)
                 .collect(Collectors.toList());
+
+        if (metricsToSend.size() == 0)
+            return 0;
 
         try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(graphiteClientTimer, TimeUnit.MILLISECONDS)) {
             graphiteClient.send(metricsToSend);
@@ -79,13 +77,25 @@ public class GraphiteEventSender extends Sender {
         return metricsToSend.size();
     }
 
+    private boolean Validate(Event event) {
+        if (MetricEventFilter.isValid(event))
+            return true;
+
+        DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
+
+        if (event != null)
+            LOGGER.warn("Invalid metric event: {}", EventFormatter.format(event, true));
+
+        return false;
+    }
+
     private static class Props {
         static final PropertyDescription<String> GRAPHITE_HOST = PropertyDescriptions
-                .stringProperty("server.host")
+                .stringProperty("graphite.host")
                 .build();
 
         static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
-                .integerProperty("server.port")
+                .integerProperty("graphite.port")
                 .withValidator(Validators.portValidator())
                 .build();
 

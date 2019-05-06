@@ -33,6 +33,8 @@ public class GraphiteConnection implements AutoCloseable {
     }
 
     public void send(Collection<GraphiteMetricData> metrics) throws IOException {
+        LOGGER.info("Sending {} metric(s) to Graphite..", metrics.size());
+
         if (printWriter == null) {
             LOGGER.info("Opening a connection to Graphite server at {}:{}..", server, port);
 
@@ -51,7 +53,7 @@ public class GraphiteConnection implements AutoCloseable {
         outputWriter.flush();
         outputStream.flush();
 
-        LOGGER.info("Sent {} metric(s) to Graphite.", metrics.size());
+        LOGGER.info("Successfully sent {} metric(s) to Graphite.", metrics.size());
     }
 
     @Override
