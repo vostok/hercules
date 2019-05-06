@@ -1,13 +1,13 @@
 # Hercules Tracing API
-##Description
+## Description
 
 Tracing API is an HTTP-service allowing to find tracings in storage by traceId or traceId+parentSpanId.
 
 API requests will return JSON as the response.
 
-##API methods
+## API methods
 
-- ###Get trace
+### Get trace
 
 **Description:** The method provides traces by traceId or traceId+parentSpanId from Cassandra.
 A client specifies `traceId` to get traces matching it.
@@ -65,7 +65,7 @@ ContentType: application/json
 }
 ```
 
-- ###Ping
+### Ping
 **Description:** The method indicates that the service is working. 
 
 **Method:** `GET`
@@ -74,15 +74,15 @@ ContentType: application/json
 
 **Request example:**
 
-````Request
+```Request
 GET /ping HTTP/1.1
-````
+```
 
 **Response codes:**
 
 `200` - the service is working
 
-- ###About
+### About
 
 **Description:** The method provides information about the service.
 
@@ -92,9 +92,9 @@ GET /ping HTTP/1.1
 
 **Request example:**
 
-````Request
+```Request
 GET /about HTTP/1.1
-````
+```
 
 **Response codes:**
 
@@ -146,7 +146,7 @@ See Curator Config from Apache Curator documentation. Main settings are presente
 
 `context.zone` - id of zone
 
-`context.instance.id` - d of instance
+`context.instance.id` - id of instance
 
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance to which metrics are sent, default value: `localhost`
@@ -168,18 +168,13 @@ See Apache Cassandra Config from Apache Cassandra documentation. Main settings a
                                                   
 `cassandra.readTimeoutMs` - default value: `12000`
 
-### Kafka settings
-See Kafka Config from Apache Kafka documentation. Main settings are presented below.
-
-`kafka.bootstrap.servers`
-
 ## Command line
 `java $JAVA_OPTS -jar hercules-sentry-sink.jar application.properties=file://path/to/properties/file`
 
 ## Quick start
 ### Initialization
 
-Stream with log events should be predefined.
+Table `tracing_spans` for tracing spans should be created.
 
 ### `application.properties` sample:
 ```properties
@@ -198,19 +193,16 @@ cassandra.connectionsPerHostLocal=4
 cassandra.connectionsPerHostRemote=2
 cassandra.maxRequestsPerConnectionLocal=1024
 cassandra.maxRequestsPerConnectionRemote=256
-cassandra.nodes=193.178.111.112
+cassandra.nodes=localhost
 cassandra.port=9042
 cassandra.readTimeout=12000
 
-kafka.bootstrap.servers=localhost:9092
-
-keys=12345678,87654321
-
 context.instance.id=1
 context.zone=devlocal
-context.environment=production 
+context.environment=production
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=vostok.hercules
 metrics.period=5
+```
