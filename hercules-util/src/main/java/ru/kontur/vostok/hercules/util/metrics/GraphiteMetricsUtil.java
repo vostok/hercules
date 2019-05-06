@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * @author Kirill Sulim
  */
 public final class GraphiteMetricsUtil {
-    private static final Pattern FORBIDDEN_CHARS_PATTERN = Pattern.compile("[^A-Za-z0-9_]");
+    private static final Pattern FORBIDDEN_CHARS_PATTERN = Pattern.compile("[^-A-Za-z0-9_]");
 
     private GraphiteMetricsUtil() {
         /* static class */
