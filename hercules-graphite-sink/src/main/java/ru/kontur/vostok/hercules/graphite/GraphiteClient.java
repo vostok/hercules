@@ -6,21 +6,27 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Collection;
 
+/**
+ * GraphiteClient is designed to send batches of metric events to Graphite over a TCP connection.
+ * It is thread-safe and can be safely used a singleton.
+ * Underlying TCP connections are pooled and reused.
+ * It also employs a simple retry policy configured by attempts count in constructor.
+ */
 public class GraphiteClient implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteClient.class);
 
     private final GraphiteConnectionPool connections;
-    private final int retryAttempts;
+    private final int attempts;
 
-    public GraphiteClient(String server, int port, int retryAttempts) {
-        this.retryAttempts = retryAttempts;
+    public GraphiteClient(String server, int port, int attempts) {
+        this.attempts = attempts;
         connections = new GraphiteConnectionPool(server, port);
     }
 
     public void send(Collection<GraphiteMetricData> data) throws Exception {
         Exception lastError = null;
 
-        for (int attempt = 0; attempt < retryAttempts; attempt++) {
+        for (int attempt = 0; attempt < attempts; attempt++) {
             try {
                 GraphiteConnection connection = connections.acquire();
                 connection.send(data);
