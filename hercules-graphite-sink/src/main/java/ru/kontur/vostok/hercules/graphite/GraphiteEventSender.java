@@ -58,7 +58,7 @@ public class GraphiteEventSender extends Sender {
         }
 
         List<GraphiteMetricData> metricsToSend = events.stream()
-                .filter(this::Validate)
+                .filter(this::validate)
                 .map(MetricEventConverter::convert)
                 .collect(Collectors.toList());
 
@@ -79,7 +79,7 @@ public class GraphiteEventSender extends Sender {
         return metricsToSend.size();
     }
 
-    private boolean Validate(Event event) {
+    private boolean validate(Event event) {
         if (MetricEventFilter.isValid(event)) {
             return true;
         }
