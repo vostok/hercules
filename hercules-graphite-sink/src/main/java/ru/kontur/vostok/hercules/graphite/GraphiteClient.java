@@ -47,7 +47,7 @@ public class GraphiteClient implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         connections.close();
     }
 }

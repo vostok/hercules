@@ -29,7 +29,7 @@ public class GraphiteConnectionPool implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         for (GraphiteConnection connection : connections) {
             connection.close();
         }
