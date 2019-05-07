@@ -84,9 +84,9 @@ public class GraphiteEventSender extends Sender {
             return true;
         }
 
-        DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
-
         if (event != null) {
+            DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
+
             LOGGER.warn("Invalid metric event: {}", EventFormatter.format(event, true));
         }
 
