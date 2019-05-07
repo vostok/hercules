@@ -1,92 +1,119 @@
 package ru.kontur.vostok.hercules.graphite.sink;
 
 import com.codahale.metrics.Timer;
-import ru.kontur.vostok.hercules.graphite.client.DefaultGraphiteClientRetryStrategy;
-import ru.kontur.vostok.hercules.graphite.client.GraphiteClient;
-import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricData;
-import ru.kontur.vostok.hercules.graphite.client.GraphiteMetricDataSender;
-import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
-import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSender;
-import ru.kontur.vostok.hercules.kafka.util.processing.bulk.BulkSenderStat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.tags.MetricsTags;
-import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
+import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.sink.SenderStatus;
+import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-public class GraphiteEventSender implements BulkSender<Event> {
+public class GraphiteEventSender extends Sender {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteEventSender.class);
+    private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
+    private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
+    private static final Logger DROPPED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
 
-    private static class Props {
-        static final PropertyDescription<String> GRAPHITE_HOST = PropertyDescriptions
-                .stringProperty("server.host")
-                .build();
-
-        static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
-                .integerProperty("server.port")
-                .withValidator(Validators.portValidator())
-                .build();
-    }
-
-    private final GraphiteMetricDataSender sender;
+    private final GraphitePinger graphitePinger;
+    private final GraphiteClient graphiteClient;
     private final Timer graphiteClientTimer;
 
-    public GraphiteEventSender(
-            Properties graphiteProperties,
-            MetricsCollector metricsCollector
-    ) {
-        final String graphiteHost = Props.GRAPHITE_HOST.extract(graphiteProperties);
-        final int graphitePort = Props.GRAPHITE_PORT.extract(graphiteProperties);
+    public GraphiteEventSender(Properties properties, MetricsCollector metricsCollector) {
+        super(properties, metricsCollector);
 
-        this.sender = new DefaultGraphiteClientRetryStrategy(new GraphiteClient(graphiteHost, graphitePort));
+        final String graphiteHost = Props.GRAPHITE_HOST.extract(properties);
+        final int graphitePort = Props.GRAPHITE_PORT.extract(properties);
+        final int retryLimit = Props.RETRY_LIMIT.extract(properties);
 
+        graphitePinger = new GraphitePinger(graphiteHost, graphitePort);
+        graphiteClient = new GraphiteClient(graphiteHost, graphitePort, retryLimit);
         graphiteClientTimer = metricsCollector.timer("graphiteClientRequestTimeMs");
     }
 
     @Override
-    public BulkSenderStat process(Collection<Event> events) throws BackendServiceFailedException {
-        if (events.size() == 0) {
-            return BulkSenderStat.ZERO;
-        }
-
-        List<GraphiteMetricData> data = new ArrayList<>(events.size());
-
-        int processed = 0;
-        int dropped = 0;
-        for (Event event : events) {
-            final long timestamp = TimeUtil.unixTicksToUnixTime(event.getTimestamp());
-            Optional<String> name = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_NAME_TAG);
-            Optional<Double> value = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_VALUE_TAG);
-            if (name.isPresent() && value.isPresent()) {
-                data.add(new GraphiteMetricData(name.get(), timestamp, value.get()));
-                processed++;
-            } else {
-                dropped++;
-            }
-        }
-
-        try {
-            long start = System.currentTimeMillis();
-            sender.send(data);
-            graphiteClientTimer.update(System.currentTimeMillis() - start, TimeUnit.MILLISECONDS);
-        } catch (IOException e) {
-            throw new BackendServiceFailedException(e);
-        }
-        return new BulkSenderStat(processed, dropped);
+    protected SenderStatus ping() {
+        return graphitePinger.ping();
     }
 
     @Override
-    public void close() throws Exception {
-        /* Do nothing */
+    protected int send(List<Event> events) throws BackendServiceFailedException {
+        if (events.size() == 0) {
+            return 0;
+        }
+
+        if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
+            events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
+        }
+
+        List<GraphiteMetricData> metricsToSend = events.stream()
+                .filter(this::validate)
+                .map(MetricEventConverter::convert)
+                .collect(Collectors.toList());
+
+        if (metricsToSend.size() == 0) {
+            return 0;
+        }
+
+        try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(graphiteClientTimer, TimeUnit.MILLISECONDS)) {
+            graphiteClient.send(metricsToSend);
+        } catch (Exception exception) {
+            throw new BackendServiceFailedException(exception);
+        }
+
+        if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
+            events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
+        }
+
+        return metricsToSend.size();
+    }
+
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
+
+        graphiteClient.close();
+
+        return super.stop(timeout, unit);
+    }
+
+    private boolean validate(Event event) {
+        if (MetricEventFilter.isValid(event)) {
+            return true;
+        }
+
+        if (event != null) {
+            DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
+
+            LOGGER.warn("Invalid metric event: {}", EventFormatter.format(event, true));
+        }
+
+        return false;
+    }
+
+    private static class Props {
+        static final PropertyDescription<String> GRAPHITE_HOST = PropertyDescriptions
+                .stringProperty("graphite.host")
+                .build();
+
+        static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
+                .integerProperty("graphite.port")
+                .withValidator(Validators.portValidator())
+                .build();
+
+        static final PropertyDescription<Integer> RETRY_LIMIT = PropertyDescriptions
+                .integerProperty("retryLimit")
+                .withDefaultValue(3)
+                .build();
     }
 }
