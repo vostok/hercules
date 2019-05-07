@@ -57,7 +57,11 @@ public class GraphiteConnection implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
-        socket.close();
+    public void close() {
+        try {
+            socket.close();
+        } catch (Exception exception) {
+            LOGGER.warn("Failed to close a connection to Graphite.", exception);
+        }
     }
 }
