@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.graphite;
+package ru.kontur.vostok.hercules.graphite.sink;
 
 import com.codahale.metrics.Timer;
 import org.slf4j.Logger;
@@ -77,6 +77,11 @@ public class GraphiteEventSender extends Sender {
         }
 
         return metricsToSend.size();
+    }
+
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
+        return super.stop(timeout, unit);
     }
 
     private boolean validate(Event event) {

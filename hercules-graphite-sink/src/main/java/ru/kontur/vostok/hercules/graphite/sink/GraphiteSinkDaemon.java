@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.graphite;
+package ru.kontur.vostok.hercules.graphite.sink;
 
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.sink.AbstractSinkDaemon;

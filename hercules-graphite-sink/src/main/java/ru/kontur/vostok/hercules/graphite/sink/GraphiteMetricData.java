@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.graphite;
+package ru.kontur.vostok.hercules.graphite.sink;
 
 /**
  * Graphite metric data
