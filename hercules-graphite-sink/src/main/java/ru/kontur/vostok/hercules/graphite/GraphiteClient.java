@@ -24,7 +24,7 @@ public class GraphiteClient implements AutoCloseable {
     }
 
     public void send(Collection<GraphiteMetricData> data) throws Exception {
-        Exception lastError = null;
+        Exception lastException = null;
 
         for (int attempt = 0; attempt < attempts; attempt++) {
             try {
@@ -32,18 +32,18 @@ public class GraphiteClient implements AutoCloseable {
                 connection.send(data);
                 connections.release(connection);
                 return;
-            } catch (Exception error) {
-                LOGGER.error("Failed to send metrics to Graphite.", error);
+            } catch (Exception exception) {
+                LOGGER.error("Failed to send metrics to Graphite.", exception);
 
-                if (!(error instanceof IOException)) {
-                    throw error;
+                if (!(exception instanceof IOException)) {
+                    throw exception;
                 }
 
-                lastError = error;
+                lastException = exception;
             }
         }
 
-        throw lastError;
+        throw lastException;
     }
 
     @Override

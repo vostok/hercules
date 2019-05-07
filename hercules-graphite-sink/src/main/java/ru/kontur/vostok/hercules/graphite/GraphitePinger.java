@@ -18,7 +18,7 @@ public class GraphitePinger {
         try {
             new Socket(server, port).close();
             return SenderStatus.AVAILABLE;
-        } catch (IOException error) {
+        } catch (IOException exception) {
             return SenderStatus.UNAVAILABLE;
         }
     }

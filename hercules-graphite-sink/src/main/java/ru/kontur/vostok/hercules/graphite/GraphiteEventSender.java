@@ -68,8 +68,8 @@ public class GraphiteEventSender extends Sender {
 
         try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(graphiteClientTimer, TimeUnit.MILLISECONDS)) {
             graphiteClient.send(metricsToSend);
-        } catch (Exception error) {
-            throw new BackendServiceFailedException(error);
+        } catch (Exception exception) {
+            throw new BackendServiceFailedException(exception);
         }
 
         if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
