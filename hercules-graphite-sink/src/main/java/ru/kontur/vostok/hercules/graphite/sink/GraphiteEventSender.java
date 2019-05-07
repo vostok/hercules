@@ -81,6 +81,9 @@ public class GraphiteEventSender extends Sender {
 
     @Override
     public boolean stop(long timeout, TimeUnit unit) {
+
+        graphiteClient.close();
+
         return super.stop(timeout, unit);
     }
 
