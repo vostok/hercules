@@ -49,8 +49,9 @@ public class GraphiteEventSender extends Sender {
 
     @Override
     protected int send(List<Event> events) throws BackendServiceFailedException {
-        if (events.size() == 0)
+        if (events.size() == 0) {
             return 0;
+        }
 
         if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
             events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
@@ -61,8 +62,9 @@ public class GraphiteEventSender extends Sender {
                 .map(MetricEventConverter::convert)
                 .collect(Collectors.toList());
 
-        if (metricsToSend.size() == 0)
+        if (metricsToSend.size() == 0) {
             return 0;
+        }
 
         try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(graphiteClientTimer, TimeUnit.MILLISECONDS)) {
             graphiteClient.send(metricsToSend);
@@ -78,13 +80,15 @@ public class GraphiteEventSender extends Sender {
     }
 
     private boolean Validate(Event event) {
-        if (MetricEventFilter.isValid(event))
+        if (MetricEventFilter.isValid(event)) {
             return true;
+        }
 
         DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
 
-        if (event != null)
+        if (event != null) {
             LOGGER.warn("Invalid metric event: {}", EventFormatter.format(event, true));
+        }
 
         return false;
     }

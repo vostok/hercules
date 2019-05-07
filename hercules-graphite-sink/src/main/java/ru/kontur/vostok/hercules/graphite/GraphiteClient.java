@@ -29,8 +29,9 @@ public class GraphiteClient implements AutoCloseable {
             } catch (Exception error) {
                 LOGGER.error("Failed to send metrics to Graphite.", error);
 
-                if (!(error instanceof IOException))
+                if (!(error instanceof IOException)) {
                     throw error;
+                }
 
                 lastError = error;
             }
