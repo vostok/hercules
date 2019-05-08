@@ -13,6 +13,12 @@ public class CassandraManager {
         this.connector = connector;
     }
 
+    /**
+     * Create the table with TTL if it doesn't exist
+     *
+     * @param table the table name
+     * @param ttl   TTL in millis
+     */
     public void createTable(String table, long ttl) {
         Session session = connector.session();
 
@@ -24,9 +30,14 @@ public class CassandraManager {
                 + "event_id blob,"
                 + "payload blob,"
                 + "PRIMARY KEY ((slice, tt_offset), event_id))\n"
-                + "WITH default_time_to_live = " + ttl + ";");
+                + "WITH default_time_to_live = " + (ttl / 1000) + ";");
     }
 
+    /**
+     * Delete the table if exists
+     *
+     * @param table the table name
+     */
     public void deleteTable(String table) {
         Session session = connector.session();
 

@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.timeline.sink;
 
+import com.codahale.metrics.Meter;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
@@ -9,6 +10,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Predicate;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.cassandra.util.Slicer;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
@@ -36,21 +38,31 @@ import java.util.concurrent.TimeUnit;
 public class TimelineSink {
     private final KafkaStreams kafkaStreams;
 
-    public TimelineSink(Properties properties, Timeline timeline, CassandraConnector cassandraConnector) {
+    public TimelineSink(
+            Properties properties,
+            Timeline timeline,
+            CassandraConnector cassandraConnector,
+            MetricsCollector metricsCollector
+    ) {
         properties.put(StreamsConfig.APPLICATION_ID_CONFIG, TimelineUtil.timelineToApplicationId(timeline));
 
         List<String> topics = Arrays.asList(timeline.getStreams());
         Set<String> tags = new HashSet<>(timeline.getFilters().length + timeline.getShardingKey().length);
         final Filter[] filters = timeline.getFilters();
+
         for (Filter filter : filters) {
             tags.add(filter.getTag());
         }
         tags.addAll(Arrays.asList(timeline.getShardingKey()));
 
+        Meter receivedEventCountMeter = metricsCollector.meter("receivedEventCount");
+        Meter filteredEventCountMeter = metricsCollector.meter("filteredEventCount");
+
         Predicate<UUID, Event> predicate = (k, v) -> {
             for (Filter filter : filters) {
                 Variant value = v.getPayload().get(filter.getTag());
                 if (!filter.getCondition().test(value)) {
+                    filteredEventCountMeter.mark();
                     return false;
                 }
             }
@@ -72,7 +84,9 @@ public class TimelineSink {
 
         StreamsBuilder builder = new StreamsBuilder();
         KStream<UUID, Event> kStream = builder.stream(topics, Consumed.with(keySerde, valueSerde));
-        kStream.filter(predicate).process(() -> new SyncTimelineProcessor(cassandraConnector, timeline, slicer));
+        kStream.peek((k, v) -> receivedEventCountMeter.mark())
+                .filter(predicate)
+                .process(() -> new SyncTimelineProcessor(cassandraConnector, timeline, slicer, metricsCollector));
 
         kafkaStreams = new KafkaStreams(builder.build(), properties);
     }
