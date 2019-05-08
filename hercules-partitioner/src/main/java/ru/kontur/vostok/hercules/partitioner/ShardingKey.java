@@ -21,7 +21,7 @@ public class ShardingKey {
 
         String[][] keys = new String[size][];
         for (int i = 0; i < size; i++) {
-            keys[i] = keyPaths[i].split("\\.");
+            keys[i] = keyPaths[i].split("/");
         }
 
         return new ShardingKey(keys);
@@ -31,7 +31,7 @@ public class ShardingKey {
         return new ShardingKey(new String[][]{{tag}});
     }
 
-    public static ShardingKey fromTags(String[] tags) {
+    public static ShardingKey fromTags(String... tags) {
         if (tags == null || tags.length == 0) {
             return empty();
         }

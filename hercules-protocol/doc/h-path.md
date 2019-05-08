@@ -1,20 +1,17 @@
 # HPath
+**HPath** describes hierarchy of tags. Each parent tag must be a Container. Leaf tag can be any of type. Currently, HPath does not support individual elements of inner vector tag.
 
-HPath is similar to XPath. It can be used to describe tag position in complex nested hierarchy of containers.
-At this moment HPath does not support inner elements of vector.
+String representation of HPath consists of tag names are joined by slash `/`.
 
 ## Match tag
+HPath is used to match specific tag from hierarchy of tags. See examples below.
 
-All path must be started from root element `/`.
-
-To match specific tag use its name:
-
+Matching top-level tag with name `tagName`:
 ```plaintext
-/tagName
+tagName
 ```
 
-To match inner tag use its name and names of all parent tags separated by hierarchy separator `/`:
-
+Matching inner tag with name `innerTagName` inside container tag with name `containerTagName`:
 ```plaintext
-/tagName/innerTagName
+containerTagName/innerTagName
 ```

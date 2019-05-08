@@ -17,20 +17,18 @@ import java.util.UUID;
 public class NaiveHasherTest {
     @Test
     public void shouldHashTopLevelTags() {
-        Event event = EventBuilder.create().
-                setTimestamp(TimeUtil.millisToTicks(System.currentTimeMillis())).
-                setRandom(UUID.randomUUID()).
-                setTag("byte", Variant.ofByte((byte) 0x01)).
-                setTag("short", Variant.ofShort((short) 1024)).
-                setTag("integer", Variant.ofInteger(42)).
-                setTag("long", Variant.ofLong(0x3333333355555555L)).
-                setTag("float", Variant.ofFloat(0.125f)).
-                setTag("double", Variant.ofDouble(0.0625)).
-                setTag("flag", Variant.ofFlag(true)).
-                setTag("string", Variant.ofString("abc")).
-                setTag("uuid", Variant.ofUuid(UUID.fromString("33333333-5555-5555-0000-000000000000"))).
-                setTag("null", Variant.ofNull()).
-                setTag("vectorOfBytes", Variant.ofVector(Vector.ofBytes((byte) 0x01, (byte) 0x02))).
+        Event event = EventBuilder.create(TimeUtil.millisToTicks(System.currentTimeMillis()), UUID.randomUUID()).
+                tag("byte", Variant.ofByte((byte) 0x01)).
+                tag("short", Variant.ofShort((short) 1024)).
+                tag("integer", Variant.ofInteger(42)).
+                tag("long", Variant.ofLong(0x3333333355555555L)).
+                tag("float", Variant.ofFloat(0.125f)).
+                tag("double", Variant.ofDouble(0.0625)).
+                tag("flag", Variant.ofFlag(true)).
+                tag("string", Variant.ofString("abc")).
+                tag("uuid", Variant.ofUuid(UUID.fromString("33333333-5555-5555-0000-000000000000"))).
+                tag("null", Variant.ofNull()).
+                tag("vectorOfBytes", Variant.ofVector(Vector.ofBytes((byte) 0x01, (byte) 0x02))).
                 build();
 
         Hasher hasher = new NaiveHasher();
@@ -50,10 +48,8 @@ public class NaiveHasherTest {
 
     @Test
     public void shouldHashNestedContainers() {
-        Event event = EventBuilder.create().
-                setTimestamp(System.currentTimeMillis()).
-                setRandom(UUID.randomUUID()).
-                setTag(
+        Event event = EventBuilder.create(System.currentTimeMillis(), UUID.randomUUID()).
+                tag(
                         "first",
                         Variant.ofContainer(ContainerBuilder.create().tag(
                                 "second",
@@ -64,29 +60,27 @@ public class NaiveHasherTest {
 
         Hasher hasher = new NaiveHasher();
 
-        Assert.assertEquals(42, hasher.hash(event, ShardingKey.fromKeyPaths("first.second.integer")));
-        Assert.assertEquals(42 * 31 + 'a', hasher.hash(event, ShardingKey.fromKeyPaths("first.second.integer", "first.second.string")));
-        Assert.assertEquals('a' * 31 + 42, hasher.hash(event, ShardingKey.fromKeyPaths("first.second.string", "first.second.integer")));
+        Assert.assertEquals(42, hasher.hash(event, ShardingKey.fromKeyPaths("first/second/integer")));
+        Assert.assertEquals(42 * 31 + 'a', hasher.hash(event, ShardingKey.fromKeyPaths("first/second/integer", "first/second/string")));
+        Assert.assertEquals('a' * 31 + 42, hasher.hash(event, ShardingKey.fromKeyPaths("first/second/string", "first/second/integer")));
     }
 
     @Test
     public void shouldHashOtherValuesAsZeros() {
-        Event event = EventBuilder.create().
-                setTimestamp(TimeUtil.millisToTicks(System.currentTimeMillis())).
-                setRandom(UUID.randomUUID()).
-                setTag("container", Variant.ofContainer(ContainerBuilder.create().build())).
-                setTag("null", Variant.ofNull()).
-                setTag("vectorOfShorts", Variant.ofVector(Vector.ofShorts((short)1, (short) 2))).
-                setTag("vectorOfIntegers", Variant.ofVector(Vector.ofIntegers(1, 2))).
-                setTag("vectorOfLongs", Variant.ofVector(Vector.ofLongs(1, 2))).
-                setTag("vectorOfFlags", Variant.ofVector(Vector.ofFlags(true, false))).
-                setTag("vectorOfFloats", Variant.ofVector(Vector.ofFloats(1.0f, 2.0f))).
-                setTag("vectorOfDoubles", Variant.ofVector(Vector.ofDoubles(1.0, 2.0))).
-                setTag("vectorOfStrings", Variant.ofVector(Vector.ofStrings("a", "b"))).
-                setTag("vectorOfUuids", Variant.ofVector(Vector.ofUuids(UUID.randomUUID(), UUID.randomUUID()))).
-                setTag("vectorOfNulls", Variant.ofVector(Vector.ofNulls(null, null))).
-                setTag("vectorOfContainers", Variant.ofVector(Vector.ofContainers(ContainerBuilder.create().build(), ContainerBuilder.create().build()))).
-                setTag("vectorOfVectors", Variant.ofVector(Vector.ofVectors(Vector.ofBytes((byte) 0x01), Vector.ofBytes((byte) 0x02)))).
+        Event event = EventBuilder.create(TimeUtil.millisToTicks(System.currentTimeMillis()), UUID.randomUUID()).
+                tag("container", Variant.ofContainer(ContainerBuilder.create().build())).
+                tag("null", Variant.ofNull()).
+                tag("vectorOfShorts", Variant.ofVector(Vector.ofShorts((short)1, (short) 2))).
+                tag("vectorOfIntegers", Variant.ofVector(Vector.ofIntegers(1, 2))).
+                tag("vectorOfLongs", Variant.ofVector(Vector.ofLongs(1, 2))).
+                tag("vectorOfFlags", Variant.ofVector(Vector.ofFlags(true, false))).
+                tag("vectorOfFloats", Variant.ofVector(Vector.ofFloats(1.0f, 2.0f))).
+                tag("vectorOfDoubles", Variant.ofVector(Vector.ofDoubles(1.0, 2.0))).
+                tag("vectorOfStrings", Variant.ofVector(Vector.ofStrings("a", "b"))).
+                tag("vectorOfUuids", Variant.ofVector(Vector.ofUuids(UUID.randomUUID(), UUID.randomUUID()))).
+                tag("vectorOfNulls", Variant.ofVector(Vector.ofNulls(null, null))).
+                tag("vectorOfContainers", Variant.ofVector(Vector.ofContainers(ContainerBuilder.create().build(), ContainerBuilder.create().build()))).
+                tag("vectorOfVectors", Variant.ofVector(Vector.ofVectors(Vector.ofBytes((byte) 0x01), Vector.ofBytes((byte) 0x02)))).
                 build();
 
         Hasher hasher = new NaiveHasher();
@@ -110,10 +104,8 @@ public class NaiveHasherTest {
 
     @Test
     public void shouldHashUndefinedValuesAsZero() {
-        Event event = EventBuilder.create().
-                setTimestamp(TimeUtil.millisToTicks(System.currentTimeMillis())).
-                setRandom(UUID.randomUUID()).
-                setTag("another", Variant.ofInteger(42)).
+        Event event = EventBuilder.create(TimeUtil.millisToTicks(System.currentTimeMillis()), UUID.randomUUID()).
+                tag("another", Variant.ofInteger(42)).
                 build();
 
         Hasher hasher = new NaiveHasher();
