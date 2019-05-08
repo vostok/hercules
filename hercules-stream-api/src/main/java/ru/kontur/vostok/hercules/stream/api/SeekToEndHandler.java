@@ -10,13 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
-import ru.kontur.vostok.hercules.undertow.util.ContentTypes;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.Maps;
@@ -131,7 +131,7 @@ public class SeekToEndHandler implements HttpHandler {
                 map.put(partition, consumer.position(partition));
             }
 
-            exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, ContentTypes.APPLICATION_OCTET_STREAM);
+            exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Encoder encoder = new Encoder(outputStream);

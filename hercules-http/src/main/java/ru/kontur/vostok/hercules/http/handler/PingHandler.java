@@ -6,9 +6,9 @@ import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 /**
  * @author Gregory Koshelev
  */
-public final class NotFoundHandler implements HttpHandler {
+public class PingHandler implements HttpHandler {
     @Override
     public void handle(HttpServerRequest request) {
-        request.complete(HttpStatusCodes.NOT_FOUND);
+        request.complete(HttpStatusCodes.OK);
     }
 }
