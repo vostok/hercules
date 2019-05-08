@@ -16,7 +16,6 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
-import ru.kontur.vostok.hercules.protocol.StreamShardReadState;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
@@ -39,7 +38,7 @@ import java.util.stream.Collectors;
 
 public class StreamReader {
 
-    private static class Props {
+    static class Props {
         static final PropertyDescription<String> SERVERS = PropertyDescriptions
                 .stringProperty("bootstrap.servers")
                 .build();
@@ -96,7 +95,7 @@ public class StreamReader {
                 Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
                 Map<TopicPartition, Long> offsetsToRequest = new HashMap<>(beginningOffsets);
                 Map<TopicPartition, Long> overflowedOffsets = new HashMap<>();
-                for (Map.Entry<TopicPartition, Long> entry : stateToMap(streamName, readState).entrySet()) {
+                for (Map.Entry<TopicPartition, Long> entry : StreamReadStateUtil.stateToMap(streamName, readState).entrySet()) {
                     TopicPartition partition = entry.getKey();
 
                     Long requestOffset = entry.getValue();
@@ -140,7 +139,7 @@ public class StreamReader {
                 offsetsToRequest.putAll(overflowedOffsets);
 
                 return new ByteStreamContent(
-                        stateFromMap(streamName, offsetsToRequest),
+                        StreamReadStateUtil.stateFromMap(streamName, offsetsToRequest),
                         poll.getRecords().toArray(new byte[][]{})
                 );
             } finally {
@@ -184,24 +183,6 @@ public class StreamReader {
         }
 
         return result;
-    }
-
-    private static Map<TopicPartition, Long> stateToMap(String streamName, StreamReadState state) {
-        return Arrays.stream(state.getShardStates())
-                .collect(Collectors.toMap(
-                        shardState -> new TopicPartition(streamName, shardState.getPartition()),
-                        StreamShardReadState::getOffset
-                ));
-    }
-
-    private static StreamReadState stateFromMap(String streamName, Map<TopicPartition, Long> map) {
-        return new StreamReadState(
-                map.entrySet().stream()
-                        .filter(e -> e.getKey().topic().equals(streamName))
-                        .map(e -> new StreamShardReadState(e.getKey().partition(), e.getValue()))
-                        .collect(Collectors.toList())
-                        .toArray(new StreamShardReadState[]{})
-        );
     }
 
     private static String generateUniqueName() {

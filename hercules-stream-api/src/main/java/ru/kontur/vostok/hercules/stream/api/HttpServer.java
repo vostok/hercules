@@ -32,13 +32,15 @@ public class HttpServer {
             Properties properties,
             AuthManager authManager,
             ReadStreamHandler readStreamHandler,
+            SeekToEndHandler seekToEndHandler,
             MetricsCollector metricsCollector
     ) {
         final String host = Props.HOST.extract(properties);
         final int port = Props.PORT.extract(properties);
 
-        HttpHandler handler = new HerculesRoutingHandler(metricsCollector)
-                .post("/stream/read", readStreamHandler);
+        HttpHandler handler = new HerculesRoutingHandler(metricsCollector).
+                post("/stream/read", readStreamHandler).
+                get("/stream/seekToEnd", seekToEndHandler);
 
         undertow = Undertow
                 .builder()
