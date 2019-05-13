@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class MetricsHandler implements HttpHandler {
 
     private final HttpHandler next;

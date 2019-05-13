@@ -5,6 +5,6 @@ import ru.kontur.vostok.hercules.http.HttpServerRequest;
 /**
  * @author Gregory Koshelev
  */
-public interface AsyncHttpHandler {
-    void handleAsync(HttpServerRequest request);
+public interface HttpHandler {
+    void handle(HttpServerRequest request);
 }
