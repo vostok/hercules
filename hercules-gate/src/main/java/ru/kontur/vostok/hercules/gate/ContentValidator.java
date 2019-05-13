@@ -17,8 +17,7 @@ public class ContentValidator {
 
     public boolean validate(Event event) {
         for (Filter filter : validation.getFilters()) {
-            Variant value = event.getPayload().get(filter.getTag());
-            if (!filter.getCondition().test(value)) {
+            if (!filter.test(event.getPayload())) {
                 return false;
             }
         }

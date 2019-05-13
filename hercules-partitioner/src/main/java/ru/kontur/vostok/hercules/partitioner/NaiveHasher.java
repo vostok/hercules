@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
+import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -82,23 +83,8 @@ public class NaiveHasher implements Hasher {
     @Override
     public int hash(Event event, ShardingKey shardingKey) {
         int hash = 0;
-        for (String[] key : shardingKey.getKeys()) {
-            int size = key.length;
-
-            Container container = event.getPayload();
-            Variant tagValue;
-
-            for (int i = 0; i < size - 1; i++) {
-                tagValue = container.get(key[i]);
-                if ((tagValue == null) || (tagValue.getType() != Type.CONTAINER)) {
-                    hash = 31 * hash;
-                    break;
-                }
-                container = (Container) tagValue.getValue();
-            }
-
-            tagValue = container.get(key[size - 1]);
-
+        for (HPath key : shardingKey.getKeys()) {
+            Variant tagValue = key.extract(event.getPayload());
             hash = 31 * hash + ((tagValue != null) ? hash(tagValue.getType(), tagValue.getValue()) : 0);
         }
         return hash;

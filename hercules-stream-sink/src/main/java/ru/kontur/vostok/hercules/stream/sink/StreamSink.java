@@ -40,17 +40,17 @@ public class StreamSink {
         StreamsConfig config = new StreamsConfig(properties);
 
         List<String> topics = Arrays.asList(derived.getStreams());
-        Set<String> tags = new HashSet<>(derived.getFilters().length + derived.getShardingKey().length);
         final Filter[] filters = derived.getFilters();
+
+        Set<String> tags = new HashSet<>(filters.length + derived.getShardingKey().length);
         for (Filter filter : filters) {
-            tags.add(filter.getTag());
+            tags.add(filter.getHPath().getRootTag());//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
         }
         tags.addAll(Arrays.asList(derived.getShardingKey()));
 
-        Predicate<UUID, Event> predicate = (k, v) -> {
+        Predicate<UUID, Event> predicate = (k, event) -> {
             for (Filter filter : filters) {
-                Variant value = v.getPayload().get(filter.getTag());
-                if (!filter.getCondition().test(value)) {
+                if (!filter.test(event.getPayload())) {
                     return false;
                 }
             }
