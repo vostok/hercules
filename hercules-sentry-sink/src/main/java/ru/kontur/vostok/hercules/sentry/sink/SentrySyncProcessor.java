@@ -60,7 +60,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
         }
         String organization = organizationName.get();
 
-        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.SCOPE_TAG);
+        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
         String sentryProject = sentryProjectName.orElse(organization);
 
         Result<SentryClient, String> sentryClient =
@@ -83,7 +83,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
     }
 
     private static class Props {

@@ -28,9 +28,9 @@ public final class CommonTags {
             .build();
 
     /**
-     * Scope tag
+     * Application tag
      */
-    public static final TagDescription<Optional<String>> SCOPE_TAG = TagDescriptionBuilder.string("scope")
+    public static final TagDescription<Optional<String>> APPLICATION_TAG = TagDescriptionBuilder.string("application")
             .optional()
             .build();
 

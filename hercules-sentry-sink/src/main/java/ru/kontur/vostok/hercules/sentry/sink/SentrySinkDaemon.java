@@ -18,8 +18,6 @@ import java.util.UUID;
  */
 public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SentrySinkDaemon.class);
-
     /**
      * Main starting point
      */
