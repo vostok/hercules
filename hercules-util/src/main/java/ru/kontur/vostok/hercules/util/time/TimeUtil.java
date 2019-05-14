@@ -104,7 +104,7 @@ public class TimeUtil {
      * @return Unix timestamp in seconds
      */
     public static long unixTicksToUnixTime(long ticks) {
-        return ticksToMillis(ticks);
+        return ticksToSeconds(ticks);
     }
 
     /**

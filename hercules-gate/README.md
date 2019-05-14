@@ -7,13 +7,15 @@ Application is configured through properties file.
 ### HTTP Server settings
 `http.server.host` - server host, default value: `0.0.0.0`
 
-`http.server.port` - server port, default value: `6306`
+`http.server.port` - server port, default value: `8080`
 
 `http.server.maxContentLength` - max Content-Length in POST-request
 
 `http.server.throttling.capacity` - default value: `100000000`
 
 `http.server.throttling.requestTimeout` - timeout for request, which capacity throttling more then permissible, default value: `5000`
+
+`http.server.connection.threshold` - maximum active http connections, default value: `100000`
 
 ### Kafka Producer settings
 See Producer's Config from Apache Kafka documentation. Main settings are presented below.
