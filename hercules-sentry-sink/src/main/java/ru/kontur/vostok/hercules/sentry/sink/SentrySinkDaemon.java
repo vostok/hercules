@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.processing.ServicePinger;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.AbstractSingleSinkDaemon;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.SingleSender;
