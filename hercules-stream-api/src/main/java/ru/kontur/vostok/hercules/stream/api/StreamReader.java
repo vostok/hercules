@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,13 +96,14 @@ public class StreamReader {
                 Map<TopicPartition, Long> overflowedOffsets = new HashMap<>();
                 for (Map.Entry<TopicPartition, Long> entry : StreamReadStateUtil.stateToMap(streamName, readState).entrySet()) {
                     TopicPartition partition = entry.getKey();
-
                     Long requestOffset = entry.getValue();
+
                     Long beginningOffset = beginningOffsets.get(partition);
                     Long endOffset = endOffsets.get(partition);
 
-                    if (Objects.isNull(beginningOffset) || Objects.isNull(endOffset)) {
-                        throw new IllegalArgumentException("Read state contains partitions that should not be requested");
+                    if (beginningOffset == null || endOffset == null) {
+                        // Ignore redundant StreamShardReadState
+                        continue;
                     }
 
                     if (requestOffset < beginningOffset) {
