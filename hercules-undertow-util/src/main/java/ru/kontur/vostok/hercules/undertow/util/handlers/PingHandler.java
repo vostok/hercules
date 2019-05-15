@@ -8,6 +8,7 @@ import io.undertow.server.HttpServerExchange;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class PingHandler implements HttpHandler {
 
     public static final PingHandler INSTANCE = new PingHandler();

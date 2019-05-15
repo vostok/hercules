@@ -1,14 +1,16 @@
 package ru.kontur.vostok.hercules.partitioner;
 
+import ru.kontur.vostok.hercules.protocol.hpath.HPath;
+
 /**
  * @author Gregory Koshelev
  */
 public class ShardingKey {
-    private static final ShardingKey EMPTY = new ShardingKey(new String[0][]);
+    private static final ShardingKey EMPTY = new ShardingKey(new HPath[0]);
 
-    private final String[][] keys;
+    private final HPath[] keys;
 
-    private ShardingKey(String[][] keys) {
+    private ShardingKey(HPath[] keys) {
         this.keys = keys;
     }
 
@@ -19,28 +21,28 @@ public class ShardingKey {
 
         int size = keyPaths.length;
 
-        String[][] keys = new String[size][];
+        HPath[] keys = new HPath[size];
         for (int i = 0; i < size; i++) {
-            keys[i] = keyPaths[i].split("\\.");
+            keys[i] = new HPath(keyPaths[i]);
         }
 
         return new ShardingKey(keys);
     }
 
     public static ShardingKey fromTag(String tag) {
-        return new ShardingKey(new String[][]{{tag}});
+        return new ShardingKey(new HPath[]{new HPath(tag)});
     }
 
-    public static ShardingKey fromTags(String[] tags) {
+    public static ShardingKey fromTags(String... tags) {
         if (tags == null || tags.length == 0) {
             return empty();
         }
 
         int size = tags.length;
 
-        String[][] keys = new String[size][1];
+        HPath[] keys = new HPath[size];
         for (int i = 0; i < size; i++) {
-            keys[i][0] = tags[i];
+            keys[i] = HPath.fromTag(tags[i]);
         }
 
         return new ShardingKey(keys);
@@ -54,7 +56,11 @@ public class ShardingKey {
         return this == EMPTY;
     }
 
-    public String[][] getKeys() {
+    public HPath[] getKeys() {
         return keys;
+    }
+
+    public int size() {
+        return keys != null ? keys.length : 0;
     }
 }

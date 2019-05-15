@@ -12,6 +12,7 @@ import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class HerculesRoutingHandler implements HttpHandler {
 
     private final RoutingHandler routingHandler;

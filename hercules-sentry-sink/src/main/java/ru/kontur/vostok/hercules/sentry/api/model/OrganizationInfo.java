@@ -3,7 +3,8 @@ package ru.kontur.vostok.hercules.sentry.api.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * The organization in Sentry
+ * The model of organization in Sentry.
+ * It is a model which may be got from JSON in Sentry response
  *
  * @author Kirill Sulim
  */

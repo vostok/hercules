@@ -1,18 +1,19 @@
 package ru.kontur.vostok.hercules.gate;
 
 import com.codahale.metrics.Meter;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
+import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.throttling.Throttle;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.Maps;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -26,7 +27,7 @@ public class GateHandler implements HttpHandler {
     private final MetricsCollector metricsCollector;
 
     private final AuthManager authManager;
-    private final Throttle<HttpServerExchange, SendContext> throttle;
+    private final Throttle<HttpServerRequest, SendContext> throttle;
     private final StreamStorage streamStorage;
     private final AuthValidationManager authValidationManager;
 
@@ -39,7 +40,7 @@ public class GateHandler implements HttpHandler {
     public GateHandler(
             MetricsCollector metricsCollector,
             AuthManager authManager,
-            Throttle<HttpServerExchange, SendContext> throttle,
+            Throttle<HttpServerRequest, SendContext> throttle,
             AuthValidationManager authValidationManager,
             StreamStorage streamStorage,
             boolean async,
@@ -66,40 +67,38 @@ public class GateHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) {
+    public void handle(HttpServerRequest request) {
         requestMeter.mark(1);
 
-        Optional<String> optionalStream = ExchangeUtil.extractQueryParam(exchange, "stream");
-        if (!optionalStream.isPresent()) {
-            ResponseUtil.badRequest(exchange);
+        String stream = request.getParameter("stream");
+        if (stream == null) {
+            request.complete(HttpStatusCodes.BAD_REQUEST);
             return;
         }
-        String stream = optionalStream.get();
         //TODO: stream name validation
 
-        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!optionalApiKey.isPresent()) {
-            ResponseUtil.unauthorized(exchange);
+        String apiKey = request.getHeader("apiKey");
+        if (apiKey == null) {
+            request.complete(HttpStatusCodes.UNAUTHORIZED);
             return;
         }
-        String apiKey = optionalApiKey.get();
-        if (!auth(exchange, apiKey, stream)) {
+        if (!auth(request, apiKey, stream)) {
             return;
         }
 
         // Check content length
-        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(exchange);
+        Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
-            ResponseUtil.lengthRequired(exchange);
+            request.complete(HttpStatusCodes.LENGTH_REQUIRED);
             return;
         }
         int contentLength = optionalContentLength.get();
         if (contentLength < 0) {
-            ResponseUtil.badRequest(exchange);
+            request.complete(HttpStatusCodes.BAD_REQUEST);
             return;
         }
         if (contentLength > maxContentLength) {
-            ResponseUtil.requestEntityTooLarge(exchange);
+            request.complete(HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE);
             return;
         }
 
@@ -107,32 +106,32 @@ public class GateHandler implements HttpHandler {
 
         Optional<Stream> optionalBaseStream = streamStorage.read(stream);
         if (!optionalBaseStream.isPresent()) {
-            ResponseUtil.notFound(exchange);
+            request.complete(HttpStatusCodes.NOT_FOUND);
             return;
         }
         Stream baseStream = optionalBaseStream.get();
         if (!(baseStream instanceof BaseStream)) {
-            ResponseUtil.badRequest(exchange);
+            request.complete(HttpStatusCodes.BAD_REQUEST);
             return;
         }
 
         Set<String> tagsToValidate = authValidationManager.getTags(apiKey, stream);
 
-        String[] shardingKey = baseStream.getShardingKey();
+        ShardingKey shardingKey = ShardingKey.fromKeyPaths(baseStream.getShardingKey());
         int partitions = baseStream.getPartitions();
         String topic = baseStream.getName();
 
-        Set<String> tags = new HashSet<>(shardingKey.length + tagsToValidate.size());
-        tags.addAll(Arrays.asList(shardingKey));//TODO: shardingKey is actually set of key paths
+        Set<String> tags = new HashSet<>(Maps.effectiveHashMapCapacity(shardingKey.size() + tagsToValidate.size()));
+        Arrays.stream(shardingKey.getKeys()).map(HPath::getRootTag).forEach(tags::add);//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
         tags.addAll(tagsToValidate);
 
         ContentValidator validator = authValidationManager.validator(apiKey, stream);
 
-        SendContext context = new SendContext(async, topic, tags, partitions, ShardingKey.fromKeyPaths(shardingKey), validator);
-        throttle.throttleAsync(exchange, context);
+        SendContext context = new SendContext(async, topic, tags, partitions, shardingKey, validator);
+        throttle.throttleAsync(request, context);
     }
 
-    private boolean auth(HttpServerExchange exchange, String apiKey, String stream) {
+    private boolean auth(HttpServerRequest request, String apiKey, String stream) {
         AuthResult authResult = authManager.authWrite(apiKey, stream);
 
         if (authResult.isSuccess()) {
@@ -140,11 +139,11 @@ public class GateHandler implements HttpHandler {
         }
 
         if (authResult.isUnknown()) {
-            ResponseUtil.unauthorized(exchange);
+            request.complete(HttpStatusCodes.UNAUTHORIZED);
             return false;
         }
 
-        ResponseUtil.forbidden(exchange);
+        request.complete(HttpStatusCodes.FORBIDDEN);
         return false;
     }
 }
