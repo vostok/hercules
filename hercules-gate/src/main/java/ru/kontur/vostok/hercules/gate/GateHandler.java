@@ -11,7 +11,9 @@ import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
+import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.throttling.Throttle;
+import ru.kontur.vostok.hercules.util.Maps;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -115,17 +117,17 @@ public class GateHandler implements HttpHandler {
 
         Set<String> tagsToValidate = authValidationManager.getTags(apiKey, stream);
 
-        String[] shardingKey = baseStream.getShardingKey();
+        ShardingKey shardingKey = ShardingKey.fromKeyPaths(baseStream.getShardingKey());
         int partitions = baseStream.getPartitions();
         String topic = baseStream.getName();
 
-        Set<String> tags = new HashSet<>(shardingKey.length + tagsToValidate.size());
-        tags.addAll(Arrays.asList(shardingKey));//TODO: shardingKey is actually set of key paths
+        Set<String> tags = new HashSet<>(Maps.effectiveHashMapCapacity(shardingKey.size() + tagsToValidate.size()));
+        Arrays.stream(shardingKey.getKeys()).map(HPath::getRootTag).forEach(tags::add);//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
         tags.addAll(tagsToValidate);
 
         ContentValidator validator = authValidationManager.validator(apiKey, stream);
 
-        SendContext context = new SendContext(async, topic, tags, partitions, ShardingKey.fromKeyPaths(shardingKey), validator);
+        SendContext context = new SendContext(async, topic, tags, partitions, shardingKey, validator);
         throttle.throttleAsync(request, context);
     }
 
