@@ -2,10 +2,10 @@ package ru.kontur.vostok.hercules.timeline.sink;
 
 import com.codahale.metrics.Meter;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Predicate;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
@@ -22,7 +22,6 @@ import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.RandomPartitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.Arrays;
 import java.util.HashSet;

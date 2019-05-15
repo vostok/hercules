@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.partitioner;
 
-import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
