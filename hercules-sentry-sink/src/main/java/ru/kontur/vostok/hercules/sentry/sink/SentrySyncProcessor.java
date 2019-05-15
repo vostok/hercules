@@ -13,6 +13,7 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
+import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -25,61 +26,49 @@ import java.util.UUID;
  */
 public class SentrySyncProcessor implements SingleSender<UUID, Event> {
 
-    private static class Props {
-        static final PropertyDescription<Level> REQUIRED_LEVEL = PropertyDescriptions
-                .propertyOfType(Level.class, "sentry.level")
-                .withParser(SentryLevelEnumParser::parseAsResult)
-                .withDefaultValue(Level.WARNING)
-                .build();
-    }
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
     private final Level requiredLevel;
     private final SentryClientHolder sentryClientHolder;
-    private final SentryProjectRegistry sentryProjectRegistry;
 
     public SentrySyncProcessor(
-            Properties properties,
-            SentryClientHolder sentryClientHolder,
-            SentryProjectRegistry sentryProjectRegistry
+            Properties sinkProperties,
+            SentryClientHolder sentryClientHolder
     ) {
-        this.requiredLevel = Props.REQUIRED_LEVEL.extract(properties);
+        this.requiredLevel = Props.REQUIRED_LEVEL.extract(sinkProperties);
         this.sentryClientHolder = sentryClientHolder;
-        this.sentryProjectRegistry = sentryProjectRegistry;
     }
 
     @Override
     public boolean process(UUID key, Event event) throws BackendServiceFailedException {
+        final Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
+                .flatMap(SentryLevelEnumParser::parse);
+        if (!level.isPresent() || requiredLevel.compareTo(level.get()) < 0) {
+            return false;
+        }
+
         final Optional<Container> properties = ContainerUtil.extract(event.getPayload(), CommonTags.PROPERTIES_TAG);
         if (!properties.isPresent()) {
             LOGGER.warn("Missing required tag '{}'", CommonTags.PROPERTIES_TAG.getName());
             return false;
         }
 
-        Optional<String> project = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
-        if (!project.isPresent()) {
+        Optional<String> organizationName = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
+        if (!organizationName.isPresent()) {
             LOGGER.warn("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
             return false;
         }
+        String organization = organizationName.get();
 
-        Optional<String> service = ContainerUtil.extract(properties.get(), CommonTags.SERVICE_TAG);
+        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
+        String sentryProject = sentryProjectName.orElse(organization);
 
-        Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
-                .flatMap(SentryLevelEnumParser::parse);
-        if (!level.isPresent() || requiredLevel.compareTo(level.get()) < 0) {
-            return false;
-        }
-
-        Optional<String> sentryProjectName = sentryProjectRegistry.getSentryProjectName(project.get(), service.orElse(null));
-        if (!sentryProjectName.isPresent()) {
-            LOGGER.warn("Project '{}' not found in registry", project.get());
-            return false;
-        }
-
-        Optional<SentryClient> sentryClient = sentryClientHolder.getClient(sentryProjectName.get());
-        if (!sentryClient.isPresent()) {
-            LOGGER.warn("Missing client for project '{}'", project.get());
+        Result<SentryClient, String> sentryClient =
+                sentryClientHolder.getOrCreateClient(organization, sentryProject);
+        if (!sentryClient.isOk()) {
+            LOGGER.error(String.format("Cannot get client for Sentry organization/project '%s/%s'",
+                    organization, sentryProject));
+            //TODO add check of sentryClient and consider it in retry (consider cases: "conflict", "not found" etc.)
             return false;
         }
 
@@ -88,11 +77,20 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             sentryClient.get().sendEvent(sentryEvent);
             return true;
         } catch (Exception e) {
+            //TODO add check of sending exceptions and consider it in retry
             throw new BackendServiceFailedException(e);
         }
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
+    }
+
+    private static class Props {
+        static final PropertyDescription<Level> REQUIRED_LEVEL = PropertyDescriptions
+                .propertyOfType(Level.class, "sentry.level")
+                .withParser(SentryLevelEnumParser::parseAsResult)
+                .withDefaultValue(Level.WARNING)
+                .build();
     }
 }

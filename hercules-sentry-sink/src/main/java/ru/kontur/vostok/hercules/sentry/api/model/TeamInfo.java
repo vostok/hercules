@@ -3,13 +3,13 @@ package ru.kontur.vostok.hercules.sentry.api.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * The model of project in Sentry.
+ * The model of team in Sentry.
  * It is a model which may be got from JSON in Sentry response
  *
- * @author Kirill Sulim
+ * @author Petr Demenev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ProjectInfo {
+public class TeamInfo {
 
     private String slug;
 

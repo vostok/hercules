@@ -1,20 +1,13 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.kafka.util.processing.ServicePinger;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.AbstractSingleSinkDaemon;
 import ru.kontur.vostok.hercules.kafka.util.processing.single.SingleSender;
-import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
-import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -22,21 +15,6 @@ import java.util.UUID;
  * @author Gregory Koshelev
  */
 public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
-
-    private static class Props {
-        static final PropertyDescription<String> SENTRY_URL = PropertyDescriptions
-                .stringProperty("sentry.url")
-                .build();
-
-        static final PropertyDescription<String> SENTRY_TOKEN = PropertyDescriptions
-                .stringProperty("sentry.token")
-                .build();
-    }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SentrySinkDaemon.class);
-
-    private CuratorClient curatorClient;
-    private SentryProjectRegistry sentryProjectRegistry;
 
     /**
      * Main starting point
@@ -50,13 +28,10 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
         final String sentryUrl = Props.SENTRY_URL.extract(sinkProperties);
         final String sentryToken = Props.SENTRY_TOKEN.extract(sinkProperties);
 
-        return new SentrySyncProcessor(
-                sinkProperties,
-                new SentryClientHolder(
-                        new SentryApiClient(sentryUrl, sentryToken)
-                ),
-                sentryProjectRegistry
-        );
+        SentryApiClient sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
+        SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient);
+        sentryClientHolder.update();
+        return new SentrySyncProcessor(sinkProperties,sentryClientHolder);
     }
 
     @Override
@@ -79,36 +54,13 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
         return "sink.sentry";
     }
 
-    @Override
-    protected void initSink(Properties properties) {
-        super.initSink(properties);
+    private static class Props {
+        static final PropertyDescription<String> SENTRY_URL = PropertyDescriptions
+                .stringProperty("sentry.url")
+                .build();
 
-        Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
-
-        curatorClient = new CuratorClient(curatorProperties);
-        curatorClient.start();
-
-        sentryProjectRegistry = new SentryProjectRegistry(new SentryProjectRepository(curatorClient));
-        sentryProjectRegistry.start();
-    }
-
-    @Override
-    protected void shutdownSink() {
-        super.shutdownSink();
-
-        try {
-            if (Objects.nonNull(sentryProjectRegistry)) {
-                sentryProjectRegistry.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping sentry project registry", t);
-        }
-        try {
-            if (Objects.nonNull(curatorClient)) {
-                curatorClient.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping curator client", t);
-        }
+        static final PropertyDescription<String> SENTRY_TOKEN = PropertyDescriptions
+                .stringProperty("sentry.token")
+                .build();
     }
 }

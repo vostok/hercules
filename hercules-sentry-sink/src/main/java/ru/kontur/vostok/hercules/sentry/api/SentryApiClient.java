@@ -1,19 +1,21 @@
 package ru.kontur.vostok.hercules.sentry.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
@@ -21,16 +23,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.sentry.api.auth.BearerAuthHttpInterceptor;
 import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.Organization;
 import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.Project;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.Team;
+import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -44,9 +48,16 @@ public class SentryApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(SentryApiClient.class);
 
     private static final String API_URL = "/api/0/";
-    private static final String PROJECTS_URL = API_URL + "projects/";
+
     private static final String ORGANIZATIONS_URL = API_URL + "organizations/";
-    private static final String KEYS_URL_TEMPLATE = PROJECTS_URL + "%s/%s/keys/";
+    private static final String PROJECTS_URL = API_URL + "projects/";
+    private static final String TEAMS_URL = API_URL + "teams/";
+
+    private static final String GET_PROJECTS_URL = ORGANIZATIONS_URL + "%s/projects/";
+    private static final String GET_PUBLIC_DSN_URL = PROJECTS_URL + "%s/%s/keys/";
+    private static final String GET_TEAMS_URL = ORGANIZATIONS_URL + "%s/teams/";
+    private static final String CREATE_TEAM_URL = ORGANIZATIONS_URL + "%s/teams/";
+    private static final String CREATE_PROJECT_URL = TEAMS_URL + "%s/%s/projects/";
 
     private final ObjectMapper objectMapper;
     private final HttpHost sentryHost;
@@ -62,57 +73,132 @@ public class SentryApiClient {
     }
 
     public Result<Void, String> ping() {
-        return request(new HttpHead(API_URL), new TypeReference<Void>() {});
+        return request(
+                new HttpHead(API_URL),
+                new TypeReference<Void>() {});
     }
 
     /**
-     * Get the projects which match the Sentry client
+     * Get the organizations for this Sentry API client
      *
-     * @return the {@link Result} object  with a list of projects
+     * @return the {@link Result} object with a list of organizations
      */
-    public Result<List<ProjectInfo>, String> getProjects() {
-        return pagedRequest(new HttpGet(PROJECTS_URL), new TypeReference<List<ProjectInfo>>() {});
+    public Result<List<OrganizationInfo>, String> getOrganizations() {
+        return pagedRequest(
+                new HttpGet(ORGANIZATIONS_URL),
+                new TypeReference<List<OrganizationInfo>>() {});
+    }
+
+    /**
+     * Get the projects which match the organization
+     *
+     * @param organization the organization
+     * @return the {@link Result} object with a list of projects
+     */
+    public Result<List<ProjectInfo>, String> getProjects(String organization) {
+        return pagedRequest(
+                new HttpGet(String.format(GET_PROJECTS_URL, organization)),
+                new TypeReference<List<ProjectInfo>>() {});
     }
 
     /**
      * Get a list of public DSN which match the project
      *
+     * @param organization the organization of the project
      * @param project the project for which a list of public DSN is requested
      * @return the {@link Result} object with a list of public DSN
      */
-    public Result<List<KeyInfo>, String> getPublicDsn(ProjectInfo project) {
-        Optional<String> projectSlug = Optional.ofNullable(project.getSlug());
-        Optional<String> organizationSlug = Optional.ofNullable(project.getOrganization()).map(OrganizationInfo::getSlug);
-
-        if (!projectSlug.isPresent() || !organizationSlug.isPresent()) {
-            return Result.error("Not enough info");
-        }
-
+    public Result<List<KeyInfo>, String> getPublicDsn(String organization, String project) {
         return pagedRequest(
-                new HttpGet(String.format(KEYS_URL_TEMPLATE, organizationSlug.get(), projectSlug.get())),
-                new TypeReference<List<KeyInfo>>() {}
-        );
+                new HttpGet(String.format(GET_PUBLIC_DSN_URL, organization, project)),
+                new TypeReference<List<KeyInfo>>() {} );
     }
 
     /**
-     * Create new organisation in the Sentry
+     * Get the teams which match the organization
      *
-     * @param name the name of organisation
-     * @return the {@link Result} object with response entity or error
+     * @param organization the organization
+     * @return the {@link Result} object with a list of teams
      */
-    public Result<Void, String> createOrganization(String name) {
-        HttpPost post = new HttpPost(ORGANIZATIONS_URL);
-        post.getParams().setParameter("name", name);
-        post.getParams().setParameter("slug", name);
-        post.getParams().setParameter("agreeTerms", false);
+    public Result<List<TeamInfo>, String> getTeams(String organization) {
+        return pagedRequest(
+                new HttpGet(String.format(GET_TEAMS_URL, organization)),
+                new TypeReference<List<TeamInfo>>() {} );
+    }
 
-        return request(post, new TypeReference<Void>() {});
+    /**
+     * Create new organization in the Sentry
+     *
+     * @param organization the name of an organization
+     * @return the {@link Result} object with created organization or error
+     */
+    public Result<OrganizationInfo, String> createOrganization(String organization) {
+        Organization organizationModel = new Organization(organization);
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] body;
+        try {
+            body = objectMapper.writeValueAsBytes(organizationModel);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Cannot create JSON from model for organization creation: {}", e.getMessage());
+            return Result.error("Cannot create JSON from model for organization creation");
+        }
+        HttpPost post = new HttpPost(ORGANIZATIONS_URL);
+        post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+        LOGGER.info(String.format("Creating of new organization '%s' in Sentry", organization));
+        return request(post, new TypeReference<OrganizationInfo>() {});
+    }
+
+    /**
+     * Create new team in the Sentry
+     *
+     * @param organization the organization where need to create a team
+     * @param team the team name
+     * @return the {@link Result} object with created team or error
+     */
+    public Result<TeamInfo, String> createTeam(String organization, String team) {
+        Team teamModel = new Team(team);
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] body;
+        try {
+            body = objectMapper.writeValueAsBytes(teamModel);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Cannot create JSON from model for team creation: {}", e.getMessage());
+            return Result.error("Cannot create JSON from model for team creation");
+        }
+        HttpPost post = new HttpPost(String.format(CREATE_TEAM_URL, organization));
+        post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+        LOGGER.info(String.format("Creating of new team '%s' in Sentry", team));
+        return request(post, new TypeReference<TeamInfo>() {});
+    }
+
+    /**
+     * Create new project in the Sentry
+     *
+     * @param organization the organization where need to create a project
+     * @param team the team where need to create a project
+     * @param project the project name
+     * @return the {@link Result} object with created project or error
+     */
+    public Result<ProjectInfo, String> createProject(String organization, String team, String project) {
+        Project projectModel = new Project(project);
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] body;
+        try {
+            body = objectMapper.writeValueAsBytes(projectModel);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Cannot create JSON from model for project creation: {}", e.getMessage());
+            return Result.error("Cannot create JSON from model for project creation");
+        }
+        HttpPost post = new HttpPost(String.format(CREATE_PROJECT_URL, organization, team));
+        post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+        LOGGER.info(String.format("Creating of new project '%s' in Sentry", project));
+        return request(post, new TypeReference<ProjectInfo>() {});
     }
 
     private <T> Result<T, String> request(HttpUriRequest request, TypeReference<T> typeReference) {
         try (CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
             if (isErrorResponse(response)) {
-                return Result.error(extractErrorMessage(response));
+                return Result.error(String.valueOf(extractErrorMessage(response)));
             }
             T value = null;
             Optional<HttpEntity> entity = Optional.ofNullable(response.getEntity());
@@ -121,7 +207,7 @@ public class SentryApiClient {
             }
             return Result.ok(value);
         } catch (Exception e) {
-            LOGGER.error("Error on request", e);
+            LOGGER.error("Error on request: {}", e.getMessage());
             return Result.error(e.getMessage());
         }
     }
@@ -132,13 +218,14 @@ public class SentryApiClient {
         try {
             do {
                 // Add cursor info to support pagination
-                nextCursor.ifPresent(cursorValue -> {
-                    request.getParams().removeParameter("cursor");
-                    request.getParams().setParameter("cursor", cursorValue);
-                });
+                if(nextCursor.isPresent()) {
+                    RequestBuilder requestBuilder = RequestBuilder.copy(request);
+                    requestBuilder.addParameter("cursor", nextCursor.get());
+                    request = requestBuilder.build();
+                }
                 try (CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
                     if (isErrorResponse(response)) {
-                        return Result.error(extractErrorMessage(response));
+                        return Result.error(String.valueOf(extractErrorMessage(response)));
                     }
                     resultList.addAll(objectMapper.readValue(response.getEntity().getContent(), listTypeReference));
                     nextCursor = getCursorValue(response.getFirstHeader("Link"));
@@ -146,17 +233,23 @@ public class SentryApiClient {
             } while (nextCursor.isPresent());
             return Result.ok(resultList);
         } catch (Exception e) {
-            LOGGER.error("Error on paged request", e);
+            LOGGER.error("Error on paged request: {}", e.getMessage());
             return Result.error(e.getMessage());
         }
     }
 
     private static boolean isErrorResponse(CloseableHttpResponse response) {
-        return 400 <= response.getStatusLine().getStatusCode();
+        return 400 <= extractStatusCode(response);
     }
 
     private static String extractErrorMessage(CloseableHttpResponse response) {
-        return response.getStatusLine().getReasonPhrase();
+        int statusCode = extractStatusCode(response);
+        String reasonPhrase = response.getStatusLine().getReasonPhrase();
+        return String.format("%d %s", statusCode, reasonPhrase);
+    }
+
+    private static int extractStatusCode(CloseableHttpResponse response) {
+        return response.getStatusLine().getStatusCode();
     }
 
     private static Optional<String> getCursorValue(Header linkHeader) {
