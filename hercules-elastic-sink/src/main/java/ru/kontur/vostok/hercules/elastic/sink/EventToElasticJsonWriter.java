@@ -6,9 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import ru.kontur.vostok.hercules.json.EventToJsonWriter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
@@ -16,16 +14,13 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 public final class EventToElasticJsonWriter {
     private static final String TIMESTAMP_TAG_NAME = "@timestamp";

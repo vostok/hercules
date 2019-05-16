@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -69,7 +70,7 @@ public class IndexToElasticJsonWriterTest {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
             .tag("properties", Variant.ofContainer(ContainerBuilder.create()
                 .tag("project", Variant.ofString("awesome-project"))
-                .tag(ElasticSearchTags.ELK_SCOPE_TAG, Variant.ofString("scope"))
+                .tag(CommonTags.APPLICATION_TAG, Variant.ofString("app"))
                 .tag("environment", Variant.ofString("production"))
                 .build()
             ))
@@ -81,7 +82,7 @@ public class IndexToElasticJsonWriterTest {
         assertEquals(
             "{" +
                 "\"index\":{" +
-                "\"_index\":\"awesome-project-scope-production-1970.01.01\"," +
+                "\"_index\":\"awesome-project-app-production-1970.01.01\"," +
                 "\"_type\":\"LogEvent\"," +
                 "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                 "}" +
