@@ -43,4 +43,16 @@ public class CassandraManager {
 
         session.execute("DROP TABLE IF EXISTS " + table);
     }
+
+    /**
+     * Alter ttl in the table
+     *
+     * @param table the table name
+     * @param ttl TTL in millis
+     */
+    public void changeTtl(String table, long ttl) {
+        Session session = connector.session();
+
+        session.execute("ALTER TABLE " + table + " WITH default_time_to_live = " + (ttl / 1000) + ";");
+    }
 }

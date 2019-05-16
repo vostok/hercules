@@ -10,11 +10,13 @@ import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
 import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
-import ru.kontur.vostok.hercules.management.api.stream.IncreasePartitionsStreamHandler;
-import ru.kontur.vostok.hercules.management.api.stream.InfoStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.ChangeStreamTtlHandler;
 import ru.kontur.vostok.hercules.management.api.stream.CreateStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.DeleteStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.IncreasePartitionsStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.InfoStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.ListStreamHandler;
+import ru.kontur.vostok.hercules.management.api.timeline.ChangeTimelineTtlHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.CreateTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.DeleteTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.InfoTimelineHandler;
@@ -69,6 +71,7 @@ public class HttpServer {
 
         AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
 
+        ChangeStreamTtlHandler changeStreamTtlHandler = new ChangeStreamTtlHandler(authManager, streamTaskQueue, streamRepository);
         CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue, streamRepository);
         DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue, streamRepository);
         IncreasePartitionsStreamHandler increasePartitionsStreamHandler =
@@ -76,6 +79,7 @@ public class HttpServer {
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
         InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
 
+        ChangeTimelineTtlHandler changeTimelineTtlHandler = new ChangeTimelineTtlHandler(authManager, timelineTaskQueue, timelineRepository);
         CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
         DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
@@ -89,11 +93,13 @@ public class HttpServer {
         HttpHandler listBlacklistHandler = adminAuthManagerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
 
         HttpHandler handler = new HerculesRoutingHandler(metricsCollector)
+                .post("/streams/changeTtl", changeStreamTtlHandler)
                 .post("/streams/create", createStreamHandler)
                 .post("/streams/delete", deleteStreamHandler)
                 .post("/streams/increasePartitions", increasePartitionsStreamHandler)
                 .get("/streams/list", listStreamHandler)
                 .get("/streams/info", infoStreamHandler)
+                .post("/timelines/changeTtl", changeTimelineTtlHandler)
                 .post("/timelines/create", createTimelineHandler)
                 .post("/timelines/delete", deleteTimelineHandler)
                 .get("/timelines/list", listTimelineHandler)

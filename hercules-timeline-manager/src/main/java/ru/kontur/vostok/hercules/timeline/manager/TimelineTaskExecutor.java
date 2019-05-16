@@ -19,6 +19,7 @@ public class TimelineTaskExecutor extends TaskExecutor<TimelineTask> {
     private final TimelineRepository timelineRepository;
     private final Meter createdTimelineCount;
     private final Meter deletedTimelineCount;
+    private final Meter updateTimelineCount;
 
     protected TimelineTaskExecutor(
             TimelineTaskRepository timelineTaskRepository,
@@ -31,6 +32,7 @@ public class TimelineTaskExecutor extends TaskExecutor<TimelineTask> {
         this.timelineRepository = timelineRepository;
         this.createdTimelineCount = metricsCollector.meter("createdTimelineCount");
         this.deletedTimelineCount = metricsCollector.meter("deletedTimelineCount");
+        this.updateTimelineCount = metricsCollector.meter("updateTimelineCount");
     }
 
     @Override
@@ -57,6 +59,16 @@ public class TimelineTaskExecutor extends TaskExecutor<TimelineTask> {
                 cassandraManager.deleteTable(task.getTimeline().getName());//TODO: process deletion error
                 LOGGER.info("Deleted table '{}'", task.getTimeline().getName());
                 deletedTimelineCount.mark();
+                return true;
+            case CHANGE_TTL:
+                cassandraManager.changeTtl(task.getTimeline().getName(), task.getTimeline().getTtl());
+                try {
+                    timelineRepository.update(task.getTimeline());
+                } catch (Exception e) {
+                    LOGGER.error("Timeline deletion failed with exception", e);
+                    return false;
+                }
+                updateTimelineCount.mark();
                 return true;
             default:
                 LOGGER.error("Unknown task type {}", task.getType());
