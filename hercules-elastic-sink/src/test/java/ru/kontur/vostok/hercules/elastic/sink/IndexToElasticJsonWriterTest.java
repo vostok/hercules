@@ -6,7 +6,6 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.tags.CommonTags;
-import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;

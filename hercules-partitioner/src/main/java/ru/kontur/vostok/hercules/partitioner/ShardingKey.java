@@ -23,14 +23,14 @@ public class ShardingKey {
 
         HPath[] keys = new HPath[size];
         for (int i = 0; i < size; i++) {
-            keys[i] = new HPath(keyPaths[i]);
+            keys[i] = HPath.fromPath(keyPaths[i]);
         }
 
         return new ShardingKey(keys);
     }
 
     public static ShardingKey fromTag(String tag) {
-        return new ShardingKey(new HPath[]{new HPath(tag)});
+        return new ShardingKey(new HPath[]{HPath.fromTag(tag)});
     }
 
     public static ShardingKey fromTags(String... tags) {
