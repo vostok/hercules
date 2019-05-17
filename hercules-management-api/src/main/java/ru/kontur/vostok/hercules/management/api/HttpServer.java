@@ -71,17 +71,17 @@ public class HttpServer {
 
         AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
 
-        ChangeStreamTtlHandler changeStreamTtlHandler = new ChangeStreamTtlHandler(authManager, streamTaskQueue, streamRepository);
         CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue, streamRepository);
         DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue, streamRepository);
+        ChangeStreamTtlHandler changeStreamTtlHandler = new ChangeStreamTtlHandler(authManager, streamTaskQueue, streamRepository);
         IncreasePartitionsStreamHandler increasePartitionsStreamHandler =
                 new IncreasePartitionsStreamHandler(authManager, streamTaskQueue, streamRepository);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
         InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
 
-        ChangeTimelineTtlHandler changeTimelineTtlHandler = new ChangeTimelineTtlHandler(authManager, timelineTaskQueue, timelineRepository);
         CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
         DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
+        ChangeTimelineTtlHandler changeTimelineTtlHandler = new ChangeTimelineTtlHandler(authManager, timelineTaskQueue, timelineRepository);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
         InfoTimelineHandler infoTimelineHandler = new InfoTimelineHandler(timelineRepository, authManager);
 
@@ -93,15 +93,15 @@ public class HttpServer {
         HttpHandler listBlacklistHandler = adminAuthManagerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
 
         HttpHandler handler = new HerculesRoutingHandler(metricsCollector)
-                .post("/streams/changeTtl", changeStreamTtlHandler)
                 .post("/streams/create", createStreamHandler)
                 .post("/streams/delete", deleteStreamHandler)
+                .post("/streams/changeTtl", changeStreamTtlHandler)
                 .post("/streams/increasePartitions", increasePartitionsStreamHandler)
                 .get("/streams/list", listStreamHandler)
                 .get("/streams/info", infoStreamHandler)
-                .post("/timelines/changeTtl", changeTimelineTtlHandler)
                 .post("/timelines/create", createTimelineHandler)
                 .post("/timelines/delete", deleteTimelineHandler)
+                .post("/timelines/changeTtl", changeTimelineTtlHandler)
                 .get("/timelines/list", listTimelineHandler)
                 .get("/timelines/info", infoTimelineHandler)
                 .post("/rules/set", setRuleHandler)
