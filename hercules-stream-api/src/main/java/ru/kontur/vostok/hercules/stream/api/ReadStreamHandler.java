@@ -37,9 +37,9 @@ public class ReadStreamHandler implements HttpHandler {
     private static final String PARAM_TAKE = "take";
 
     private final AuthManager authManager;
-    private final StreamReader streamReader;
+    private final OldStreamReader streamReader;
 
-    public ReadStreamHandler(StreamReader streamReader, AuthManager authManager) {
+    public ReadStreamHandler(OldStreamReader streamReader, AuthManager authManager) {
         this.streamReader = streamReader;
         this.authManager = authManager;
     }

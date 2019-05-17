@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
-public class StreamReader {
+public class OldStreamReader {
 
     static class Props {
         static final PropertyDescription<String> SERVERS = PropertyDescriptions
@@ -49,7 +49,7 @@ public class StreamReader {
                 .build();
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StreamReader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OldStreamReader.class);
 
     private static final Object DUMMY = new Object();
 
@@ -59,7 +59,7 @@ public class StreamReader {
     private final String servers;
     private final long pollTimeout;
 
-    public StreamReader(Properties properties, StreamRepository streamRepository) {
+    public OldStreamReader(Properties properties, StreamRepository streamRepository) {
         this.streamRepository = streamRepository;
         this.servers = Props.SERVERS.extract(properties);
         this.pollTimeout = Props.POLL_TIMEOUT_MS.extract(properties);

@@ -50,7 +50,7 @@ public class SeekToEndHandler implements HttpHandler {
     public SeekToEndHandler(Properties properties, AuthManager authManager, StreamRepository repository) {
         this.authManager = authManager;
         this.repository = repository;
-        this.servers = StreamReader.Props.SERVERS.extract(properties);
+        this.servers = OldStreamReader.Props.SERVERS.extract(properties);
     }
 
 

@@ -23,7 +23,7 @@ public class StreamApiApplication {
 
     private static HttpServer server;
     private static CuratorClient curatorClient;
-    private static StreamReader streamReader;
+    private static OldStreamReader streamReader;
     private static AuthManager authManager;
     private static MetricsCollector metricsCollector;
 
@@ -48,7 +48,7 @@ public class StreamApiApplication {
 
             StreamRepository repository = new StreamRepository(curatorClient);
 
-            streamReader = new StreamReader(consumerProperties, repository);
+            streamReader = new OldStreamReader(consumerProperties, repository);
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
