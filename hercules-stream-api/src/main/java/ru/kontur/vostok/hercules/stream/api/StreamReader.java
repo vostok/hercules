@@ -81,7 +81,7 @@ public class StreamReader {
             }
 
             consumer.assign(partitionsToRead);
-            seekToNextOffsets(consumer, partitions, nextOffsets);
+            seekToNextOffsets(consumer, partitionsToRead, nextOffsets);
 
             elapsedTimeMs = readStartedMs - System.currentTimeMillis();
             remainingTimeMs = remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
