@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.curator.result.DeletionResult;
 import ru.kontur.vostok.hercules.curator.result.ReadResult;
+import ru.kontur.vostok.hercules.curator.result.UpdateResult;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.serialization.Deserializer;
 import ru.kontur.vostok.hercules.meta.serialization.SerializationException;
@@ -37,6 +38,10 @@ public class TimelineRepository {
 
     public CreationResult create(Timeline timeline) throws SerializationException, CuratorUnknownException, CuratorInternalException {
         return curatorClient.create(zPrefix + '/' + timeline.getName(), serializer.serialize(timeline));
+    }
+
+    public UpdateResult update(Timeline timeline) throws SerializationException, CuratorUnknownException, CuratorInternalException {
+        return curatorClient.update(zPrefix + '/' + timeline.getName(), serializer.serialize(timeline));
     }
 
     public List<String> list() throws Exception {

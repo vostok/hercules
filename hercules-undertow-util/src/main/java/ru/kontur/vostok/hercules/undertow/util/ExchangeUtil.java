@@ -59,6 +59,18 @@ public class ExchangeUtil {
         }
     }
 
+    public static Optional<Long> extractLongQueryParam(HttpServerExchange exchange, String name) {
+        Optional<String> param = extractQueryParam(exchange, name);
+        if (!param.isPresent()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Long.valueOf(param.get()));
+        } catch (NumberFormatException ex) {
+            return Optional.empty();
+        }
+    }
+
     private static Optional<String> getFirstValueIfExists(Deque<String> values) {
         if (values == null || values.isEmpty()) {
             return Optional.empty();
