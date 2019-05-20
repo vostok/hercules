@@ -3,15 +3,13 @@ package ru.kontur.vostok.hercules.stream.api;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.http.MimeTypes;
-import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
@@ -28,7 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -45,12 +43,12 @@ public class SeekToEndHandler implements HttpHandler {
 
     private final AuthManager authManager;
     private final StreamRepository repository;
-    private final String servers;
+    private final ConsumerPool<Void, byte[]> consumerPool;
 
-    public SeekToEndHandler(Properties properties, AuthManager authManager, StreamRepository repository) {
+    public SeekToEndHandler(AuthManager authManager, StreamRepository repository, ConsumerPool<Void, byte[]> consumerPool) {
         this.authManager = authManager;
         this.repository = repository;
-        this.servers = StreamReader.Props.SERVERS.extract(properties);
+        this.consumerPool = consumerPool;
     }
 
 
@@ -107,15 +105,9 @@ public class SeekToEndHandler implements HttpHandler {
             return;
         }
 
+        Consumer<Void, byte[]> consumer = null;
         try {
-            Properties props = new Properties();
-            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
-            props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, VoidDeserializer.class);
-            props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, VoidDeserializer.class);
-
-            KafkaConsumer<Void, byte[]> consumer = new KafkaConsumer<>(props);
+            consumer = consumerPool.acquire(5_000, TimeUnit.MILLISECONDS);
 
             List<TopicPartition> partitions = Arrays.stream(
                     LogicalPartitioner.getPartitionsForLogicalSharding(
@@ -124,6 +116,7 @@ public class SeekToEndHandler implements HttpHandler {
                             optionalShardCount.get())).
                     mapToObj(partition -> new TopicPartition(streamName, partition)).
                     collect(Collectors.toList());
+            consumer.assign(partitions);
             consumer.seekToEnd(partitions);
 
             Map<TopicPartition, Long> map = new HashMap<>(Maps.effectiveHashMapCapacity(partitions.size()));
@@ -141,6 +134,10 @@ public class SeekToEndHandler implements HttpHandler {
         } catch (Exception ex) {
             LOGGER.error("Error on processing request", ex);
             ResponseUtil.internalServerError(exchange);
+        } finally {
+            if (consumer != null) {
+                consumerPool.release(consumer);
+            }
         }
     }
 }
