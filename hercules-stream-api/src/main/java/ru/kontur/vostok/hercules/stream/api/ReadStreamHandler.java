@@ -7,7 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.http.MimeTypes;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
+import ru.kontur.vostok.hercules.meta.stream.Stream;
+import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
@@ -37,15 +43,17 @@ public class ReadStreamHandler implements HttpHandler {
     private static final String PARAM_TAKE = "take";
 
     private final AuthManager authManager;
-    private final OldStreamReader streamReader;
+    private final StreamReader streamReader;
+    private final StreamRepository streamRepository;
 
-    public ReadStreamHandler(OldStreamReader streamReader, AuthManager authManager) {
+    public ReadStreamHandler(StreamReader streamReader, AuthManager authManager, StreamRepository streamRepository) {
         this.streamReader = streamReader;
         this.authManager = authManager;
+        this.streamRepository = streamRepository;
     }
 
     @Override
-    public void handleRequest(HttpServerExchange httpServerExchange) throws Exception {
+    public void handleRequest(HttpServerExchange httpServerExchange) {
 
         Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(httpServerExchange);
         if (!optionalContentLength.isPresent()) {
@@ -119,11 +127,29 @@ public class ReadStreamHandler implements HttpHandler {
             return;
         }
 
+        Stream stream;
+        try {
+            Optional<Stream> optionalStream = streamRepository.read(streamName);
+            if (!optionalStream.isPresent()) {
+                ResponseUtil.notFound(httpServerExchange);
+                return;
+            }
+            stream = optionalStream.get();
+        } catch (CuratorException  ex) {
+            LOGGER.error("Curator exception when read Stream", ex);
+            ResponseUtil.internalServerError(httpServerExchange);
+            return;
+        } catch (DeserializationException ex) {
+            LOGGER.error("Deserialization exception of Stream", ex);
+            ResponseUtil.internalServerError(httpServerExchange);
+            return;
+        }
+
         httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
             exchange.dispatch(() -> {
                 try {
-                    ByteStreamContent streamContent = streamReader.getStreamContent(
-                            streamName,
+                    ByteStreamContent streamContent = streamReader.read(
+                            stream,
                             STATE_READER.read(new Decoder(message)),
                             shardIndex.get(),
                             shardCount.get(),
@@ -132,10 +158,10 @@ public class ReadStreamHandler implements HttpHandler {
 
                     exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
 
-                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    Encoder encoder = new Encoder(stream);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    Encoder encoder = new Encoder(baos);
                     CONTENT_WRITER.write(encoder, streamContent);
-                    exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
+                    exchange.getResponseSender().send(ByteBuffer.wrap(baos.toByteArray()));
                 } catch (IllegalArgumentException e) {
                     ResponseUtil.badRequest(exchange);
                 } catch (Exception e) {

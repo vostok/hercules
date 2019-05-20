@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.stream.api;
 
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -12,6 +13,7 @@ import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -21,8 +23,8 @@ import java.util.concurrent.TimeoutException;
 /**
  * @author Gregory Koshelev
  */
-public class KafkaConsumerPool<K, V> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumerPool.class);
+public class ConsumerPool<K, V> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerPool.class);
 
     private final Properties properties;
 
@@ -33,9 +35,9 @@ public class KafkaConsumerPool<K, V> {
     private final int maxPollRecords;
     private final int poolSize;
 
-    private ArrayBlockingQueue<KafkaConsumer<K, V>> consumers;
+    private ArrayBlockingQueue<Consumer<K, V>> consumers;
 
-    public KafkaConsumerPool(Properties properties, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
+    public ConsumerPool(Properties properties, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
         this.properties = properties;
 
         this.keyDeserializer = keyDeserializer;
@@ -54,29 +56,30 @@ public class KafkaConsumerPool<K, V> {
         }
     }
 
-    public KafkaConsumer<K, V> tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
+    public Consumer<K, V> tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
         return consumers.poll(timeout, unit);
     }
 
-    public KafkaConsumer<K, V> acquire(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
-        KafkaConsumer<K, V> consumer = tryAcquire(timeout, unit);
+    public Consumer<K, V> acquire(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+        Consumer<K, V> consumer = tryAcquire(timeout, unit);
         if (consumer != null) {
             return consumer;
         }
         throw new TimeoutException();
     }
 
-    public void release(KafkaConsumer<K, V> consumer) {
+    public void release(Consumer<K, V> consumer) {
+        consumer.assign(Collections.emptyList());
         consumers.offer(consumer);
     }
 
     public void stop(long timeout, TimeUnit unit) {
-        List<KafkaConsumer<K,V>> list = new ArrayList<>(poolSize);
+        List<Consumer<K,V>> list = new ArrayList<>(poolSize);
         int count = consumers.drainTo(list, poolSize);
         LOGGER.info("Closing " + count + " of " + poolSize + " consumers");
 
-        Duration duration = DurationUtil.of(timeout, unit);//TODO: Should use elapsed time on each iteration
-        for (KafkaConsumer<K,V> consumer : list) {
+        Duration duration = DurationUtil.of(timeout, unit);//TODO: Should use (timeout - elapsed time) on each iteration
+        for (Consumer<K,V> consumer : list) {
             try {
                 consumer.wakeup();
             } catch (Exception ex) {
@@ -91,7 +94,7 @@ public class KafkaConsumerPool<K, V> {
         }
     }
 
-    private KafkaConsumer<K, V> create() {
+    private Consumer<K, V> create() {
         Properties consumerProperties = new Properties();
         consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "stub");
