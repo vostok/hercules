@@ -116,19 +116,13 @@ public class SeekToEndHandler implements HttpHandler {
                             optionalShardCount.get())).
                     mapToObj(partition -> new TopicPartition(streamName, partition)).
                     collect(Collectors.toList());
-            consumer.assign(partitions);
-            consumer.seekToEnd(partitions);
-
-            Map<TopicPartition, Long> map = new HashMap<>(Maps.effectiveHashMapCapacity(partitions.size()));
-            for (TopicPartition partition : partitions) {
-                map.put(partition, consumer.position(partition));
-            }
+            Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
 
             exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Encoder encoder = new Encoder(outputStream);
-            CONTENT_WRITER.write(encoder, StreamReadStateUtil.stateFromMap(streamName, map));
+            CONTENT_WRITER.write(encoder, StreamReadStateUtil.stateFromMap(streamName, endOffsets));
 
             exchange.getResponseSender().send(ByteBuffer.wrap(outputStream.toByteArray()));
         } catch (Exception ex) {
