@@ -50,6 +50,7 @@ public class StreamApiApplication {
             curatorClient.start();
 
             consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer());
+            consumerPool.start();
 
             StreamRepository repository = new StreamRepository(curatorClient);
 
