@@ -125,6 +125,16 @@ public class ReadStreamHandler implements HttpHandler {
             return;
         }
 
+        if (take.get() < 0) {
+            ResponseUtil.badRequest(httpServerExchange, "Invalid parameter " + PARAM_TAKE);
+            return;
+        }
+
+        if (shardCount.get() <= shardIndex.get()) {
+            ResponseUtil.badRequest(httpServerExchange, "Invalid parameters: " + PARAM_SHARD_COUNT + " must be > " + PARAM_SHARD_INDEX);
+            return;
+        }
+
         Stream stream;
         try {
             Optional<Stream> optionalStream = streamRepository.read(streamName);

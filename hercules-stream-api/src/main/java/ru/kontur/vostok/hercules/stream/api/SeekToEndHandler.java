@@ -90,6 +90,11 @@ public class SeekToEndHandler implements HttpHandler {
             return;
         }
 
+        if (optionalShardCount.get() <= optionalShardIndex.get()) {
+            ResponseUtil.badRequest(exchange, "Invalid parameters: " + PARAM_SHARD_COUNT + " must be > " + PARAM_SHARD_INDEX);
+            return;
+        }
+
         Optional<Stream> stream;
         try {
             stream = repository.read(streamName);
