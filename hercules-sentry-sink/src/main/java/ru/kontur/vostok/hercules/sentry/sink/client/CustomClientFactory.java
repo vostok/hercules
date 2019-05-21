@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.sentry.sink.client;
 
 import io.sentry.DefaultSentryClientFactory;
 import io.sentry.SentryClient;
+import io.sentry.connection.AsyncConnection;
 import io.sentry.connection.NoopConnection;
 import io.sentry.context.ThreadLocalContextManager;
 import io.sentry.dsn.Dsn;
@@ -50,5 +51,32 @@ public class CustomClientFactory extends DefaultSentryClientFactory {
             logger.error("Failed to initialize sentry, falling back to no-op client", e);
             return new CustomSentryClient(new NoopConnection(), new ThreadLocalContextManager());
         }
+    }
+
+    /**
+     * Whether or not to wrap the underlying connection in an {@link AsyncConnection}.
+     * But the overriding method always return false because
+     * {@link AsyncConnection} is not needed and we need to forward exceptions to
+     * {@link ru.kontur.vostok.hercules.sentry.sink.SentrySyncProcessor}
+     *
+     * @param dsn Sentry server DSN which may contain options (see the overridden method)
+     * @return false (not to wrap the underlying connection in an {@link AsyncConnection})
+     */
+    @Override
+    protected boolean getAsyncEnabled(Dsn dsn) {
+        return false;
+    }
+
+    /**
+     * Whether or not buffering is enabled.
+     * But the overriding method always return false because
+     * {@link io.sentry.connection.BufferedConnection} is not needed
+     *
+     * @param dsn Sentry server DSN which may contain options (see the overridden method)
+     * @return false (not buffering is enabled)
+     */
+    @Override
+    protected boolean getBufferEnabled(Dsn dsn) {
+        return false;
     }
 }

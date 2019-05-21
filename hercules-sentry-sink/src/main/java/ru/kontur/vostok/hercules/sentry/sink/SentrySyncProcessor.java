@@ -86,9 +86,9 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             LOGGER.warn("a temporary lockdown is switched on");
             //TODO Handle as retryable exception.
         } catch (ConnectionException e) {
-            LOGGER.warn("Connection exception");
             Long lockdownTime = e.getRecommendedLockdownTime();
             int responseCode = e.getResponseCode();
+            LOGGER.warn(String.format("Connection exception: responseCode=%d, lockdownTime=%d", responseCode, lockdownTime));
             //TODO Add responseCode check (retryable / non retryable). Add retry after lockdownTime if responseCode indicate to retryable error.
         } catch (Exception e) {
             throw new BackendServiceFailedException(e);
