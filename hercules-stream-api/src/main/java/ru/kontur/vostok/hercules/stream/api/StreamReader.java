@@ -83,7 +83,7 @@ public class StreamReader {
             consumer.assign(partitionsToRead);
             seekToNextOffsets(consumer, partitionsToRead, nextOffsets);
 
-            elapsedTimeMs = readStartedMs - System.currentTimeMillis();
+            elapsedTimeMs = elapsedTime(readStartedMs);
             remainingTimeMs = remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
 
             List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, remainingTimeMs);
@@ -133,7 +133,7 @@ public class StreamReader {
                 }
             }
 
-            elapsedTimeMs = pollStartedAt - System.currentTimeMillis();
+            elapsedTimeMs = elapsedTime(pollStartedAt);
             remainingTimeMs = remainingTimeOrZero(timeoutMs, elapsedTimeMs);
         }
         while ((count < take) && (remainingTimeMs > 0));
@@ -143,6 +143,10 @@ public class StreamReader {
 
     private static long remainingTimeOrZero(long timeoutMs, long elapsedTimeMs) {
         return Math.max(timeoutMs - elapsedTimeMs, 0L );
+    }
+
+    private static long elapsedTime(long startedAtMs) {
+        return System.currentTimeMillis() - startedAtMs;
     }
 
     static class Props {

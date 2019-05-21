@@ -17,12 +17,10 @@ import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
-import ru.kontur.vostok.hercules.util.Maps;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -89,6 +87,11 @@ public class SeekToEndHandler implements HttpHandler {
         Optional<Integer> optionalShardCount = ExchangeUtil.extractIntegerQueryParam(exchange, PARAM_SHARD_COUNT);
         if (!optionalShardCount.isPresent() || optionalShardCount.get() < 1) {
             ResponseUtil.badRequest(exchange, "Missing or invalid " + PARAM_SHARD_COUNT);
+            return;
+        }
+
+        if (optionalShardCount.get() <= optionalShardIndex.get()) {
+            ResponseUtil.badRequest(exchange, "Invalid parameters: " + PARAM_SHARD_COUNT + " must be > " + PARAM_SHARD_INDEX);
             return;
         }
 
