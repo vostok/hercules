@@ -60,11 +60,6 @@ public class CreateStreamHandler implements HttpHandler {
             ResponseUtil.lengthRequired(exchange);
             return;
         }
-        int contentLength = optionalContentLength.get();
-        if (contentLength < 0) {
-            ResponseUtil.badRequest(exchange);
-            return;
-        }
 
         final String apiKey = optionalApiKey.get();
         exchange.getRequestReceiver().receiveFullBytes((exch, bytes) -> {
