@@ -58,10 +58,6 @@ public class ReadStreamHandler implements HttpHandler {
             ResponseUtil.lengthRequired(httpServerExchange);
             return;
         }
-        if (optionalContentLength.get() < 0) {
-            ResponseUtil.badRequest(httpServerExchange);
-            return;
-        }
 
         Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(httpServerExchange, "apiKey");
         if (!optionalApiKey.isPresent()) {
