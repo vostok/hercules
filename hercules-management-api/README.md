@@ -4,12 +4,15 @@ Provide next opportunities:
 * Streams:
   * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for create stream;
   * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for delete stream;
+  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for change TTL of stream;
+  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for increase partitions count in stream;
   * Show all streams;
   * Get info about stream.
   
 * Timelines:
   * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for creat timeline;
   * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for delete timeline;
+  * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for change TTL of timeline;
   * Show all timelines;
   * Get info about timeline.
 

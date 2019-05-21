@@ -15,13 +15,14 @@ public final class ElasticSearchTags {
     /**
      * Special name for marking use of special index in elasticsearch
      */
-    public static final TagDescription<Optional<String>> INDEX_PATTERN_TAG = TagDescriptionBuilder.string("elk-index")
+    public static final TagDescription<Optional<String>> ELK_INDEX_TAG = TagDescriptionBuilder.string("elk-index")
         .optional()
         .build();
 
     /**
-     * Special tag for marking mid-level hierarchy in elasticsearch index
+     * Uses for backward compatibility only. FIXME: Should be removed in upcoming releases.
      */
+    @Deprecated
     public static final TagDescription<Optional<String>> ELK_SCOPE_TAG = TagDescriptionBuilder.string("elk-scope")
         .optional()
         .build();

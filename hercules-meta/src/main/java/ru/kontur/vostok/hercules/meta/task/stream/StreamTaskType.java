@@ -6,5 +6,6 @@ package ru.kontur.vostok.hercules.meta.task.stream;
 public enum StreamTaskType {
     CREATE,
     INCREASE_PARTITIONS,
-    DELETE;
+    DELETE,
+    CHANGE_TTL;
 }
