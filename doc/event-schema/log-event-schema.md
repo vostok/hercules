@@ -10,7 +10,7 @@ LogEvent:
   messageTemplate?: String # Message template
   exception?: Exception # Exception
   stackTrace?: String # Exception tree string representation (stacktrace)
-  properties?: Container # Key-value dictionary where values are primitives or string representation in case of object
+  properties?: Properties # Key-value dictionary where values are primitives or string representation in case of object
 Exception:
   type?: String # Exception runtime type
   message?: String # Exception message
@@ -22,8 +22,15 @@ StackFrame:
   file?: String # File name
   line?: Integer # Line number
   column?: Short # Column number
+Properties:
+  project?: String
+  application?: String
+  service?: String
+  environment?: String
 ```
 
-## Services which can process LogEvent
+Tags `properties/project`, `properties/application`, `properties/service` and `properties/environment` are [common tags](../../hercules-protocol/doc/common-tags.md).
 
-- elasticsearch-sink can process LogEvent as described in [its documentation](../../hercules-elasticsearch-sink/doc/log-event-schema.md)
+## LogEvent usages
+
+- Elastic Sink processes LogEvent as described in [its documentation](../../hercules-elastic-sink/doc/log-event-schema.md)

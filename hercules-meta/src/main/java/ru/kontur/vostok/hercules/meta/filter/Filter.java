@@ -23,6 +23,8 @@ public class Filter {
     public Filter(String path, Condition condition) {
         this.path = path;
         this.condition = condition;
+
+        hPath = HPath.fromPath(path);
     }
 
     public String getPath() {
@@ -31,7 +33,7 @@ public class Filter {
     public void setPath(String path) {
         this.path = path;
 
-        hPath = new HPath(path);
+        hPath = HPath.fromPath(path);
     }
 
     public Condition getCondition() {
