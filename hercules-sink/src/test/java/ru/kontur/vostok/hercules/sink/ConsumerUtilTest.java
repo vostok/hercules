@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util.processing.bulk;
+package ru.kontur.vostok.hercules.sink;
 
 import org.junit.Assert;
 import org.junit.Test;

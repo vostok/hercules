@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -26,6 +27,21 @@ public class CollectionUtil {
     @SuppressWarnings("unchecked")
     public static <T> Deque<T> emptyDeque() {
         return (Deque<T>) EMPTY_DEQUE;
+    }
+
+    /**
+     * Retruns {@code true} if collection is null or empty
+     *
+     * @param collection
+     * @param <T>
+     * @return {@code true} if collection is null or empty
+     */
+    public static <T> boolean isNullOrEmpty(Collection<T> collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    public static <T> List<T> nonNullElseEmpty(List<T> list) {
+        return (list != null) ? list : Collections.emptyList();
     }
 
     private CollectionUtil() {
