@@ -34,6 +34,9 @@ public final class EventToElasticJsonWriter {
                 final Optional<Container> properties = ContainerUtil.extract(event.getPayload(), CommonTags.PROPERTIES_TAG);
                 if (properties.isPresent()) {
                     for (Map.Entry<String, Variant> tag : properties.get()) {
+                        if (TIMESTAMP_FIELD.equals(tag.getKey())) {
+                            continue;// Ignore @timestamp tag since it is special field for elastic events
+                        }
                         EventToJsonWriter.writeVariantAsField(generator, tag.getKey(), tag.getValue());
                     }
                 }
@@ -42,6 +45,9 @@ public final class EventToElasticJsonWriter {
             for (Map.Entry<String, Variant> tag : event.getPayload()) {
                 if (mergePropertiesToRoot && CommonTags.PROPERTIES_TAG.getName().equals(tag.getKey())) {
                     continue;
+                }
+                if (TIMESTAMP_FIELD.equals(tag.getKey())) {
+                    continue;// Ignore @timestamp tag since it is special field for elastic events
                 }
                 EventToJsonWriter.writeVariantAsField(generator, tag.getKey(), tag.getValue());
             }
