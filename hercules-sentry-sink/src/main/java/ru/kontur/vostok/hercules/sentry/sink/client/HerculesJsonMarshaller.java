@@ -8,20 +8,20 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * CustomJsonMarshaller
+ * HerculesJsonMarshaller
  *
  * @author Kirill Sulim
  */
-public class CustomJsonMarshaller extends JsonMarshaller {
+public class HerculesJsonMarshaller extends JsonMarshaller {
 
     private final JsonFactory jsonFactory = new JsonFactory();
 
-    public CustomJsonMarshaller(int maxMessageLength) {
+    public HerculesJsonMarshaller(int maxMessageLength) {
         super(maxMessageLength);
     }
 
     @Override
     protected JsonGenerator createJsonGenerator(OutputStream destination) throws IOException {
-        return new CustomSentryJsonGenerator(jsonFactory.createGenerator(destination));
+        return new HerculesSentryJsonGenerator(jsonFactory.createGenerator(destination));
     }
 }

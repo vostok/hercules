@@ -11,7 +11,7 @@ import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
-import ru.kontur.vostok.hercules.sentry.sink.client.CustomClientFactory;
+import ru.kontur.vostok.hercules.sentry.sink.client.HerculesClientFactory;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
 import ru.kontur.vostok.hercules.util.validation.Validator;
@@ -51,7 +51,7 @@ public class SentryClientHolder {
     private final AtomicReference<Map<String, Map<String, SentryClient>>> clients = new AtomicReference<>(Collections.emptyMap());
 
     private final SentryApiClient sentryApiClient;
-    private final SentryClientFactory sentryClientFactory = new CustomClientFactory();
+    private final SentryClientFactory sentryClientFactory = new HerculesClientFactory();
 
     public SentryClientHolder(SentryApiClient sentryApiClient) {
         this.sentryApiClient = sentryApiClient;

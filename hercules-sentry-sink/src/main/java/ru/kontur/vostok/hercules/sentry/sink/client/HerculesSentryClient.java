@@ -16,9 +16,9 @@ import java.util.Set;
  *
  * @author Petr Demenev
  */
-public class CustomSentryClient extends SentryClient {
+public class HerculesSentryClient extends SentryClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(SentryClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SentryClient.class);
 
     /**
      * The underlying {@link Connection} to use for sending events to Sentry.
@@ -38,7 +38,7 @@ public class CustomSentryClient extends SentryClient {
      * @param connection     Underlying {@link Connection} instance to use for sending events
      * @param contextManager {@link ContextManager} instance to use for storing contextual data
      */
-    public CustomSentryClient(Connection connection, ContextManager contextManager) {
+    public HerculesSentryClient(Connection connection, ContextManager contextManager) {
         super(connection, contextManager);
         this.connection = connection;
     }
@@ -52,7 +52,7 @@ public class CustomSentryClient extends SentryClient {
     public void sendEvent(Event event) {
         for (ShouldSendEventCallback shouldSendEventCallback : shouldSendEventCallbacks) {
             if (!shouldSendEventCallback.shouldSend(event)) {
-                logger.trace("Not sending Event because of ShouldSendEventCallback: {}", shouldSendEventCallback);
+                LOGGER.trace("Not sending Event because of ShouldSendEventCallback: {}", shouldSendEventCallback);
                 return;
             }
         }
@@ -60,7 +60,7 @@ public class CustomSentryClient extends SentryClient {
         try {
             connection.send(event);
         } catch (Exception e) {
-            logger.error("An exception occurred while sending the event to Sentry.", e);
+            LOGGER.error("An exception occurred while sending the event to Sentry.", e);
             throw e;
         } finally {
             getContext().setLastEventId(event.getId());
