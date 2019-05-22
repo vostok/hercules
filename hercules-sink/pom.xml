@@ -16,5 +16,11 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-kafka-util</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

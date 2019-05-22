@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * MetricsTags collection of metrics tags
  *
- * @author Kirill Sulim
+ * @author iloktionov
  */
 public final class MetricsTags {
 
