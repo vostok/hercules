@@ -18,7 +18,7 @@ import java.util.Set;
  */
 public class HerculesSentryClient extends SentryClient {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SentryClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HerculesSentryClient.class);
 
     /**
      * The underlying {@link Connection} to use for sending events to Sentry.
