@@ -3,7 +3,7 @@ info:
   description: 'Management api for Hercules. Uses for create, modify, delete streams and timelines'
   version: 0.23.0
   title: Hercules management API
-host: 'vm-hercules05:6507'
+host: 'vm-hercules05:6309'
 schemes:
   - http
 paths:
@@ -51,7 +51,7 @@ paths:
         '403':
           $ref: '#/responses/forbidden'
         '404':
-          $ref: '#/responses/notFoundSourceStreams'
+          $ref: '#/responses/notFoundSourceStream'
         '409':
           $ref: '#/responses/conflict'
   /streams/delete:
@@ -79,7 +79,7 @@ paths:
         '403':
           $ref: '#/responses/forbidden'
         '404':
-          $ref: '#/responses/notFound'
+          $ref: '#/responses/notFoundSourceStream'
   /streams/list:
     get:
       tags:
@@ -121,7 +121,7 @@ paths:
           pattern: '[a-z0-9_]{1,48}'
         - name: newPartitions
           in: query
-          description: new partitions count
+          description: New partitions count
           required: true
           type: integer
       responses:
@@ -131,6 +131,10 @@ paths:
           $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'
+        '404':
+          $ref: '#/responses/notFoundSourceStream'
+        '409':
+          $ref: '#/responses/partitionConflict'
   /streams/changeTtl:
     post:
       tags:
@@ -163,7 +167,7 @@ paths:
         '403':
           $ref: '#/responses/forbidden'
         '404':
-          $ref: '#/responses/notFound'
+          $ref: '#/responses/notFoundSourceStream'
   /streams/info:
     get:
       tags:
@@ -191,7 +195,7 @@ paths:
         '401':
           $ref: '#/responses/unauthorized'
         '404':
-          $ref: '#/responses/notFound'
+          $ref: '#/responses/notFoundSourceStream'
   /timelines/create:
     post:
       tags:
@@ -216,7 +220,7 @@ paths:
         '403':
           $ref: '#/responses/forbidden'
         '404':
-          $ref: '#/responses/notFoundSourceStreams'
+          $ref: '#/responses/notFoundSourceTimeline'
         '409':
           $ref: '#/responses/conflict'
   /timelines/delete:
@@ -228,7 +232,7 @@ paths:
       operationId: deleteTimeline
       parameters:
         - $ref: '#/parameters/apiKey'
-        - name: stream
+        - name: timeline
           in: query
           description: Timeline name
           required: true
@@ -244,7 +248,7 @@ paths:
         '403':
           $ref: '#/responses/forbidden'
         '404':
-          $ref: '#/responses/notFound'
+          $ref: '#/responses/notFoundSourceTimeline'
   /timelines/list:
     get:
       tags:
@@ -288,7 +292,7 @@ paths:
           in: query
           description: New ttl
           required: true
-          type: long
+          type: integer
       responses:
         '200':
           $ref: '#/responses/success'
@@ -299,7 +303,7 @@ paths:
         '403':
           $ref: '#/responses/forbidden'
         '404':
-          $ref: '#/responses/notFound'
+          $ref: '#/responses/notFoundSourceTimeline'
   /timelines/info:
     get:
       tags:
@@ -327,7 +331,7 @@ paths:
         '401':
           $ref: '#/responses/unauthorized'
         '404':
-          $ref: '#/responses/notFound'
+          $ref: '#/responses/notFoundSourceTimeline'
   /rules/set:
     post:
       tags:
@@ -345,11 +349,10 @@ paths:
           pattern: '[a-zA-Z0-9_\-]+'
         - name: pattern
           in: query
-          description: Pattern for stream or timelime names
+          description: Pattern for stream or timeline names
           required: true
           type: string
           pattern: '[a-z0-9_\*\?]+'
-          #example: proj_name_*
         - name: rights
           in: query
           description: Combination of read, write and modified rights
@@ -426,7 +429,7 @@ paths:
         - $ref: '#/parameters/masterApiKey'
         - name: key
           in: query
-          description: API key for adding to blacklist
+          description: API key for removing from blacklist
           required: true
           type: string
           pattern: '[a-zA-Z0-9_\-]+'
@@ -562,9 +565,13 @@ responses:
     description: Forbidden for this API-key
   notFound:
     description: Not Found
-  notFoundSourceStreams:
-    description: Source streams not found
+  notFoundSourceStream:
+    description: Source stream not found
+  notFoundSourceTimeline:
+    description: Source timeline not found
   conflict:
     description: Conflict. Entity already exists
+  partitionConflict:
+    description: Conflict. New partition count less then old
   success:
     description: OK

@@ -3,9 +3,49 @@ Stream Api is used for reading streams from Apache Kafka.
 
 ## API methods
 
+[swagger documentation](../docs/stream-api/stream-api-swagger2.yml)
+
+### Ping
+
+**Description:** The method for ping service.
+
+**Method:** `GET`
+
+**URL:** `/ping`
+
+**Response codes:**
+
+`200` - successfully ping.
+
+### About
+
+**Description:** The method for getting service information.
+
+**Method:** `GET`
+
+**URL:** `/about`
+
+**Response codes:**
+
+`200` - successfully getting service information.
+
+**Response body:**
+
+Response body contains information about service:
+
+```
+applicationName - human readable application name
+applicationId - robot readable application name
+version - application version
+commitId - commit id
+environment - environment in which service is running (production, testing etc.)
+zone - datacenter in which instance is located
+hostName - server host name
+instanceId - instance identifier
+```
 ### Read 
 
-**Description:** The method to read the stream content.
+**Description:** The method for reading stream content.
 
 **Method:** `POST`
 
@@ -15,7 +55,7 @@ Stream Api is used for reading streams from Apache Kafka.
 
 `apiKey` - the API Key with read access to the stream is specified. Required.
 
-`ContentLength` - standard HTTP header. Required.
+`ContentType: application/octet-stream`
 
 **Query parameters:**
 
@@ -25,7 +65,7 @@ Stream Api is used for reading streams from Apache Kafka.
 
 `shardCount` - the total logical shards. Should be positive. Required.
 
-`take` - maximum events to read. Required.
+`take` - maximum events for reading. Required.
 
 **Request body:**
 
@@ -66,7 +106,8 @@ Events          Count, Event*
 ``` 
 
 ### Seek to end
-**Description:** The method to seek the end of the stream.
+
+**Description:** The method for seek the end of the stream.
 
 **Method:** `GET`
 
@@ -75,6 +116,8 @@ Events          Count, Event*
 **Request headers**
 
 `apiKey` - the API Key with read access to the stream is specified. Required.
+
+`ContentType: application/octet-stream`
 
 **Query parameters:**
 
@@ -105,6 +148,7 @@ ContentType: application/octet-stream
 **Response body:**
 
 Response body contains read state as follows:
+
 ```
 ResponseBody    State
 ```

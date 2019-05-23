@@ -1,0 +1,130 @@
+swagger: '2.0'
+info:
+  description: 'Gate api for Hercules. The method for send event to Apache Kafka.'
+  version: 0.23.0
+  title: Hercules gate API
+host: 'vm-hercules05:6306'
+schemes:
+  - http
+paths:
+  /ping:
+    get:
+      summary: Ping
+      description: Check server status
+      operationId: ping
+      responses:
+        '200':
+          $ref: '#/responses/success'
+  /about:
+    get:
+      summary: About
+      description: Check server description
+      operationId: about
+      responses:
+        '200':
+          description: Info about service
+          schema:
+            $ref: '#/definitions/About'
+  /stream/send:
+    post:
+      tags:
+        - gate
+      summary: Gate
+      description: Send events to Apache Kafka
+      operationId: gate
+      produces:
+        - plain/text
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - name: stream
+          in: query
+          description: Name of stream
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+      responses:
+        '200':
+          $ref: '#/responses/success'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/writeRulesIsAbsent'
+        '403':
+          $ref: '#/responses/forbidden'
+        '404':
+          $ref: '#/responses/notFoundSourceStream'
+        '413':
+          $ref: '#/responses/entityTooLarge'
+  /stream/sendAsync:
+    post:
+      tags:
+        - gate
+      summary: Gate
+      description: Asynchronously send events to Apache Kafka
+      operationId: gateAsync
+      produces:
+        - plain/text
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - name: stream
+          in: query
+          description: Name of stream
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+      responses:
+        '200':
+          $ref: '#/responses/success'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/writeRulesIsAbsent'
+        '403':
+          $ref: '#/responses/forbidden'
+        '404':
+          $ref: '#/responses/notFoundSourceStream'
+        '413':
+          $ref: '#/responses/entityTooLarge'
+definitions:
+  About:
+    type: object
+    properties:
+      applicationName:
+        type: string
+      applicationId:
+        type: string
+      version:
+        type: string
+      commitId:
+        type: string
+      environment:
+        type: string
+      zone:
+        type: string
+      hostName:
+        type: string
+      instanceId:
+        type: string
+parameters:
+  apiKey:
+    name: apiKey
+    in: header
+    type: string
+    pattern: '^\d{3}-\d{2}-\d{4}$'
+    required: true
+    description: API key for authorization
+responses:
+  success:
+    description: OK
+  badRequest:
+    description: Bad request
+  writeRulesIsAbsent:
+    description: Write rule for this apiKey is absent
+  forbidden:
+    description: Forbidden for this API-key
+  notFoundSourceStream:
+    description: Not found source stream
+  lengthRequired:
+    description: Can't get Content-Length value
+  entityTooLarge:
+    description: Request entity too large

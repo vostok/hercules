@@ -7,6 +7,47 @@ API requests will return JSON as the response.
 
 ## API methods
 
+[swagger documentation](../docs/tracing-api/tracing-api-swagger2.yml)
+
+### Ping
+
+**Description:** The method to ping service.
+
+**Method:** `GET`
+
+**URL:** `/ping`
+
+**Response codes:**
+
+`200` - successfully ping.
+
+### About
+
+**Description:** The method to get service information.
+
+**Method:** `GET`
+
+**URL:** `/about`
+
+**Response codes:**
+
+`200` - successfully getting service information.
+
+**Response body:**
+
+Response body contains information about service:
+
+```
+applicationName - human readable application name
+applicationId - robot readable application name
+version - application version
+commitId - commit id
+environment - environment in which service is running (production, testing etc.)
+zone - datacenter in which instance is located
+hostName - server host name
+instanceId - instance identifier
+```
+
 ### Get trace
 
 **Description:** The method provides traces by traceId or traceId+parentSpanId from Cassandra.
@@ -39,7 +80,7 @@ GET /trace?traceId=1a2b3c4d-9bec-40b0-839b-cc51e2abcdef&parentSpanId=abcdef12-ac
 
 `400` - the request has incorrect values
 
-**Response properties:**
+**Response headers:**
 
 ContentType: application/json
 
@@ -62,59 +103,6 @@ ContentType: application/json
         "parentSpanId":"abcdef12-acde-4675-9322-f96cc1234567"
       }
     ]
-}
-```
-
-### Ping
-**Description:** The method indicates that the service is working. 
-
-**Method:** `GET`
-
-**URL:** `/ping`
-
-**Request example:**
-
-```Request
-GET /ping HTTP/1.1
-```
-
-**Response codes:**
-
-`200` - the service is working
-
-### About
-
-**Description:** The method provides information about the service.
-
-**Method:** `GET`
-
-**URL:** `/about`
-
-**Request example:**
-
-```Request
-GET /about HTTP/1.1
-```
-
-**Response codes:**
-
-`200` - the service is working
-
-**Response properties:**
-
-ContentType: application/json
-
-**Response body example:**
-```response
-{
-    "applicationName": "Hercules tracing API",
-    "applicationId": "tracing-api",
-    "version": "0.20.1-SNAPSHOT",
-    "commitId": "e840d62543f70b4d469dc848beaf9c7a56d05b56",
-    "environment": "production",
-    "zone": "devlocal",
-    "hostName": "K1805018",
-    "instanceId": "1"
 }
 ```
 

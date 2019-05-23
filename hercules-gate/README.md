@@ -1,6 +1,127 @@
 # Hercules Gate
 Gate is used to transmit events from clients to Apache Kafka.
 
+## API methods
+
+[swagger documentation](../docs/gate-api/gate-api-swagger2.yml)
+
+### Ping
+
+**Description:** The method for ping service.
+
+**Method:** `GET`
+
+**URL:** `/ping`
+
+**Response codes:**
+
+`200` - successfully ping.
+
+### About
+
+**Description:** The method ащк getting service information.
+
+**Method:** `GET`
+
+**URL:** `/about`
+
+**Response codes:**
+
+`200` - successfully getting service information.
+
+**Response body:**
+
+Response body contains information about service:
+
+```
+applicationName - human readable application name
+applicationId - robot readable application name
+version - application version
+commitId - commit id
+environment - environment in which service is running (production, testing etc.)
+zone - datacenter in which instance is located
+hostName - server host name
+instanceId - instance identifier
+```
+
+### Send
+
+**Description:** The method for sending event to Apache Kafka.
+
+**Method:** `POST`
+
+**URL:** `/stream/send`
+
+**Request headers**
+
+`apiKey` - the API Key with write access to the stream is specified. Required.
+
+`ContentType: application/octet-stream`
+
+**Query parameters:**
+
+`stream` - the name of stream. Required.
+
+**Request body:**
+
+```
+Events		Count, Event*
+Count		Integer
+```
+
+**Response codes:**
+
+`200` - successfully send data into stream.
+
+`400` - bad request.
+
+`401` - no API key is provided or it is invalid.
+
+`403` - the stream cannot be accessed with provided API key.
+
+`404` - the stream not found.
+
+`413` - request entity too large.
+
+### Send Async
+
+**Description:** The method for asynchronously sending event to Apache Kafka.
+
+**Method:** `POST`
+
+**URL:** `/stream/sendAsync`
+
+**Request headers**
+
+`apiKey` - the API Key with write access to the stream is specified. Required.
+
+`ContentType: application/octet-stream`
+
+**Query parameters:**
+
+`stream` - the name of stream. Required.
+
+**Request body:**
+
+```
+Events		Count, Event*
+Count		Integer
+```
+
+**Response codes:**
+
+`200` - successfully send data into stream.
+
+`400` - bad request.
+
+`401` - no API key is provided or it is invalid.
+
+`403` - the stream cannot be accessed with provided API key.
+
+`404` - the stream not found.
+
+`413` - request entity too large.
+
 ## Settings
 Application is configured through properties file.
 

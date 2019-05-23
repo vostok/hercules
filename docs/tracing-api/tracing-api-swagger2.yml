@@ -1,0 +1,128 @@
+swagger: '2.0'
+info:
+  description: 'Tracing api for Hercules. The method provides traces by traceId or traceId+parentSpanId from Cassandra.'
+  version: 0.23.0
+  title: Hercules tracing API
+host: 'vm-hercules05:6312'
+schemes:
+  - http
+paths:
+  /ping:
+    get:
+      summary: Ping
+      description: Check server status
+      operationId: ping
+      responses:
+        '200':
+          $ref: '#/responses/success'
+  /about:
+    get:
+      summary: About
+      description: Check server description
+      operationId: about
+      responses:
+        '200':
+          description: Info about service
+          schema:
+            $ref: '#/definitions/About'
+  /trace:
+    get:
+      tags:
+        - trace
+      summary: Trace
+      description: Provides traces by traceId or traceId+parentSpanId from Cassandra
+      operationId: trace
+      produces:
+        - plain/text
+      parameters:
+        - name: traceId
+          in: query
+          description: Unique identifier of the trace containing the span
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+        - name: parentSpanId
+          in: query
+          description: Unique identifier of the parent span in the tree
+          required: false
+          type: string
+        - name: limit
+          in: query
+          description: Count limit of traces in response
+          required: false
+          type: integer
+        - name: pagingState
+          in: query
+          description: Paging state, is used for paging of result
+          required: false
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Trace'
+        '400':
+          $ref: '#/responses/badRequest'
+definitions:
+  Trace:
+    type: object
+    properties:
+      traceId:
+        type: string
+        description: trace id
+      spanId:
+        type: string
+        description: span id
+      endTimestampUtcOffset:
+        type: integer
+        description: end timestamp utc offset
+      beginTimestampUtcOffset:
+        type: integer
+        description: begin timestamp utc offset
+      beginTimestampUtc:
+        type: number
+        description: begin timestamp utc
+      endTimestampUtc:
+        type: number
+        description: end timestamp utc
+      annotations:
+        type: array
+        description: annotation
+        items:
+          type: string
+      parentSpanId:
+        type: string
+        description: parent span id
+    example:
+      traceId: 1a2b3c4d-9bec-40b0-839b-cc51e2abcdef
+      spanId: 7a99a678-def0-4567-abad-ba7fc38ffa13
+      endTimestampUtcOffset: 18000
+      beginTimestampUtcOffset: 18000
+      endTimestampUtc: 1555920934013
+      beginTimestampUtc: 1555920933913
+      annotations: [Key: value]
+      parentSpanId: abcdef12-acde-4675-9322-f96cc1234567
+  About:
+    type: object
+    properties:
+      applicationName:
+        type: string
+      applicationId:
+        type: string
+      version:
+        type: string
+      commitId:
+        type: string
+      environment:
+        type: string
+      zone:
+        type: string
+      hostName:
+        type: string
+      instanceId:
+        type: string
+responses:
+  success:
+    description: OK
+  badRequest:
+    description: Bad request
