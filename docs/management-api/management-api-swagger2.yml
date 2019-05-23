@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
-  description: 'Management api for Hercules. Uses for create, midify, delete streams and timelines'
-  version: 0.20.0
+  description: 'Management api for Hercules. Uses for create, modify, delete streams and timelines'
+  version: 0.23.0
   title: Hercules management API
 host: 'vm-hercules05:6507'
 schemes:
@@ -131,6 +131,39 @@ paths:
           $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'
+  /streams/changeTtl:
+    post:
+      tags:
+        - stream
+      summary: Change stream ttl
+      description: Change stream ttl
+      operationId: changeStreamTtl
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - name: stream
+          in: query
+          description: Stream name
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+        - name: newTtl
+          in: query
+          description: New ttl
+          required: true
+          type: integer
+      responses:
+        '200':
+          $ref: '#/responses/success'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/unauthorized'
+        '403':
+          $ref: '#/responses/forbidden'
+        '404':
+          $ref: '#/responses/notFound'
   /streams/info:
     get:
       tags:
@@ -234,6 +267,39 @@ paths:
           $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'
+  /timelines/changeTtl:
+    post:
+      tags:
+        - timeline
+      summary: Change timeline ttl
+      description: Change timeline ttl
+      operationId: changeTimelineTtl
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - name: timeline
+          in: query
+          description: Timeline name
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+        - name: newTtl
+          in: query
+          description: New ttl
+          required: true
+          type: long
+      responses:
+        '200':
+          $ref: '#/responses/success'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/unauthorized'
+        '403':
+          $ref: '#/responses/forbidden'
+        '404':
+          $ref: '#/responses/notFound'
   /timelines/info:
     get:
       tags:

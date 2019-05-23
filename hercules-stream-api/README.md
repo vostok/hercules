@@ -115,19 +115,11 @@ Application is configured through properties file.
 ### Kafka Consumer settings
 See Consumer's Config from Apache Kafka documentation. Main settings are presented below.
 
-`consumer.bootstrap.servers`
+`consumer.bootstrap.servers` - see KafkaConsumer's `bootstrap.servers` property. Required.
 
-`consumer.acks`
+`consumer.max.poll.records` - see KafkaConsumer's `max.poll.records` property. Default value: `1000`.
 
-`consumer.retries`
-
-`consumer.batch.size`
-
-`consumer.linger.ms`
-
-`consumer.buffer.memory`
-
-`consumer.poll.timeout` - default value: `1000`
+`consumer.poolSize` - consumers pool size. Default value: `4`.
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -180,13 +172,9 @@ Stream Api uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should
 
 ### `application.properties` sample:
 ```properties
-consumer.bootstrap.servers=localhost:2342
-consumer.acks=all
-consumer.retries=0
-consumer.batch.size=16384
-consumer.linger.ms=1
-consumer.buffer.memory=33554432
-consumer.poll.timeout=10000
+consumer.bootstrap.servers=localhost:9092
+consumer.max.poll.records=1000
+consumer.poolSize=16
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000

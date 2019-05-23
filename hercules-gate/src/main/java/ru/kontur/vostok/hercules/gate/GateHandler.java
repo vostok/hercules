@@ -93,10 +93,7 @@ public class GateHandler implements HttpHandler {
             return;
         }
         int contentLength = optionalContentLength.get();
-        if (contentLength < 0) {
-            request.complete(HttpStatusCodes.BAD_REQUEST);
-            return;
-        }
+
         if (contentLength > maxContentLength) {
             request.complete(HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE);
             return;

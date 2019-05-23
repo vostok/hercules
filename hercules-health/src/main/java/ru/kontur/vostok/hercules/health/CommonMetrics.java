@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.health;
 
-import ru.kontur.vostok.hercules.util.CollectionUtil;
+import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
 import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -66,7 +66,7 @@ public final class CommonMetrics {
     }
 
     public static void registerGarbageCollectionMetrics(MetricsCollector metricsCollector) {
-        for (GarbageCollectorMXBean garbageCollectorMXBean : CollectionUtil.nullAsEmpty(ManagementFactory.getGarbageCollectorMXBeans())) {
+        for (GarbageCollectorMXBean garbageCollectorMXBean : CollectionUtil.nonNullElseEmpty(ManagementFactory.getGarbageCollectorMXBeans())) {
             String collectorName = garbageCollectorMXBean.getName();
             metricsCollector.gauge("gc." + collectorName + ".collectionCount", garbageCollectorMXBean::getCollectionCount);
             metricsCollector.gauge("gc." + collectorName + ".collectionTimeMs", garbageCollectorMXBean::getCollectionTime);
