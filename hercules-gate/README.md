@@ -19,7 +19,7 @@ Gate is used to transmit events from clients to Apache Kafka.
 
 ### About
 
-**Description:** The method ащк getting service information.
+**Description:** The method for getting service information.
 
 **Method:** `GET`
 
@@ -75,7 +75,7 @@ Count		Integer
 
 `400` - bad request.
 
-`401` - no API key is provided or it is invalid.
+`401` - write rules for this apiKey is absent.
 
 `403` - the stream cannot be accessed with provided API key.
 
@@ -114,7 +114,7 @@ Count		Integer
 
 `400` - bad request.
 
-`401` - no API key is provided or it is invalid.
+`401` - write rules for this apiKey is absent.
 
 `403` - the stream cannot be accessed with provided API key.
 

@@ -90,7 +90,7 @@ EventId			    Long, Long
 
 `400` - bad request.
 
-`401` - no API key is provided or it is invalid.
+`401` - read rules for this apiKey is absent.
 
 `403` - the timeline cannot be accessed with provided API key.
 

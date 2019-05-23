@@ -1,6 +1,6 @@
 # Hercules Management Api
 Management Api is used for working with streams, timelines, rules and blacklist in Apache Kafka.
-Provide next opportunities:
+Management Api provides following opportunities:
 * Streams:
   * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for create stream;
   * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for delete stream;
@@ -84,7 +84,7 @@ instanceId - instance identifier
 
 `apiKey` - the API Key with manage access to the stream is specified. Required.
 
-**Body:**
+**Request body:**
 
 ```
 "type": type of stream
@@ -94,9 +94,17 @@ instanceId - instance identifier
 "ttl": time to live
 ```
 
-**Response headers:**
+**Request body example:**
 
-ContentType: plain/text
+```
+{
+  "type": "base",
+  "name": "project_test_stream_0",
+  "partitions": 1,
+  "shardingKey": [],
+  "ttl": 3600000
+}
+```
 
 **Response codes:**
 
@@ -107,8 +115,6 @@ ContentType: plain/text
 `401` - management rules for this apiKey is absent.
 
 `403` - forbidden for this API-key.
-
-`404` - source stream not found.
 
 `409` - conflict. Entity already exists.
 
@@ -127,10 +133,6 @@ ContentType: plain/text
 **Query parameters:**
 
 `stream` - the name of stream. Required.
-
-**Response headers:**
-
-ContentType: application/json
 
 **Response codes:**
 
@@ -175,7 +177,7 @@ ContentType: application/json
 
 `400` - bad request.
 
-`401` - unauthorized.
+`401` - apiKey is absent.
 
 ### Increase stream partition count
 
@@ -195,17 +197,17 @@ ContentType: application/json
 
 `newPartitions` - new count of partition in stream. Required.
 
-**Response headers:**
-
-ContentType: application/json
-
 **Response codes:**
 
 `200` - successfully increase count of partition in stream.
 
 `400` - bad request.
 
-`401` - unauthorized.
+`401` - management rules for this apiKey is absent.
+
+`403` - forbidden for this API-key.
+
+`404` - source stream not found.
 
 ### Change ttl of stream
 
@@ -225,17 +227,13 @@ ContentType: application/json
 
 `newTtl` - new ttl of stream. Required.
 
-**Response headers:**
-
-ContentType: application/json
-
 **Response codes:**
 
 `200` - successfully change ttl of stream.
 
 `400` - bad request.
 
-`401` - unauthorized.
+`401` - management rules for this apiKey is absent.
 
 `403` - forbidden for this API-key.
 
@@ -278,7 +276,11 @@ ContentType: application/json
 
 `400` - bad request.
 
-`401` - unauthorized.
+`401` - management rules for this apiKey is absent.
+
+`403` - forbidden for this API-key.
+
+`404` - source stream not found.
 
 ## Timeline
 
@@ -294,7 +296,7 @@ ContentType: application/json
 
 `apiKey` - the API Key with manage access to the stream is specified. Required.
 
-**Body:**
+**Request body:**
 
 ```
 "name": name of timeline
@@ -306,9 +308,25 @@ ContentType: application/json
 "filters": filters array
 ```
 
-**Response headers:**
+**Request body example:**
 
-ContentType: plain/text
+```
+{
+  "name": "timeline",
+  "slices": 150,
+  "shardingKey": [
+    "key"
+  ],
+  "ttl": 18000000,
+  "timetrapSize": 5000,
+  "streams": [
+    "stream"
+  ],
+  "filters": [
+    "filter"
+  ]
+}
+```
 
 **Response codes:**
 
@@ -319,8 +337,6 @@ ContentType: plain/text
 `401` - management rules for this apiKey is absent.
 
 `403` - forbidden for this API-key.
-
-`404` - source timeline not found.
 
 `409` - conflict. Entity already exists.
 
@@ -339,10 +355,6 @@ ContentType: plain/text
 **Query parameters:**
 
 `timeline` - the name of timeline. Required.
-
-**Response headers:**
-
-ContentType: application/json
 
 **Response codes:**
 
@@ -387,7 +399,7 @@ ContentType: application/json
 
 `400` - bad request.
 
-`401` - unauthorized.
+`401` - apiKey is absent.
 
 ### Change ttl of timeline
 
@@ -407,17 +419,13 @@ ContentType: application/json
 
 `newTtl` - new ttl of timeline. Required.
 
-**Response headers:**
-
-ContentType: application/json
-
 **Response codes:**
 
 `200` - successfully change ttl of timeline.
 
 `400` - bad request.
 
-`401` - unauthorized.
+`401` - management rules for this apiKey is absent.
 
 `403` - forbidden for this API-key.
 
@@ -464,7 +472,11 @@ ContentType: application/json
 
 `400` - bad request.
 
-`401` - unauthorized.
+`401` - management rules for this apiKey is absent.
+
+`403` - forbidden for this API-key.
+
+`404` - source timeline not found.
 
 ## Rules
 
@@ -488,10 +500,6 @@ ContentType: application/json
 
 `rights` - combination of read, write and modified rights. Required. 
 Available values : ---, r--, -w-, --m, rw-, r-m, -wm, rwm.
-
-**Response headers:**
-
-ContentType: application/json
 
 **Response codes:**
 
@@ -552,10 +560,6 @@ ContentType: application/json
 
 `key` - the API key for adding to blacklist. Required.
 
-**Response headers:**
-
-ContentType: application/json
-
 **Response codes:**
 
 `200` - successfully add apiKey to blacklist.
@@ -579,10 +583,6 @@ ContentType: application/json
 **Query parameters:**
 
 `key` - the API key for removing from blacklist. Required.
-
-**Response headers:**
-
-ContentType: application/json
 
 **Response codes:**
 

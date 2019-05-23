@@ -24,7 +24,7 @@ paths:
         '200':
           description: Info about service
           schema:
-            $ref: '#/definitions/About'
+            $ref: '#/definitions/about'
   /timeline/read:
     post:
       tags:
@@ -83,7 +83,7 @@ paths:
         '500':
           $ref: '#/responses/internalServiceError'
 definitions:
-  About:
+  about:
     type: object
     properties:
       applicationName:

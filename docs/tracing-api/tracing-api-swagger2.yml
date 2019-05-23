@@ -24,7 +24,7 @@ paths:
         '200':
           description: Info about service
           schema:
-            $ref: '#/definitions/About'
+            $ref: '#/definitions/about'
   /trace:
     get:
       tags:
@@ -60,11 +60,11 @@ paths:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/Trace'
+            $ref: '#/definitions/trace'
         '400':
           $ref: '#/responses/badRequest'
 definitions:
-  Trace:
+  trace:
     type: object
     properties:
       traceId:
@@ -102,7 +102,7 @@ definitions:
       beginTimestampUtc: 1555920933913
       annotations: [Key: value]
       parentSpanId: abcdef12-acde-4675-9322-f96cc1234567
-  About:
+  about:
     type: object
     properties:
       applicationName:

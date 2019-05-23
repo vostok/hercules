@@ -24,7 +24,7 @@ paths:
         '200':
           description: Info about service
           schema:
-            $ref: '#/definitions/About'
+            $ref: '#/definitions/about'
   /stream/send:
     post:
       tags:
@@ -86,7 +86,7 @@ paths:
         '413':
           $ref: '#/responses/entityTooLarge'
 definitions:
-  About:
+  about:
     type: object
     properties:
       applicationName:

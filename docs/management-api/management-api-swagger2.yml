@@ -24,7 +24,7 @@ paths:
         '200':
           description: Info about service
           schema:
-            $ref: '#/definitions/About'
+            $ref: '#/definitions/about'
   /streams/create:
     post:
       tags:
@@ -32,15 +32,13 @@ paths:
       summary: Create stream
       description: Create stream
       operationId: createStream
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: body
           in: body
           description: CreateStreamRequest
           schema:
-            $ref: '#/definitions/Stream'
+            $ref: '#/definitions/stream'
       responses:
         '200':
           $ref: '#/responses/success'
@@ -50,8 +48,6 @@ paths:
           $ref: '#/responses/managementRulesIsAbsent'
         '403':
           $ref: '#/responses/forbidden'
-        '404':
-          $ref: '#/responses/notFoundSourceStream'
         '409':
           $ref: '#/responses/conflict'
   /streams/delete:
@@ -109,8 +105,6 @@ paths:
       summary: Increase stream partition count
       description: Increase stream partition count
       operationId: increasePartitions
-      produces:
-        - application/json
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: stream
@@ -130,7 +124,9 @@ paths:
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'
+          $ref: '#/responses/managementRulesIsAbsent'
+        '403':
+          $ref: '#/responses/forbidden'
         '404':
           $ref: '#/responses/notFoundSourceStream'
         '409':
@@ -142,8 +138,6 @@ paths:
       summary: Change stream ttl
       description: Change stream ttl
       operationId: changeStreamTtl
-      produces:
-        - application/json
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: stream
@@ -163,7 +157,7 @@ paths:
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'
+          $ref: '#/responses/managementRulesIsAbsent'
         '403':
           $ref: '#/responses/forbidden'
         '404':
@@ -175,8 +169,6 @@ paths:
       summary: Stream info
       description: Stream info
       operationId: streamInfo
-      produces:
-        - application/json
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: stream
@@ -189,11 +181,13 @@ paths:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/Stream'
+            $ref: '#/definitions/stream'
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'
+          $ref: '#/responses/managementRulesIsAbsent'
+        '403':
+          $ref: '#/responses/forbidden'
         '404':
           $ref: '#/responses/notFoundSourceStream'
   /timelines/create:
@@ -209,7 +203,7 @@ paths:
           in: body
           description: CreateTimelineRequest
           schema:
-            $ref: '#/definitions/Timeline'
+            $ref: '#/definitions/timeline'
       responses:
         '200':
           $ref: '#/responses/success'
@@ -219,8 +213,6 @@ paths:
           $ref: '#/responses/managementRulesIsAbsent'
         '403':
           $ref: '#/responses/forbidden'
-        '404':
-          $ref: '#/responses/notFoundSourceTimeline'
         '409':
           $ref: '#/responses/conflict'
   /timelines/delete:
@@ -270,7 +262,7 @@ paths:
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'
+          $ref: '#/responses/absentApikey'
   /timelines/changeTtl:
     post:
       tags:
@@ -278,8 +270,6 @@ paths:
       summary: Change timeline ttl
       description: Change timeline ttl
       operationId: changeTimelineTtl
-      produces:
-        - application/json
       parameters:
         - $ref: '#/parameters/apiKey'
         - name: timeline
@@ -299,7 +289,7 @@ paths:
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'
+          $ref: '#/responses/managementRulesIsAbsent'
         '403':
           $ref: '#/responses/forbidden'
         '404':
@@ -325,11 +315,13 @@ paths:
         '200':
           description: OK
           schema:
-            $ref: '#/definitions/Timeline'
+            $ref: '#/definitions/timeline'
         '400':
           $ref: '#/responses/badRequest'
         '401':
-          $ref: '#/responses/unauthorized'
+          $ref: '#/responses/managementRulesIsAbsent'
+        '403':
+          $ref: '#/responses/forbidden'
         '404':
           $ref: '#/responses/notFoundSourceTimeline'
   /rules/set:
@@ -463,7 +455,7 @@ paths:
         '401':
           $ref: '#/responses/unauthorized'
 definitions:
-  Stream:
+  stream:
     type: object
     properties:
       type:
@@ -497,7 +489,7 @@ definitions:
       partitions: 1
       shardingKey: []
       ttl: 3600000
-  Timeline:
+  timeline:
     type: object
     properties:
       name:
@@ -520,7 +512,7 @@ definitions:
         type: array
         items:
           type: string
-  About:
+  about:
     type: object
     properties:
       applicationName:
@@ -561,6 +553,8 @@ responses:
     description: Management rules for this apiKey is absent
   badRequest:
     description: Bad request
+  absentApikey:
+    description: Absent apiKey
   forbidden:
     description: Forbidden for this API-key
   notFound:

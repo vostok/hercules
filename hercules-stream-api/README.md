@@ -65,7 +65,7 @@ instanceId - instance identifier
 
 `shardCount` - the total logical shards. Should be positive. Required.
 
-`take` - maximum events for reading. Required.
+`take` - maximum events to read. Required.
 
 **Request body:**
 
@@ -87,7 +87,7 @@ Offset          Long
 
 `401` - no API key is provided or it is invalid.
 
-`403` - the stream cannot be accessed with provided API key.
+`403` - read rules for this apiKey is absent.
 
 `404` - the stream not found.
 
@@ -133,7 +133,7 @@ Events          Count, Event*
 
 `400` - bad request.
 
-`401` - no API key is provided or it is invalid.
+`401` - read rules for this apiKey is absent.
 
 `403` - the stream cannot be accessed with provided API key.
 
