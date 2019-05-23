@@ -27,7 +27,7 @@ Management Api provides following opportunities:
   
 ## API methods
 
-[swagger documentation](../docs/management-api/management-api-swagger2.yml)
+[swagger documentation](../docs/swagger/management-api-swagger2.yml)
 
 ## Default
 

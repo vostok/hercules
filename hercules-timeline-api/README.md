@@ -3,7 +3,7 @@ Timeline Api is used for reading timelines from Apache Kafka.
 
 ## API methods
 
-[swagger documentation](../docs/timeline-api/timeline-api-swagger2.yml)
+[swagger documentation](../docs/swagger/timeline-api-swagger2.yml)
 
 ### Ping
 

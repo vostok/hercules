@@ -7,7 +7,7 @@ API requests will return JSON as the response.
 
 ## API methods
 
-[swagger documentation](../docs/tracing-api/tracing-api-swagger2.yml)
+[swagger documentation](../docs/swagger/tracing-api-swagger2.yml)
 
 ### Ping
 

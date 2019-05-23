@@ -3,7 +3,7 @@ Stream Api is used for reading streams from Apache Kafka.
 
 ## API methods
 
-[swagger documentation](../docs/stream-api/stream-api-swagger2.yml)
+[swagger documentation](../docs/swagger/stream-api-swagger2.yml)
 
 ### Ping
 

@@ -3,7 +3,7 @@ Gate is used to transmit events from clients to Apache Kafka.
 
 ## API methods
 
-[swagger documentation](../docs/gate-api/gate-api-swagger2.yml)
+[swagger documentation](../docs/swagger/gate-api-swagger2.yml)
 
 ### Ping
 
