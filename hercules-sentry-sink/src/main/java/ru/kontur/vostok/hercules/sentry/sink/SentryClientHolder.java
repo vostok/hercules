@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Sentry client holder.
  * The class stores actual Sentry clients for event sending to the Sentry
  *
- * @author Kirill Sulim
+ * @author Petr Demenev
  */
 public class SentryClientHolder {
 

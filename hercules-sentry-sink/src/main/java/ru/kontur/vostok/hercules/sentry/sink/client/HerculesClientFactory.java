@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 /**
  * HerculesClientFactory
  *
- * @author Kirill Sulim
+ * @author Petr Demenev
  */
 public class HerculesClientFactory extends DefaultSentryClientFactory {
 
