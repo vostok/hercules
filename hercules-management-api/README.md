@@ -209,6 +209,8 @@ ContentType: application/json
 
 `404` - source stream not found.
 
+`409` - conflict. New partition count less then old.
+
 ### Change ttl of stream
 
 **Description:** The method for changing ttl of stream.

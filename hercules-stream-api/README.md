@@ -91,6 +91,8 @@ Offset          Long
 
 `404` - the stream not found.
 
+`411` - can't get Content-Length value.
+
 `500` - internal service error.
 
 **Response headers:**

@@ -36,6 +36,7 @@ paths:
         - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/contentType'
         - name: timeline
           in: query
           description: Timeline name
@@ -110,6 +111,12 @@ parameters:
     pattern: '^\d{3}-\d{2}-\d{4}$'
     required: true
     description: API key for authorization
+  contentType:
+    name: contentType
+    in: header
+    type: string
+    required: true
+    description: application/octet-stream
 responses:
   success:
     description: OK

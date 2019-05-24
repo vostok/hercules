@@ -32,10 +32,9 @@ paths:
       summary: Gate
       description: Send events to Apache Kafka
       operationId: gate
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/contentType'
         - name: stream
           in: query
           description: Name of stream
@@ -62,10 +61,9 @@ paths:
       summary: Gate
       description: Asynchronously send events to Apache Kafka
       operationId: gateAsync
-      produces:
-        - plain/text
       parameters:
         - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/contentType'
         - name: stream
           in: query
           description: Name of stream
@@ -113,6 +111,12 @@ parameters:
     pattern: '^\d{3}-\d{2}-\d{4}$'
     required: true
     description: API key for authorization
+  contentType:
+    name: ContentType
+    in: header
+    type: string
+    required: true
+    description: application/octet-stream
 responses:
   success:
     description: OK

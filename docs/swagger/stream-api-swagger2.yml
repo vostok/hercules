@@ -33,9 +33,10 @@ paths:
       description: Seek the end of the stream
       operationId: seekEndOfStream
       produces:
-        - plain/text
+        - application/octet-stream
       parameters:
         - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/contentType'
         - name: stream
           in: query
           description: Stream name
@@ -73,9 +74,10 @@ paths:
       description: Read the stream content
       operationId: readStream
       produces:
-        - plain/text
+        - application/octet-stream
       parameters:
         - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/contentType'
         - name: stream
           in: query
           description: Stream name
@@ -140,6 +142,12 @@ parameters:
     pattern: '^\d{3}-\d{2}-\d{4}$'
     required: true
     description: API key for authorization
+  contentType:
+    name: contentType
+    in: header
+    type: string
+    required: true
+    description: application/octet-stream
 responses:
   success:
     description: OK
