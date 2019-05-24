@@ -1,6 +1,9 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
 import io.sentry.SentryClient;
+import io.sentry.connection.ConnectionException;
+import io.sentry.connection.LockedDownException;
+import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,10 +79,22 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             io.sentry.event.Event sentryEvent = SentryEventConverter.convert(event);
             sentryClient.get().sendEvent(sentryEvent);
             return true;
+        } catch (InvalidDsnException e) {
+            LOGGER.error("Invalid DSN");
+            //TODO Handle as non retryable exception.
+        } catch (LockedDownException e) {
+            LOGGER.warn("a temporary lockdown is switched on");
+            //TODO Handle as retryable exception.
+        } catch (ConnectionException e) {
+            Long lockdownTime = e.getRecommendedLockdownTime();
+            int responseCode = e.getResponseCode();
+            LOGGER.warn(String.format("Connection exception: responseCode=%d, lockdownTime=%d", responseCode, lockdownTime));
+            //TODO Add responseCode check (retryable / non retryable). Add retry after lockdownTime if responseCode indicate to retryable error.
         } catch (Exception e) {
-            //TODO add check of sending exceptions and consider it in retry
             throw new BackendServiceFailedException(e);
         }
+
+        return false;
     }
 
     @Override

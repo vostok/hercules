@@ -3,9 +3,49 @@ Stream Api is used for reading streams from Apache Kafka.
 
 ## API methods
 
+[swagger documentation](../docs/swagger/stream-api-swagger2.yml)
+
+### Ping
+
+**Description:** The method to ping service.
+
+**Method:** `GET`
+
+**URL:** `/ping`
+
+**Response codes:**
+
+`200` - successfully ping.
+
+### About
+
+**Description:** The method to get service information.
+
+**Method:** `GET`
+
+**URL:** `/about`
+
+**Response codes:**
+
+`200` - successfully getting service information.
+
+**Response body:**
+
+Response body contains information about service:
+
+```
+applicationName - human readable application name
+applicationId - robot readable application name
+version - application version
+commitId - commit id
+environment - environment in which service is running (production, testing etc.)
+zone - datacenter in which instance is located
+hostName - server host name
+instanceId - instance identifier
+```
 ### Read 
 
-**Description:** The method to read the stream content.
+**Description:** The method to read stream content.
 
 **Method:** `POST`
 
@@ -15,7 +55,7 @@ Stream Api is used for reading streams from Apache Kafka.
 
 `apiKey` - the API Key with read access to the stream is specified. Required.
 
-`ContentLength` - standard HTTP header. Required.
+`ContentType: application/octet-stream`
 
 **Query parameters:**
 
@@ -47,9 +87,11 @@ Offset          Long
 
 `401` - no API key is provided or it is invalid.
 
-`403` - the stream cannot be accessed with provided API key.
+`403` - read rules for this apiKey is absent.
 
 `404` - the stream not found.
+
+`411` - can't get Content-Length value.
 
 `500` - internal service error.
 
@@ -66,6 +108,7 @@ Events          Count, Event*
 ``` 
 
 ### Seek to end
+
 **Description:** The method to seek the end of the stream.
 
 **Method:** `GET`
@@ -75,6 +118,8 @@ Events          Count, Event*
 **Request headers**
 
 `apiKey` - the API Key with read access to the stream is specified. Required.
+
+`ContentType: application/octet-stream`
 
 **Query parameters:**
 
@@ -90,7 +135,7 @@ Events          Count, Event*
 
 `400` - bad request.
 
-`401` - no API key is provided or it is invalid.
+`401` - read rules for this apiKey is absent.
 
 `403` - the stream cannot be accessed with provided API key.
 
@@ -105,6 +150,7 @@ ContentType: application/octet-stream
 **Response body:**
 
 Response body contains read state as follows:
+
 ```
 ResponseBody    State
 ```
