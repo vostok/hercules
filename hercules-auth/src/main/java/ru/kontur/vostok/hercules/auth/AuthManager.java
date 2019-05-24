@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.Blacklist;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
-import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
-import ru.kontur.vostok.hercules.util.schedule.Scheduler;
+import ru.kontur.vostok.hercules.util.concurrent.RenewableTask;
+import ru.kontur.vostok.hercules.util.concurrent.RenewableTaskScheduler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ public final class AuthManager {
 
     private final CuratorClient curatorClient;
 
-    private final Scheduler scheduler;
+    private final RenewableTaskScheduler scheduler;
 
     private final AtomicReference<ConcurrentHashMap<String, List<PatternMatcher>>> readRules = new AtomicReference<>(new ConcurrentHashMap<>());
     private final AtomicReference<ConcurrentHashMap<String, List<PatternMatcher>>> writeRules = new AtomicReference<>(new ConcurrentHashMap<>());
@@ -36,7 +36,7 @@ public final class AuthManager {
     public AuthManager(CuratorClient curatorClient) {
         this.curatorClient = curatorClient;
 
-        this.scheduler = new Scheduler(1);
+        this.scheduler = new RenewableTaskScheduler(1);
 
         this.blacklist = new Blacklist(curatorClient, scheduler);
 

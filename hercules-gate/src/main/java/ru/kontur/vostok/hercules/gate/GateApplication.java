@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
+import ru.kontur.vostok.hercules.sd.BeaconService;
 import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.DefaultHttpServerRequestWeigher;
@@ -43,6 +44,7 @@ public class GateApplication {
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
     private static AuthValidationManager authValidationManager;
+    private static BeaconService beaconService;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -77,6 +79,9 @@ public class GateApplication {
 
             server = createHttpServer(httpServerProperties);
             server.start();
+
+            beaconService = new BeaconService(curatorClient);
+            beaconService.start();
         } catch (Throwable t) {
             LOGGER.error("Cannot start application due to", t);
             shutdown();
@@ -90,7 +95,16 @@ public class GateApplication {
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
+
         LOGGER.info("Started Gateway shutdown");
+        try {
+            if (beaconService != null) {
+                beaconService.stop(5_000, TimeUnit.MILLISECONDS);
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on beacon service shutdown", t);
+        }
+
         try {
             if (server != null) {
                 server.stop(5_000, TimeUnit.MILLISECONDS);

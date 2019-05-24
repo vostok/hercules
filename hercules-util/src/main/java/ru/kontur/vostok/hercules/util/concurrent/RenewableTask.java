@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.util.schedule;
+package ru.kontur.vostok.hercules.util.concurrent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

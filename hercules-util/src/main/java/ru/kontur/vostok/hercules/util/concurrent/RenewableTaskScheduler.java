@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.util.schedule;
+package ru.kontur.vostok.hercules.util.concurrent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,13 +10,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public class Scheduler {
+public class RenewableTaskScheduler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RenewableTaskScheduler.class);
 
     private final ScheduledExecutorService executor;
 
-    public Scheduler(int threadPoolSize) {
+    public RenewableTaskScheduler(int threadPoolSize) {
         executor = Executors.newScheduledThreadPool(threadPoolSize);
     }
 
