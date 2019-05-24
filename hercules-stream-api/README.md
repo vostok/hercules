@@ -7,7 +7,7 @@ Stream Api is used for reading streams from Apache Kafka.
 
 ### Ping
 
-**Description:** The method for ping service.
+**Description:** The method to ping service.
 
 **Method:** `GET`
 
@@ -19,7 +19,7 @@ Stream Api is used for reading streams from Apache Kafka.
 
 ### About
 
-**Description:** The method for getting service information.
+**Description:** The method to get service information.
 
 **Method:** `GET`
 
@@ -45,7 +45,7 @@ instanceId - instance identifier
 ```
 ### Read 
 
-**Description:** The method for reading stream content.
+**Description:** The method to read stream content.
 
 **Method:** `POST`
 
@@ -109,7 +109,7 @@ Events          Count, Event*
 
 ### Seek to end
 
-**Description:** The method for seek the end of the stream.
+**Description:** The method to seek the end of the stream.
 
 **Method:** `GET`
 

@@ -7,7 +7,7 @@ Gate is used to transmit events from clients to Apache Kafka.
 
 ### Ping
 
-**Description:** The method for ping service.
+**Description:** The method to ping service.
 
 **Method:** `GET`
 
@@ -19,7 +19,7 @@ Gate is used to transmit events from clients to Apache Kafka.
 
 ### About
 
-**Description:** The method for getting service information.
+**Description:** The method to get service information.
 
 **Method:** `GET`
 
@@ -46,7 +46,7 @@ instanceId - instance identifier
 
 ### Send
 
-**Description:** The method for sending event to Apache Kafka.
+**Description:** The method to send event to Apache Kafka.
 
 **Method:** `POST`
 
@@ -85,7 +85,7 @@ Count		Integer
 
 ### Send Async
 
-**Description:** The method for asynchronously sending event to Apache Kafka.
+**Description:** The method to asynchronously send event to Apache Kafka.
 
 **Method:** `POST`
 

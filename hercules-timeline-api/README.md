@@ -7,7 +7,7 @@ Timeline Api is used for reading timelines from Apache Kafka.
 
 ### Ping
 
-**Description:** The method for ping service.
+**Description:** The method to ping service.
 
 **Method:** `GET`
 
@@ -19,7 +19,7 @@ Timeline Api is used for reading timelines from Apache Kafka.
 
 ### About
 
-**Description:** The method for getting service information.
+**Description:** The method to get service information.
 
 **Method:** `GET`
 
@@ -46,7 +46,7 @@ instanceId - instance identifier
 
 ## Read
 
-**Description:** The method for read the timeline content.
+**Description:** The method to read the timeline content.
 
 **Method:** `POST`
 

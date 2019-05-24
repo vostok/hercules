@@ -33,7 +33,7 @@ Management Api provides following opportunities:
 
 ### Ping
 
-**Description:** The method for ping service.
+**Description:** The method to ping service.
 
 **Method:** `GET`
 
@@ -45,7 +45,7 @@ Management Api provides following opportunities:
 
 ### About
 
-**Description:** The method for getting service information.
+**Description:** The method to get service information.
 
 **Method:** `GET`
 
@@ -74,7 +74,7 @@ instanceId - instance identifier
 
 ### Create stream
 
-**Description:** The method for creation stream.
+**Description:** The method to create stream.
 
 **Method:** `POST`
 
@@ -120,7 +120,7 @@ instanceId - instance identifier
 
 ### Delete stream
 
-**Description:** The method for deletion stream.
+**Description:** The method to delete stream.
 
 **Method:** `POST`
 
@@ -148,7 +148,7 @@ instanceId - instance identifier
 
 ### Show streams
 
-**Description:** The method for show all streams.
+**Description:** The method to show all streams.
 
 **Method:** `GET`
 
@@ -181,7 +181,7 @@ ContentType: application/json
 
 ### Increase stream partition count
 
-**Description:** The method for increase partition count in stream.
+**Description:** The method to increase partition count in stream.
 
 **Method:** `POST`
 
@@ -213,7 +213,7 @@ ContentType: application/json
 
 ### Change ttl of stream
 
-**Description:** The method for changing ttl of stream.
+**Description:** The method to change ttl of stream.
 
 **Method:** `POST`
 
@@ -243,7 +243,7 @@ ContentType: application/json
 
 ### Show information about stream
 
-**Description:** The method for show information about stream.
+**Description:** The method to show information about stream.
 
 **Method:** `GET`
 
@@ -288,7 +288,7 @@ ContentType: application/json
 
 ### Create timeline
 
-**Description:** The method for creation timeline.
+**Description:** The method to create timeline.
 
 **Method:** `POST`
 
@@ -344,7 +344,7 @@ ContentType: application/json
 
 ### Delete timeline
 
-**Description:** The method for deletion timeline.
+**Description:** The method to delete timeline.
 
 **Method:** `POST`
 
@@ -372,7 +372,7 @@ ContentType: application/json
 
 ### Show timelines
 
-**Description:** The method for show all timelines.
+**Description:** The method to show all timelines.
 
 **Method:** `GET`
 
@@ -405,7 +405,7 @@ ContentType: application/json
 
 ### Change ttl of timeline
 
-**Description:** The method for change ttl of timeline.
+**Description:** The method to change ttl of timeline.
 
 **Method:** `POST`
 
@@ -435,7 +435,7 @@ ContentType: application/json
 
 ### Show information about timeline
 
-**Description:** The method for show information about timeline.
+**Description:** The method to show information about timeline.
 
 **Method:** `GET`
 
@@ -484,7 +484,7 @@ ContentType: application/json
 
 ### Set rules
 
-**Description:** The method for set rules for ApiKey.
+**Description:** The method to set rules for ApiKey.
 
 **Method:** `POST`
 
@@ -513,7 +513,7 @@ Available values : ---, r--, -w-, --m, rw-, r-m, -wm, rwm.
 
 ### Show rules
 
-**Description:** The method for show all rules.
+**Description:** The method to show all rules.
 
 **Method:** `GET`
 
@@ -548,7 +548,7 @@ ContentType: application/json
 
 ### Add apiKey to blacklist
 
-**Description:** The method for add apiKey to blacklist.
+**Description:** The method to add apiKey to blacklist.
 
 **Method:** `POST`
 
@@ -572,7 +572,7 @@ ContentType: application/json
 
 ### Remove apiKey from blacklist
 
-**Description:** The method for removing apiKey from blacklist.
+**Description:** The method to remove apiKey from blacklist.
 
 **Method:** `POST`
 
@@ -596,7 +596,7 @@ ContentType: application/json
 
 ### Show apiKeys in blacklist
 
-**Description:** The method for show all apiKey from blacklist.
+**Description:** The method to show all apiKey from blacklist.
 
 **Method:** `GET`
 
