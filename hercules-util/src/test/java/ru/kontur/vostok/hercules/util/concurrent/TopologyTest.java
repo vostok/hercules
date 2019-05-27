@@ -2,6 +2,11 @@ package ru.kontur.vostok.hercules.util.concurrent;
 
 import org.junit.Assert;
 import org.junit.Test;
+import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * @author Gregory Koshelev
@@ -63,5 +68,38 @@ public class TopologyTest {
         topology.add("first");
         Assert.assertTrue(topology.remove("second"));
         Assert.assertEquals("first", topology.next());
+    }
+
+    @Test
+    public void shouldBreakIterationWhenTopologyIsEmpty() {
+        String[] elements = new String[]{"first", "second", "third", "fourth", "fifth"};
+        Topology<String> topology = new Topology<>(elements);
+
+        Set<String> actualElements = new HashSet<>();
+        try {
+            for (String element : topology) {
+                actualElements.add(element);
+                Assert.assertTrue(topology.remove(element));
+            }
+        } catch (Topology.TopologyIsEmptyException ex) {
+            /* it is not possible in single-threaded environment */
+            Assert.fail();
+        }
+
+        Assert.assertEquals(CollectionUtil.setOf(elements), actualElements);
+    }
+
+    @Test
+    public void shouldIterateWithForEach() {
+        String[] elements = new String[]{"first", "second", "third", "fourth", "fifth"};
+        Topology<String> topology = new Topology<>(elements);
+
+        int i = 10;
+        Set<String> actualElements = new HashSet<>();
+        Iterator<String> it = topology.iterator();
+        while (i-- > 0 && it.hasNext()) {
+            actualElements.add(it.next());
+        }
+        Assert.assertEquals(CollectionUtil.setOf(elements), actualElements);
     }
 }

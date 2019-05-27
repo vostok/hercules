@@ -7,11 +7,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * Topology is a list of elements which is iterated infinitely while topology is not empty.
+ * <p>
+ * Topology can be thread-safely iterated since modification through {@link #add(T)} or {@link #remove(T)} is thread-safe too.
+ *
  * @author Gregory Koshelev
  */
 public class Topology<T> implements Iterable<T> {
     private final ReentrantLock lock = new ReentrantLock();
-    private final TopologyIterator<T> iterator = new TopologyIterator<>();
+    private final TopologyIterator iterator = new TopologyIterator();
     private volatile State state;
 
     public Topology(T[] topology) {
@@ -20,15 +24,31 @@ public class Topology<T> implements Iterable<T> {
         this.state = new State(array);
     }
 
+    /**
+     * Iterate to the next element in the topology list. The first element is following by the last one.
+     *
+     * @return the next element in the topology list
+     * @throws TopologyIsEmptyException if the topology is empty
+     */
     @SuppressWarnings("unchecked")
-    public T next() {
+    public T next() throws TopologyIsEmptyException {
         return (T) state.next();
     }
 
+    /**
+     * Returns {@code true} if topology is empty.
+     *
+     * @return {@code true} if topology is empty
+     */
     public boolean isEmpty() {
         return state.isEmpty();
     }
 
+    /**
+     * Add the element to the topology list.
+     *
+     * @param element the element to add
+     */
     public void add(T element) {
         lock.lock();
         try {
@@ -43,6 +63,12 @@ public class Topology<T> implements Iterable<T> {
         }
     }
 
+    /**
+     * Remove the first occurrence of the element in the topology list.
+     *
+     * @param element the element to remove
+     * @return {@code true} if the element was removed from the topology list, otherwise return {@code false}
+     */
     public boolean remove(T element) {
         lock.lock();
         try {
@@ -61,7 +87,7 @@ public class Topology<T> implements Iterable<T> {
             }
 
             final int newSize = array.length - 1;
-            Object[] newArray = new Object[array.length - 1];
+            Object[] newArray = new Object[newSize];
             System.arraycopy(array, 0, newArray, 0, index);
             if (index != newSize) {
                 System.arraycopy(array, index + 1, newArray, index, newSize - index);
@@ -80,7 +106,7 @@ public class Topology<T> implements Iterable<T> {
         return iterator;
     }
 
-    private final class TopologyIterator<T> implements Iterator<T> {
+    private final class TopologyIterator implements Iterator<T> {
 
         @Override
         public boolean hasNext() {
@@ -103,7 +129,7 @@ public class Topology<T> implements Iterable<T> {
             this.array = array;
         }
 
-        public Object next() {
+        public Object next() throws TopologyIsEmptyException {
             if (array.length == 0) {
                 throw new TopologyIsEmptyException("Topology is empty");
             }
@@ -116,6 +142,9 @@ public class Topology<T> implements Iterable<T> {
 
     }
 
+    /**
+     * Throw
+     */
     public static class TopologyIsEmptyException extends RuntimeException {
         public TopologyIsEmptyException() {
             super();
