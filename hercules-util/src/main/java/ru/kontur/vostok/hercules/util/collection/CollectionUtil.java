@@ -2,13 +2,17 @@ package ru.kontur.vostok.hercules.util.collection;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import ru.kontur.vostok.hercules.util.Maps;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * @author Gregory Koshelev
@@ -30,7 +34,7 @@ public class CollectionUtil {
     }
 
     /**
-     * Retruns {@code true} if collection is null or empty
+     * Returns {@code true} if collection is null or empty
      *
      * @param collection
      * @param <T>
@@ -42,6 +46,20 @@ public class CollectionUtil {
 
     public static <T> List<T> nonNullElseEmpty(List<T> list) {
         return (list != null) ? list : Collections.emptyList();
+    }
+
+    /**
+     * Returns set of elements
+     *
+     * @param elements
+     * @param <T>
+     * @return set of elements
+     */
+    public static <T> Set<T> setOf(T... elements) {
+        Set<T> set = new HashSet<>(Maps.effectiveHashMapCapacity(elements.length));
+        set.addAll(Arrays.asList(elements));
+
+        return set;
     }
 
     private CollectionUtil() {
