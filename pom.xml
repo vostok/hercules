@@ -68,6 +68,7 @@
         <module>hercules-json</module>
         <module>hercules-curator</module>
         <module>hercules-sd</module>
+        <module>hercules-application</module>
     </modules>
 
     <dependencyManagement>
@@ -237,6 +238,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-configuration</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-application</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>

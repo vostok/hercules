@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.gate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
@@ -50,6 +51,8 @@ public class GateApplication {
         long start = System.currentTimeMillis();
 
         try {
+            Application.run("Hercules Gate", "gate", args);
+
             Map<String, String> parameters = ArgsParser.parse(args);
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));

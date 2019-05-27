@@ -7,13 +7,13 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.application.ApplicationContext;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
-import ru.kontur.vostok.hercules.util.application.ApplicationContext;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.time.TimeUnitUtil;
 
@@ -38,7 +38,7 @@ public class BeaconService {
     private final ScheduledExecutorService executor;
 
     /**
-     * Period in milliseconds to beacon registration check
+     * Period in milliseconds of beacon registration check
      */
     private final long periodMs = 10_000L;
 
@@ -59,11 +59,11 @@ public class BeaconService {
     public void start() {
         sessionId = getCurrentSessionId();
 
-        ApplicationContext context = ApplicationContextHolder.get();
+        ApplicationContext context = Application.context();
 
         beaconPath = zPrefix + '/' + context.getApplicationId() + '/' + context.getInstanceId();
         try {
-            beaconData = new ObjectMapper().writeValueAsString(ApplicationContextHolder.get()).getBytes(StandardCharsets.UTF_8);
+            beaconData = new ObjectMapper().writeValueAsString(context).getBytes(StandardCharsets.UTF_8);
         } catch (JsonProcessingException ex) {
             /* Should never happen */
 
