@@ -100,6 +100,15 @@ public class Topology<T> implements Iterable<T> {
         }
     }
 
+    /**
+     * Returns current size of the topology list.
+     *
+     * @return current size of the topology list
+     */
+    public int size() {
+        return state.array.length;
+    }
+
     @NotNull
     @Override
     public Iterator<T> iterator() {
@@ -143,7 +152,7 @@ public class Topology<T> implements Iterable<T> {
     }
 
     /**
-     * Throw
+     * {@link TopologyIsEmptyException} is thrown when try to get element from the empty topology.
      */
     public static class TopologyIsEmptyException extends RuntimeException {
         public TopologyIsEmptyException() {
