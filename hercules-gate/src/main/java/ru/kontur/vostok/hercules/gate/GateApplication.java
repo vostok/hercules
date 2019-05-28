@@ -62,6 +62,7 @@ public class GateApplication {
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+            Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
 
             ApplicationContextHolder.init("Hercules Gate", "gate", contextProperties);
 
@@ -83,7 +84,7 @@ public class GateApplication {
             server = createHttpServer(httpServerProperties);
             server.start();
 
-            beaconService = new BeaconService(curatorClient);
+            beaconService = new BeaconService(sdProperties, curatorClient);
             beaconService.start();
         } catch (Throwable t) {
             LOGGER.error("Cannot start application due to", t);
@@ -186,6 +187,10 @@ public class GateApplication {
                 post("/stream/send", sendHandler).
                 build();
 
-        return new UndertowHttpServer(httpServerProperies, handler);
+        return new UndertowHttpServer(
+                Application.application().getConfig().getHost(),
+                Application.application().getConfig().getPort(),
+                httpServerProperies,
+                handler);
     }
 }

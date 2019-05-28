@@ -8,6 +8,7 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.application.ApplicationConfig;
 import ru.kontur.vostok.hercules.application.ApplicationContext;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
@@ -15,9 +16,13 @@ import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.TimeUnitUtil;
+import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * {@link BeaconService} is used to automate service registration for Service Discovery over ZooKeeper.
  * <p>
  * {@link BeaconService} uses service instance information from {@link ApplicationContext} and registers it in ZooKeeper.
- * Existence of such a registration (or beacon) means that service instance is a active.
+ * Existence of such a registration (or beacon) means that service instance is an active.
  * Thus, {@link BeaconService} should periodically check if beacon exists and re-register if it did not.
  *
  * @author Gregory Koshelev
@@ -34,20 +39,17 @@ import java.util.concurrent.TimeUnit;
 public class BeaconService {
     private static final Logger LOGGER = LoggerFactory.getLogger(BeaconService.class);
 
+    private final Properties properties;
     private final CuratorClient curatorClient;
     private final ScheduledExecutorService executor;
-
-    /**
-     * Period in milliseconds of beacon registration check
-     */
-    private final long periodMs = 10_000L;
 
     private volatile long sessionId;
 
     private String beaconPath;
     private byte[] beaconData;
 
-    public BeaconService(CuratorClient curatorClient) {
+    public BeaconService(Properties properties, CuratorClient curatorClient) {
+        this.properties = properties;
         this.curatorClient = curatorClient;
 
         this.executor = Executors.newSingleThreadScheduledExecutor(ThreadFactories.newNamedThreadFactory("beacon"));
@@ -57,16 +59,33 @@ public class BeaconService {
      * Start beacon's registration
      */
     public void start() {
+        long periodMs = Props.PERIOD_MS.extract(properties);
+
         sessionId = getCurrentSessionId();
+
+        String address = Props.ADDRESS.extract(properties);
+        if ("".equals(address)) {
+            ApplicationConfig applicationConfig = Application.application().getConfig();
+            address = "http://" + applicationConfig.getHost() + ":" + applicationConfig.getPort();
+        }
 
         ApplicationContext context = Application.context();
 
         beaconPath = zPrefix + '/' + context.getApplicationId() + '/' + context.getInstanceId();
+        BeaconInfo beaconInfo =
+                new BeaconInfo(
+                        context.getApplicationName(),
+                        context.getApplicationId(),
+                        context.getVersion(),
+                        context.getCommitId(),
+                        context.getEnvironment(),
+                        context.getZone(),
+                        context.getInstanceId(),
+                        address);
         try {
-            beaconData = new ObjectMapper().writeValueAsString(context).getBytes(StandardCharsets.UTF_8);
+            beaconData = new ObjectMapper().writeValueAsString(beaconInfo).getBytes(StandardCharsets.UTF_8);
         } catch (JsonProcessingException ex) {
             /* Should never happen */
-
             LOGGER.error("Cannot serialize ApplicationContext", ex);
             beaconData = new byte[0];
         }
@@ -121,7 +140,7 @@ public class BeaconService {
      *
      * @throws CuratorUnknownException  in case of unknown exceptions
      * @throws CuratorInternalException in case of internal Curator exceptions
-     * @throws BeaconConflictException in case of conflict when creates beacon
+     * @throws BeaconConflictException  in case of conflict when creates beacon
      */
     private void register() throws CuratorUnknownException, CuratorInternalException, BeaconConflictException {
         try {
@@ -181,4 +200,19 @@ public class BeaconService {
     }
 
     private static String zPrefix = "/hercules/sd/services";
+
+    private static class Props {
+        /**
+         * Address of service to access it via http
+         */
+        static final PropertyDescription<String> ADDRESS =
+                PropertyDescriptions.stringProperty("address").withDefaultValue("").build();
+        /**
+         * Period of beacon registration check in milliseconds
+         */
+        static final PropertyDescription<Long> PERIOD_MS =
+                PropertyDescriptions.longProperty("periodMs").
+                        withValidator(LongValidators.positive()).
+                        withDefaultValue(10_000L).build();
+    }
 }
