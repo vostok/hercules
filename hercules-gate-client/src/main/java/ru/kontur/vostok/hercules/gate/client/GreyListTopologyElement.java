@@ -20,6 +20,4 @@ public class GreyListTopologyElement {
     public long getEntryTime() {
         return entryTime;
     }
-
-
 }
