@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.gate.client;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -19,6 +18,8 @@ import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
+import ru.kontur.vostok.hercules.gate.client.shedule.TopologyListsUpdateTaskScheduler;
+import ru.kontur.vostok.hercules.util.concurrent.Topology;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -27,6 +28,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Client for Hercules Gateway API
@@ -43,16 +47,36 @@ public class GateClient implements Closeable {
 
     private final CloseableHttpClient client;
 
-    public GateClient(CloseableHttpClient client) {
+    private BlockingQueue greyList;
+    private Topology<String> whiteList;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    public GateClient(Properties properties,
+                      CloseableHttpClient client,
+                      Topology<String> whiteList,
+                      BlockingQueue<GreyListTopologyElement> greyList) {
+        final int greyListElementsRecoveryTime = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME.extract(properties);
+
         this.client = client;
+        this.whiteList = whiteList;
+        this.greyList = greyList;
+
+        TopologyListsUpdateTaskScheduler.executeQueuesUpdateTask(whiteList, greyList, greyListElementsRecoveryTime, scheduler);
     }
 
-    public GateClient(Properties properties) {
+    public GateClient(Properties properties,
+                      Topology<String> whiteList,
+                      BlockingQueue<GreyListTopologyElement> greyList) {
         final int requestTimeout = Props.REQUEST_TIMEOUT.extract(properties);
         final int connectionTimeout = Props.CONNECTION_TIMEOUT.extract(properties);
         final int connectionCount = Props.CONNECTION_COUNT.extract(properties);
+        final int greyListElementsRecoveryTime = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME.extract(properties);
+
+        this.whiteList = whiteList;
+        this.greyList = greyList;
 
         this.client = createHttpClient(requestTimeout, connectionTimeout, connectionCount);
+        TopologyListsUpdateTaskScheduler.executeQueuesUpdateTask(whiteList, greyList, greyListElementsRecoveryTime, scheduler);
     }
 
     /**
@@ -108,20 +132,18 @@ public class GateClient implements Closeable {
     /**
      * Request to {@value #PING}
      *
-     * @param urls addresses pool of gate
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void ping(String[] urls, int retryLimit)
+    public void ping(int retryLimit)
             throws BadRequestException, UnavailableClusterException {
-        sendToPool(urls, retryLimit, this::ping);
+        sendToPool(retryLimit, this::ping);
     }
 
     /**
      * Request to {@value #SEND_ASYNC}
      *
-     * @param urls addresses pool of gate
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
      * @param apiKey key for sending
      * @param stream topic name in kafka
@@ -129,15 +151,14 @@ public class GateClient implements Closeable {
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void sendAsync(String[] urls, int retryLimit, String apiKey, String stream, final byte[] data)
+    public void sendAsync(int retryLimit, String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
-        sendToPool(urls, retryLimit, url -> sendAsync(url, apiKey, stream, data));
+        sendToPool(retryLimit, url -> sendAsync(url, apiKey, stream, data));
     }
 
     /**
      * Request to {@value #SEND_ACK}
      *
-     * @param urls addresses pool of gate
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
      * @param apiKey key for sending
      * @param stream topic name in kafka
@@ -145,51 +166,48 @@ public class GateClient implements Closeable {
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void send(String[] urls, int retryLimit, String apiKey, String stream, final byte[] data)
+    public void send(int retryLimit, String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
-        sendToPool(urls, retryLimit, url -> send(url, apiKey, stream, data));
+        sendToPool(retryLimit, url -> send(url, apiKey, stream, data));
     }
 
     /**
      * Request to {@value #PING}. Count of retry is <code>urls.length + 1</code>
      *
-     * @param urls addresses pool of gate
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void ping(String[] urls)
+    public void ping()
             throws BadRequestException, UnavailableClusterException {
-        ping(urls, urls.length + 1);
+        ping(whiteList.size() + 1);
     }
 
     /**
      * Request to {@value #SEND_ASYNC}. Count of retry is <code>urls.length + 1</code>
      *
-     * @param urls addresses pool of gate
      * @param apiKey key for sending
      * @param stream topic name in kafka
      * @param data payload
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void sendAsync(String[] urls, String apiKey, String stream, final byte[] data)
+    public void sendAsync(String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
-        sendAsync(urls, urls.length + 1, apiKey, stream, data);
+        sendAsync(whiteList.size() + 1, apiKey, stream, data);
     }
 
     /**
      * Request to {@value #SEND_ACK}. Count of retry is <code>urls.length + 1</code>
      *
-     * @param urls addresses pool of gate
      * @param apiKey key for sending
      * @param stream topic name in kafka
      * @param data payload
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void send(String[] urls, String apiKey, String stream, final byte[] data)
+    public void send(String apiKey, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
-        send(urls, urls.length + 1, apiKey, stream, data);
+        send(whiteList.size() + 1, apiKey, stream, data);
     }
 
     public void close() {
@@ -204,25 +222,32 @@ public class GateClient implements Closeable {
     /**
      * Strategy of sending data to addresses pool
      */
-    private void sendToPool(String[] urls, int retryLimit, HerculesRequestSender sender)
+    private void sendToPool(int retryLimit, HerculesRequestSender sender)
             throws BadRequestException, UnavailableClusterException {
-        int seed = RANDOM.nextInt(urls.length);
 
-        for (int i = seed, count = 0;
-             count < retryLimit;
-             count++, i = (i + 1) % urls.length) {
+        for (int count = 0; count < retryLimit; count++) {
+
+            if (whiteList.isEmpty()) {
+                throw new UnavailableClusterException();
+            }
+
+            String element = whiteList.next();
 
             try {
-                sender.send(urls[i]);
+                sender.send(element);
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
+                whiteList.remove(element);
+                try {
+                    greyList.put(new GreyListTopologyElement(element));
+                } catch (InterruptedException e1) {
+                    LOGGER.warn("Error when insert {} in grey list." , element);
+                }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Send fails", e);
                 }
             }
         }
-
-        throw new UnavailableClusterException();
     }
 
     //TODO: metrics
@@ -330,5 +355,13 @@ public class GateClient implements Closeable {
                         .withDefaultValue(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
                         .withValidator(IntegerValidators.positive())
                         .build();
+
+        static final PropertyDescription<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME =
+                PropertyDescriptions
+                        .integerProperty("greyListElementsRecoveryTime")
+                        .withDefaultValue(GateClientDefaults.DEFAULT_RECOVERY_TIME)
+                        .withValidator(IntegerValidators.positive())
+                        .build();
+
     }
 }

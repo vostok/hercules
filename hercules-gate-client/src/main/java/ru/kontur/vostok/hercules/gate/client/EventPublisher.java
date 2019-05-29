@@ -9,11 +9,11 @@ import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterExcepti
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.concurrent.Topology;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.ArrayValidators;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
-import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -59,11 +61,11 @@ public class EventPublisher {
         this.apiKey = apiKey;
         this.executor = new ScheduledThreadPoolExecutor(threads, threadFactory);
 
-        this.gateClient = new GateClient(gateClientProperties);
+        Topology<String> whiteList = new Topology<>(urls);
+        BlockingQueue<GreyListTopologyElement> greyList = new ArrayBlockingQueue<>(urls.length);
+        this.gateClient = new GateClient(gateClientProperties, whiteList, greyList);
 
         registerAll(queues);
-
-
     }
 
     public void start() {
@@ -212,7 +214,6 @@ public class EventPublisher {
 
         try {
             gateClient.sendAsync(
-                    this.urls,
                     this.apiKey,
                     stream,
                     EventWriterUtil.toBytes(size, eventsArray));
