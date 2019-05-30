@@ -18,7 +18,6 @@ import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
-import ru.kontur.vostok.hercules.gate.client.shedule.TopologyListsUpdateTaskScheduler;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
@@ -31,6 +30,7 @@ import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client for Hercules Gateway API
@@ -47,36 +47,61 @@ public class GateClient implements Closeable {
 
     private final CloseableHttpClient client;
 
-    private BlockingQueue greyList;
+    private BlockingQueue<GreyListTopologyElement> greyList;
     private Topology<String> whiteList;
+    private int greyListElementsRecoveryTimeMs;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    public GateClient(Properties properties,
-                      CloseableHttpClient client,
-                      Topology<String> whiteList,
-                      BlockingQueue<GreyListTopologyElement> greyList) {
-        final int greyListElementsRecoveryTime = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME.extract(properties);
+    public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList, BlockingQueue<GreyListTopologyElement> greyList) {
 
+        this.greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
         this.client = client;
         this.whiteList = whiteList;
         this.greyList = greyList;
 
-        TopologyListsUpdateTaskScheduler.executeQueuesUpdateTask(whiteList, greyList, greyListElementsRecoveryTime, scheduler);
+        scheduler.scheduleWithFixedDelay(this::updateTopology,
+                greyListElementsRecoveryTimeMs,
+                greyListElementsRecoveryTimeMs,
+                TimeUnit.MILLISECONDS);
+
     }
 
-    public GateClient(Properties properties,
-                      Topology<String> whiteList,
-                      BlockingQueue<GreyListTopologyElement> greyList) {
+    public GateClient(Properties properties, Topology<String> whiteList, BlockingQueue<GreyListTopologyElement> greyList) {
         final int requestTimeout = Props.REQUEST_TIMEOUT.extract(properties);
         final int connectionTimeout = Props.CONNECTION_TIMEOUT.extract(properties);
         final int connectionCount = Props.CONNECTION_COUNT.extract(properties);
-        final int greyListElementsRecoveryTime = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME.extract(properties);
+        final int greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
 
+        this.greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
         this.whiteList = whiteList;
         this.greyList = greyList;
 
         this.client = createHttpClient(requestTimeout, connectionTimeout, connectionCount);
-        TopologyListsUpdateTaskScheduler.executeQueuesUpdateTask(whiteList, greyList, greyListElementsRecoveryTime, scheduler);
+
+        scheduler.scheduleWithFixedDelay(this::updateTopology,
+                greyListElementsRecoveryTimeMs,
+                greyListElementsRecoveryTimeMs,
+                TimeUnit.MILLISECONDS);
+    }
+
+    private void updateTopology() {
+        if (greyList.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < greyList.size(); i++) {
+            GreyListTopologyElement element = greyList.peek();
+            if (System.currentTimeMillis() - element.getEntryTime() >= greyListElementsRecoveryTimeMs) {
+                try {
+                    GreyListTopologyElement pollElement = greyList.take();
+                    whiteList.add(pollElement.getUrl());
+                } catch (InterruptedException e) {
+                    LOGGER.warn("Error when take {} from grey list." ,element);
+                }
+            } else {
+                return;
+            }
+        }
     }
 
     /**
@@ -242,6 +267,7 @@ public class GateClient implements Closeable {
                     greyList.put(new GreyListTopologyElement(element));
                 } catch (InterruptedException e1) {
                     LOGGER.warn("Error when insert {} in grey list." , element);
+                    whiteList.add(element);
                 }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Send fails", e);
@@ -356,9 +382,9 @@ public class GateClient implements Closeable {
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final PropertyDescription<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME =
+        static final PropertyDescription<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME_MS =
                 PropertyDescriptions
-                        .integerProperty("greyListElementsRecoveryTime")
+                        .integerProperty("greyListElementsRecoveryTimeMs")
                         .withDefaultValue(GateClientDefaults.DEFAULT_RECOVERY_TIME)
                         .withValidator(IntegerValidators.positive())
                         .build();
