@@ -16,14 +16,12 @@ import java.util.concurrent.TimeUnit;
 public class UndertowHttpServer extends HttpServer {
     private Undertow undertow;
 
-    public UndertowHttpServer(Properties properties, HttpHandler handler) {
-        super(properties, handler);
+    public UndertowHttpServer(String host, int port, Properties properties, HttpHandler handler) {
+        super(host, port, properties, handler);
     }
 
     @Override
     protected void startInternal() {
-        int port = Props.PORT.extract(properties);
-        String host = Props.HOST.extract(properties);
         int connectionThreshold = Props.CONNECTION_THRESHOLD.extract(properties);
 
         undertow = Undertow.builder().

@@ -67,6 +67,8 @@
         <module>hercules-tracing-api</module>
         <module>hercules-json</module>
         <module>hercules-curator</module>
+        <module>hercules-sd</module>
+        <module>hercules-application</module>
     </modules>
 
     <dependencyManagement>
@@ -240,6 +242,11 @@
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-application</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-throttling</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
@@ -333,6 +340,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-curator</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sd</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 
