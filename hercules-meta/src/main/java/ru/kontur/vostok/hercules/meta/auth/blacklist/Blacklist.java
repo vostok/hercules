@@ -3,8 +3,8 @@ package ru.kontur.vostok.hercules.meta.auth.blacklist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
-import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
-import ru.kontur.vostok.hercules.util.schedule.Scheduler;
+import ru.kontur.vostok.hercules.util.concurrent.RenewableTask;
+import ru.kontur.vostok.hercules.util.concurrent.RenewableTaskScheduler;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,7 +22,7 @@ public class Blacklist {
     private final AtomicReference<State> state = new AtomicReference<>(State.INIT);
     private final RenewableTask updateTask;
 
-    public Blacklist(CuratorClient curatorClient, Scheduler scheduler) {
+    public Blacklist(CuratorClient curatorClient, RenewableTaskScheduler scheduler) {
         this.curatorClient = curatorClient;
         this.updateTask = scheduler.task(this::update, 60_000, false);
     }

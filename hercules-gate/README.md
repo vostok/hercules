@@ -125,18 +125,21 @@ Count		Integer
 ## Settings
 Application is configured through properties file.
 
-### HTTP Server settings
-`http.server.host` - server host, default value: `0.0.0.0`
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
 
-`http.server.port` - server port, default value: `8080`
+`application.port` - server port, default value: `8080`
+
+### HTTP Server settings
+HTTP Server binds on host:port are defined in Main Application settings.
 
 `http.server.maxContentLength` - max Content-Length in POST-request
+
+`http.server.connection.threshold` - maximum active http connections, default value: `100000`
 
 `http.server.throttling.capacity` - default value: `100000000`
 
 `http.server.throttling.requestTimeout` - timeout for request, which capacity throttling more then permissible, default value: `5000`
-
-`http.server.connection.threshold` - maximum active http connections, default value: `100000`
 
 ### Kafka Producer settings
 See Producer's Config from Apache Kafka documentation. Main settings are presented below.
@@ -186,6 +189,11 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 
 `context.zone` - id of zone
 
+### Service Discovery settings
+`sd.address` - http address of service to register in service discovery. If no address is specified, then application settings `http://<host>:<port>` are used
+
+`sd.periodMs` - period of beacon registration check in milliseconds, default value: `10000`
+
 ## Command line
 `java $JAVA_OPTS -jar hercules-gate.jar application.properties=file://path/to/file/application.properties`
 
@@ -200,9 +208,11 @@ Gate uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should be co
 
 ### `application.properties` sample:
 ```properties
-http.server.host=0.0.0.0
-http.server.port=6306
+application.host=0.0.0.0
+application.port=6306
+
 http.server.maxContentLength=25165824
+http.server.connection.threshold=100000
 http.server.throttling.capacity=1073741824
 http.server.throttling.requestTimeout=10000
 
@@ -229,4 +239,7 @@ metrics.period=60
 context.instance.id=1
 context.environment=dev
 context.zone=default
+
+sd.address=http://localhost:6306
+sd.periodMs=10000
 ```
