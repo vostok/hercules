@@ -101,7 +101,8 @@ public class SentryClientHolder {
                     break;
                 }
                 if (triedToUpdate) {
-                    String message = "Error due to updating Sentry clients into Sentry Sink cache";
+                    String message = "Cannot update required Sentry clients into Sentry Sink cache." +
+                            "The reason for this may be absent or invalid dsn-key";
                     LOGGER.error(message);
                     sentryClientResult = Result.error(new SentrySinkError(message, false));
                     break;

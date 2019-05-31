@@ -34,6 +34,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
     private final Level requiredLevel;
+    private final int retryLimit;
     private final SentryClientHolder sentryClientHolder;
 
     public SentrySyncProcessor(
@@ -41,6 +42,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             SentryClientHolder sentryClientHolder
     ) {
         this.requiredLevel = Props.REQUIRED_LEVEL.extract(sinkProperties);
+        this.retryLimit = Props.RETRY_LIMIT.extract(sinkProperties);
         this.sentryClientHolder = sentryClientHolder;
         this.sentryClientHolder.update();
     }
@@ -77,7 +79,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
         String sentryProject = sentryProjectName.orElse(organization);
 
-        int retryCount = 3; //FIXME hard code
+        int retryCount = retryLimit;
         do {
             SentrySinkError processError = null;
             Result<SentryClient, SentrySinkError> sentryClient =
@@ -140,6 +142,11 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                 .propertyOfType(Level.class, "sentry.level")
                 .withParser(SentryLevelEnumParser::parseAsResult)
                 .withDefaultValue(Level.WARNING)
+                .build();
+
+        static final PropertyDescription<Integer> RETRY_LIMIT = PropertyDescriptions
+                .integerProperty("sentry.retryLimit")
+                .withDefaultValue(3)
                 .build();
     }
 }
