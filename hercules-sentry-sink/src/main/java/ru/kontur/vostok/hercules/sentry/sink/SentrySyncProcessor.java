@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 
+import static io.sentry.connection.LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME;
+
 /**
  * @author Gregory Koshelev
  */
@@ -40,8 +42,17 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
     ) {
         this.requiredLevel = Props.REQUIRED_LEVEL.extract(sinkProperties);
         this.sentryClientHolder = sentryClientHolder;
+        this.sentryClientHolder.update();
     }
 
+    /**
+     * Process event
+     *
+     * @param key UUID of event
+     * @param event event
+     * @return true if event is successfully processed or false otherwise
+     * @throws BackendServiceFailedException
+     */
     @Override
     public boolean process(UUID key, Event event) throws BackendServiceFailedException {
         final Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
@@ -66,33 +77,56 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
         String sentryProject = sentryProjectName.orElse(organization);
 
-        Result<SentryClient, String> sentryClient =
-                sentryClientHolder.getOrCreateClient(organization, sentryProject);
-        if (!sentryClient.isOk()) {
-            LOGGER.error(String.format("Cannot get client for Sentry organization/project '%s/%s'",
-                    organization, sentryProject));
-            //TODO add check of sentryClient and consider it in retry (consider cases: "conflict", "not found" etc.)
-            return false;
-        }
+        int retryCount = 3; //FIXME hard code
+        do {
+            SentrySinkError processError = null;
+            Result<SentryClient, SentrySinkError> sentryClient =
+                    sentryClientHolder.getOrCreateClient(organization, sentryProject);
+            if (!sentryClient.isOk()) {
+                LOGGER.error(String.format("Cannot get client for Sentry organization/project '%s/%s'",
+                        organization, sentryProject));
+                processError = sentryClient.getError();
+            } else {
+                try {
+                    io.sentry.event.Event sentryEvent = SentryEventConverter.convert(event);
+                    sentryClient.get().sendEvent(sentryEvent);
+                } catch (InvalidDsnException e) {
+                    LOGGER.error("InvalidDsnException: " + e.getMessage());
+                    processError = new SentrySinkError(false);
+                } catch (LockedDownException e) {
+                    LOGGER.error("LockedDownException: a temporary lockdown is switched on");
+                    processError = new SentrySinkError(true, DEFAULT_BASE_LOCKDOWN_TIME);
+                } catch (ConnectionException e) {
+                    LOGGER.error(String.format("ConnectionException: %d %s", e.getResponseCode(), e.getMessage()));
+                    if (e.getRecommendedLockdownTime() != null) {
+                        processError = new SentrySinkError(e.getResponseCode(), e.getRecommendedLockdownTime());
+                    } else {
+                        processError = new SentrySinkError(e.getResponseCode());
+                    }
 
-        try {
-            io.sentry.event.Event sentryEvent = SentryEventConverter.convert(event);
-            sentryClient.get().sendEvent(sentryEvent);
-            return true;
-        } catch (InvalidDsnException e) {
-            LOGGER.error("Invalid DSN");
-            //TODO Handle as non retryable exception.
-        } catch (LockedDownException e) {
-            LOGGER.warn("a temporary lockdown is switched on");
-            //TODO Handle as retryable exception.
-        } catch (ConnectionException e) {
-            Long lockdownTime = e.getRecommendedLockdownTime();
-            int responseCode = e.getResponseCode();
-            LOGGER.warn(String.format("Connection exception: responseCode=%d, lockdownTime=%d", responseCode, lockdownTime));
-            //TODO Add responseCode check (retryable / non retryable). Add retry after lockdownTime if responseCode indicate to retryable error.
-        } catch (Exception e) {
-            throw new BackendServiceFailedException(e);
-        }
+                } catch (Exception e) {
+                    throw new BackendServiceFailedException(e);
+                }
+            }
+            if (processError == null) {
+                return true;
+
+            } else if (processError.isRetryable()) {
+                if (processError.needToUpdate()) {
+                    sentryClientHolder.update();
+                }
+                long waitingTimeMs = processError.getWaitingTimeMs();
+                if (waitingTimeMs > 0) {
+                    try {
+                        Thread.sleep(waitingTimeMs);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                return false;
+            }
+         } while (0 < retryCount--);
 
         return false;
     }
