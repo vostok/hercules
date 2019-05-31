@@ -256,18 +256,18 @@ public class GateClient implements Closeable {
                 throw new UnavailableClusterException();
             }
 
-            String element = whiteList.next();
+            String url = whiteList.next();
 
             try {
-                sender.send(element);
+                sender.send(url);
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
-                whiteList.remove(element);
+                whiteList.remove(url);
                 try {
-                    greyList.put(new GreyListTopologyElement(element));
+                    greyList.put(new GreyListTopologyElement(url));
                 } catch (InterruptedException e1) {
-                    LOGGER.warn("Error when insert {} in grey list." , element);
-                    whiteList.add(element);
+                    LOGGER.warn("Error when insert {} in grey list." , url);
+                    whiteList.add(url);
                 }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Send fails", e);
