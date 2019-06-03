@@ -75,8 +75,8 @@ public class SentryClientHolder {
      * @return the {@link Optional} describing SentryClient matching an organization and a project
      * or empty {@link Optional} if cannot get or create client
      */
-    public Result<SentryClient, SentrySinkError> getOrCreateClient(String organization, String project) {
-        Result<SentryClient, SentrySinkError> sentryClientResult = null;
+    public Result<SentryClient, ErrorInfo> getOrCreateClient(String organization, String project) {
+        Result<SentryClient, ErrorInfo> sentryClientResult = null;
         boolean triedToUpdate = false;
         boolean success = false;
         while (!success) {
@@ -85,17 +85,17 @@ public class SentryClientHolder {
                 success = true;
             } else {
                 LOGGER.info(String.format("Sentry client is not found in cache for project '%s' in organization '%s'", project, organization));
-                Result<Void, SentrySinkError> validationResult = validateSlugs(organization, project);
+                Result<Void, ErrorInfo> validationResult = validateSlugs(organization, project);
                 if (!validationResult.isOk()) {
                     sentryClientResult = Result.error(validationResult.getError());
                     break;
                 }
-                Result<Void, SentrySinkError> orgExists = createOrganizationIfNotExists(organization);
+                Result<Void, ErrorInfo> orgExists = createOrganizationIfNotExists(organization);
                 if (!orgExists.isOk()) {
                     sentryClientResult = Result.error(orgExists.getError());
                     break;
                 }
-                Result<Void, SentrySinkError> projectExists = createProjectIfNotExists(organization, project);
+                Result<Void, ErrorInfo> projectExists = createProjectIfNotExists(organization, project);
                 if (!projectExists.isOk()) {
                     sentryClientResult = Result.error(projectExists.getError());
                     break;
@@ -104,7 +104,7 @@ public class SentryClientHolder {
                     String message = "Cannot update required Sentry clients into Sentry Sink cache." +
                             "The reason for this may be absent or invalid dsn-key";
                     LOGGER.error(message);
-                    sentryClientResult = Result.error(new SentrySinkError(message, false));
+                    sentryClientResult = Result.error(new ErrorInfo(message, false));
                     break;
                 }
                 update();
@@ -122,18 +122,18 @@ public class SentryClientHolder {
      * @return the {@link Optional} describing SentryClient
      * or empty {@link Optional} if cannot get client from cache
      */
-    public Result<SentryClient, SentrySinkError> getClient(String organization, String project) {
+    public Result<SentryClient, ErrorInfo> getClient(String organization, String project) {
         Map<String, SentryClient> projectMap = clients.get().get(organization);
         if (projectMap == null) {
             String message = String.format("The organization '%s' is not found in the cache", organization);
             LOGGER.info(message);
-            return Result.error(new SentrySinkError(message));
+            return Result.error(new ErrorInfo(message));
         }
         SentryClient sentryClient = projectMap.get(project);
         if (sentryClient == null) {
             String message = String.format("The project '%s' is not found in the cache", project);
             LOGGER.info(message);
-            return Result.error(new SentrySinkError(message));
+            return Result.error(new ErrorInfo(message));
         }
         return Result.ok(sentryClient);
     }
@@ -145,14 +145,14 @@ public class SentryClientHolder {
      * @param slugs the strings
      * @return the {@link Result} object with success information
      */
-    public Result<Void, SentrySinkError> validateSlugs(String... slugs) {
-        Result<Void, SentrySinkError> result = Result.ok();
+    public Result<Void, ErrorInfo> validateSlugs(String... slugs) {
+        Result<Void, ErrorInfo> result = Result.ok();
         for(String slug : slugs) {
             Optional<String> slugError = slugValidator.validate(slug);
             if (slugError.isPresent()) {
                 String message = String.format("Invalid name: '%s'. This name cannot be Sentry slug: %s", slug, slugError.get());
                 LOGGER.error(message);
-                return Result.error(new SentrySinkError(message, false));
+                return Result.error(new ErrorInfo(message, false));
             }
         }
         return result;
@@ -165,8 +165,8 @@ public class SentryClientHolder {
      * @param organization the organization
      * @return the {@link Result} object with success information
      */
-    public Result<Void, SentrySinkError> createOrganizationIfNotExists(String organization) {
-        Result<List<OrganizationInfo>, SentrySinkError> getListResult = sentryApiClient.getOrganizations();
+    public Result<Void, ErrorInfo> createOrganizationIfNotExists(String organization) {
+        Result<List<OrganizationInfo>, ErrorInfo> getListResult = sentryApiClient.getOrganizations();
         if(!getListResult.isOk()) {
             LOGGER.error("Cannot get organizations from Sentry: {}", getListResult.getError());
             return Result.error(getListResult.getError());
@@ -176,7 +176,7 @@ public class SentryClientHolder {
                 return Result.ok();
             }
         }
-        Result<OrganizationInfo, SentrySinkError> creationResult = sentryApiClient.createOrganization(organization);
+        Result<OrganizationInfo, ErrorInfo> creationResult = sentryApiClient.createOrganization(organization);
         if(!creationResult.isOk()) {
             LOGGER.warn(String.format("Cannot create organisation '%s': {}", organization), creationResult.getError());
             return Result.error(creationResult.getError());
@@ -193,8 +193,8 @@ public class SentryClientHolder {
      * @param project the project
      * @return the {@link Result} object with success information.
      */
-    public Result<Void, SentrySinkError> createProjectIfNotExists(String organization, String project) {
-        Result<List<ProjectInfo>, SentrySinkError> getListResult = sentryApiClient.getProjects(organization);
+    public Result<Void, ErrorInfo> createProjectIfNotExists(String organization, String project) {
+        Result<List<ProjectInfo>, ErrorInfo> getListResult = sentryApiClient.getProjects(organization);
         if (!getListResult.isOk()) {
             LOGGER.error(String.format("Cannot get projects of organization '%s': {}", organization), getListResult.getError());
             return Result.error(getListResult.getError());
@@ -204,12 +204,12 @@ public class SentryClientHolder {
                 return Result.ok();
             }
         }
-        Result<Void, SentrySinkError> defaultTeamExists = createDefaultTeamIfNotExists(organization);
+        Result<Void, ErrorInfo> defaultTeamExists = createDefaultTeamIfNotExists(organization);
         if (!defaultTeamExists.isOk()) {
             return Result.error(defaultTeamExists.getError());
         }
         String team = organization;
-        Result<ProjectInfo, SentrySinkError> creationResult = sentryApiClient.createProject(organization, team, project);
+        Result<ProjectInfo, ErrorInfo> creationResult = sentryApiClient.createProject(organization, team, project);
         if (!creationResult.isOk()) {
             LOGGER.warn(String.format("Cannot create project '%s' in organization '%s': {}",project, organization), creationResult.getError());
             return Result.error(creationResult.getError());
@@ -224,8 +224,8 @@ public class SentryClientHolder {
      * @param organization the organization
      * @return the {@link Result} object with success information.
      */
-    public Result<Void, SentrySinkError> createDefaultTeamIfNotExists(String organization) {
-        Result<List<TeamInfo>, SentrySinkError> getListResult = sentryApiClient.getTeams(organization);
+    public Result<Void, ErrorInfo> createDefaultTeamIfNotExists(String organization) {
+        Result<List<TeamInfo>, ErrorInfo> getListResult = sentryApiClient.getTeams(organization);
         if (!getListResult.isOk()) {
             LOGGER.error(String.format("Cannot get teams of organization '%s': {}", organization), getListResult.getError());
             return Result.error(getListResult.getError());
@@ -236,7 +236,7 @@ public class SentryClientHolder {
                 return Result.ok();
             }
         }
-        Result<TeamInfo, SentrySinkError> creationResult = sentryApiClient.createTeam(organization, team);
+        Result<TeamInfo, ErrorInfo> creationResult = sentryApiClient.createTeam(organization, team);
         if (!creationResult.isOk()) {
             LOGGER.warn(String.format("Cannot create default team in organization '%s': {}", organization), creationResult.getError());
             return Result.error(creationResult.getError());
@@ -255,7 +255,7 @@ public class SentryClientHolder {
     public void update() {
         try {
             LOGGER.info("Updating Sentry clients");
-            Result<List<OrganizationInfo>, SentrySinkError> organizations = sentryApiClient.getOrganizations();
+            Result<List<OrganizationInfo>, ErrorInfo> organizations = sentryApiClient.getOrganizations();
             if (!organizations.isOk()) {
                 LOGGER.error("Cannot update organizations info due to: {}", organizations.getError());
                 return;
@@ -265,7 +265,7 @@ public class SentryClientHolder {
             for (OrganizationInfo organizationInfo : organizations.get()) {
                 String organization = organizationInfo.getSlug();
 
-                Result<List<ProjectInfo>, SentrySinkError> projects = sentryApiClient.getProjects(organization);
+                Result<List<ProjectInfo>, ErrorInfo> projects = sentryApiClient.getProjects(organization);
                 if (!projects.isOk()) {
                     LOGGER.error("Cannot update projects info due to: {}", projects.getError());
                     return;
@@ -277,7 +277,7 @@ public class SentryClientHolder {
                 for (ProjectInfo projectInfo : projects.get()) {
                     String project = projectInfo.getSlug();
 
-                    Result<List<KeyInfo>, SentrySinkError> publicDsn = sentryApiClient.getPublicDsn(organization, project);
+                    Result<List<KeyInfo>, ErrorInfo> publicDsn = sentryApiClient.getPublicDsn(organization, project);
                     if (publicDsn.isOk()) {
                         Optional<String> dsn = publicDsn.get().stream()
                                 .findAny()

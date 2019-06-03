@@ -29,7 +29,7 @@ import ru.kontur.vostok.hercules.sentry.api.model.Project;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.Team;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
-import ru.kontur.vostok.hercules.sentry.sink.SentrySinkError;
+import ru.kontur.vostok.hercules.sentry.sink.ErrorInfo;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.Arrays;
@@ -73,7 +73,7 @@ public class SentryApiClient {
                 .build();
     }
 
-    public Result<Void, SentrySinkError> ping() {
+    public Result<Void, ErrorInfo> ping() {
         return request(
                 new HttpHead(API_URL),
                 new TypeReference<Void>() {});
@@ -84,7 +84,7 @@ public class SentryApiClient {
      *
      * @return the {@link Result} object with a list of organizations
      */
-    public Result<List<OrganizationInfo>, SentrySinkError> getOrganizations() {
+    public Result<List<OrganizationInfo>, ErrorInfo> getOrganizations() {
         return pagedRequest(
                 new HttpGet(ORGANIZATIONS_URL),
                 new TypeReference<List<OrganizationInfo>>() {});
@@ -96,7 +96,7 @@ public class SentryApiClient {
      * @param organization the organization
      * @return the {@link Result} object with a list of projects
      */
-    public Result<List<ProjectInfo>, SentrySinkError> getProjects(String organization) {
+    public Result<List<ProjectInfo>, ErrorInfo> getProjects(String organization) {
         return pagedRequest(
                 new HttpGet(String.format(GET_PROJECTS_URL, organization)),
                 new TypeReference<List<ProjectInfo>>() {});
@@ -109,7 +109,7 @@ public class SentryApiClient {
      * @param project the project for which a list of public DSN is requested
      * @return the {@link Result} object with a list of public DSN
      */
-    public Result<List<KeyInfo>, SentrySinkError> getPublicDsn(String organization, String project) {
+    public Result<List<KeyInfo>, ErrorInfo> getPublicDsn(String organization, String project) {
         return pagedRequest(
                 new HttpGet(String.format(GET_PUBLIC_DSN_URL, organization, project)),
                 new TypeReference<List<KeyInfo>>() {} );
@@ -121,7 +121,7 @@ public class SentryApiClient {
      * @param organization the organization
      * @return the {@link Result} object with a list of teams
      */
-    public Result<List<TeamInfo>, SentrySinkError> getTeams(String organization) {
+    public Result<List<TeamInfo>, ErrorInfo> getTeams(String organization) {
         return pagedRequest(
                 new HttpGet(String.format(GET_TEAMS_URL, organization)),
                 new TypeReference<List<TeamInfo>>() {} );
@@ -133,7 +133,7 @@ public class SentryApiClient {
      * @param organization the name of an organization
      * @return the {@link Result} object with created organization or error
      */
-    public Result<OrganizationInfo, SentrySinkError> createOrganization(String organization) {
+    public Result<OrganizationInfo, ErrorInfo> createOrganization(String organization) {
         Organization organizationModel = new Organization(organization);
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] body;
@@ -142,7 +142,7 @@ public class SentryApiClient {
         } catch (JsonProcessingException e) {
             String message = String.format("Cannot create JSON from model for organization creation: %s", e.getMessage());
             LOGGER.error(message);
-            return Result.error(new SentrySinkError(message, false));
+            return Result.error(new ErrorInfo(message, false));
         }
         HttpPost post = new HttpPost(ORGANIZATIONS_URL);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -157,7 +157,7 @@ public class SentryApiClient {
      * @param team the team name
      * @return the {@link Result} object with created team or error
      */
-    public Result<TeamInfo, SentrySinkError> createTeam(String organization, String team) {
+    public Result<TeamInfo, ErrorInfo> createTeam(String organization, String team) {
         Team teamModel = new Team(team);
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] body;
@@ -166,7 +166,7 @@ public class SentryApiClient {
         } catch (JsonProcessingException e) {
             String message = String.format("Cannot create JSON from model for team creation: %s", e.getMessage());
             LOGGER.error(message);
-            return Result.error(new SentrySinkError(message, false));
+            return Result.error(new ErrorInfo(message, false));
         }
         HttpPost post = new HttpPost(String.format(CREATE_TEAM_URL, organization));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -182,7 +182,7 @@ public class SentryApiClient {
      * @param project the project name
      * @return the {@link Result} object with created project or error
      */
-    public Result<ProjectInfo, SentrySinkError> createProject(String organization, String team, String project) {
+    public Result<ProjectInfo, ErrorInfo> createProject(String organization, String team, String project) {
         Project projectModel = new Project(project);
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] body;
@@ -191,7 +191,7 @@ public class SentryApiClient {
         } catch (JsonProcessingException e) {
             String message = String.format("Cannot create JSON from model for project creation: %s", e.getMessage());
             LOGGER.error(message);
-            return Result.error(new SentrySinkError(message, false));
+            return Result.error(new ErrorInfo(message, false));
         }
         HttpPost post = new HttpPost(String.format(CREATE_PROJECT_URL, organization, team));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -199,10 +199,10 @@ public class SentryApiClient {
         return request(post, new TypeReference<ProjectInfo>() {});
     }
 
-    private <T> Result<T, SentrySinkError> request(HttpUriRequest request, TypeReference<T> typeReference) {
+    private <T> Result<T, ErrorInfo> request(HttpUriRequest request, TypeReference<T> typeReference) {
         try (CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
             if (isErrorResponse(response)) {
-                return Result.error(new SentrySinkError(extractErrorMessage(response), extractStatusCode(response)));
+                return Result.error(new ErrorInfo(extractErrorMessage(response), extractStatusCode(response)));
             }
             T value = null;
             Optional<HttpEntity> entity = Optional.ofNullable(response.getEntity());
@@ -212,11 +212,11 @@ public class SentryApiClient {
             return Result.ok(value);
         } catch (Exception e) {
             LOGGER.error("Error on request: {}", e.getMessage());
-            return Result.error(new SentrySinkError(e.getMessage(), true));
+            return Result.error(new ErrorInfo(e.getMessage(), true));
         }
     }
 
-    private <T> Result<List<T>, SentrySinkError> pagedRequest(HttpUriRequest request, TypeReference<List<T>> listTypeReference) {
+    private <T> Result<List<T>, ErrorInfo> pagedRequest(HttpUriRequest request, TypeReference<List<T>> listTypeReference) {
         List<T> resultList = new LinkedList<>();
         Optional<String> nextCursor = Optional.empty();
         try {
@@ -229,7 +229,7 @@ public class SentryApiClient {
                 }
                 try (CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
                     if (isErrorResponse(response)) {
-                        return Result.error(new SentrySinkError(extractErrorMessage(response), extractStatusCode(response)));
+                        return Result.error(new ErrorInfo(extractErrorMessage(response), extractStatusCode(response)));
                     }
                     resultList.addAll(objectMapper.readValue(response.getEntity().getContent(), listTypeReference));
                     nextCursor = getCursorValue(response.getFirstHeader("Link"));
@@ -238,7 +238,7 @@ public class SentryApiClient {
             return Result.ok(resultList);
         } catch (Exception e) {
             LOGGER.error("Error on paged request: {}", e.getMessage());
-            return Result.error(new SentrySinkError(e.getMessage(), true));
+            return Result.error(new ErrorInfo(e.getMessage(), true));
         }
     }
 

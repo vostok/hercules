@@ -4,43 +4,43 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SentrySinkError {
+public class ErrorInfo {
 
     private String message;
     private int code;
     private boolean isRetryable;
     private long waitingTimeMs;
 
-    public SentrySinkError(String message) {
+    public ErrorInfo(String message) {
         this.message = message;
     }
 
-    public SentrySinkError(String message, int code) {
+    public ErrorInfo(String message, int code) {
         this.message = message;
         this.code = code;
     }
 
-    public SentrySinkError(String message, boolean isRetryable) {
+    public ErrorInfo(String message, boolean isRetryable) {
         this.message = message;
         this.isRetryable = isRetryable;
     }
 
-    public SentrySinkError(Boolean isRetryable) {
+    public ErrorInfo(Boolean isRetryable) {
         this.isRetryable = isRetryable;
     }
 
-    public SentrySinkError(Boolean isRetryable, long waitingTimeMs) {
+    public ErrorInfo(Boolean isRetryable, long waitingTimeMs) {
         this.isRetryable = isRetryable;
         this.waitingTimeMs = waitingTimeMs;
     }
 
 
-    public SentrySinkError(int code) {
+    public ErrorInfo(int code) {
         this.code = code;
         setIsRetryableByCode();
     }
 
-    public SentrySinkError(int code, long waitingTimeMs) {
+    public ErrorInfo(int code, long waitingTimeMs) {
         this.code = code;
         this.waitingTimeMs = waitingTimeMs;
         setIsRetryableByCode();

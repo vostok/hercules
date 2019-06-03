@@ -11,7 +11,7 @@ Application is configured through properties file.
 
 `sink.sentry.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `WARNING`
 
-`sink.sentry.retryLimit` - count of trying send event with retryable errors, default value: `3`
+`sink.sentry.retryLimit` - the number of attempts to send event with retryable errors, default value: `3`
 
 ### Stream settings
 `streams.bootstrap.servers` - list of host/port pairs to use for establishing the initial connection to the Kafka cluster

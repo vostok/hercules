@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.sentry.sink;
 
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
+import io.sentry.connection.LockdownManager;
 import io.sentry.connection.LockedDownException;
 import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.Event.Level;
@@ -23,8 +24,6 @@ import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
-
-import static io.sentry.connection.LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME;
 
 /**
  * @author Gregory Koshelev
@@ -81,43 +80,48 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
 
         int retryCount = retryLimit;
         do {
-            SentrySinkError processError = null;
-            Result<SentryClient, SentrySinkError> sentryClient =
+            ErrorInfo processErrorInfo = null;
+            Result<SentryClient, ErrorInfo> sentryClient =
                     sentryClientHolder.getOrCreateClient(organization, sentryProject);
             if (!sentryClient.isOk()) {
                 LOGGER.error(String.format("Cannot get client for Sentry organization/project '%s/%s'",
                         organization, sentryProject));
-                processError = sentryClient.getError();
+                processErrorInfo = sentryClient.getError();
             } else {
                 try {
                     io.sentry.event.Event sentryEvent = SentryEventConverter.convert(event);
                     sentryClient.get().sendEvent(sentryEvent);
                 } catch (InvalidDsnException e) {
                     LOGGER.error("InvalidDsnException: " + e.getMessage());
-                    processError = new SentrySinkError(false);
+                    processErrorInfo = new ErrorInfo(false);
                 } catch (LockedDownException e) {
                     LOGGER.error("LockedDownException: a temporary lockdown is switched on");
-                    processError = new SentrySinkError(true, DEFAULT_BASE_LOCKDOWN_TIME);
+                    processErrorInfo = new ErrorInfo(true, LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME);
                 } catch (ConnectionException e) {
-                    LOGGER.error(String.format("ConnectionException: %d %s", e.getResponseCode(), e.getMessage()));
-                    if (e.getRecommendedLockdownTime() != null) {
-                        processError = new SentrySinkError(e.getResponseCode(), e.getRecommendedLockdownTime());
+                    if (e.getResponseCode() != null) {
+                        LOGGER.error(String.format("ConnectionException: %d %s", e.getResponseCode(), e.getMessage()));
+                        if (e.getRecommendedLockdownTime() != null) {
+                            processErrorInfo = new ErrorInfo(e.getResponseCode(), e.getRecommendedLockdownTime());
+                        } else {
+                            processErrorInfo = new ErrorInfo(e.getResponseCode());
+                        }
                     } else {
-                        processError = new SentrySinkError(e.getResponseCode());
+                        LOGGER.error(String.format("ConnectionException: %s", e.getMessage()));
+                        processErrorInfo = new ErrorInfo(e.getMessage(), false);
                     }
 
                 } catch (Exception e) {
                     throw new BackendServiceFailedException(e);
                 }
             }
-            if (processError == null) {
+            if (processErrorInfo == null) {
                 return true;
 
-            } else if (processError.isRetryable()) {
-                if (processError.needToUpdate()) {
+            } else if (processErrorInfo.isRetryable()) {
+                if (processErrorInfo.needToUpdate()) {
                     sentryClientHolder.update();
                 }
-                long waitingTimeMs = processError.getWaitingTimeMs();
+                long waitingTimeMs = processErrorInfo.getWaitingTimeMs();
                 if (waitingTimeMs > 0) {
                     try {
                         Thread.sleep(waitingTimeMs);
