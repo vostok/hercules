@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -62,8 +60,7 @@ public class EventPublisher {
         this.executor = new ScheduledThreadPoolExecutor(threads, threadFactory);
 
         Topology<String> whiteList = new Topology<>(urls);
-        BlockingQueue<GreyListTopologyElement> greyList = new ArrayBlockingQueue<>(urls.length);
-        this.gateClient = new GateClient(gateClientProperties, whiteList, greyList);
+        this.gateClient = new GateClient(gateClientProperties, whiteList);
 
         registerAll(queues);
     }

@@ -11,10 +11,8 @@ import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.internal.verification.VerificationModeFactory.times;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Daniil Zhenikhov
@@ -23,6 +21,7 @@ public class GateClientTests {
     private static final String OK_200_ADDR = "ok_2xx";
     private static final String ERROR_4XX_ADDR = "error_4xx";
     private static final String ERROR_5XX_ADDR = "error_5xx";
+    private static final String ERROR_5XX_ADDR_PROCESSING_TEST = "error_5xx_processing_test";
 
     private Properties properties = new Properties();
     private final CloseableHttpClient HTTP_CLIENT = new CloseableHttpClientMock();
@@ -38,14 +37,14 @@ public class GateClientTests {
     @Test(expected = BadRequestException.class)
     public void shouldThrowExceptionIfReturn4xx() throws BadRequestException, UnavailableClusterException {
         whiteList.add(ERROR_4XX_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, greyList);
+        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList);
         gateClient.ping();
     }
 
     @Test(expected = UnavailableClusterException.class)
     public void shouldThrowExceptionIfAllOneHostUnavailable() throws BadRequestException, UnavailableClusterException {
         whiteList.add(ERROR_5XX_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, greyList);
+        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList);
         gateClient.ping();
     }
 
@@ -54,34 +53,47 @@ public class GateClientTests {
         whiteList.add(ERROR_5XX_ADDR);
         whiteList.add(ERROR_5XX_ADDR);
         whiteList.add(ERROR_5XX_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, greyList);
+        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList);
         gateClient.ping();
     }
 
     @Test
-    public void shouldPutIntoGreyListThreeTimes() throws BadRequestException, UnavailableClusterException, InterruptedException {
-        greyList = mock(ArrayBlockingQueue.class);
-        whiteList.add(ERROR_5XX_ADDR);
+    public void shouldDeleteUrlFromWhiteListAndReturnAfterTimeout() throws BadRequestException, UnavailableClusterException, InterruptedException {
+        Properties properties = new Properties();
+        properties.setProperty("greyListElementsRecoveryTimeMs", "100");
         whiteList.add(ERROR_5XX_ADDR);
         whiteList.add(ERROR_5XX_ADDR);
         whiteList.add(OK_200_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, greyList);
+        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList);
         gateClient.ping();
-        verify(greyList, times(3)).put(any());
-        gateClient.ping();
-        verify(greyList, times(3)).put(any());
-
+        assertEquals(1, whiteList.size());
+        Thread.sleep(1000);
+        assertEquals(3, whiteList.size());
     }
 
     @Test
-    public void shouldNotPutIntoGreyList() throws BadRequestException, UnavailableClusterException, InterruptedException {
-        greyList = mock(ArrayBlockingQueue.class);
-        whiteList.add(OK_200_ADDR);
-        whiteList.add(ERROR_5XX_ADDR);
-        whiteList.add(ERROR_5XX_ADDR);
-        whiteList.add(ERROR_5XX_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, greyList);
-        gateClient.ping();
-        verify(greyList, times(0)).put(any());
+    public void shouldNotPingNotWorkingHosts() throws BadRequestException, UnavailableClusterException {
+        long startMs = System.currentTimeMillis();
+        Properties properties = new Properties();
+        properties.setProperty("greyListElementsRecoveryTimeMs", "10000");
+        int count = 10;
+        for (int i = 0; i < count; i++) {
+            if (i % 2 == 0) {
+                whiteList.add(OK_200_ADDR);
+            } else {
+                whiteList.add(ERROR_5XX_ADDR_PROCESSING_TEST);
+            }
+        }
+
+        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList);
+        for (int i = 0; i < count * 3; i++) {
+            gateClient.ping();
+        }
+        long endMs = System.currentTimeMillis();
+
+        long timeOfProcessingMs = endMs - startMs;
+
+        assertTrue(timeOfProcessingMs > 5_000 && timeOfProcessingMs < 6_000);
+
     }
 }

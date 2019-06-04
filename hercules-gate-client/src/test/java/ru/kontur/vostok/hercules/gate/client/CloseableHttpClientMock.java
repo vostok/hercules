@@ -20,10 +20,12 @@ public class CloseableHttpClientMock extends CloseableHttpClient {
     private static final String OK_200_ADDR = "ok_2xx" + PING_METHOD;
     private static final String ERROR_4XX_ADDR = "error_4xx" + PING_METHOD;
     private static final String ERROR_5XX_ADDR = "error_5xx" + PING_METHOD;
+    private static final String ERROR_5XX_ADDR_PROCESSING_TEST = "error_5xx_processing_test" + PING_METHOD;
 
     private static final CloseableHttpResponse OK_200;
     private static final CloseableHttpResponse ERROR_4XX;
     private static final CloseableHttpResponse ERROR_5XX;
+    private static final CloseableHttpResponse ERROR_5XX_PROCESSING_TEST;
 
     static {
         OK_200 = Mockito.mock(CloseableHttpResponse.class);
@@ -32,6 +34,8 @@ public class CloseableHttpClientMock extends CloseableHttpClient {
         StatusLine statusLine4xx = Mockito.mock(StatusLine.class);
         ERROR_5XX = Mockito.mock(CloseableHttpResponse.class);
         StatusLine statusLine5xx = Mockito.mock(StatusLine.class);
+        ERROR_5XX_PROCESSING_TEST = Mockito.mock(CloseableHttpResponse.class);
+        StatusLine statusLine5xxTimeTest = Mockito.mock(StatusLine.class);
 
         Mockito.when(OK_200.getStatusLine()).thenReturn(statusLine200);
         Mockito.when(statusLine200.getStatusCode()).thenReturn(200);
@@ -39,6 +43,8 @@ public class CloseableHttpClientMock extends CloseableHttpClient {
         Mockito.when(statusLine4xx.getStatusCode()).thenReturn(400);
         Mockito.when(ERROR_5XX.getStatusLine()).thenReturn(statusLine5xx);
         Mockito.when(statusLine5xx.getStatusCode()).thenReturn(500);
+        Mockito.when(ERROR_5XX_PROCESSING_TEST.getStatusLine()).thenReturn(statusLine5xxTimeTest);
+        Mockito.when(statusLine5xxTimeTest.getStatusCode()).thenReturn(500);
     }
 
     @Override
@@ -50,6 +56,12 @@ public class CloseableHttpClientMock extends CloseableHttpClient {
                 return ERROR_4XX;
             case ERROR_5XX_ADDR:
                 return ERROR_5XX;
+            case ERROR_5XX_ADDR_PROCESSING_TEST:
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+                return ERROR_5XX_PROCESSING_TEST;
             default:
                 throw new IOException();
         }

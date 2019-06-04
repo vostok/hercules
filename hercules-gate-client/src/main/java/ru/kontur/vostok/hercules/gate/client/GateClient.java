@@ -27,6 +27,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -47,17 +48,17 @@ public class GateClient implements Closeable {
 
     private final CloseableHttpClient client;
 
-    private BlockingQueue<GreyListTopologyElement> greyList;
-    private Topology<String> whiteList;
-    private int greyListElementsRecoveryTimeMs;
+    private final BlockingQueue<GreyListTopologyElement> greyList;
+    private final Topology<String> whiteList;
+    private final int greyListElementsRecoveryTimeMs;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList, BlockingQueue<GreyListTopologyElement> greyList) {
+    public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList) {
 
         this.greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
         this.client = client;
         this.whiteList = whiteList;
-        this.greyList = greyList;
+        this.greyList = new ArrayBlockingQueue<>(whiteList.size());
 
         scheduler.scheduleWithFixedDelay(this::updateTopology,
                 greyListElementsRecoveryTimeMs,
@@ -66,15 +67,14 @@ public class GateClient implements Closeable {
 
     }
 
-    public GateClient(Properties properties, Topology<String> whiteList, BlockingQueue<GreyListTopologyElement> greyList) {
+    public GateClient(Properties properties, Topology<String> whiteList) {
         final int requestTimeout = Props.REQUEST_TIMEOUT.extract(properties);
         final int connectionTimeout = Props.CONNECTION_TIMEOUT.extract(properties);
         final int connectionCount = Props.CONNECTION_COUNT.extract(properties);
-        final int greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
 
         this.greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
         this.whiteList = whiteList;
-        this.greyList = greyList;
+        this.greyList = new ArrayBlockingQueue<>(whiteList.size());
 
         this.client = createHttpClient(requestTimeout, connectionTimeout, connectionCount);
 
@@ -82,26 +82,6 @@ public class GateClient implements Closeable {
                 greyListElementsRecoveryTimeMs,
                 greyListElementsRecoveryTimeMs,
                 TimeUnit.MILLISECONDS);
-    }
-
-    private void updateTopology() {
-        if (greyList.isEmpty()) {
-            return;
-        }
-
-        for (int i = 0; i < greyList.size(); i++) {
-            GreyListTopologyElement element = greyList.peek();
-            if (System.currentTimeMillis() - element.getEntryTime() >= greyListElementsRecoveryTimeMs) {
-                try {
-                    GreyListTopologyElement pollElement = greyList.take();
-                    whiteList.add(pollElement.getUrl());
-                } catch (InterruptedException e) {
-                    LOGGER.warn("Error when take {} from grey list." ,element);
-                }
-            } else {
-                return;
-            }
-        }
     }
 
     /**
@@ -243,6 +223,25 @@ public class GateClient implements Closeable {
         }
     }
 
+    /**
+     * Strategy of updating urls in topology
+     */
+    private void updateTopology() {
+        if (greyList.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < greyList.size(); i++) {
+            GreyListTopologyElement element = greyList.peek();
+            if (System.currentTimeMillis() - element.getEntryTime() >= greyListElementsRecoveryTimeMs) {
+                GreyListTopologyElement pollElement = greyList.poll();
+                whiteList.add(pollElement.getUrl());
+            } else {
+                return;
+            }
+        }
+    }
+
     //TODO: metrics
     /**
      * Strategy of sending data to addresses pool
@@ -263,14 +262,11 @@ public class GateClient implements Closeable {
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
                 whiteList.remove(url);
-                try {
-                    greyList.put(new GreyListTopologyElement(url));
-                } catch (InterruptedException e1) {
-                    LOGGER.warn("Error when insert {} in grey list." , url);
+                if (!greyList.offer(new GreyListTopologyElement(url))) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Send fails", e);
+                    }
                     whiteList.add(url);
-                }
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Send fails", e);
                 }
             }
         }
