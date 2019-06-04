@@ -177,7 +177,7 @@ public class GateClient implements Closeable {
     }
 
     /**
-     * Request to {@value #PING}. Count of retry is <code>urls.length + 1</code>
+     * Request to {@value #PING}. Count of retry is <code>whitelist.size() + 1</code>
      *
      * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
@@ -188,7 +188,7 @@ public class GateClient implements Closeable {
     }
 
     /**
-     * Request to {@value #SEND_ASYNC}. Count of retry is <code>urls.length + 1</code>
+     * Request to {@value #SEND_ASYNC}. Count of retry is <code>whitelist.size() + 1</code>
      *
      * @param apiKey key for sending
      * @param stream topic name in kafka
@@ -202,7 +202,7 @@ public class GateClient implements Closeable {
     }
 
     /**
-     * Request to {@value #SEND_ACK}. Count of retry is <code>urls.length + 1</code>
+     * Request to {@value #SEND_ACK}. Count of retry is <code>whitelist.size() + 1</code>
      *
      * @param apiKey key for sending
      * @param stream topic name in kafka
