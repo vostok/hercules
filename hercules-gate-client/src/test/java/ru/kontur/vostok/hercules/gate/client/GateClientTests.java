@@ -8,8 +8,6 @@ import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterExcepti
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
 
 import java.util.Properties;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -25,12 +23,10 @@ public class GateClientTests {
 
     private Properties properties = new Properties();
     private final CloseableHttpClient HTTP_CLIENT = new CloseableHttpClientMock();
-    private BlockingQueue<GreyListTopologyElement> greyList;
     private Topology<String> whiteList;
 
     @Before
     public void setUp() {
-        greyList = new ArrayBlockingQueue<>(4);
         whiteList = new Topology<>(new String[]{});
     }
 
@@ -73,7 +69,9 @@ public class GateClientTests {
 
     @Test
     public void shouldNotPingNotWorkingHosts() throws BadRequestException, UnavailableClusterException {
-        long startMs = System.currentTimeMillis();
+
+        long startProcessingMs = System.currentTimeMillis();
+
         Properties properties = new Properties();
         properties.setProperty("greyListElementsRecoveryTimeMs", "10000");
         int count = 10;
@@ -89,11 +87,10 @@ public class GateClientTests {
         for (int i = 0; i < count * 3; i++) {
             gateClient.ping();
         }
-        long endMs = System.currentTimeMillis();
 
-        long timeOfProcessingMs = endMs - startMs;
+        long endProcessingMs = System.currentTimeMillis();
+        long timeOfProcessingMs = endProcessingMs - startProcessingMs;
 
         assertTrue(timeOfProcessingMs > 5_000 && timeOfProcessingMs < 6_000);
-
     }
 }
