@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Sentry client holder.
@@ -42,13 +41,13 @@ public class SentryClientHolder {
     private static final Validator<String> slugValidator = StringValidators.matchesWith(SLUG_REGEX);
 
     /**
-     * Clients is a {@link AtomicReference} with a base of Sentry clients and their organizations and projects.<p>
+     * Clients is a base of Sentry clients and their organizations and projects.<p>
      * It is a cache which stores the Map with the String of organization as a key
      * and the Map as a value. <p>
      * The nested Map matching this organization contains the String of project as a key
      * and the {@link SentryClient} as a value.
      */
-    private final AtomicReference<Map<String, Map<String, SentryClient>>> clients = new AtomicReference<>(Collections.emptyMap());
+    private Map<String, Map<String, SentryClient>> clients = Collections.emptyMap();
 
     private final SentryApiClient sentryApiClient;
     private final SentryClientFactory sentryClientFactory = new HerculesClientFactory();
@@ -77,7 +76,7 @@ public class SentryClientHolder {
      */
     public Result<SentryClient, ErrorInfo> getOrCreateClient(String organization, String project) {
         Result<SentryClient, ErrorInfo> sentryClientResult = null;
-        boolean triedToUpdate = false;
+        boolean triedToCreateClient = false;
         boolean success = false;
         while (!success) {
             sentryClientResult = getClient(organization, project);
@@ -100,15 +99,13 @@ public class SentryClientHolder {
                     sentryClientResult = Result.error(projectExists.getError());
                     break;
                 }
-                if (triedToUpdate) {
-                    String message = "Cannot update required Sentry clients into Sentry Sink cache." +
-                            "The reason for this may be absent or invalid dsn-key";
+                if (triedToCreateClient) {
+                    String message = "Cannot find Sentry client in cache and cannot create new Sentry client";
                     LOGGER.error(message);
-                    sentryClientResult = Result.error(new ErrorInfo(message, false));
+                    sentryClientResult = Result.error(new ErrorInfo(message, true));
                     break;
                 }
-                update();
-                triedToUpdate = true;
+                triedToCreateClient = true;
             }
         }
         return sentryClientResult;
@@ -123,7 +120,7 @@ public class SentryClientHolder {
      * or empty {@link Optional} if cannot get client from cache
      */
     public Result<SentryClient, ErrorInfo> getClient(String organization, String project) {
-        Map<String, SentryClient> projectMap = clients.get().get(organization);
+        Map<String, SentryClient> projectMap = clients.get(organization);
         if (projectMap == null) {
             String message = String.format("The organization '%s' is not found in the cache", organization);
             LOGGER.info(message);
@@ -160,7 +157,7 @@ public class SentryClientHolder {
 
     /**
      * Check the organization existence in the Sentry.
-     * If the organization does not exist the method create new organization
+     * If the organization does not exist the method create new organization in the Sentry and in the cache
      *
      * @param organization the organization
      * @return the {@link Result} object with success information
@@ -171,23 +168,32 @@ public class SentryClientHolder {
             LOGGER.error("Cannot get organizations from Sentry: {}", getListResult.getError());
             return Result.error(getListResult.getError());
         }
+        boolean orgExists = false;
         for(OrganizationInfo organizationInfo : getListResult.get()) {
             if(organizationInfo.getSlug().equals(organization)) {
-                return Result.ok();
+                orgExists = true;
+                break;
             }
         }
-        Result<OrganizationInfo, ErrorInfo> creationResult = sentryApiClient.createOrganization(organization);
-        if(!creationResult.isOk()) {
-            LOGGER.warn(String.format("Cannot create organisation '%s': {}", organization), creationResult.getError());
-            return Result.error(creationResult.getError());
+        if (!orgExists) {
+            Result<OrganizationInfo, ErrorInfo> creationResult = sentryApiClient.createOrganization(organization);
+            if(!creationResult.isOk()) {
+                LOGGER.warn(String.format("Cannot create organisation '%s': {}", organization), creationResult.getError());
+                return Result.error(creationResult.getError());
+            }
+        }
+        if (!clients.containsKey(organization)) {
+            clients.put(organization, new HashMap<>());
+            LOGGER.info(String.format("Organisation '%s' is uploaded into cache", organization));
         }
         return Result.ok();
     }
 
     /**
      * Check the project existence in the organization in the Sentry.
-     * If the project does not exist the method create new project.
-     * For project creation the method find or create default team
+     * If the project does not exist the method create new project in the Sentry and in the cache.
+     * For project creation the method find or create default team.
+     * The method returns the {@link Result} with error if project does not have dsn-key.
      *
      * @param organization the organization
      * @param project the project
@@ -199,20 +205,33 @@ public class SentryClientHolder {
             LOGGER.error(String.format("Cannot get projects of organization '%s': {}", organization), getListResult.getError());
             return Result.error(getListResult.getError());
         }
+        boolean projExists = false;
         for (ProjectInfo projectInfo : getListResult.get()) {
             if (projectInfo.getSlug().equals(project)) {
-                return Result.ok();
+                projExists = true;
+                break;
             }
         }
-        Result<Void, ErrorInfo> defaultTeamExists = createDefaultTeamIfNotExists(organization);
-        if (!defaultTeamExists.isOk()) {
-            return Result.error(defaultTeamExists.getError());
+        if (!projExists) {
+            Result<Void, ErrorInfo> defaultTeamExists = createDefaultTeamIfNotExists(organization);
+            if (!defaultTeamExists.isOk()) {
+                return Result.error(defaultTeamExists.getError());
+            }
+            String team = organization;
+            Result<ProjectInfo, ErrorInfo> creationResult = sentryApiClient.createProject(organization, team, project);
+            if (!creationResult.isOk()) {
+                LOGGER.warn(String.format("Cannot create project '%s' in organization '%s': {}",project, organization), creationResult.getError());
+                return Result.error(creationResult.getError());
+            }
         }
-        String team = organization;
-        Result<ProjectInfo, ErrorInfo> creationResult = sentryApiClient.createProject(organization, team, project);
-        if (!creationResult.isOk()) {
-            LOGGER.warn(String.format("Cannot create project '%s' in organization '%s': {}",project, organization), creationResult.getError());
-            return Result.error(creationResult.getError());
+        Result<String, ErrorInfo> dsnResult = getDsnKey(organization, project);
+        if (dsnResult.isOk()){
+            SentryClient sentryClient = SentryClientFactory.sentryClient(applySettings(dsnResult.get()), sentryClientFactory);
+            clients.get(organization).put(project, sentryClient);
+            LOGGER.info(String.format("The client for project '%s' is uploaded into cache", organization));
+        } else {
+            LOGGER.error(dsnResult.getError().toString());
+            return Result.error(dsnResult.getError());
         }
         return Result.ok();
     }
@@ -231,17 +250,31 @@ public class SentryClientHolder {
             return Result.error(getListResult.getError());
         }
         String team = organization;
+        boolean teamExists = false;
         for (TeamInfo teamInfo : getListResult.get()) {
             if (teamInfo.getSlug().equals(team)) {
-                return Result.ok();
+                teamExists = true;
+                break;
             }
         }
-        Result<TeamInfo, ErrorInfo> creationResult = sentryApiClient.createTeam(organization, team);
-        if (!creationResult.isOk()) {
-            LOGGER.warn(String.format("Cannot create default team in organization '%s': {}", organization), creationResult.getError());
-            return Result.error(creationResult.getError());
+        if (!teamExists) {
+            Result<TeamInfo, ErrorInfo> creationResult = sentryApiClient.createTeam(organization, team);
+            if (!creationResult.isOk()) {
+                LOGGER.warn(String.format("Cannot create default team in organization '%s': {}", organization), creationResult.getError());
+                return Result.error(creationResult.getError());
+            }
         }
         return Result.ok();
+    }
+
+    /**
+     * Remove Sentry client from cache
+     *
+     * @param organization the organization
+     * @param project the project
+     */
+    public void removeClientFromCache(String organization, String project) {
+        clients.get(organization).remove(project);
     }
 
     /**
@@ -277,30 +310,44 @@ public class SentryClientHolder {
                 for (ProjectInfo projectInfo : projects.get()) {
                     String project = projectInfo.getSlug();
 
-                    Result<List<KeyInfo>, ErrorInfo> publicDsn = sentryApiClient.getPublicDsn(organization, project);
-                    if (publicDsn.isOk()) {
-                        Optional<String> dsn = publicDsn.get().stream()
-                                .findAny()
-                                .map(KeyInfo::getDsn)
-                                .map(DsnInfo::getPublicDsn);
-                        if (dsn.isPresent()) {
-                            String dsnString = dsn.get();
-                            try {
-                                new URL(dsnString);
-                            } catch (MalformedURLException e) {
-                                throw new Exception(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
-                            }
-                            SentryClient sentryClient = SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory);
-                            projectMap.put(project, sentryClient);
-                        }
+                    Result<String, ErrorInfo> dsnResult = getDsnKey(organization, project);
+                    if (dsnResult.isOk()) {
+                        String dsnString = dsnResult.get();
+                        SentryClient sentryClient = SentryClientFactory.sentryClient(applySettings(dsnString), sentryClientFactory);
+                        projectMap.put(project, sentryClient);
                     }
                 }
             }
 
-            clients.set(organizationMap);
+            clients = organizationMap;
         } catch (Throwable t) {
             LOGGER.error("Error of updating Sentry clients: {}", t.getMessage());
             System.exit(1);
+        }
+    }
+
+    private  Result<String, ErrorInfo> getDsnKey(String organization, String project) {
+        Result<List<KeyInfo>, ErrorInfo> publicDsn = sentryApiClient.getPublicDsn(organization, project);
+        if (publicDsn.isOk()) {
+            Optional<String> dsn = publicDsn.get().stream()
+                    .findAny()
+                    .map(KeyInfo::getDsn)
+                    .map(DsnInfo::getPublicDsn);
+            if (dsn.isPresent()) {
+                String dsnString = dsn.get();
+                try {
+                    new URL(dsnString);
+                } catch (MalformedURLException e) {
+                    String message = String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString);
+                    LOGGER.error(message);
+                    return Result.error(new ErrorInfo(message, false));
+                }
+                return Result.ok(dsnString);
+            } else {
+                return Result.error(new ErrorInfo(String.format("dsn is not present for project %s", project), false));
+            }
+        } else {
+            return Result.error(publicDsn.getError());
         }
     }
 

@@ -23,7 +23,7 @@ Application is configured through properties file.
 
 `context.zone` - id of zone
 
-`context.instance.id` - d of instance
+`context.instance.id` - id of instance
 
 ### HTTP Server settings
 `http.server.host` - server host, default value: `0.0.0.0`
