@@ -37,7 +37,9 @@ public class SentryClientHolderTest {
     private static final String EXISTING_ORGANIZATION = "existing-organization";
     private static final String MY_PROJECT = "my-project";
     private static final String EXISTING_PROJECT = "existing-project";
+    private static final String NEW_PROJECT = "new-project";
     private static final String MY_DSN = "https://1234567813ef4c6ca4fbabc4b8f8cb7d@mysentry.io/1000001";
+    private static final String NEW_DSN = "https://0234567813ef4c6ca4fbabc4b8f8cb7d@mysentry.io/1000002";
 
     private Map<String, SentryOrg> sentrySimulator;
     private SentryApiClient sentryApiClientMock;
@@ -157,17 +159,17 @@ public class SentryClientHolderTest {
 
     @Test
     public void shouldCreateNewProject() {
-        String newProject = "new-project";
-        createProjectMock(MY_ORGANIZATION, newProject);
+        createProjectMock(MY_ORGANIZATION, NEW_PROJECT);
         getTeamsMock(MY_ORGANIZATION);
+        getPublicDsnMock(MY_ORGANIZATION, NEW_PROJECT);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
         sentryClientHolder.update();
-        Result<Void, ErrorInfo> result = sentryClientHolder.createProjectIfNotExists(MY_ORGANIZATION, newProject);
+        Result<Void, ErrorInfo> result = sentryClientHolder.createProjectIfNotExists(MY_ORGANIZATION, NEW_PROJECT);
 
         verify(sentryApiClientMock, times(2)).getProjects(MY_ORGANIZATION);
         verify(sentryApiClientMock).getTeams(MY_ORGANIZATION);
-        verify(sentryApiClientMock).createProject(MY_ORGANIZATION, MY_TEAM, newProject);
+        verify(sentryApiClientMock).createProject(MY_ORGANIZATION, MY_TEAM, NEW_PROJECT);
         assertTrue(result.isOk());
     }
 
@@ -262,6 +264,11 @@ public class SentryClientHolderTest {
 
     private void getPublicDsnMock(String organization, String project) {
         Result<List<KeyInfo>, ErrorInfo> result;
+        if (project.equals(NEW_PROJECT)) {
+            List<String> keyList = new ArrayList<>();
+            keyList.add(NEW_DSN);
+            sentrySimulator.get(organization).getProjectMap().put(project, keyList);
+        }
         try {
             result = Result.ok(
                     sentrySimulator.get(organization).getProjectMap().get(project).stream()

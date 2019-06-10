@@ -37,7 +37,7 @@ public class SentryClientHolder {
     private static final String DISABLE_UNCAUGHT_EXCEPTION_HANDLING = DefaultSentryClientFactory.UNCAUGHT_HANDLER_ENABLED_OPTION + "=false";
     private static final String DISABLE_IN_APP_WARN_MESSAGE = DefaultSentryClientFactory.IN_APP_FRAMES_OPTION + "=%20"; // Empty value disables warn message
 
-    private static final String SLUG_REGEX = "[a-z0-9_\\-]+";
+    private static final String SLUG_REGEX = "[a-z0-9_\\-]{1,50}";
     private static final Validator<String> slugValidator = StringValidators.matchesWith(SLUG_REGEX);
 
     /**
@@ -193,6 +193,7 @@ public class SentryClientHolder {
      * Check the project existence in the organization in the Sentry.
      * If the project does not exist the method create new project in the Sentry and in the cache.
      * For project creation the method find or create default team.
+     * The method check existence of dsn-key for the project and create dsn-key in case of its absence.
      * The method returns the {@link Result} with error if project does not have dsn-key.
      *
      * @param organization the organization

@@ -73,6 +73,11 @@ public class SentryApiClient {
                 .build();
     }
 
+    /**
+     * Ping of Sentry
+     *
+     * @return the {@link Result} object with error information in case of error
+     */
     public Result<Void, ErrorInfo> ping() {
         return request(
                 new HttpHead(API_URL),
