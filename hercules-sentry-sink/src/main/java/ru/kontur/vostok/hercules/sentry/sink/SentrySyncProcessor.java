@@ -87,10 +87,12 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                 LOGGER.error(String.format("Cannot get client for Sentry organization/project '%s/%s'",
                         organization, sentryProject));
                 processErrorInfo = sentryClient.getError();
+                processErrorInfo.setIsRetryableForApiClient();
             } else {
                 try {
                     io.sentry.event.Event sentryEvent = SentryEventConverter.convert(event);
                     sentryClient.get().sendEvent(sentryEvent);
+                    return true;
                 } catch (InvalidDsnException e) {
                     LOGGER.error("InvalidDsnException: " + e.getMessage());
                     processErrorInfo = new ErrorInfo(false);
@@ -98,29 +100,26 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                     LOGGER.error("LockedDownException: a temporary lockdown is switched on");
                     processErrorInfo = new ErrorInfo(true, LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME);
                 } catch (ConnectionException e) {
-                    if (e.getResponseCode() != null) {
-                        LOGGER.error(String.format("ConnectionException: %d %s", e.getResponseCode(), e.getMessage()));
+                    Integer responseCode = e.getResponseCode();
+                    String message = e.getMessage();
+                    if (responseCode != null) {
+                        LOGGER.error(String.format("ConnectionException: %d %s", responseCode, message));
                         if (e.getRecommendedLockdownTime() != null) {
-                            processErrorInfo = new ErrorInfo(e.getResponseCode(), e.getRecommendedLockdownTime());
+                            processErrorInfo = new ErrorInfo(responseCode, e.getRecommendedLockdownTime());
                         } else {
-                            processErrorInfo = new ErrorInfo(e.getResponseCode());
+                            processErrorInfo = new ErrorInfo(responseCode);
                         }
                     } else {
-                        LOGGER.error(String.format("ConnectionException: %s", e.getMessage()));
-                        processErrorInfo = new ErrorInfo(e.getMessage(), false);
+                        LOGGER.error(String.format("ConnectionException: %s", message));
+                        throw new BackendServiceFailedException(e);
                     }
 
                 } catch (Exception e) {
                     throw new BackendServiceFailedException(e);
                 }
+                processErrorInfo.setIsRetryableForSending();
             }
-            if (processErrorInfo == null) {
-                return true;
-
-            } else if (processErrorInfo.isRetryable()) {
-                if (processErrorInfo.needToUpdate()) {
-                    sentryClientHolder.update();
-                }
+            if (processErrorInfo.isRetryable()) {
                 long waitingTimeMs = processErrorInfo.getWaitingTimeMs();
                 if (waitingTimeMs > 0) {
                     try {

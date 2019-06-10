@@ -100,9 +100,8 @@ public class SentryClientHolder {
                     break;
                 }
                 if (triedToCreateClient) {
-                    String message = "Cannot find Sentry client in cache and cannot create new Sentry client";
-                    LOGGER.error(message);
-                    sentryClientResult = Result.error(new ErrorInfo(message, true));
+                    LOGGER.error("Cannot find Sentry client in cache and cannot create new Sentry client");
+                    sentryClientResult = Result.error(new ErrorInfo(true));
                     break;
                 }
                 triedToCreateClient = true;
@@ -147,9 +146,8 @@ public class SentryClientHolder {
         for(String slug : slugs) {
             Optional<String> slugError = slugValidator.validate(slug);
             if (slugError.isPresent()) {
-                String message = String.format("Invalid name: '%s'. This name cannot be Sentry slug: %s", slug, slugError.get());
-                LOGGER.error(message);
-                return Result.error(new ErrorInfo(message, false));
+                LOGGER.error(String.format("Invalid name: '%s'. This name cannot be Sentry slug: %s", slug, slugError.get()));
+                return Result.error(new ErrorInfo(false));
             }
         }
         return result;
@@ -231,7 +229,6 @@ public class SentryClientHolder {
             clients.get(organization).put(project, sentryClient);
             LOGGER.info(String.format("The client for project '%s' is uploaded into cache", organization));
         } else {
-            LOGGER.error(dsnResult.getError().toString());
             return Result.error(dsnResult.getError());
         }
         return Result.ok();
@@ -339,13 +336,13 @@ public class SentryClientHolder {
                 try {
                     new URL(dsnString);
                 } catch (MalformedURLException e) {
-                    String message = String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString);
-                    LOGGER.error(message);
-                    return Result.error(new ErrorInfo(message, false));
+                    LOGGER.error(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
+                    return Result.error(new ErrorInfo(false));
                 }
                 return Result.ok(dsnString);
             } else {
-                return Result.error(new ErrorInfo(String.format("dsn is not present for project %s", project), false));
+                LOGGER.error(String.format("dsn is not present for project %s", project));
+                return Result.error(new ErrorInfo(false));
             }
         } else {
             return Result.error(publicDsn.getError());

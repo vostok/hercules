@@ -145,9 +145,8 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(organizationModel);
         } catch (JsonProcessingException e) {
-            String message = String.format("Cannot create JSON from model for organization creation: %s", e.getMessage());
-            LOGGER.error(message);
-            return Result.error(new ErrorInfo(message, false));
+            LOGGER.error(String.format("Cannot create JSON from model for organization creation: %s", e.getMessage()));
+            return Result.error(new ErrorInfo( false));
         }
         HttpPost post = new HttpPost(ORGANIZATIONS_URL);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -169,9 +168,8 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(teamModel);
         } catch (JsonProcessingException e) {
-            String message = String.format("Cannot create JSON from model for team creation: %s", e.getMessage());
-            LOGGER.error(message);
-            return Result.error(new ErrorInfo(message, false));
+            LOGGER.error(String.format("Cannot create JSON from model for team creation: %s", e.getMessage()));
+            return Result.error(new ErrorInfo(false));
         }
         HttpPost post = new HttpPost(String.format(CREATE_TEAM_URL, organization));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -194,9 +192,8 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(projectModel);
         } catch (JsonProcessingException e) {
-            String message = String.format("Cannot create JSON from model for project creation: %s", e.getMessage());
-            LOGGER.error(message);
-            return Result.error(new ErrorInfo(message, false));
+            LOGGER.error(String.format("Cannot create JSON from model for project creation: %s", e.getMessage()));
+            return Result.error(new ErrorInfo(false));
         }
         HttpPost post = new HttpPost(String.format(CREATE_PROJECT_URL, organization, team));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -217,7 +214,7 @@ public class SentryApiClient {
             return Result.ok(value);
         } catch (Exception e) {
             LOGGER.error("Error on request: {}", e.getMessage());
-            return Result.error(new ErrorInfo(e.getMessage(), true));
+            return Result.error(new ErrorInfo(e.getMessage()));
         }
     }
 
@@ -243,7 +240,7 @@ public class SentryApiClient {
             return Result.ok(resultList);
         } catch (Exception e) {
             LOGGER.error("Error on paged request: {}", e.getMessage());
-            return Result.error(new ErrorInfo(e.getMessage(), true));
+            return Result.error(new ErrorInfo(e.getMessage()));
         }
     }
 
