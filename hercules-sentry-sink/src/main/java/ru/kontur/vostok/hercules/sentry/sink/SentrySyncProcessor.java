@@ -47,12 +47,19 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
     }
 
     /**
-     * Process event
+     * Execute following operations: <p>
+     * - event filtering; <p>
+     * - getting Sentry client from the cache or creating Sentry client in Sentry and in the cache; <p>
+     * - converting Hercules event to Sentry event; <p>
+     * - sending event to Sentry. <p>
+     * The method handle different types of errors when executing this operations
      *
      * @param key UUID of event
      * @param event event
-     * @return true if event is successfully processed or false otherwise
-     * @throws BackendServiceFailedException
+     * @return true if event is successfully processed
+     * or returns false if event is invalid or non retryable error occurred.
+     * @throws BackendServiceFailedException if retryable error occurred on every attempt of retry or
+     * other error occurred (which is not retryable or non retryable).
      */
     @Override
     public boolean process(UUID key, Event event) throws BackendServiceFailedException {
@@ -134,8 +141,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                 return false;
             }
          } while (0 < retryCount--);
-
-        return false;
+        throw new BackendServiceFailedException();
     }
 
     @Override
