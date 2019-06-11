@@ -80,7 +80,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
 
         int retryCount = retryLimit;
         do {
-            ErrorInfo processErrorInfo = null;
+            ErrorInfo processErrorInfo;
             Result<SentryClient, ErrorInfo> sentryClient =
                     sentryClientHolder.getOrCreateClient(organization, sentryProject);
             if (!sentryClient.isOk()) {
@@ -113,13 +113,15 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                         LOGGER.error(String.format("ConnectionException: %s", message));
                         throw new BackendServiceFailedException(e);
                     }
-
                 } catch (Exception e) {
                     throw new BackendServiceFailedException(e);
                 }
                 processErrorInfo.setIsRetryableForSending();
             }
             if (processErrorInfo.isRetryable()) {
+                if (processErrorInfo.needToRemoveClientFromCache()) {
+                    sentryClientHolder.removeClientFromCache(organization, sentryProject);
+                }
                 long waitingTimeMs = processErrorInfo.getWaitingTimeMs();
                 if (waitingTimeMs > 0) {
                     try {

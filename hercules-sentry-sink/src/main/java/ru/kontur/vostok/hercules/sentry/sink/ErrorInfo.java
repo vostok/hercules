@@ -75,6 +75,10 @@ public class ErrorInfo {
         }
     }
 
+    public boolean needToRemoveClientFromCache() {
+        return ERROR_CODES_NEED_TO_UPDATE_CACHE.contains(code);
+    }
+
     private static final Set<Integer> RETRYABLE_ERROR_CODES_FOR_API_CLIENT = new HashSet<>(Arrays.asList(
             404, 408, 409, 429
     ));
@@ -91,6 +95,10 @@ public class ErrorInfo {
             400, 405, 413, 414, 415
     ));
 
+    private static final Set<Integer> ERROR_CODES_NEED_TO_UPDATE_CACHE = new HashSet<>(Arrays.asList(
+            401, 403, 404
+    ));
+
     @Override
     public String toString() {
         String string = "";
@@ -102,4 +110,5 @@ public class ErrorInfo {
         }
         return string;
     }
+
 }
