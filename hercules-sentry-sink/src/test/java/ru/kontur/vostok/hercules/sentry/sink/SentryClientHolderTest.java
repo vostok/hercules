@@ -30,6 +30,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author Petr Demenev
+ */
 public class SentryClientHolderTest {
 
     private static final String MY_ORGANIZATION = "my-organization";

@@ -28,6 +28,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author Petr Demenev
+ */
 public class SentrySyncProcessorTest {
 
     private SentryClientHolder sentryClientHolderMock = mock(SentryClientHolder.class);
@@ -56,7 +59,7 @@ public class SentrySyncProcessorTest {
     }
 
     @Test
-    public void shouldProcessEventWithoutLevelTag() throws BackendServiceFailedException {
+    public void shouldReturnFalseWhenProcessEventWithoutLevelTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
                         .tag(CommonTags.PROJECT_TAG, Variant.ofString(MY_ORGANIZATION))
@@ -70,7 +73,21 @@ public class SentrySyncProcessorTest {
     }
 
     @Test
-    public void shouldProcessEventWithoutPropertiesTag() throws BackendServiceFailedException {
+    public void shouldReturnFalseWhenProcessEventWithLowValueOfLevelTag() throws BackendServiceFailedException {
+        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag(CommonTags.PROJECT_TAG, Variant.ofString(MY_ORGANIZATION))
+                        .tag(CommonTags.APPLICATION_TAG, Variant.ofString(MY_PROJECT))
+                        .tag(CommonTags.ENVIRONMENT_TAG, Variant.ofString(MY_ENVIRONMENT))
+                        .build()
+                ))
+                .tag(LogEventTags.LEVEL_TAG, Variant.ofString("debug"))
+                .build();
+        assertFalse(sentrySyncProcessor.process(someUuid, event));
+    }
+
+    @Test
+    public void shouldReturnFalseWhenProcessEventWithoutPropertiesTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
                 .tag(LogEventTags.LEVEL_TAG, Variant.ofString("Error"))
                 .build();
@@ -79,7 +96,7 @@ public class SentrySyncProcessorTest {
     }
 
     @Test
-    public void shouldProcessEventWithoutProjectTag() throws BackendServiceFailedException {
+    public void shouldReturnFalseWhenProcessEventWithoutProjectTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
                         .tag(CommonTags.APPLICATION_TAG, Variant.ofString(MY_PROJECT))
@@ -93,7 +110,7 @@ public class SentrySyncProcessorTest {
     }
 
     @Test
-    public void shouldProcessEventWithoutApplicationTag() throws BackendServiceFailedException {
+    public void shouldReturnTrueWhenProcessEventWithoutApplicationTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
                         .tag(CommonTags.PROJECT_TAG, Variant.ofString(MY_PROJECT))
@@ -110,7 +127,16 @@ public class SentrySyncProcessorTest {
     }
 
     @Test(expected = BackendServiceFailedException.class)
-    public void shouldHandleRetryableErrorOfApiClient() throws BackendServiceFailedException {
+    public void shouldThrowExceptionWhenHappensRetryableErrorOfApiClient() throws BackendServiceFailedException {
+        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.error(new ErrorInfo(404)));
+        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+
+        sentrySyncProcessor.process(someUuid, EVENT);
+    }
+
+    @Test
+    public void shouldRetryWhenHappensRetryableErrorOfApiClient() {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(404)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
@@ -120,23 +146,40 @@ public class SentrySyncProcessorTest {
         } catch (BackendServiceFailedException e) {
 
             verify(sentryClientHolderMock, times(RETRY_COUNT + 1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
-            throw e;
         }
     }
 
     @Test
-    public void shouldHandleNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
+    public void shouldReturnFalseWhenHappensNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(400)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         boolean result = sentrySyncProcessor.process(someUuid, EVENT);
 
-        verify(sentryClientHolderMock).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
         assertFalse(result);
     }
 
+    @Test
+    public void shouldNotRetryWhenHappensNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
+        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.error(new ErrorInfo(400)));
+        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        sentrySyncProcessor.process(someUuid, EVENT);
+
+        verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+    }
+
     @Test(expected = BackendServiceFailedException.class)
-    public void shouldHandleErrorWithExceptionOfApiClient() throws BackendServiceFailedException {
+    public void shouldThrowExceptionWhenHappensOtherErrorOfApiClient() throws BackendServiceFailedException {
+        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.error(new ErrorInfo(402)));
+        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+
+        sentrySyncProcessor.process(someUuid, EVENT);
+    }
+
+    @Test
+    public void shouldNotRetryWhenHappensOtherErrorOfApiClient() {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(402)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
@@ -145,28 +188,47 @@ public class SentrySyncProcessorTest {
             sentrySyncProcessor.process(someUuid, EVENT);
         } catch (BackendServiceFailedException e) {
 
-            verify(sentryClientHolderMock).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
-            throw e;
+            verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
         }
     }
 
     @Test
-    public void shouldHandleInvalidDsnExceptionOfSending() throws BackendServiceFailedException {
+    public void shouldReturnFalseWhenHappensInvalidDsnExceptionOfSending() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(InvalidDsnException.class).when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         boolean result = sentrySyncProcessor.process(someUuid, EVENT);
 
-        verify(sentryClientHolderMock).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
         assertFalse(result);
     }
 
-    @Test(expected = BackendServiceFailedException.class)
-    public void shouldHandleConnectionExceptionWithRetryableCode() throws BackendServiceFailedException {
+    @Test
+    public void shouldNotRetryWhenHappensInvalidDsnExceptionOfSending() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
+        doThrow(InvalidDsnException.class).when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
+        sentrySyncProcessor.process(someUuid, EVENT);
+
+        verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+    }
+
+    @Test(expected = BackendServiceFailedException.class)
+    public void shouldThrowExceptionWhenHappensConnectionExceptionWithRetryableCode() throws BackendServiceFailedException {
+        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryClientMock));
+        doThrow(new ConnectionException("UNAUTHORIZED", new Exception(), null, 401))
+                .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+
+        sentrySyncProcessor.process(someUuid, EVENT);
+    }
+
+
+    @Test
+    public void shouldRetryWhenHappensConnectionExceptionWithRetryableCode() {
+        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryClientMock));
         doThrow(new ConnectionException("UNAUTHORIZED", new Exception(), null, 401))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
@@ -175,20 +237,29 @@ public class SentrySyncProcessorTest {
         } catch (BackendServiceFailedException e) {
 
             verify(sentryClientMock, times(RETRY_COUNT + 1)).sendEvent(any(io.sentry.event.Event.class));
-            throw e;
         }
     }
 
     @Test
-    public void shouldHandleConnectionExceptionWithNonRetryableCode() throws BackendServiceFailedException {
+    public void shouldReturnFalseWhenHappensConnectionExceptionWithNonRetryableCode() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(new ConnectionException("BED_REQUEST", new Exception(), null, 400))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         boolean result = sentrySyncProcessor.process(someUuid, EVENT);
 
-        verify(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         assertFalse(result);
+    }
+
+    @Test
+    public void shouldNotRetryWhenHappensConnectionExceptionWithNonRetryableCode() throws BackendServiceFailedException {
+        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryClientMock));
+        doThrow(new ConnectionException("BED_REQUEST", new Exception(), null, 400))
+                .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        sentrySyncProcessor.process(someUuid, EVENT);
+
+        verify(sentryClientMock, times(1)).sendEvent(any(io.sentry.event.Event.class));
     }
 
     private static Event createEvent() {

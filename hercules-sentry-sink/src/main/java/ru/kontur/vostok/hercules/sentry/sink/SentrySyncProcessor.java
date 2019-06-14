@@ -95,6 +95,9 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                         organization, sentryProject));
                 processErrorInfo = sentryClient.getError();
                 processErrorInfo.setIsRetryableForApiClient();
+                if (processErrorInfo.needDropAfterRetry() && retryCount == 0) {
+                    return false;
+                }
             } else {
                 try {
                     io.sentry.event.Event sentryEvent = SentryEventConverter.convert(event);
@@ -131,6 +134,7 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                 }
                 long waitingTimeMs = processErrorInfo.getWaitingTimeMs();
                 if (waitingTimeMs > 0) {
+                    LOGGER.info(String.format("Waiting %d ms", waitingTimeMs));
                     try {
                         Thread.sleep(waitingTimeMs);
                     } catch (InterruptedException e) {
