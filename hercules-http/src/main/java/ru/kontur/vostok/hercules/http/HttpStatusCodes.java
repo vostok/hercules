@@ -22,7 +22,7 @@ public final class HttpStatusCodes {
      */
     public static final int REQUEST_ENTITY_TOO_LARGE = 413;
     public static final int URI_TOO_LONG = 414;
-    public static final int UNSUPPORTED_MEDIA_TIPE= 415;
+    public static final int UNSUPPORTED_MEDIA_TYPE = 415;
     public static final int UNPROCESSABLE_ENTITY = 422;
     public static final int TOO_MANY_REQUESTS = 429;
 

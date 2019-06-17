@@ -107,7 +107,7 @@ public class ErrorInfo {
      * @return true if need to remove Sentry client from the cache
      */
     public boolean needToRemoveClientFromCache() {
-        return ERROR_CODES_NEED_TO_UPDATE_CACHE.contains(code);
+        return ERROR_CODES_NEED_TO_REMOVE_CLIENT_FROM_CACHE.contains(code);
     }
 
     private static final Set<Integer> RETRYABLE_ERROR_CODES_FOR_API_CLIENT = new HashSet<>(Arrays.asList(
@@ -122,7 +122,7 @@ public class ErrorInfo {
             HttpStatusCodes.METHOD_NOT_ALLOWED,
             HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE,
             HttpStatusCodes.URI_TOO_LONG,
-            HttpStatusCodes.UNSUPPORTED_MEDIA_TIPE
+            HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE
     ));
 
     private static final Set<Integer> RETRYABLE_ERROR_CODES_FOR_SENDING = new HashSet<>(Arrays.asList(
@@ -138,10 +138,10 @@ public class ErrorInfo {
             HttpStatusCodes.METHOD_NOT_ALLOWED,
             HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE,
             HttpStatusCodes.URI_TOO_LONG,
-            HttpStatusCodes.UNSUPPORTED_MEDIA_TIPE
+            HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE
     ));
 
-    private static final Set<Integer> ERROR_CODES_NEED_TO_UPDATE_CACHE = new HashSet<>(Arrays.asList(
+    private static final Set<Integer> ERROR_CODES_NEED_TO_REMOVE_CLIENT_FROM_CACHE = new HashSet<>(Arrays.asList(
             HttpStatusCodes.UNAUTHORIZED,
             HttpStatusCodes.FORBIDDEN,
             HttpStatusCodes.NOT_FOUND

@@ -19,10 +19,10 @@ import ru.kontur.vostok.hercules.util.validation.Validator;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Sentry client holder.
@@ -181,7 +181,7 @@ public class SentryClientHolder {
             }
         }
         if (!clients.containsKey(organization)) {
-            clients.put(organization, new HashMap<>());
+            clients.put(organization, new ConcurrentHashMap<>());
             LOGGER.info(String.format("Organisation '%s' is uploaded into cache", organization));
         }
         return Result.ok();
@@ -292,7 +292,7 @@ public class SentryClientHolder {
                 return;
             }
 
-            Map<String, Map<String, SentryClient>> organizationMap = new HashMap<>();
+            Map<String, Map<String, SentryClient>> organizationMap = new ConcurrentHashMap<>();
             for (OrganizationInfo organizationInfo : organizations.get()) {
                 String organization = organizationInfo.getSlug();
 
@@ -302,7 +302,7 @@ public class SentryClientHolder {
                     return;
                 }
 
-                Map<String, SentryClient> projectMap = new HashMap<>();
+                Map<String, SentryClient> projectMap = new ConcurrentHashMap<>();
                 organizationMap.put(organization, projectMap);
 
                 for (ProjectInfo projectInfo : projects.get()) {
