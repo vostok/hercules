@@ -68,17 +68,17 @@ public abstract class CassandraSender extends Sender {
     protected int send(List<Event> events) throws BackendServiceFailedException {
         Session session = cassandraConnector.session();
 
-        int droppedEvents = 0;
+        int rejectedEvents = 0;
 
         List<ResultSetFuture> futures = new ArrayList<>(events.size());
         for (Event event : events) {
             Optional<Object[]> converted = convert(event);
             if (!converted.isPresent()) {
-                droppedEvents++;
+                rejectedEvents++;
                 continue;
             }
 
-            futures.add(session.executeAsync(preparedStatement.bind()));
+            futures.add(session.executeAsync(preparedStatement.bind(converted.get())));
         }
 
         long elapsedTimeMs = 0L;
@@ -92,14 +92,14 @@ public abstract class CassandraSender extends Sender {
                 throw new BackendServiceFailedException(ex);
             } catch (QueryValidationException ex) {
                 LOGGER.warn("Event dropped due to exception", ex);
-                droppedEvents++;
+                rejectedEvents++;
             }
 
             elapsedTimeMs = StopwatchUtil.elapsedTime(startedAtMs);
             remainingTimeMs = StopwatchUtil.remainingTimeOrZero(timeoutMs, elapsedTimeMs);
         }
 
-        return events.size() - droppedEvents;
+        return events.size() - rejectedEvents;
     }
 
     @Override
