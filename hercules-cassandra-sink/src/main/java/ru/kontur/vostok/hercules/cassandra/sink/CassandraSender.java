@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.cassandra.sink;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
@@ -71,6 +72,7 @@ public abstract class CassandraSender extends Sender {
         int rejectedEvents = 0;
 
         List<ResultSetFuture> futures = new ArrayList<>(events.size());
+        BatchStatement batch = new BatchStatement(BatchStatement.Type.UNLOGGED);
         for (Event event : events) {
             Optional<Object[]> converted = convert(event);
             if (!converted.isPresent()) {
@@ -78,7 +80,16 @@ public abstract class CassandraSender extends Sender {
                 continue;
             }
 
-            futures.add(session.executeAsync(preparedStatement.bind(converted.get())));
+            batch.add(preparedStatement.bind(converted.get()));
+
+            if (batch.size() >= 10) {
+                futures.add(session.executeAsync(batch));
+                batch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+            }
+        }
+
+        if (batch.size() > 0) {
+            futures.add(session.executeAsync(batch));
         }
 
         long elapsedTimeMs = 0L;
