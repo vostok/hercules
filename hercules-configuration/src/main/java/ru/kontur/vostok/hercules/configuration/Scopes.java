@@ -21,13 +21,16 @@ public final class Scopes {
 
     public static final String METRICS = "metrics";
 
+    public static final String APPLICATION = "application";
     public static final String CONTEXT = "context";
 
     public static final String GATE_CLIENT = "gate.client";
 
     public static final String SENDER = "sender";
 
-    private Scopes() {
+    public static final String SERVICE_DISCOVERY = "sd";
 
+    private Scopes() {
+        /* static class */
     }
 }

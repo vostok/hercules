@@ -3,12 +3,14 @@ package ru.kontur.vostok.hercules.curator;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.CuratorWatcher;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.curator.exception.CuratorConnectionException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
@@ -87,6 +89,14 @@ public class CuratorClient {
         }
     }
 
+    public void ensurePath(String path) throws Exception {
+        try {
+            curatorFramework.create().creatingParentsIfNeeded().forPath(path);
+        } catch (KeeperException.NodeExistsException ex) {
+            return; /* nothing to do: node alredy exists */
+        }
+    }
+
     public CreationResult create(String path, byte[] data) throws CuratorUnknownException, CuratorInternalException {
         return createWithMode(path, data, CreateMode.PERSISTENT);
     }
@@ -151,13 +161,39 @@ public class CuratorClient {
     public CreationResult createWithMode(String path, byte[] data, CreateMode mode)
             throws CuratorInternalException, CuratorUnknownException {
         try {
-            return CreationResult.ok(curatorFramework.create().withMode(mode).forPath(path, data));
+            return CreationResult.ok(curatorFramework.create().creatingParentsIfNeeded().withMode(mode).forPath(path, data));
         } catch (KeeperException.NodeExistsException ex) {
             return CreationResult.alreadyExist(path);
         } catch (KeeperException ex) {
             throw new CuratorInternalException("Create failed with KeeperException", ex);
         } catch (Exception ex) {
             throw new CuratorUnknownException("Create failed with Exception", ex);
+        }
+    }
+
+    public long getSessionId() throws CuratorConnectionException {
+        verify();
+
+        try {
+            return curatorFramework.getZookeeperClient().getZooKeeper().getSessionId();
+        } catch (Exception ex) {
+            throw new CuratorConnectionException(ex);
+        }
+    }
+
+    public CuratorFramework getCuratorFramework() {
+        verify();
+
+        return curatorFramework;
+    }
+
+    private void verify() {
+        if (curatorFramework == null) {
+            throw new IllegalStateException("CuratorFramework is null");
+        }
+        final CuratorFrameworkState state = curatorFramework.getState();
+        if (state != CuratorFrameworkState.STARTED) {
+            throw new IllegalStateException("CuratorFramework state is " + state);
         }
     }
 

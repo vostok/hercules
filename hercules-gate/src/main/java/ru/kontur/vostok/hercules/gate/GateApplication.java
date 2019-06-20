@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.gate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
@@ -18,6 +19,7 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
+import ru.kontur.vostok.hercules.sd.BeaconService;
 import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.DefaultHttpServerRequestWeigher;
@@ -43,11 +45,14 @@ public class GateApplication {
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
     private static AuthValidationManager authValidationManager;
+    private static BeaconService beaconService;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
 
         try {
+            Application.run("Hercules Gate", "gate", args);
+
             Map<String, String> parameters = ArgsParser.parse(args);
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
@@ -57,6 +62,7 @@ public class GateApplication {
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+            Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
 
             ApplicationContextHolder.init("Hercules Gate", "gate", contextProperties);
 
@@ -77,6 +83,9 @@ public class GateApplication {
 
             server = createHttpServer(httpServerProperties);
             server.start();
+
+            beaconService = new BeaconService(sdProperties, curatorClient);
+            beaconService.start();
         } catch (Throwable t) {
             LOGGER.error("Cannot start application due to", t);
             shutdown();
@@ -90,7 +99,16 @@ public class GateApplication {
 
     private static void shutdown() {
         long start = System.currentTimeMillis();
+
         LOGGER.info("Started Gateway shutdown");
+        try {
+            if (beaconService != null) {
+                beaconService.stop(5_000, TimeUnit.MILLISECONDS);
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on beacon service shutdown", t);
+        }
+
         try {
             if (server != null) {
                 server.stop(5_000, TimeUnit.MILLISECONDS);
@@ -169,6 +187,10 @@ public class GateApplication {
                 post("/stream/send", sendHandler).
                 build();
 
-        return new UndertowHttpServer(httpServerProperies, handler);
+        return new UndertowHttpServer(
+                Application.application().getConfig().getHost(),
+                Application.application().getConfig().getPort(),
+                httpServerProperies,
+                handler);
     }
 }

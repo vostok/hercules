@@ -17,10 +17,14 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class HttpServer {
     private final AtomicReference<HttpServerState> state = new AtomicReference<>(HttpServerState.INIT);
 
+    protected final String host;
+    protected final int port;
     protected final Properties properties;
     protected final HttpHandler handler;
 
-    public HttpServer(Properties properties, HttpHandler handler) {
+    public HttpServer(String host, int port, Properties properties, HttpHandler handler) {
+        this.host = host;
+        this.port = port;
         this.properties = properties;
         this.handler = handler;
     }
@@ -59,17 +63,6 @@ public abstract class HttpServer {
     }
 
     public static final class Props {
-        public static final PropertyDescription<String> HOST = PropertyDescriptions
-                .stringProperty("host")
-                .withDefaultValue(HttpServerDefaults.DEFAULT_HOST)
-                .build();
-
-        public static final PropertyDescription<Integer> PORT = PropertyDescriptions
-                .integerProperty("port")
-                .withDefaultValue(HttpServerDefaults.DEFAULT_PORT)
-                .withValidator(Validators.portValidator())
-                .build();
-
         public static final PropertyDescription<Long> MAX_CONTENT_LENGTH =
                 PropertyDescriptions.longProperty("maxContentLength").
                         withDefaultValue(HttpServerDefaults.DEFAULT_MAX_CONTENT_LENGTH).

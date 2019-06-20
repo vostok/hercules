@@ -9,4 +9,9 @@ public final class GateClientDefaults {
 
     public static final int DEFAULT_TIMEOUT = 30_000;
     public static final int DEFAULT_CONNECTION_COUNT = 1_000;
+
+    /**
+     * Time(in millis) of location url in greyList
+     */
+    public static final int DEFAULT_RECOVERY_TIME = 10_000;
 }

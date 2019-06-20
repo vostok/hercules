@@ -16,6 +16,7 @@ import java.util.Properties;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class ApplicationContextHolder {
 
     private static class GitProps {
@@ -57,7 +58,9 @@ public class ApplicationContextHolder {
      * @param applicationName human readable application name
      * @param applicationId application id without spaces and special symbols
      * @param contextProperties context properties
+     * @deprecated use {@link ru.kontur.vostok.hercules.application.Application}
      */
+    @Deprecated
     public static void init(
             String applicationName,
             String applicationId,
@@ -92,7 +95,9 @@ public class ApplicationContextHolder {
      * Get application context
      *
      * @return application context
+     * @deprecated use {@link ru.kontur.vostok.hercules.application.Application}
      */
+    @Deprecated
     public static ApplicationContext get() {
         if (Objects.isNull(applicationContext)) {
             throw new IllegalStateException("Context is not initialized");

@@ -1,0 +1,134 @@
+swagger: '2.0'
+info:
+  description: 'Timeline api for Hercules. Uses for reading the timeline content.'
+  version: 0.23.0
+  title: Hercules timeline API
+host: 'vm-hercules05:6306'
+schemes:
+  - http
+paths:
+  /ping:
+    get:
+      summary: Ping
+      description: Check server status
+      operationId: ping
+      responses:
+        '200':
+          $ref: '#/responses/success'
+  /about:
+    get:
+      summary: About
+      description: Check server description
+      operationId: about
+      responses:
+        '200':
+          description: Info about service
+          schema:
+            $ref: '#/definitions/about'
+  /timeline/read:
+    post:
+      tags:
+        - timeline
+      summary: Timeline
+      description: Read the timeline content
+      operationId: readTimeline
+      produces:
+        - plain/text
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - $ref: '#/parameters/contentType'
+        - name: timeline
+          in: query
+          description: Timeline name
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+        - name: shardIndex
+          in: query
+          description: The logical shard index. Starts with `0` up to `shardCount - 1`
+          required: true
+          type: integer
+        - name: shardCount
+          in: query
+          description: The total logical shards
+          required: true
+          type: integer
+        - name: take
+          in: query
+          description: Maximum events to read
+          required: true
+          type: integer
+        - name: from
+          in: query
+          description: Lower timestamp bound in 100-ns ticks from Unix epoch
+          required: true
+          type: integer
+        - name: to
+          in: query
+          description: Upper timestamp bound exclusive in 100-ns ticks from Unix epoch
+          required: true
+          type: integer
+      responses:
+        '200':
+          $ref: '#/responses/success'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/readRulesIsAbsent'
+        '403':
+          $ref: '#/responses/forbidden'
+        '404':
+          $ref: '#/responses/notFoundSourceTimeline'
+        '411':
+          $ref: '#/responses/lengthRequired'
+        '500':
+          $ref: '#/responses/internalServiceError'
+definitions:
+  about:
+    type: object
+    properties:
+      applicationName:
+        type: string
+      applicationId:
+        type: string
+      version:
+        type: string
+      commitId:
+        type: string
+      environment:
+        type: string
+      zone:
+        type: string
+      hostName:
+        type: string
+      instanceId:
+        type: string
+parameters:
+  apiKey:
+    name: apiKey
+    in: header
+    type: string
+    pattern: '^\d{3}-\d{2}-\d{4}$'
+    required: true
+    description: API key for authorization
+  contentType:
+    name: contentType
+    in: header
+    type: string
+    required: true
+    description: application/octet-stream
+responses:
+  success:
+    description: OK
+  badRequest:
+    description: Bad request
+  readRulesIsAbsent:
+    description: Read rules for this apiKey is absent
+  forbidden:
+    description: Forbidden for this API-key
+  notFoundSourceTimeline:
+    description: Not found source timeline
+  lengthRequired:
+    description: Can't get Content-Length value
+  internalServiceError:
+    description: Internal service error

@@ -6,7 +6,7 @@
     <groupId>ru.kontur.vostok.hercules</groupId>
     <artifactId>hercules</artifactId>
     <packaging>pom</packaging>
-    <version>0.23.1-SNAPSHOT</version>
+    <version>0.24.0-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,9 +14,9 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <hercules.version>0.23.1-SNAPSHOT</hercules.version>
+        <hercules.version>0.24.0-SNAPSHOT</hercules.version>
 
-        <kafka.version>2.0.0</kafka.version>
+        <kafka.version>2.2.0</kafka.version>
         <zookeeper.version>3.4.13</zookeeper.version>
         <curator.version>4.0.1</curator.version>
         <cassandra-driver.version>3.5.1</cassandra-driver.version>
@@ -62,11 +62,13 @@
         <module>hercules-client</module>
         <module>hercules-sink</module>
         <module>hercules-elastic-sink</module>
-        <module>hercules-cassandra-common-sink</module>
+        <module>hercules-cassandra-sink</module>
         <module>hercules-tracing-sink</module>
         <module>hercules-tracing-api</module>
         <module>hercules-json</module>
         <module>hercules-curator</module>
+        <module>hercules-sd</module>
+        <module>hercules-application</module>
     </modules>
 
     <dependencyManagement>
@@ -225,7 +227,7 @@
             <dependency>
                 <groupId>io.sentry</groupId>
                 <artifactId>sentry</artifactId>
-                <version>1.7.5</version>
+                <version>1.7.22</version>
             </dependency>
 
             <dependency>
@@ -236,6 +238,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-configuration</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-application</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>
@@ -317,7 +324,7 @@
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-cassandra-common-sink</artifactId>
+                <artifactId>hercules-cassandra-sink</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>
@@ -333,6 +340,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-curator</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sd</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 

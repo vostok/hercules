@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.util;
 
+import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
+
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
