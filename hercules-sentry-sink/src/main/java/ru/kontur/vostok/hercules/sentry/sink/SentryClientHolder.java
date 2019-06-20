@@ -47,7 +47,7 @@ public class SentryClientHolder {
      * The nested Map matching this organization contains the String of project as a key
      * and the {@link SentryClient} as a value.
      */
-    private Map<String, Map<String, SentryClient>> clients = Collections.emptyMap();
+    private volatile Map<String, Map<String, SentryClient>> clients = Collections.emptyMap();
 
     private final SentryApiClient sentryApiClient;
     private final SentryClientFactory sentryClientFactory = new HerculesClientFactory();
@@ -65,8 +65,7 @@ public class SentryClientHolder {
      * If the organization or the project of event does not exist in the cache,
      * the method finds the organization and the project in the Sentry.
      * If the organization or the project does not exist in the Sentry,
-     * the method create the organization or the project in the Sentry.
-     * Then the method updates the cache from the Sentry,
+     * the method create the organization or the project in the Sentry and in the cache.
      * and then makes one another attempt to get Sentry client from the cache
      * <p>
      * @param organization the organization
@@ -83,7 +82,6 @@ public class SentryClientHolder {
             if (sentryClientResult.isOk()) {
                 success = true;
             } else {
-                LOGGER.info(String.format("Sentry client is not found in cache for project '%s' in organization '%s'", project, organization));
                 Result<Void, ErrorInfo> validationResult = validateSlugs(organization, project);
                 if (!validationResult.isOk()) {
                     sentryClientResult = Result.error(validationResult.getError());
@@ -127,7 +125,8 @@ public class SentryClientHolder {
         }
         SentryClient sentryClient = projectMap.get(project);
         if (sentryClient == null) {
-            String message = String.format("The project '%s' is not found in the cache", project);
+            String message = String.format("The project '%s' in the organization '%s' is not found in the cache",
+                    project, organization);
             LOGGER.info(message);
             return Result.error(new ErrorInfo(message));
         }

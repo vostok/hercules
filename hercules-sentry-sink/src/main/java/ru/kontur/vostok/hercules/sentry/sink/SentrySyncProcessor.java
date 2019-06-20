@@ -80,10 +80,10 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             LOGGER.warn("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
             return false;
         }
-        String organization = organizationName.get();
+        String organization = correctName(organizationName.get());
 
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
-        String sentryProject = sentryProjectName.orElse(organization);
+        String sentryProject = sentryProjectName.map(this::correctName).orElse(organization);
 
         int retryCount = retryLimit;
         do {
@@ -132,14 +132,8 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
                 if (processErrorInfo.needToRemoveClientFromCache()) {
                     sentryClientHolder.removeClientFromCache(organization, sentryProject);
                 }
-                long waitingTimeMs = processErrorInfo.getWaitingTimeMs();
-                if (waitingTimeMs > 0) {
-                    LOGGER.info(String.format("Waiting %d ms", waitingTimeMs));
-                    try {
-                        Thread.sleep(waitingTimeMs);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                if (processErrorInfo.getWaitingTimeMs() > 0) {
+                    throw new BackendServiceFailedException();
                 }
             } else {
                 return false;
@@ -150,6 +144,14 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
 
     @Override
     public void close() {
+    }
+
+    private String correctName(String name) {
+        return name.toLowerCase()
+                .replace('.', '_')
+                .replace('/', '_')
+                .replace(',', '_')
+                .replace(' ', '_');
     }
 
     private static class Props {
