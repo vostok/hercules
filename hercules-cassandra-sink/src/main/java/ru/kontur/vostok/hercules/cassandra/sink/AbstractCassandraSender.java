@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.cassandra.common.sink;
+package ru.kontur.vostok.hercules.cassandra.sink;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
@@ -15,6 +15,7 @@ import java.util.UUID;
  * Abstract cassandra sender set the main pipeline for any cassandra sink. In most cases all cassandra sink services
  * should extends this class.
  */
+@Deprecated
 public abstract class AbstractCassandraSender implements SingleSender<UUID, Event> {
 
     private final Session session;

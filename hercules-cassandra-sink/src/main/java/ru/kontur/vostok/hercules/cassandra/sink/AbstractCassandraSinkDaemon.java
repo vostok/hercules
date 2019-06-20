@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.cassandra.common.sink;
+package ru.kontur.vostok.hercules.cassandra.sink;
 
 import com.datastax.driver.core.Session;
 import org.slf4j.Logger;
@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 
+@Deprecated
 public abstract class AbstractCassandraSinkDaemon extends AbstractSingleSinkDaemon {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractCassandraSinkDaemon.class);

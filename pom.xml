@@ -62,7 +62,7 @@
         <module>hercules-client</module>
         <module>hercules-sink</module>
         <module>hercules-elastic-sink</module>
-        <module>hercules-cassandra-common-sink</module>
+        <module>hercules-cassandra-sink</module>
         <module>hercules-tracing-sink</module>
         <module>hercules-tracing-api</module>
         <module>hercules-json</module>
@@ -324,7 +324,7 @@
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-cassandra-common-sink</artifactId>
+                <artifactId>hercules-cassandra-sink</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>

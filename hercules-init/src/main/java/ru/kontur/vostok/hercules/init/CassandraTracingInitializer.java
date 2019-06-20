@@ -5,11 +5,8 @@ import com.datastax.driver.core.Session;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraDefaults;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +17,7 @@ public class CassandraTracingInitializer {
     private final String[] nodes;
     private final int port;
     private final String keyspace;
+    private final String tableName;
     private final short replicationFactor;
     private final int ttl;
 
@@ -27,6 +25,7 @@ public class CassandraTracingInitializer {
         this.nodes = Props.NODES.extract(properties);
         this.port = Props.PORT.extract(properties);
         this.keyspace = Props.KEYSPACE.extract(properties);
+        this.tableName = Props.TABLE_NAME.extract(properties);
         this.replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
         this.ttl = Props.TTL_SECONDS.extract(properties);
     }
@@ -49,7 +48,7 @@ public class CassandraTracingInitializer {
             );
 
             session.execute(
-                    "CREATE TABLE IF NOT EXISTS " + keyspace + ".tracing_spans (\n" +
+                    "CREATE TABLE IF NOT EXISTS " + keyspace + "." + tableName + " (\n" +
                             "        trace_id uuid,\n" +
                             "        parent_span_id uuid,\n" +
                             "        span_id uuid,\n" +
@@ -81,32 +80,37 @@ public class CassandraTracingInitializer {
     }
 
     private static class Props {
-        static final PropertyDescription<String[]> NODES = PropertyDescriptions
-                .arrayOfStringsProperty("nodes")
-                .withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS})
-                .build();
+        static final PropertyDescription<String[]> NODES =
+                PropertyDescriptions.arrayOfStringsProperty("nodes").
+                        withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS}).
+                        build();
 
-        static final PropertyDescription<Integer> PORT = PropertyDescriptions
-                .integerProperty("port")
-                .withDefaultValue(CassandraDefaults.DEFAULT_CASSANDRA_PORT)
-                .withValidator(Validators.portValidator())
-                .build();
+        static final PropertyDescription<Integer> PORT =
+                PropertyDescriptions.integerProperty("port").
+                        withDefaultValue(CassandraDefaults.DEFAULT_CASSANDRA_PORT).
+                        withValidator(Validators.portValidator()).
+                        build();
 
-        static final PropertyDescription<String> KEYSPACE = PropertyDescriptions
-                .stringProperty("keyspace")
-                .withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE)
-                .build();
+        static final PropertyDescription<String> KEYSPACE =
+                PropertyDescriptions.stringProperty("keyspace").
+                        withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE).
+                        build();
 
-        static final PropertyDescription<Short> REPLICATION_FACTOR = PropertyDescriptions
-                .shortProperty("replication.factor")
-                .withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR)
-                .withValidator(Validators.greaterThan((short) 0))
-                .build();
+        static final PropertyDescription<String> TABLE_NAME =
+                PropertyDescriptions.stringProperty("tableName").
+                        withDefaultValue("tracing_spans").
+                        build();
 
-        static final PropertyDescription<Integer> TTL_SECONDS = PropertyDescriptions
-                .integerProperty("ttl.seconds")
-                .withDefaultValue((int) TimeUnit.DAYS.toSeconds(3))
-                .withValidator(Validators.greaterThan(0))
-                .build();
+        static final PropertyDescription<Short> REPLICATION_FACTOR =
+                PropertyDescriptions.shortProperty("replication.factor").
+                        withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR).
+                        withValidator(Validators.greaterThan((short) 0)).
+                        build();
+
+        static final PropertyDescription<Integer> TTL_SECONDS =
+                PropertyDescriptions.integerProperty("ttl.seconds").
+                        withDefaultValue((int) TimeUnit.DAYS.toSeconds(3)).
+                        withValidator(Validators.greaterThan(0)).
+                        build();
     }
 }
