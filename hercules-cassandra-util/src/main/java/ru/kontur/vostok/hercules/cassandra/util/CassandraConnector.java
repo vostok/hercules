@@ -1,13 +1,16 @@
 package ru.kontur.vostok.hercules.cassandra.util;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.TableMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.util.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.Validators;
@@ -31,6 +34,8 @@ public class CassandraConnector {
     private final int port;
     private final int readTimeoutMs;
 
+    private final ConsistencyLevel consistencyLevel;
+
     private volatile Cluster cluster;
     private volatile Session session;
 
@@ -46,6 +51,8 @@ public class CassandraConnector {
         this.nodes = Props.NODES.extract(properties);
         this.port = Props.PORT.extract(properties);
         this.readTimeoutMs = Props.READ_TIMEOUT_MS.extract(properties);
+
+        this.consistencyLevel = Props.CONSISTENCY_LEVEL.extract(properties);
     }
 
     public void connect() {
@@ -58,6 +65,11 @@ public class CassandraConnector {
                         .setMaxRequestsPerConnection(HostDistance.LOCAL, maxRequestsPerConnectionLocal)
                         .setMaxRequestsPerConnection(HostDistance.REMOTE, maxRequestsPerConnectionRemote);
         builder.withPoolingOptions(poolingOptions);
+
+        QueryOptions queryOptions =
+                new QueryOptions()
+                        .setConsistencyLevel(ConsistencyLevel.QUORUM);
+        builder.withQueryOptions(queryOptions);
 
         SocketOptions socketOptions =
                 new SocketOptions()
@@ -137,5 +149,11 @@ public class CassandraConnector {
                 .integerProperty("readTimeoutMs")
                 .withDefaultValue(CassandraDefaults.DEFAULT_READ_TIMEOUT_MILLIS)
                 .build();
+
+        static final PropertyDescription<ConsistencyLevel> CONSISTENCY_LEVEL =
+                PropertyDescriptions.propertyOfType(ConsistencyLevel.class, "consistencyLevel").
+                        withParser(Parsers.enumParser(ConsistencyLevel.class)).
+                        withDefaultValue(ConsistencyLevel.QUORUM).
+                        build();
     }
 }

@@ -81,7 +81,6 @@ sink.batchSize=10000
 sink.pattern=logs_*
 
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
-sink.consumer.max.partition.fetch.bytes=8388608
 sink.consumer.max.partition.fetch.bytes=52428800
 
 sink.consumer.max.poll.interval.ms=370000
