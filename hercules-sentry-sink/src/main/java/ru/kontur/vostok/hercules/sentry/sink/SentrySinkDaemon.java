@@ -30,7 +30,6 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
 
         SentryApiClient sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient);
-        sentryClientHolder.update();
         return new SentrySyncProcessor(sinkProperties,sentryClientHolder);
     }
 
