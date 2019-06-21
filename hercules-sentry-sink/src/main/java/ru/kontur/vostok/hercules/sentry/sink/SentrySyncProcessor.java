@@ -9,7 +9,6 @@ import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
-import ru.kontur.vostok.hercules.kafka.util.processing.single.SingleSender;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
@@ -23,12 +22,11 @@ import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Optional;
 import java.util.Properties;
-import java.util.UUID;
 
 /**
  * @author Gregory Koshelev
  */
-public class SentrySyncProcessor implements SingleSender<UUID, Event> {
+public class SentrySyncProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
@@ -54,15 +52,13 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
      * - sending event to Sentry. <p>
      * The method handle different types of errors when executing this operations
      *
-     * @param key UUID of event
      * @param event event
      * @return true if event is successfully processed
      * or returns false if event is invalid or non retryable error occurred.
      * @throws BackendServiceFailedException if retryable error occurred on every attempt of retry or
      * other error occurred (which is not retryable or non retryable).
      */
-    @Override
-    public boolean process(UUID key, Event event) throws BackendServiceFailedException {
+    public boolean process(Event event) throws BackendServiceFailedException {
         final Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
                 .flatMap(SentryLevelEnumParser::parse);
         if (!level.isPresent() || requiredLevel.compareTo(level.get()) < 0) {
@@ -140,10 +136,6 @@ public class SentrySyncProcessor implements SingleSender<UUID, Event> {
             }
          } while (0 < retryCount--);
         throw new BackendServiceFailedException();
-    }
-
-    @Override
-    public void close() {
     }
 
     private String correctName(String name) {

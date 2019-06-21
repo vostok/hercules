@@ -60,6 +60,10 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-sink</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -42,7 +42,7 @@ public abstract class AbstractSinkDaemon {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://applicationProperties"));
+            Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
