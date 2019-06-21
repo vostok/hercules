@@ -1,12 +1,12 @@
 package ru.kontur.vostok.hercules.cassandra.sink;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import com.datastax.driver.core.exceptions.QueryExecutionException;
-import com.datastax.driver.core.exceptions.QueryValidationException;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.servererrors.QueryValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -59,7 +61,7 @@ public abstract class CassandraSender extends Sender {
     public void start() {
         cassandraConnector.connect();
 
-        Session session = cassandraConnector.session();
+        CqlSession session = cassandraConnector.session();
         preparedStatement = session.prepare(query());
 
         super.start();
@@ -67,12 +69,12 @@ public abstract class CassandraSender extends Sender {
 
     @Override
     protected int send(List<Event> events) throws BackendServiceFailedException {
-        Session session = cassandraConnector.session();
+        CqlSession session = cassandraConnector.session();
 
         int rejectedEvents = 0;
 
-        List<ResultSetFuture> futures = new ArrayList<>(events.size());
-        BatchStatement batch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+        List<CompletionStage<AsyncResultSet>> asyncTasks = new ArrayList<>(events.size());
+        BatchStatementBuilder batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
         for (Event event : events) {
             Optional<Object[]> converted = convert(event);
             if (!converted.isPresent()) {
@@ -80,28 +82,36 @@ public abstract class CassandraSender extends Sender {
                 continue;
             }
 
-            batch.add(preparedStatement.bind(converted.get()));
+            batchBuilder.addStatement(preparedStatement.bind(converted.get()));
 
-            if (batch.size() >= 10) {
-                futures.add(session.executeAsync(batch));
-                batch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+            if (batchBuilder.getStatementsCount() >= 10) {
+                asyncTasks.add(session.executeAsync(batchBuilder.build()));
+                batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
             }
         }
 
-        if (batch.size() > 0) {
-            futures.add(session.executeAsync(batch));
+        if (batchBuilder.getStatementsCount() > 0) {
+            asyncTasks.add(session.executeAsync(batchBuilder.build()));
         }
 
         long elapsedTimeMs = 0L;
         long remainingTimeMs = timeoutMs;
         final long startedAtMs = System.currentTimeMillis();
 
-        for (ResultSetFuture future : futures) {
+        for (CompletionStage<AsyncResultSet> asyncTask : asyncTasks) {
             try {
-                future.getUninterruptibly(remainingTimeMs, TimeUnit.MILLISECONDS);
-            } catch (TimeoutException | NoHostAvailableException | QueryExecutionException ex) {
+                asyncTask.toCompletableFuture().get(remainingTimeMs, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException | InterruptedException ex) {
                 throw new BackendServiceFailedException(ex);
-            } catch (QueryValidationException ex) {
+            } catch (ExecutionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof QueryValidationException) {
+                    LOGGER.warn("Event dropped due to exception", cause);
+                    rejectedEvents++;
+                } else {
+                    throw new BackendServiceFailedException(cause);
+                }
+            } catch (RuntimeException ex) {
                 LOGGER.warn("Event dropped due to exception", ex);
                 rejectedEvents++;
             }
@@ -128,10 +138,10 @@ public abstract class CassandraSender extends Sender {
     protected abstract String query();
 
     /**
-     * Convert event to array of objects is acceptable in {@link com.datastax.driver.core.PreparedStatement#bind(Object...)}
+     * Convert event to array of objects is acceptable in {@link PreparedStatement#bind(Object...)}
      *
      * @param event the event to convert
-     * @return optional array of objects is acceptable in {@link com.datastax.driver.core.PreparedStatement#bind(Object...)}
+     * @return optional array of objects is acceptable in {@link PreparedStatement#bind(Object...)}
      * or {@link Optional#empty()} if event is invalid
      */
     protected abstract Optional<Object[]> convert(Event event);

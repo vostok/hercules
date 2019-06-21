@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.timeline.manager;
 
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 
 /**
@@ -20,7 +20,7 @@ public class CassandraManager {
      * @param ttl   TTL in millis
      */
     public void createTable(String table, long ttl) {
-        Session session = connector.session();
+        CqlSession session = connector.session();
 
         //TODO: What if table already exists?
         // Create table if it doesn't exist
@@ -39,7 +39,7 @@ public class CassandraManager {
      * @param table the table name
      */
     public void deleteTable(String table) {
-        Session session = connector.session();
+        CqlSession session = connector.session();
 
         session.execute("DROP TABLE IF EXISTS " + table);
     }
@@ -51,7 +51,7 @@ public class CassandraManager {
      * @param ttl TTL in millis
      */
     public void changeTtl(String table, long ttl) {
-        Session session = connector.session();
+        CqlSession session = connector.session();
 
         session.execute("ALTER TABLE " + table + " WITH default_time_to_live = " + (ttl / 1000) + ";");
     }

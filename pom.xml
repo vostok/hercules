@@ -19,7 +19,7 @@
         <kafka.version>2.2.0</kafka.version>
         <zookeeper.version>3.4.13</zookeeper.version>
         <curator.version>4.0.1</curator.version>
-        <cassandra-driver.version>3.5.1</cassandra-driver.version>
+        <cassandra-driver.version>4.0.1</cassandra-driver.version>
         <undertow.version>2.0.13.Final</undertow.version>
         <metrics.version>4.0.2</metrics.version>
         <jackson.version>2.9.7</jackson.version>
@@ -163,8 +163,8 @@
 
             <!-- Apache Cassandra driver -->
             <dependency>
-                <groupId>com.datastax.cassandra</groupId>
-                <artifactId>cassandra-driver-core</artifactId>
+                <groupId>com.datastax.oss</groupId>
+                <artifactId>java-driver-core</artifactId>
                 <version>${cassandra-driver.version}</version>
             </dependency>
 

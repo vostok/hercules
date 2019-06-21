@@ -1,14 +1,33 @@
 package ru.kontur.vostok.hercules.util.bytes;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * @author Gregory Koshelev
  */
 public class ByteUtil {
-
     private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
+
+    private static final byte[] HEX_CHAR_TO_BYTE;
+
+    static {
+        byte[] hexCharToByte = new byte[256];
+        Arrays.fill(hexCharToByte, (byte) -1);
+        for (char hex = '0'; hex <= '9'; hex++) {
+            hexCharToByte[hex] = (byte) (hex - '0');
+        }
+        for (char hex = 'a'; hex <= 'f'; hex++) {
+            hexCharToByte[hex] = (byte) (hex - 'a');
+        }
+        for (char hex = 'A'; hex <= 'F'; hex++) {
+            hexCharToByte[hex] = (byte) (hex - 'A');
+        }
+
+        HEX_CHAR_TO_BYTE = hexCharToByte;
+    }
 
     /**
      * Check if array starts with subarray
@@ -50,16 +69,70 @@ public class ByteUtil {
         return bytes;
     }
 
-    public static String bytesToHexString(byte[] bytes) {
+    public static String toHexString(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2 + 2];
         hexChars[0] = '0';
         hexChars[1] = 'x';
 
+        return toRawHexString(bytes, hexChars, 2);
+    }
+
+    private static String toRawHexString(byte[] bytes, char[] hexChars, int offset) {
         for (int i = 0; i < bytes.length; i++) {
-            int v = bytes[i] & 0xFF;
-            hexChars[i * 2 + 2] = HEX_CHARS[v >>> 4];
-            hexChars[i * 2 + 3] = HEX_CHARS[v & 0x0F];
+            toHexChars(bytes[i], hexChars, offset + i * 2);
         }
         return new String(hexChars);
+    }
+
+    public static String toHexString(ByteBuffer buffer) {
+        char[] hexChars = new char[buffer.remaining() * 2 + 2];
+        hexChars[0] = '0';
+        hexChars[1] = 'x';
+
+        return toRawHexString(buffer, hexChars, 2);
+    }
+
+    private static String toRawHexString(ByteBuffer buffer, char[] hexChars, int offset) {
+        int size = buffer.remaining();
+
+        for (int i = 0; i < size; i++) {
+            toHexChars(buffer.get(), hexChars, offset + i * 2);
+        }
+        return new String(hexChars);
+    }
+
+    public static byte[] fromHexString(@NotNull String string) {
+        if (string.length() < 2 ||
+                string.length() % 2 != 0 ||
+                string.charAt(0) != '0' ||
+                string.charAt(1) != 'x') {
+            throw new IllegalArgumentException("Not a hex string: " + string);
+        }
+
+        return fromRawHexString(string, 2);
+    }
+
+    private static byte[] fromRawHexString(String string, int offset) {
+        byte[] bytes = new byte[(string.length() - offset) / 2];
+
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = fromHexChars(string.charAt(i * 2 + offset), string.charAt(i * 2 + offset + 1));
+        }
+
+        return bytes;
+    }
+
+    private static void toHexChars(byte b, char[] hexChars, int offset) {
+        hexChars[offset] = HEX_CHARS[(b & 0xF0) >> 4];
+        hexChars[offset + 1] = HEX_CHARS[b & 0x0F];
+    }
+
+    private static byte fromHexChars(char left, char right) {
+        byte leftByteHalf = HEX_CHAR_TO_BYTE[left];
+        byte rightByteHalf = HEX_CHAR_TO_BYTE[right];
+        if (leftByteHalf == -1 || rightByteHalf == -1) {
+            throw new IllegalArgumentException("Not a hex chars: " + left + right);
+        }
+        return (byte) (leftByteHalf << 4 | rightByteHalf);
     }
 }

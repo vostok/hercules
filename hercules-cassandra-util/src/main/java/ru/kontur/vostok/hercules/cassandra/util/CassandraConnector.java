@@ -1,21 +1,24 @@
 package ru.kontur.vostok.hercules.cassandra.util;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SocketOptions;
-import com.datastax.driver.core.TableMetadata;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
+import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
+import com.datastax.oss.driver.api.core.session.Session;
+import com.datastax.oss.driver.internal.core.metadata.DefaultEndPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
 
+import java.time.Duration;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Gregory Koshelev
@@ -27,17 +30,14 @@ public class CassandraConnector {
 
     private final int connectionsPerHostLocal;
     private final int connectionsPerHostRemote;
-    private final int maxRequestsPerConnectionLocal;
-    private final int maxRequestsPerConnectionRemote;
+    private final int maxRequestsPerConnection;
 
     private final String[] nodes;
-    private final int port;
-    private final int readTimeoutMs;
+    private final long requestTimeoutMs;
 
-    private final ConsistencyLevel consistencyLevel;
+    private final String consistencyLevel;
 
-    private volatile Cluster cluster;
-    private volatile Session session;
+    private volatile CqlSession session;
 
 
     public CassandraConnector(Properties properties) {
@@ -45,50 +45,40 @@ public class CassandraConnector {
 
         this.connectionsPerHostLocal = Props.CONNECTIONS_PER_HOST_LOCAL.extract(properties);
         this.connectionsPerHostRemote = Props.CONNECTIONS_PER_HOST_REMOTE.extract(properties);
-        this.maxRequestsPerConnectionLocal = Props.MAX_REQUEST_PER_CONNECTION_LOCAL.extract(properties);
-        this.maxRequestsPerConnectionRemote = Props.MAX_REQUEST_PER_CONNECTION_REMOTE.extract(properties);
+        this.maxRequestsPerConnection = Props.MAX_REQUEST_PER_CONNECTION.extract(properties);
 
         this.nodes = Props.NODES.extract(properties);
-        this.port = Props.PORT.extract(properties);
-        this.readTimeoutMs = Props.READ_TIMEOUT_MS.extract(properties);
+        this.requestTimeoutMs = Props.REQUEST_TIMEOUT_MS.extract(properties);
 
         this.consistencyLevel = Props.CONSISTENCY_LEVEL.extract(properties);
     }
 
     public void connect() {
-        Cluster.Builder builder = Cluster.builder().addContactPoints(nodes).withPort(port);
+        DriverConfigLoader configLoader = DriverConfigLoader.programmaticBuilder().
+                withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofMillis(requestTimeoutMs)).
+                withString(DefaultDriverOption.REQUEST_CONSISTENCY, consistencyLevel).
+                withInt(DefaultDriverOption.CONNECTION_MAX_REQUESTS, maxRequestsPerConnection).
+                withInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE, connectionsPerHostLocal).
+                withInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE, connectionsPerHostRemote).
+                build();
 
-        PoolingOptions poolingOptions =
-                new PoolingOptions()
-                        .setConnectionsPerHost(HostDistance.LOCAL, connectionsPerHostLocal, connectionsPerHostLocal)
-                        .setConnectionsPerHost(HostDistance.REMOTE, connectionsPerHostRemote, connectionsPerHostRemote)
-                        .setMaxRequestsPerConnection(HostDistance.LOCAL, maxRequestsPerConnectionLocal)
-                        .setMaxRequestsPerConnection(HostDistance.REMOTE, maxRequestsPerConnectionRemote);
-        builder.withPoolingOptions(poolingOptions);
-
-        QueryOptions queryOptions =
-                new QueryOptions()
-                        .setConsistencyLevel(ConsistencyLevel.QUORUM);
-        builder.withQueryOptions(queryOptions);
-
-        SocketOptions socketOptions =
-                new SocketOptions()
-                        .setReadTimeoutMillis(readTimeoutMs);
-        builder.withSocketOptions(socketOptions);
-
-        builder.withoutJMXReporting();
-
-        cluster = builder.build();
-
-        session = cluster.connect(keyspace);
+        session = CqlSession.builder().
+                addContactEndPoints(
+                        Stream.of(nodes).
+                                map(x -> new DefaultEndPoint(InetSocketAddressUtil.fromString(x, CassandraDefaults.DEFAULT_CASSANDRA_PORT))).
+                                collect(Collectors.toList())).
+                withKeyspace(keyspace).
+                withConfigLoader(configLoader).
+                build();
     }
 
-    public Session session() {
+    public CqlSession session() {
         return session;
     }
 
-    public TableMetadata metadata(String table) {
-        return cluster.getMetadata().getKeyspace(keyspace).getTable(table);
+    public Optional<TableMetadata> metadata(final String table) {
+        Optional<KeyspaceMetadata> keyspaceMetadata = session.getMetadata().getKeyspace(this.keyspace);
+        return keyspaceMetadata.flatMap(x -> x.getTable(table));
     }
 
     public void close() {
@@ -98,13 +88,6 @@ public class CassandraConnector {
             }
         } catch (Exception e) {
             LOGGER.error("Error on closing session", e);
-        }
-        try {
-            if (cluster != null) {
-                cluster.close();
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error on closing cluster", e);
         }
     }
 
@@ -124,14 +107,9 @@ public class CassandraConnector {
                 .withDefaultValue(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_REMOTE)
                 .build();
 
-        static final PropertyDescription<Integer> MAX_REQUEST_PER_CONNECTION_LOCAL = PropertyDescriptions
-                .integerProperty("maxRequestsPerConnectionLocal")
-                .withDefaultValue(CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION_LOCAL)
-                .build();
-
-        static final PropertyDescription<Integer> MAX_REQUEST_PER_CONNECTION_REMOTE = PropertyDescriptions
-                .integerProperty("maxRequestsPerConnectionRemote")
-                .withDefaultValue(CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION_REMOTE)
+        static final PropertyDescription<Integer> MAX_REQUEST_PER_CONNECTION = PropertyDescriptions
+                .integerProperty("maxRequestsPerConnection")
+                .withDefaultValue(CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION)
                 .build();
 
         static final PropertyDescription<String[]> NODES = PropertyDescriptions
@@ -139,21 +117,14 @@ public class CassandraConnector {
                 .withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS})
                 .build();
 
-        static final PropertyDescription<Integer> PORT = PropertyDescriptions
-                .integerProperty("port")
-                .withDefaultValue(CassandraDefaults.DEFAULT_CASSANDRA_PORT)
-                .withValidator(Validators.portValidator())
-                .build();
-
-        static final PropertyDescription<Integer> READ_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("readTimeoutMs")
+        static final PropertyDescription<Long> REQUEST_TIMEOUT_MS = PropertyDescriptions
+                .longProperty("requestTimeoutMs")
                 .withDefaultValue(CassandraDefaults.DEFAULT_READ_TIMEOUT_MILLIS)
                 .build();
 
-        static final PropertyDescription<ConsistencyLevel> CONSISTENCY_LEVEL =
-                PropertyDescriptions.propertyOfType(ConsistencyLevel.class, "consistencyLevel").
-                        withParser(Parsers.enumParser(ConsistencyLevel.class)).
-                        withDefaultValue(ConsistencyLevel.QUORUM).
+        static final PropertyDescription<String> CONSISTENCY_LEVEL =
+                PropertyDescriptions.stringProperty("consistencyLevel").
+                        withDefaultValue(DefaultConsistencyLevel.QUORUM.name()).
                         build();
     }
 }
