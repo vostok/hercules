@@ -7,13 +7,12 @@ Application is configured through properties file.
 ### Apache Cassandra settings
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
-`cassandra.nodes` - default values: `127.0.0.1`
-
-`cassandra.port` - default value: `9042`
+`cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
 
 `cassandra.keyspace` - default value: `hercules`
 
-`cassandra.readTimeoutMs` - default value: `12000`
+`cassandra.requestTimeoutMs` - default value: `12000`
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -57,9 +56,8 @@ Timeline Manager uses Timeline's metadata from ZooKeeper. Thus, ZK should be con
 ### `application.properties` sample:
 ```properties
 cassandra.nodes=localhost
-cassandra.port=9042
 cassandra.keyspace=hercules
-cassandra.readTimeoutMs=12000
+cassandra.requestTimeoutMs=12000
 
 curator.connectString=localhost:2181,localhsot:2182,localhsot:2183
 curator.connectionTimeout=10000

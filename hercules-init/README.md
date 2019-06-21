@@ -30,9 +30,10 @@ See Kafka Config from Apache Kafka documentation. Main settings are presented be
 `kafka.replication.factor` - default value: `3`
 
 ### Cassandra settings
-`cassandra.nodes` - default value: `127.0.0.1`
+Settinfs for Timeline Cassandra. Configuration for Tracing Cassandra are the same but starts with prefix `tracing`.
 
-`cassandra.port` - default value: `9042`
+`cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
 
 `cassandra.keyspace` - default value: `hercules`
 
@@ -65,7 +66,10 @@ kafka.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 kafka.replication.factor=3
  
 cassandra.nodes=localhost
-cassandra.port=9042
 cassandra.keyspace=hercules
 cassandra.replication.factor=3
+
+tracing.cassandra.nodes=localhost
+tracing.cassandra.keyspace=hercules_traces
+tracing.cassandra.replication.factor=1
 ```

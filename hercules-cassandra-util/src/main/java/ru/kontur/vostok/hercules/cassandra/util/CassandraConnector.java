@@ -6,7 +6,6 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
-import com.datastax.oss.driver.api.core.session.Session;
 import com.datastax.oss.driver.internal.core.metadata.DefaultEndPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
