@@ -4,6 +4,9 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.internal.core.metadata.DefaultEndPoint;
@@ -12,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -37,6 +41,8 @@ public class CassandraConnector {
 
     private final String consistencyLevel;
 
+    private final int batchSizeBytesLimit;
+
     private volatile CqlSession session;
 
 
@@ -52,6 +58,8 @@ public class CassandraConnector {
         this.maxRequestsPerConnection = Props.MAX_REQUEST_PER_CONNECTION.extract(properties);
 
         this.consistencyLevel = Props.CONSISTENCY_LEVEL.extract(properties);
+
+        this.batchSizeBytesLimit = Props.BATCH_SIZE_BYTES_LIMIT.extract(properties);
     }
 
     public void connect() {
@@ -81,6 +89,25 @@ public class CassandraConnector {
     public Optional<TableMetadata> metadata(final String table) {
         Optional<KeyspaceMetadata> keyspaceMetadata = session.getMetadata().getKeyspace(this.keyspace);
         return keyspaceMetadata.flatMap(x -> x.getTable(table));
+    }
+
+    /**
+     * Return minimum {@link BatchStatement} size in bytes.
+     *
+     * @return minimum {@link BatchStatement} size in bytes
+     */
+    public int batchSizeBytesMinimum() {
+        BatchStatement batchStatement = BatchStatement.builder(DefaultBatchType.UNLOGGED).build();
+        return batchStatement.computeSizeInBytes(session.getContext());
+    }
+
+    /**
+     * Return maximum {@link BatchStatement} size in bytes.
+     *
+     * @return maximum {@link BatchStatement} size in bytes
+     */
+    public int batchSizeBytesLimit() {
+        return batchSizeBytesLimit;
     }
 
     public void close() {
@@ -132,6 +159,12 @@ public class CassandraConnector {
         static final PropertyDescription<String> CONSISTENCY_LEVEL =
                 PropertyDescriptions.stringProperty("consistencyLevel").
                         withDefaultValue(DefaultConsistencyLevel.QUORUM.name()).
+                        build();
+
+        static final PropertyDescription<Integer> BATCH_SIZE_BYTES_LIMIT =
+                PropertyDescriptions.integerProperty("batchSizeBytesLimit").
+                        withDefaultValue(CassandraDefaults.DEFAULT_BATCH_SIZE_BYTES_LIMIT).
+                        withValidator(IntegerValidators.positive()).
                         build();
     }
 }

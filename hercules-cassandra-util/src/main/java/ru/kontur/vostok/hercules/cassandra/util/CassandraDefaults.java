@@ -19,5 +19,11 @@ public final class CassandraDefaults {
     public static final int DEFAULT_CONNECTIONS_PER_HOST_REMOTE = 2;
     public static final int DEFAULT_MAX_REQUEST_PER_CONNECTION = 1024;
 
-    private CassandraDefaults() {}
+    // Default query options:
+
+    public static final int DEFAULT_BATCH_SIZE_BYTES_LIMIT = 5120;
+
+    private CassandraDefaults() {
+        /* static class */
+    }
 }

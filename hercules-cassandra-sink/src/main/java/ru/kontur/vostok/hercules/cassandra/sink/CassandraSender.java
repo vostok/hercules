@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BatchStatement;
 import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.servererrors.QueryValidationException;
@@ -42,6 +43,10 @@ public abstract class CassandraSender extends Sender {
 
     private volatile PreparedStatement preparedStatement;
 
+    private volatile int batchSizeBytesLimit;
+    private volatile int batchSizeBytesMinimum;
+
+
     /**
      * Base Cassandra Sender.
      *
@@ -64,6 +69,9 @@ public abstract class CassandraSender extends Sender {
         CqlSession session = cassandraConnector.session();
         preparedStatement = session.prepare(query());
 
+        batchSizeBytesLimit = cassandraConnector.batchSizeBytesLimit();
+        batchSizeBytesMinimum = cassandraConnector.batchSizeBytesMinimum();
+
         super.start();
     }
 
@@ -75,6 +83,7 @@ public abstract class CassandraSender extends Sender {
 
         List<CompletionStage<AsyncResultSet>> asyncTasks = new ArrayList<>(events.size());
         BatchStatementBuilder batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
+        int batchSizeBytes = batchSizeBytesMinimum;
         for (Event event : events) {
             Optional<Object[]> converted = convert(event);
             if (!converted.isPresent()) {
@@ -82,12 +91,23 @@ public abstract class CassandraSender extends Sender {
                 continue;
             }
 
-            batchBuilder.addStatement(preparedStatement.bind(converted.get()));
+            BoundStatement statement = preparedStatement.bind(converted.get());
+            int statementSizeBytes = statement.computeSizeInBytes(session.getContext());
 
-            if (batchBuilder.getStatementsCount() >= 10) {
-                asyncTasks.add(session.executeAsync(batchBuilder.build()));
-                batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
+            if (statementSizeBytes + batchSizeBytesMinimum >= batchSizeBytesLimit) {
+                asyncTasks.add(session.executeAsync(statement));
+                continue;
             }
+
+            if (statementSizeBytes + batchSizeBytes > batchSizeBytesLimit) {
+                asyncTasks.add(session.executeAsync(batchBuilder.build()));
+
+                batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
+                batchSizeBytes = batchSizeBytesMinimum;
+            }
+
+            batchBuilder.addStatement(statement);
+            batchSizeBytes += statementSizeBytes;
         }
 
         if (batchBuilder.getStatementsCount() > 0) {
