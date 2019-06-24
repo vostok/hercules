@@ -24,7 +24,9 @@ Application is configured through properties file.
 #### Cassandra Sender settings
 `sink.sender.pingPeriodMs` - period to update Cassandra's availability status, default value: `5000`
 
-`sink.sender.sendTimeoutMs` - timeout for sending requests to Cassandra, devault value: `60000`
+`sink.sender.sendTimeoutMs` - timeout for sending requests to Cassandra, default value: `60000`
+
+`sink.sender.batchSize` - limit for statements in a single batch, default value: `10`
 
 `sink.sender.tableName` - table name for trace spans in Cassandra, default value: `tracing_spans`
 
@@ -92,6 +94,7 @@ sink.consumer.max.poll.interval.ms=240000
 
 sink.sender.pingPeriodMs=60000
 sink.sender.sendTimeoutMs=60000
+sink.sender.batchSize=10
 sink.sender.tableName=tracing_spans
 
 sink.sender.cassandra.dataCenter=datacenter1

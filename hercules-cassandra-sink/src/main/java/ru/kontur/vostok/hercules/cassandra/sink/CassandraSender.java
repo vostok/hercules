@@ -20,6 +20,7 @@ import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.StopwatchUtil;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public abstract class CassandraSender extends Sender {
     private final CassandraConnector cassandraConnector;
 
     private final long timeoutMs;
+    private final int batchSize;
 
     private volatile PreparedStatement preparedStatement;
 
@@ -60,6 +62,7 @@ public abstract class CassandraSender extends Sender {
         cassandraConnector = new CassandraConnector(cassandraProperties);
 
         timeoutMs = Props.SEND_TIMEOUT_MS.extract(properties);
+        batchSize = Props.BATCH_SIZE.extract(properties);
     }
 
     @Override
@@ -99,7 +102,7 @@ public abstract class CassandraSender extends Sender {
                 continue;
             }
 
-            if (statementSizeBytes + batchSizeBytes > batchSizeBytesLimit) {
+            if (statementSizeBytes + batchSizeBytes > batchSizeBytesLimit || batchBuilder.getStatementsCount() > batchSize) {
                 asyncTasks.add(session.executeAsync(batchBuilder.build()));
 
                 batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
@@ -171,6 +174,12 @@ public abstract class CassandraSender extends Sender {
                 PropertyDescriptions.longProperty("sendTimeoutMs").
                         withDefaultValue(60_000L).
                         withValidator(LongValidators.positive()).
+                        build();
+
+        static final PropertyDescription<Integer> BATCH_SIZE =
+                PropertyDescriptions.integerProperty("batchSize").
+                        withDefaultValue(10).
+                        withValidator(IntegerValidators.positive()).
                         build();
     }
 }
