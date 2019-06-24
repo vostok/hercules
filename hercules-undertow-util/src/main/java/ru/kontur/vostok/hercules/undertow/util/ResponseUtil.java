@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.undertow.util;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+import ru.kontur.vostok.hercules.http.MimeTypes;
 
 import java.nio.charset.StandardCharsets;
 
@@ -17,7 +18,7 @@ public class ResponseUtil {
 
     public static void okJson(HttpServerExchange exchange, String jsonString) {
         exchange.setStatusCode(200);
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, ContentTypes.APPLICATION_JSON);
+        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, MimeTypes.APPLICATION_JSON);
         exchange.getResponseSender().send(jsonString, StandardCharsets.UTF_8);
         exchange.endExchange();
     }
@@ -29,7 +30,7 @@ public class ResponseUtil {
 
     public static void badRequest(HttpServerExchange exchange, String reason) {
         exchange.setStatusCode(400);
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, ContentTypes.TEXT_PLAIN);
+        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, MimeTypes.TEXT_PLAIN);
         exchange.getResponseSender().send(reason);
         exchange.endExchange();
     }

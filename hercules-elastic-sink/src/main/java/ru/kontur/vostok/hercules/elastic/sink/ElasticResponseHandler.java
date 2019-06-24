@@ -87,7 +87,7 @@ public class ElasticResponseHandler {
         UNKNOWN
     }
 
-    private static final Set<String> RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
+    static final Set<String> RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
             "process_cluster_event_timeout_exception",
             "es_rejected_execution_exception",
             "cluster_block_exception",
@@ -106,7 +106,7 @@ public class ElasticResponseHandler {
             "delay_recovery_exception"
     ));
 
-    private static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
+    static final Set<String> NON_RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
             "illegal_argument_exception",
             "mapper_parsing_exception",
             "illegal_state_exception",
@@ -161,7 +161,6 @@ public class ElasticResponseHandler {
             "index_shard_relocated_exception",
             "node_should_not_connect_exception",
             "translog_corrupted_exception",
-            "cluster_block_exception",
             "fetch_phase_execution_exception",
             "version_conflict_engine_exception",
             "engine_exception",
@@ -203,7 +202,6 @@ public class ElasticResponseHandler {
             "aliases_not_found_exception",
             "index_shard_recovering_exception",
             "translog_exception",
-            "process_cluster_event_timeout_exception",
             "retry_on_primary_exception",
             "query_phase_execution_exception",
             "repository_verification_exception",
@@ -211,7 +209,6 @@ public class ElasticResponseHandler {
             "http_on_transport_exception",
             "search_context_exception",
             "search_source_builder_exception",
-            "unavailable_shards_exception",
             "flush_failed_engine_exception",
             "circuit_breaking_exception",
             "strict_dynamic_mapping_exception",

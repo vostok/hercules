@@ -1,11 +1,16 @@
 package ru.kontur.vostok.hercules.stream.manager;
 
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AlterConfigsResult;
+import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.config.TopicConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +50,22 @@ public class KafkaManager {
             future.get();
         } catch (Exception e) {
             LOGGER.error("Topic creation fails with exception", e);
+        }
+    }
+
+    public void changeTtl(String topic, Long ttl) {
+        ConfigResource resourceConfig = new ConfigResource(ConfigResource.Type.TOPIC, topic);
+        ConfigEntry retentionConfigEntry = new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, ttl.toString());
+
+        Map<ConfigResource, Config> updateConfig = new HashMap<>();
+        updateConfig.put(resourceConfig, new Config(Collections.singleton(retentionConfigEntry)));
+        AlterConfigsResult result = adminClient.alterConfigs(updateConfig);
+
+        Future<Void> future = result.values().get(resourceConfig);
+        try {
+            future.get();
+        } catch (Exception e) {
+            LOGGER.error("Change of ttl fails with exception", e);
         }
     }
 

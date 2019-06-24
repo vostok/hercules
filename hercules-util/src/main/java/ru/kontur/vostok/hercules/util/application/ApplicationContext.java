@@ -5,6 +5,7 @@ package ru.kontur.vostok.hercules.util.application;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class ApplicationContext {
 
     /**

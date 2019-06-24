@@ -6,15 +6,25 @@ import java.util.Arrays;
 import java.util.UUID;
 
 /**
+ * Low-level protocol decoder.
+ * <p>
+ * {@link Decoder} decodes values of types are defined in enum {@link ru.kontur.vostok.hercules.protocol.Type}
+ * or their parts (length of {@link ru.kontur.vostok.hercules.protocol.Type#STRING},
+ * {@link ru.kontur.vostok.hercules.protocol.Type#VECTOR}, tag names and so on).
+ * <p>
+ * Also, {@link Decoder} can be used to skip some values.
+ *
  * @author Gregory Koshelev
  */
 public class Decoder {
-    private final byte[] data;
     private final ByteBuffer buffer;
 
     public Decoder(byte[] data) {
-        this.data = data;
         this.buffer = ByteBuffer.wrap(data);
+    }
+
+    public Decoder(ByteBuffer buffer) {
+        this.buffer = buffer;
     }
 
     /* --- Read data types --- */
@@ -388,17 +398,6 @@ public class Decoder {
         return length + SizeOf.BYTE;
     }
 
-    public int readVarLen() {
-        byte b = buffer.get();
-        int value = b & 0x7F;
-        while ((b & 0x80) == 0x80) {
-            value = (value << 7);
-            b = buffer.get();
-            value |= (b & 0x7F);
-        }
-        return value;
-    }
-
     public int readVectorLength() {
         return readInteger();
     }
@@ -419,8 +418,26 @@ public class Decoder {
         buffer.position(buffer.position() + bytesToSkip);
     }
 
+    /**
+     * Return an array of bytes that is sub array of underlying buffer.
+     * <p>
+     * The sub array begins at the index {@code from} and ends to the index {@code toExclusive - 1}.
+     * The length of the sub array is {@code toExclusive - from}.
+     *
+     * @param from        the beginning index, inclusive
+     * @param toExclusive the ending index, exclusive
+     * @return the sub array
+     */
     public byte[] subarray(int from, int toExclusive) {
-        return Arrays.copyOfRange(data, from, toExclusive);
+        int originalPosition = buffer.position();
+
+        buffer.position(from);
+        byte[] subarray = new byte[toExclusive - from];
+        buffer.get(subarray);
+
+        buffer.position(originalPosition);// Restore buffer's position
+
+        return subarray;
     }
 
 

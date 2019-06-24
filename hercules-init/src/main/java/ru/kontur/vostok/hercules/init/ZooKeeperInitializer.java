@@ -18,19 +18,14 @@ public class ZooKeeperInitializer {
         CuratorClient curatorClient = new CuratorClient(curatorProperties);
         try {
             curatorClient.start();
-            curatorClient.createIfAbsent("/hercules");
-            curatorClient.createIfAbsent("/hercules/streams");
-            curatorClient.createIfAbsent("/hercules/timelines");
-            curatorClient.createIfAbsent("/hercules/tasks");
-            curatorClient.createIfAbsent("/hercules/tasks/streams");
-            curatorClient.createIfAbsent("/hercules/tasks/timelines");
-            curatorClient.createIfAbsent("/hercules/auth");
-            curatorClient.createIfAbsent("/hercules/auth/blacklist");
-            curatorClient.createIfAbsent("/hercules/auth/rules");
-            curatorClient.createIfAbsent("/hercules/auth/validations");
-            curatorClient.createIfAbsent("/hercules/sink");
-            curatorClient.createIfAbsent("/hercules/sink/sentry");
-            curatorClient.createIfAbsent("/hercules/sink/sentry/registry");
+            curatorClient.ensurePath("/hercules/streams");
+            curatorClient.ensurePath("/hercules/timelines");
+            curatorClient.ensurePath("/hercules/tasks/streams");
+            curatorClient.ensurePath("/hercules/tasks/timelines");
+            curatorClient.ensurePath("/hercules/auth/blacklist");
+            curatorClient.ensurePath("/hercules/auth/rules");
+            curatorClient.ensurePath("/hercules/auth/validations");
+            curatorClient.ensurePath("/hercules/sd/services");
         } finally {
             curatorClient.stop();
         }

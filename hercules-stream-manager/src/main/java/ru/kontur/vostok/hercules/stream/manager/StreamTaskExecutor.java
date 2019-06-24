@@ -71,6 +71,17 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
                 }
                 updatedStreamCount.mark();
                 return true;
+            case CHANGE_TTL:
+                kafkaManager.changeTtl(task.getStream().getName(), task.getStream().getTtl());
+                LOGGER.info("Change ttl for topic '{}'", task.getStream().getName());
+                try {
+                    streamRepository.update(task.getStream());
+                } catch (Exception e) {
+                    LOGGER.error("Stream update failed with exception", e);
+                    return false;
+                }
+                updatedStreamCount.mark();
+                return true;
             default:
                 LOGGER.error("Unknown task type {}", task.getType());
                 return false;

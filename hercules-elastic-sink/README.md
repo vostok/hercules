@@ -78,10 +78,9 @@ sink.poolSize=3
 sink.senderTimeoutMs=120000
 sink.pollTimeoutMs=5000
 sink.batchSize=10000
-sink.pattern=abc_*
+sink.pattern=logs_*
 
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
-sink.consumer.max.partition.fetch.bytes=8388608
 sink.consumer.max.partition.fetch.bytes=52428800
 
 sink.consumer.max.poll.interval.ms=370000
@@ -97,13 +96,13 @@ sink.sender.retryOnUnknownErrors=true
 sink.sender.retryLimit=2
 sink.sender.elastic.mergePropertiesTagToRoot=true
 
-metrics.graphite.server.addr=graphite.ru
+metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
 http.server.host=0.0.0.0
-http.server.port=6501 
+http.server.port=6501
 
 context.instance.id=1
 context.environment=dev

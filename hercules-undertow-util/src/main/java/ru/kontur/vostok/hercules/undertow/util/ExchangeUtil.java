@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.undertow.util;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
+import ru.kontur.vostok.hercules.http.HttpHeaders;
 
 import java.util.Deque;
 import java.util.Optional;
@@ -11,7 +12,7 @@ import java.util.Optional;
  */
 public class ExchangeUtil {
     public static Optional<Integer> extractContentLength(HttpServerExchange exchange) {
-        HeaderValues header = exchange.getRequestHeaders().get("Content-Length");
+        HeaderValues header = exchange.getRequestHeaders().get(HttpHeaders.CONTENT_LENGTH);
         if (header == null || header.isEmpty()) {
             return Optional.empty();
         }
@@ -53,6 +54,18 @@ public class ExchangeUtil {
         }
         try {
             return Optional.of(Integer.valueOf(param.get()));
+        } catch (NumberFormatException ex) {
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<Long> extractLongQueryParam(HttpServerExchange exchange, String name) {
+        Optional<String> param = extractQueryParam(exchange, name);
+        if (!param.isPresent()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Long.valueOf(param.get()));
         } catch (NumberFormatException ex) {
             return Optional.empty();
         }

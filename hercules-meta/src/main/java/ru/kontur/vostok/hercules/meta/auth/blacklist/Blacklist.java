@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.curator.LatchWatcher;
-import ru.kontur.vostok.hercules.util.schedule.RenewableTask;
-import ru.kontur.vostok.hercules.util.schedule.Scheduler;
+import ru.kontur.vostok.hercules.util.concurrent.RenewableTask;
+import ru.kontur.vostok.hercules.util.concurrent.RenewableTaskScheduler;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +26,7 @@ public class Blacklist {
     private final RenewableTask updateTask;
     private final LatchWatcher latchWatcher;
 
-    public Blacklist(CuratorClient curatorClient, Scheduler scheduler) {
+    public Blacklist(CuratorClient curatorClient, RenewableTaskScheduler scheduler) {
         this.curatorClient = curatorClient;
         this.updateTask = scheduler.task(this::update, 60_000, false);
         this.latchWatcher = new LatchWatcher(event -> updateTask.renew());

@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class AboutHandler implements HttpHandler {
 
     public static final AboutHandler INSTANCE = new AboutHandler();

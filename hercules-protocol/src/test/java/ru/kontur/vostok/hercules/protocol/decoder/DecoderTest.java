@@ -33,8 +33,7 @@ public class DecoderTest {
         URL resource = getClass().getClassLoader().getResource("v1.event.1.txt");
         Path path = Paths.get(resource.toURI());
         byte[] data = Files.readAllBytes(path);
-        Set<String> tags = new HashSet<>();
-        tags.addAll(Arrays.asList("host", "timestamp"));
+        Set<String> tags = new HashSet<>(Arrays.asList("host", "timestamp"));
 
         ReaderIterator<Event> reader = new ReaderIterator<>(new Decoder(data), EventReader.readTags(tags));
         assertEquals(1, reader.getTotal());
@@ -45,7 +44,7 @@ public class DecoderTest {
         assertFalse(reader.hasNext());
 
         assertEquals(1, event.getVersion());
-        assertEquals(15276799200000000L, event.getTimestamp());
+        assertEquals(15_276_799_200_000_000L, event.getTimestamp());
         assertEquals(UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000"), event.getUuid());
 
         assertEquals(2, event.getPayload().size());
@@ -69,7 +68,7 @@ public class DecoderTest {
         assertNotNull(timestamp);
         assertTrue(timestamp instanceof Long);
         long timestampAsLong = (Long) timestamp;
-        assertEquals(1527679920000000L, timestampAsLong);
+        assertEquals(1_527_679_920_000_000L, timestampAsLong);
 
         byte[] bytes = event.getBytes();
         assertNotNull(bytes);
@@ -77,9 +76,9 @@ public class DecoderTest {
         assertArrayEquals(new byte[]{
                 /* Version equals 1 */
                 0x01,
-                /* Timestamp equals 1527679920000000L */
+                /* Timestamp equals 15_276_799_200_000_000L */
                 0x00, 0x36, 0x46, 0x2A, (byte) 0xFD, (byte) 0x9E, (byte) 0xF8, 0x00,
-                /* Random is UUID for Timestamp 137469727200000000L is 2018-05-30T11:32:00.000Z in 100ns ticks from Gregorian Epoch */
+                /* UUID (ver. 4) for timestamp 137_469_727_200_000_000L is 2018-05-30T11:32:00.000Z in 100ns ticks from Gregorian Epoch */
                 0x11, 0x20, 0x38, 0x00, 0x63, (byte) 0xFD, 0x11, (byte) 0xE8, (byte) 0x83, (byte) 0xE2, 0x3A, 0x58,
                 0x7D, (byte) 0x90, 0x20, 0x00,
                 /* Tags count equals 2 */
@@ -94,7 +93,7 @@ public class DecoderTest {
                 0x09, 0x74, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70,
                 /* Tag's value type Long */
                 0x05,
-                /*Tag's value 1527679920000000L */
+                /*Tag's value 1_527_679_920_000_000L */
                 0x00, 0x05, 0x6D, 0x6A, (byte) 0xB2, (byte) 0xF6, 0x4C, 0x00
         }, bytes);
     }

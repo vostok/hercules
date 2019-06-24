@@ -55,14 +55,18 @@ public final class IndexToElasticJsonWriter {
                 .flatMap(properties -> {
                     final List<String> parts = new ArrayList<>(4);
 
-                    final Optional<String> index = ContainerUtil.extract(properties, ElasticSearchTags.INDEX_PATTERN_TAG);
+                    final Optional<String> index = ContainerUtil.extract(properties, ElasticSearchTags.ELK_INDEX_TAG);
                     if (index.isPresent()) {
                         parts.add(index.get());
                     } else {
                         final Optional<String> project = ContainerUtil.extract(properties, CommonTags.PROJECT_TAG);
                         if (project.isPresent()) {
                             parts.add(project.get());
-                            ContainerUtil.extract(properties, ElasticSearchTags.ELK_SCOPE_TAG).ifPresent(parts::add);
+                            Optional<String> application = ContainerUtil.extract(properties, CommonTags.APPLICATION_TAG);
+                            application.ifPresent(parts::add);
+                            if (!application.isPresent()) {//FIXME: backward compatibility
+                                ContainerUtil.extract(properties, ElasticSearchTags.ELK_SCOPE_TAG).ifPresent(parts::add);
+                            }
                             ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG).ifPresent(parts::add);
                         }
                     }

@@ -58,7 +58,7 @@ Binary protocol is used to store and transfer Hercules Events.
 ### Binary representation
 
 <pre>
-Event = Version Timestamp Random Payload
+Event = Version Timestamp Uuid Payload
         ; Hercules Event
 
 Version = <i>Byte</i>
@@ -67,7 +67,7 @@ Version = <i>Byte</i>
 Timestamp = <i>Long</i>
         ; Event timestamp in 100-ns ticks from Unix Epoch (1970-01-01T00:00:00.000Z)
 
-Random = <i>UUID</i>
+Uuid = <i>UUID</i>
         ; Event identifier is used to deduplicate events with the same timestamp
 
 Payload = <i>Container</i>
@@ -106,6 +106,7 @@ Length = <i>Integer</i>
 </pre>
 
 Where,  
+`X Y` means "`Y` follows `X`"  
 `X*` means "repeat `X` zero or more times"  
 `X | Y` means "`X` or `Y`"  
 `; commentary` is commentary,  
@@ -118,14 +119,38 @@ Binary protocol uses **network byte order** or **Big Endian**.
 
 Thus, `Short`, `Integer`, `Float` and other numbers are presented in Big Endian form.
 
+### Sample
+
+Hex representation of single Hercules Event with 2 tags:
+```
+0x01 # Version is 1
+0x00 0x36 0x46 0x2A 0xFD 0x9E 0xF8 0x00 # Timestamp equals 15 276 799 200 000 000 in 100ns-ticks or 1527679920000 ms since 1970-01-01T00:00:00.000Z
+0x11 0x20 0x38 0x00 0x63 0xfd 0x11 0xE8 0x83 0xE2 0x3A 0x58 0x7D 0x90 0x20 0x00 # UUID 11203800-63FD-11E8-83E2-3A587D902000
+0x00 0x02 # Tag count is 2
+0x04 0x68 0x6F 0x73 0x74 # Tag key is tiny string 'host' with length 4
+0x09 0x00 0x00 0x00 0x09 0x6C 0x6F 0x63 0x61 0x6C 0x68 0x6F 0x73 0x74 # Tag value is string 'localhost' with length 9
+0x09 0x74 0x69 0x6D 0x65 0x73 0x74 0x61 0x6D 0x70 # Tag key is tiny string 'timestamp' with length 9
+0x05 0x00 0x05 0x6D 0x6A 0xB2 0xF6 0x4C 0x00 # Tag value is long 1 527 679 920 000 000
+```
+with total of 65 bytes.
+
+## Naming convention
+
+Name of tag has following restrictions:
+- Length in bytes does not exceed 255,
+- String of alphanumeric characters and underscores `[a-zA-Z0-9_]`.
+
+Tag's name is case sensitive.
+
+### HPath
+[HPath](./doc/h-path.md) describes hierarchy of tags.
+
 ## Event schema
 
-To describe tags in hercules event you can use event schema with .yaml syntax described in [separate document](./doc/event-schema.md).
+Hercules protocol does not imply usage of event schema as protocol is self-described. For convenience purposes to describe tags in hercules event you can use [event schema](./doc/event-schema.md) with .yaml syntax.
 
-## Common tags
+Note that some hercules components use _well known tags_ to process events. See docs for components you use.
+
+### Common tags
 
 Some tags are common for different kinds of Hercules events. List of common tags can be found in [separate document](./doc/common-tags.md).
-
-## HPath
-
-To describe hierarchy of tags inside many nested containers you can use HPath described in [separate document](./doc/h-path.md).

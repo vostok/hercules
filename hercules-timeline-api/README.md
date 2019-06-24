@@ -1,6 +1,117 @@
 # Hercules Timeline Api
 Timeline Api is used for reading timelines from Apache Kafka.
 
+## API methods
+
+[swagger documentation](../docs/swagger/timeline-api-swagger2.yml)
+
+### Ping
+
+**Description:** The method to ping service.
+
+**Method:** `GET`
+
+**URL:** `/ping`
+
+**Response codes:**
+
+`200` - successfully ping.
+
+### About
+
+**Description:** The method to get service information.
+
+**Method:** `GET`
+
+**URL:** `/about`
+
+**Response codes:**
+
+`200` - successfully getting service information.
+
+**Response body:**
+
+Response body contains information about service:
+
+```
+applicationName - human readable application name
+applicationId - robot readable application name
+version - application version
+commitId - commit id
+environment - environment in which service is running (production, testing etc.)
+zone - datacenter in which instance is located
+hostName - server host name
+instanceId - instance identifier
+```
+
+## Read
+
+**Description:** The method to read the timeline content.
+
+**Method:** `POST`
+
+**URL:** `/timeline/read`
+
+**Request headers**
+
+`apiKey` - the API Key with read access to the timeline is specified. Required.
+
+`ContentType: application/octet-stream`
+
+**Query parameters:**
+
+`timeline` - the name of timeline. Required.
+
+`shardIndex` - the logical shard index. Starts with `0` up to `shardCount - 1`. Required.
+
+`shardCount` - the total logical shards. Should be positive. Required.
+
+`take` - maximum events to read. Required.
+
+`from` - lower timestamp bound in 100-ns ticks from Unix epoch. Required.
+
+`to` - upper timestamp bound exclusive in 100-ns ticks from Unix epoch. Required.
+
+**Request body:**
+
+Optional read state by shards `State` is provided in the request body as follows:
+```
+TimelineState		Count, TimelineSliceState*
+Count			    Integer
+TimelineSliceState	Slice, Offset, EventId
+Slice			    Integer
+Offset			    Long
+EventId			    Long, Long
+```
+
+**Response codes:**
+
+`200` - successfully read timeline and return it's content in response body.
+
+`400` - bad request.
+
+`401` - read rules for this apiKey is absent.
+
+`403` - the timeline cannot be accessed with provided API key.
+
+`404` - the timeline not found.
+
+`411` - can't get Content-Length value.
+
+`500` - internal service error.
+
+**Response headers:**
+
+ContentType: application/octet-stream
+
+**Response body:**
+
+Response body contains new read state and events as follows:
+```
+ResponseBody    TimelineState, Events
+Events          Count, Event*
+``` 
+
 ## Settings
 Application is configured through properties file.
 

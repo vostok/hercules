@@ -10,21 +10,19 @@ import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
 import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
-import ru.kontur.vostok.hercules.management.api.sink.sentry.DeleteProjectHandler;
-import ru.kontur.vostok.hercules.management.api.sink.sentry.ListProjectHandler;
-import ru.kontur.vostok.hercules.management.api.sink.sentry.SetProjectHandler;
-import ru.kontur.vostok.hercules.management.api.stream.IncreasePartitionsStreamHandler;
-import ru.kontur.vostok.hercules.management.api.stream.InfoStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.ChangeStreamTtlHandler;
 import ru.kontur.vostok.hercules.management.api.stream.CreateStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.DeleteStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.IncreasePartitionsStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.InfoStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.ListStreamHandler;
+import ru.kontur.vostok.hercules.management.api.timeline.ChangeTimelineTtlHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.CreateTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.DeleteTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.InfoTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.ListTimelineHandler;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
-import ru.kontur.vostok.hercules.meta.sink.sentry.SentryProjectRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
@@ -66,7 +64,6 @@ public class HttpServer {
             TaskQueue<TimelineTask> timelineTaskQueue,
             BlacklistRepository blacklistRepository,
             RuleRepository ruleRepository,
-            SentryProjectRepository sentryProjectRepository,
             MetricsCollector metricsCollector
     ) {
         final String host = Props.HOST.extract(properties);
@@ -76,6 +73,7 @@ public class HttpServer {
 
         CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue, streamRepository);
         DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue, streamRepository);
+        ChangeStreamTtlHandler changeStreamTtlHandler = new ChangeStreamTtlHandler(authManager, streamTaskQueue, streamRepository);
         IncreasePartitionsStreamHandler increasePartitionsStreamHandler =
                 new IncreasePartitionsStreamHandler(authManager, streamTaskQueue, streamRepository);
         ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
@@ -83,6 +81,7 @@ public class HttpServer {
 
         CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
         DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
+        ChangeTimelineTtlHandler changeTimelineTtlHandler = new ChangeTimelineTtlHandler(authManager, timelineTaskQueue, timelineRepository);
         ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
         InfoTimelineHandler infoTimelineHandler = new InfoTimelineHandler(timelineRepository, authManager);
 
@@ -93,28 +92,23 @@ public class HttpServer {
         HttpHandler removeBlacklistHandler = adminAuthManagerWrapper.wrap(new RemoveBlacklistHandler(blacklistRepository));
         HttpHandler listBlacklistHandler = adminAuthManagerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
 
-        HttpHandler sentryRegistryListHandler = adminAuthManagerWrapper.wrap(new ListProjectHandler(sentryProjectRepository));
-        HttpHandler sentryRegistrySetHandler = adminAuthManagerWrapper.wrap(new SetProjectHandler(sentryProjectRepository));
-        HttpHandler sentryRegistryDeleteHandler = adminAuthManagerWrapper.wrap(new DeleteProjectHandler(sentryProjectRepository));
-
         HttpHandler handler = new HerculesRoutingHandler(metricsCollector)
                 .post("/streams/create", createStreamHandler)
                 .post("/streams/delete", deleteStreamHandler)
+                .post("/streams/changeTtl", changeStreamTtlHandler)
                 .post("/streams/increasePartitions", increasePartitionsStreamHandler)
                 .get("/streams/list", listStreamHandler)
                 .get("/streams/info", infoStreamHandler)
                 .post("/timelines/create", createTimelineHandler)
                 .post("/timelines/delete", deleteTimelineHandler)
+                .post("/timelines/changeTtl", changeTimelineTtlHandler)
                 .get("/timelines/list", listTimelineHandler)
                 .get("/timelines/info", infoTimelineHandler)
                 .post("/rules/set", setRuleHandler)
                 .get("/rules/list", listRuleHandler)
                 .post("/blacklist/add", addBlacklistHandler)
                 .post("/blacklist/remove", removeBlacklistHandler)
-                .get("/blacklist/list", listBlacklistHandler)
-                .get("/sink/sentry/registry", sentryRegistryListHandler)
-                .post("/sink/sentry/registry", sentryRegistrySetHandler)
-                .delete("/sink/sentry/registry", sentryRegistryDeleteHandler);
+                .get("/blacklist/list", listBlacklistHandler);
 
         undertow = Undertow
                 .builder()

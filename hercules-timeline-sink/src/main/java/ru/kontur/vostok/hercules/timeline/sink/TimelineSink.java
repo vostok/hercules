@@ -2,10 +2,10 @@ package ru.kontur.vostok.hercules.timeline.sink;
 
 import com.codahale.metrics.Meter;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Predicate;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
@@ -22,7 +22,6 @@ import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.RandomPartitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -47,21 +46,20 @@ public class TimelineSink {
         properties.put(StreamsConfig.APPLICATION_ID_CONFIG, TimelineUtil.timelineToApplicationId(timeline));
 
         List<String> topics = Arrays.asList(timeline.getStreams());
-        Set<String> tags = new HashSet<>(timeline.getFilters().length + timeline.getShardingKey().length);
         final Filter[] filters = timeline.getFilters();
 
+        Set<String> tags = new HashSet<>(filters.length + timeline.getShardingKey().length);
         for (Filter filter : filters) {
-            tags.add(filter.getTag());
+            tags.add(filter.getHPath().getRootTag());//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
         }
         tags.addAll(Arrays.asList(timeline.getShardingKey()));
 
         Meter receivedEventCountMeter = metricsCollector.meter("receivedEventCount");
         Meter filteredEventCountMeter = metricsCollector.meter("filteredEventCount");
 
-        Predicate<UUID, Event> predicate = (k, v) -> {
+        Predicate<UUID, Event> predicate = (k, event) -> {
             for (Filter filter : filters) {
-                Variant value = v.getPayload().get(filter.getTag());
-                if (!filter.getCondition().test(value)) {
+                if (!filter.test(event.getPayload())) {
                     filteredEventCountMeter.mark();
                     return false;
                 }

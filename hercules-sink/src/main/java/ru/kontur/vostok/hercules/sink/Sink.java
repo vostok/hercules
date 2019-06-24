@@ -10,13 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
-import ru.kontur.vostok.hercules.kafka.util.processing.bulk.ConsumerUtil;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidDeserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.time.Duration;
 import java.util.List;
@@ -54,9 +54,14 @@ public abstract class Sink {
         this.pollTimeout = Duration.ofMillis(Props.POLL_TIMEOUT_MS.extract(properties));
         this.batchSize = Props.BATCH_SIZE.extract(properties);
 
+        String consumerGroupId = Props.GROUP_ID.extract(properties);
+
         List<PatternMatcher> patternMatchers = Props.PATTERN.extract(properties).stream().
                 map(PatternMatcher::new).collect(Collectors.toList());
-        String consumerGroupId = ConsumerUtil.toGroupId(applicationId, patternMatchers);
+
+        if (StringUtil.isNullOrEmpty(consumerGroupId)) {
+            consumerGroupId = ConsumerUtil.toGroupId(applicationId, patternMatchers);
+        }
 
         this.pattern = PatternMatcher.matcherListToRegexp(patternMatchers);
 
@@ -162,13 +167,22 @@ public abstract class Sink {
 
     private static class Props {
         static final PropertyDescription<Long> POLL_TIMEOUT_MS =
-                PropertyDescriptions.longProperty("pollTimeoutMs").withDefaultValue(6_000L).build();
+                PropertyDescriptions.longProperty("pollTimeoutMs").
+                        withDefaultValue(6_000L).
+                        build();
 
         static final PropertyDescription<Integer> BATCH_SIZE =
-                PropertyDescriptions.integerProperty("batchSize").withDefaultValue(1000).build();
+                PropertyDescriptions.integerProperty("batchSize").
+                        withDefaultValue(1000).
+                        build();
 
-        static final PropertyDescription<List<String>> PATTERN = PropertyDescriptions
-                .listOfStringsProperty("pattern")
-                .build();
+        static final PropertyDescription<List<String>> PATTERN =
+                PropertyDescriptions.listOfStringsProperty("pattern").
+                        build();
+
+        static final PropertyDescription<String> GROUP_ID =
+                PropertyDescriptions.stringProperty("groupId").
+                        withDefaultValue(null).
+                        build();
     }
 }

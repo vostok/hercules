@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.gate.client;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -18,51 +17,58 @@ import java.io.IOException;
  */
 public class CloseableHttpClientMock extends CloseableHttpClient {
     private static final String PING_METHOD = "/ping";
-    private static final String ERROR_4XX_ADDR = "error_client_1" + PING_METHOD;
-    private static final String ERROR_5XX_ADDR = "error_host_1" + PING_METHOD;
-    private static final String ERROR_503_ADDR = "error_host_2" + PING_METHOD;
-    private static final String CLIENT_PROTOCOL_EXC_ADDR = "error_client_2" + PING_METHOD;
-    private static final String IOEXC_ADDR = "error_host_3" + PING_METHOD;
+    private static final String OK_200_ADDR = "ok_2xx" + PING_METHOD;
+    private static final String ERROR_4XX_ADDR = "error_4xx" + PING_METHOD;
+    private static final String ERROR_5XX_ADDR = "error_5xx" + PING_METHOD;
+    private static final String ERROR_5XX_ADDR_PROCESSING_TEST = "error_5xx_processing_test" + PING_METHOD;
 
+    private static final CloseableHttpResponse OK_200;
     private static final CloseableHttpResponse ERROR_4XX;
     private static final CloseableHttpResponse ERROR_5XX;
-    private static final CloseableHttpResponse ERROR_503;
+    private static final CloseableHttpResponse ERROR_5XX_PROCESSING_TEST;
 
     static {
+        OK_200 = Mockito.mock(CloseableHttpResponse.class);
+        StatusLine statusLine200 = Mockito.mock(StatusLine.class);
         ERROR_4XX = Mockito.mock(CloseableHttpResponse.class);
         StatusLine statusLine4xx = Mockito.mock(StatusLine.class);
         ERROR_5XX = Mockito.mock(CloseableHttpResponse.class);
         StatusLine statusLine5xx = Mockito.mock(StatusLine.class);
-        ERROR_503 = Mockito.mock(CloseableHttpResponse.class);
-        StatusLine statusLine503 = Mockito.mock(StatusLine.class);
+        ERROR_5XX_PROCESSING_TEST = Mockito.mock(CloseableHttpResponse.class);
+        StatusLine statusLine5xxTimeTest = Mockito.mock(StatusLine.class);
 
+        Mockito.when(OK_200.getStatusLine()).thenReturn(statusLine200);
+        Mockito.when(statusLine200.getStatusCode()).thenReturn(200);
         Mockito.when(ERROR_4XX.getStatusLine()).thenReturn(statusLine4xx);
         Mockito.when(statusLine4xx.getStatusCode()).thenReturn(400);
         Mockito.when(ERROR_5XX.getStatusLine()).thenReturn(statusLine5xx);
         Mockito.when(statusLine5xx.getStatusCode()).thenReturn(500);
-        Mockito.when(ERROR_503.getStatusLine()).thenReturn(statusLine503);
-        Mockito.when(statusLine503.getStatusCode()).thenReturn(503);
+        Mockito.when(ERROR_5XX_PROCESSING_TEST.getStatusLine()).thenReturn(statusLine5xxTimeTest);
+        Mockito.when(statusLine5xxTimeTest.getStatusCode()).thenReturn(500);
     }
 
     @Override
-    protected CloseableHttpResponse doExecute(HttpHost target, HttpRequest request, HttpContext context) throws IOException, ClientProtocolException {
+    protected CloseableHttpResponse doExecute(HttpHost target, HttpRequest request, HttpContext context) throws IOException {
         switch (request.getRequestLine().getUri()) {
+            case OK_200_ADDR:
+                return OK_200;
             case ERROR_4XX_ADDR:
                 return ERROR_4XX;
             case ERROR_5XX_ADDR:
                 return ERROR_5XX;
-            case ERROR_503_ADDR:
-                return ERROR_503;
-            case CLIENT_PROTOCOL_EXC_ADDR:
-                throw new ClientProtocolException();
-            case IOEXC_ADDR:
+            case ERROR_5XX_ADDR_PROCESSING_TEST:
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+                return ERROR_5XX_PROCESSING_TEST;
             default:
                 throw new IOException();
         }
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
 
     }
 

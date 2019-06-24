@@ -55,7 +55,7 @@ public class CommonSingleSink {
 
         static final PropertyDescription<Integer> PING_RATE_MS = PropertyDescriptions
                 .integerProperty("ping.rate")
-                .withDefaultValue(1_000)
+                .withDefaultValue(10_000)
                 .withValidator(Validators.greaterOrEquals(0))
                 .build();
     }
