@@ -102,7 +102,7 @@ public abstract class CassandraSender extends Sender {
                 continue;
             }
 
-            if (statementSizeBytes + batchSizeBytes > batchSizeBytesLimit || batchBuilder.getStatementsCount() > batchSize) {
+            if (statementSizeBytes + batchSizeBytes > batchSizeBytesLimit || batchBuilder.getStatementsCount() >= batchSize) {
                 asyncTasks.add(session.executeAsync(batchBuilder.build()));
 
                 batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
