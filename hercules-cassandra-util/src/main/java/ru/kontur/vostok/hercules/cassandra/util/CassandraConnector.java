@@ -2,14 +2,21 @@ package ru.kontur.vostok.hercules.cassandra.util;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
+import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.BatchStatement;
 import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.BatchableStatement;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import com.datastax.oss.driver.internal.core.metadata.DefaultEndPoint;
+import com.datastax.oss.driver.internal.core.util.Sizes;
+import com.datastax.oss.protocol.internal.PrimitiveSizes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
@@ -17,6 +24,7 @@ import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
@@ -108,6 +116,45 @@ public class CassandraConnector {
      */
     public int batchSizeBytesLimit() {
         return batchSizeBytesLimit;
+    }
+
+    /**
+     * Compute an inner batch {@code statement} size in bytes.
+     *
+     * @param statement the inner statement of the batch
+     * @return the inner statement size in bytes
+     */
+    public int computeInnerBatchStatementSizeBytes(BatchableStatement statement) {
+        /*
+        // Should be as simple as possible
+        return Sizes.sizeOfInnerBatchStatementInBytes(statement, session.getContext().getProtocolVersion(), session.getContext().getCodecRegistry());
+        // But Cassandra's driver has a bug https://datastax-oss.atlassian.net/browse/JAVA-2304
+        // FIXME: replace with simple variant after releasing new version
+         */
+        ProtocolVersion protocolVersion = session.getContext().getProtocolVersion();
+        CodecRegistry codecRegistry = session.getContext().getCodecRegistry();
+
+        int size = 0;
+
+        size += PrimitiveSizes.BYTE;
+
+        if (statement instanceof SimpleStatement) {
+            size += PrimitiveSizes.sizeOfLongString(((SimpleStatement) statement).getQuery());
+            size +=
+                    Sizes.sizeOfSimpleStatementValues(
+                            ((SimpleStatement) statement), protocolVersion, codecRegistry);
+        } else if (statement instanceof BoundStatement) {
+            size +=
+                    sizeOfShortBytes(
+                            ((BoundStatement) statement).getPreparedStatement().getId());
+            size += Sizes.sizeOfBoundStatementValues(((BoundStatement) statement));
+        }
+        return size;
+    }
+
+    //FIXME: Remove after releasing new version with https://github.com/datastax/native-protocol/pull/27
+    private static int sizeOfShortBytes(ByteBuffer bytes) {
+        return PrimitiveSizes.SHORT + (bytes == null ? 0 : bytes.remaining());
     }
 
     public void close() {

@@ -92,7 +92,7 @@ public abstract class CassandraSender extends Sender {
             }
 
             BoundStatement statement = preparedStatement.bind(converted.get());
-            int statementSizeBytes = statement.computeSizeInBytes(session.getContext());
+            int statementSizeBytes = cassandraConnector.computeInnerBatchStatementSizeBytes(statement);
 
             if (statementSizeBytes + batchSizeBytesMinimum >= batchSizeBytesLimit) {
                 asyncTasks.add(session.executeAsync(statement));
