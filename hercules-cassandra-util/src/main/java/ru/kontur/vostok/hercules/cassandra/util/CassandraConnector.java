@@ -25,14 +25,15 @@ import java.util.stream.Stream;
 public class CassandraConnector {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraConnector.class);
 
+    private final String dataCenter;
+    private final String[] nodes;
     private final String keyspace;
+
+    private final long requestTimeoutMs;
 
     private final int connectionsPerHostLocal;
     private final int connectionsPerHostRemote;
     private final int maxRequestsPerConnection;
-
-    private final String[] nodes;
-    private final long requestTimeoutMs;
 
     private final String consistencyLevel;
 
@@ -40,14 +41,15 @@ public class CassandraConnector {
 
 
     public CassandraConnector(Properties properties) {
+        this.dataCenter = Props.DATA_CENTER.extract(properties);
+        this.nodes = Props.NODES.extract(properties);
         this.keyspace = Props.KEYSPACE.extract(properties);
+
+        this.requestTimeoutMs = Props.REQUEST_TIMEOUT_MS.extract(properties);
 
         this.connectionsPerHostLocal = Props.CONNECTIONS_PER_HOST_LOCAL.extract(properties);
         this.connectionsPerHostRemote = Props.CONNECTIONS_PER_HOST_REMOTE.extract(properties);
         this.maxRequestsPerConnection = Props.MAX_REQUEST_PER_CONNECTION.extract(properties);
-
-        this.nodes = Props.NODES.extract(properties);
-        this.requestTimeoutMs = Props.REQUEST_TIMEOUT_MS.extract(properties);
 
         this.consistencyLevel = Props.CONSISTENCY_LEVEL.extract(properties);
     }
@@ -62,6 +64,7 @@ public class CassandraConnector {
                 build();
 
         session = CqlSession.builder().
+                withLocalDatacenter(dataCenter).
                 addContactEndPoints(
                         Stream.of(nodes).
                                 map(x -> new DefaultEndPoint(InetSocketAddressUtil.fromString(x, CassandraDefaults.DEFAULT_CASSANDRA_PORT))).
@@ -91,35 +94,40 @@ public class CassandraConnector {
     }
 
     private static class Props {
-        static final PropertyDescription<String> KEYSPACE = PropertyDescriptions
-                .stringProperty("keyspace")
-                .withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE)
-                .build();
+        static final PropertyDescription<String> DATA_CENTER =
+                PropertyDescriptions.stringProperty("dataCenter").
+                        withDefaultValue(CassandraDefaults.DEFAULT_DATA_CENTER).
+                        build();
 
-        static final PropertyDescription<Integer> CONNECTIONS_PER_HOST_LOCAL = PropertyDescriptions
-                .integerProperty("connectionsPerHostLocal")
-                .withDefaultValue(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_LOCAL)
-                .build();
+        static final PropertyDescription<String[]> NODES =
+                PropertyDescriptions.arrayOfStringsProperty("nodes").
+                        withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS}).
+                        build();
 
-        static final PropertyDescription<Integer> CONNECTIONS_PER_HOST_REMOTE = PropertyDescriptions
-                .integerProperty("connectionsPerHostRemote")
-                .withDefaultValue(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_REMOTE)
-                .build();
+        static final PropertyDescription<String> KEYSPACE =
+                PropertyDescriptions.stringProperty("keyspace").
+                        withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE).
+                        build();
 
-        static final PropertyDescription<Integer> MAX_REQUEST_PER_CONNECTION = PropertyDescriptions
-                .integerProperty("maxRequestsPerConnection")
-                .withDefaultValue(CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION)
-                .build();
+        static final PropertyDescription<Long> REQUEST_TIMEOUT_MS =
+                PropertyDescriptions.longProperty("requestTimeoutMs").
+                        withDefaultValue(CassandraDefaults.DEFAULT_READ_TIMEOUT_MILLIS).
+                        build();
 
-        static final PropertyDescription<String[]> NODES = PropertyDescriptions
-                .arrayOfStringsProperty("nodes")
-                .withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS})
-                .build();
+        static final PropertyDescription<Integer> CONNECTIONS_PER_HOST_LOCAL =
+                PropertyDescriptions.integerProperty("connectionsPerHostLocal").
+                        withDefaultValue(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_LOCAL).
+                        build();
 
-        static final PropertyDescription<Long> REQUEST_TIMEOUT_MS = PropertyDescriptions
-                .longProperty("requestTimeoutMs")
-                .withDefaultValue(CassandraDefaults.DEFAULT_READ_TIMEOUT_MILLIS)
-                .build();
+        static final PropertyDescription<Integer> CONNECTIONS_PER_HOST_REMOTE =
+                PropertyDescriptions.integerProperty("connectionsPerHostRemote").
+                        withDefaultValue(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_REMOTE).
+                        build();
+
+        static final PropertyDescription<Integer> MAX_REQUEST_PER_CONNECTION =
+                PropertyDescriptions.integerProperty("maxRequestsPerConnection").
+                        withDefaultValue(CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION).
+                        build();
 
         static final PropertyDescription<String> CONSISTENCY_LEVEL =
                 PropertyDescriptions.stringProperty("consistencyLevel").

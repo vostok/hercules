@@ -17,6 +17,7 @@ import java.util.stream.Stream;
  * @author Gregory Koshelev
  */
 public class CassandraTracingInitializer {
+    private final String dataCenter;
     private final String[] nodes;
     private final String keyspace;
     private final String tableName;
@@ -24,6 +25,7 @@ public class CassandraTracingInitializer {
     private final int ttl;
 
     public CassandraTracingInitializer(Properties properties) {
+        this.dataCenter = Props.DATA_CENTER.extract(properties);
         this.nodes = Props.NODES.extract(properties);
         this.keyspace = Props.KEYSPACE.extract(properties);
         this.tableName = Props.TABLE_NAME.extract(properties);
@@ -79,6 +81,11 @@ public class CassandraTracingInitializer {
     }
 
     private static class Props {
+        static final PropertyDescription<String> DATA_CENTER =
+                PropertyDescriptions.stringProperty("dataCenter").
+                        withDefaultValue(CassandraDefaults.DEFAULT_DATA_CENTER).
+                        build();
+
         static final PropertyDescription<String[]> NODES =
                 PropertyDescriptions.arrayOfStringsProperty("nodes").
                         withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS}).
@@ -89,15 +96,15 @@ public class CassandraTracingInitializer {
                         withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE).
                         build();
 
-        static final PropertyDescription<String> TABLE_NAME =
-                PropertyDescriptions.stringProperty("tableName").
-                        withDefaultValue("tracing_spans").
-                        build();
-
         static final PropertyDescription<Short> REPLICATION_FACTOR =
                 PropertyDescriptions.shortProperty("replication.factor").
                         withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR).
                         withValidator(Validators.greaterThan((short) 0)).
+                        build();
+
+        static final PropertyDescription<String> TABLE_NAME =
+                PropertyDescriptions.stringProperty("tableName").
+                        withDefaultValue("tracing_spans").
                         build();
 
         static final PropertyDescription<Integer> TTL_SECONDS =

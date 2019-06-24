@@ -148,6 +148,8 @@ See Curator Config from Apache Curator documentation. Main settings are presente
 ### Apache Cassandra settings
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
+`cassandra.dataCenter` - local Cassandra DC, default value: `datacenter1`
+
 `cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
 also, default port value is `9042`
 
@@ -183,7 +185,8 @@ curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
 
-cassandra.nodes=localhost
+cassandra.dataCenter=datacenter1
+cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
 cassandra.keyspace=hercules_traces
 cassandra.requestTimeoutMs=12000
 cassandra.connectionsPerHostLocal=4

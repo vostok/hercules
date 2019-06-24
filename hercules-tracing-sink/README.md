@@ -28,6 +28,8 @@ Application is configured through properties file.
 
 `sink.sender.tableName` - table name for trace spans in Cassandra, default value: `tracing_spans`
 
+`sink.sender.cassandra.dataCenter` - local Cassandra DC, default value: `datacenter1`
+
 `sink.sender.cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
  also, default port value is `9042`
 
@@ -92,7 +94,8 @@ sink.sender.pingPeriodMs=60000
 sink.sender.sendTimeoutMs=60000
 sink.sender.tableName=tracing_spans
 
-sink.sender.cassandra.nodes=localhost
+sink.sender.cassandra.dataCenter=datacenter1
+sink.sender.cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
 sink.sender.cassandra.keyspace=hercules_traces
 sink.sender.cassandra.requestTimeoutMs=12000
 sink.sender.cassandra.connectionsPerHostLocal=4

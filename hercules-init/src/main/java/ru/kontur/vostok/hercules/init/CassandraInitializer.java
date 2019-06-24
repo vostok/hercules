@@ -16,11 +16,13 @@ import java.util.stream.Stream;
  * @author Gregory Koshelev
  */
 public class CassandraInitializer {
+    private final String dataCenter;
     private final String[] nodes;
     private final String keyspace;
     private final short replicationFactor;
 
     public CassandraInitializer(Properties properties) {
+        this.dataCenter = Props.DATA_CENTER.extract(properties);
         this.nodes = Props.NODES.extract(properties);
         this.keyspace = Props.KEYSPACE.extract(properties);
         this.replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
@@ -28,6 +30,7 @@ public class CassandraInitializer {
 
     public void init() {
         try (CqlSession session = CqlSession.builder().
+                withLocalDatacenter(dataCenter).
                 addContactEndPoints(
                         Stream.of(nodes).
                                 map(x -> new DefaultEndPoint(InetSocketAddressUtil.fromString(x, CassandraDefaults.DEFAULT_CASSANDRA_PORT))).
@@ -44,20 +47,25 @@ public class CassandraInitializer {
     }
 
     private static class Props {
-        static final PropertyDescription<String[]> NODES = PropertyDescriptions
-                .arrayOfStringsProperty("nodes")
-                .withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS})
-                .build();
+        static final PropertyDescription<String> DATA_CENTER =
+                PropertyDescriptions.stringProperty("dataCenter").
+                        withDefaultValue(CassandraDefaults.DEFAULT_DATA_CENTER).
+                        build();
 
-        static final PropertyDescription<String> KEYSPACE = PropertyDescriptions
-                .stringProperty("keyspace")
-                .withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE)
-                .build();
+        static final PropertyDescription<String[]> NODES =
+                PropertyDescriptions.arrayOfStringsProperty("nodes").
+                        withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS}).
+                        build();
 
-        static final PropertyDescription<Short> REPLICATION_FACTOR = PropertyDescriptions
-                .shortProperty("replication.factor")
-                .withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR)
-                .withValidator(Validators.greaterThan((short) 0))
-                .build();
+        static final PropertyDescription<String> KEYSPACE =
+                PropertyDescriptions.stringProperty("keyspace").
+                        withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE).
+                        build();
+
+        static final PropertyDescription<Short> REPLICATION_FACTOR =
+                PropertyDescriptions.shortProperty("replication.factor").
+                        withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR).
+                        withValidator(Validators.greaterThan((short) 0)).
+                        build();
     }
 }

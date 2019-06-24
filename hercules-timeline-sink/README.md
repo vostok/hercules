@@ -7,6 +7,8 @@ Application is configured through properties file.
 ### Apache Cassandra settings 
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
+`cassandra.dataCenter` - default value: `datacenter1`
+
 `cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
 also, default port value is `9042`
 
@@ -71,7 +73,8 @@ Timeline Sink uses Timeline's and Stream's metadata from ZooKeeper. Thus, ZK sho
 
 ### `application.properties` sample:
 ```properties
-cassandra.nodes=localhost
+cassandra.dataCenter=datacenter1
+cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
 cassandra.keyspace=hercules
 cassandra.requestTimeoutMs=12000
 

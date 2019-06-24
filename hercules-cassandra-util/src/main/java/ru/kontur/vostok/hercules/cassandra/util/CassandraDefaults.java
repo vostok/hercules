@@ -6,6 +6,7 @@ package ru.kontur.vostok.hercules.cassandra.util;
 public final class CassandraDefaults {
     // Default cassandra configuration
 
+    public static final String DEFAULT_DATA_CENTER = "datacenter1";
     public static final String DEFAULT_CASSANDRA_ADDRESS = "127.0.0.1";
     public static final int DEFAULT_CASSANDRA_PORT = 9042;
     public static final long DEFAULT_READ_TIMEOUT_MILLIS = 12_000L;
