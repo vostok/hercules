@@ -148,13 +148,22 @@ See Curator Config from Apache Curator documentation. Main settings are presente
 ### Apache Cassandra settings
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
-`cassandra.nodes` - default value: `127.0.0.1`
-                                                  
-`cassandra.port` - default value: `9042`
-                                                  
-`cassandra.keyspace` - default value: `hercules`
-                                                  
-`cassandra.readTimeoutMs` - default value: `12000`
+`cassandra.dataCenter` - local Cassandra DC, default value: `datacenter1`
+
+`cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
+
+`cassandra.keyspace` - keyspace in Cassandra, default value: `hercules`
+
+`cassandra.requestTimeoutMs` - request to Cassandra timeout, default value: `12000`
+
+`cassandra.connectionsPerHostLocal` - connections per local Cassandra node (see Cassandra docs for details), default value: `4`
+
+`cassandra.connectionsPerHostRemote` - connections per remote Cassandra node (see Cassandra docs for details), default value: `2`
+
+`cassandra.maxRequestsPerConnection` - max requests per connection, default value: `1024`
+
+`cassandra.consistencyLevel` - consistency level (see Cassandra docs for details), default value: `QUORUM`
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-sentry-sink.jar application.properties=file://path/to/properties/file`
@@ -176,14 +185,14 @@ curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
 
-cassandra.keyspace=test
+cassandra.dataCenter=datacenter1
+cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
+cassandra.keyspace=hercules_traces
+cassandra.requestTimeoutMs=12000
 cassandra.connectionsPerHostLocal=4
 cassandra.connectionsPerHostRemote=2
-cassandra.maxRequestsPerConnectionLocal=1024
-cassandra.maxRequestsPerConnectionRemote=256
-cassandra.nodes=localhost
-cassandra.port=9042
-cassandra.readTimeout=12000
+cassandra.maxRequestsPerConnection=1024
+cassandra.consistencyLevel=QUORUM
 
 context.instance.id=1
 context.zone=devlocal

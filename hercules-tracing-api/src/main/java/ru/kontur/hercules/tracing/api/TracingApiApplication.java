@@ -28,7 +28,7 @@ public class TracingApiApplication {
     private static CuratorClient curatorClient;
     private static CassandraConnector cassandraConnector;
     private static MetricsCollector metricsCollector;
-    private static CassandraTracingReader cassandraTracingReader;
+    private static TracingReader tracingReader;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -52,7 +52,7 @@ public class TracingApiApplication {
             cassandraConnector = new CassandraConnector(cassandraProperties);
             cassandraConnector.connect();
 
-            cassandraTracingReader = new CassandraTracingReader(cassandraConnector);
+            tracingReader = new TracingReader(cassandraConnector);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
@@ -60,7 +60,7 @@ public class TracingApiApplication {
 
             server = new HttpServer(
                 httpServerProperties,
-                new GetTraceHandler(cassandraTracingReader),
+                new GetTraceHandler(tracingReader),
                 metricsCollector
             );
             server.start();

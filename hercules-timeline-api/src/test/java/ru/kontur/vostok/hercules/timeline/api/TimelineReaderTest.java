@@ -1,8 +1,8 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SimpleStatement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -39,7 +39,7 @@ public class TimelineReaderTest {
 
         @Override
         public boolean matches(SimpleStatement argument) {
-            return cqlMatcher.matches(argument.getQueryString());
+            return cqlMatcher.matches(argument.getQuery());
         }
 
         @Override
@@ -58,7 +58,7 @@ public class TimelineReaderTest {
     }
 
     private TimelineReader timelineReader;
-    private Session session = mock(Session.class);
+    private CqlSession session = mock(CqlSession.class);
     private ResultSet resultSet = mock(ResultSet.class);
 
     @Before

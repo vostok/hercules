@@ -2,11 +2,10 @@ package ru.kontur.vostok.hercules.timeline.sink;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
 import org.apache.kafka.streams.processor.AbstractProcessor;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.cassandra.util.Slicer;
@@ -24,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class SyncTimelineProcessor extends AbstractProcessor<UUID, Event> {
-    private final Session session;
+    private final CqlSession session;
     private final PreparedStatement prepared;
     private final Timeline timeline;
     private final Slicer slicer;
@@ -39,10 +38,10 @@ public class SyncTimelineProcessor extends AbstractProcessor<UUID, Event> {
     ) {
         session = connector.session();
 
-        PreparedStatement prepared =
-                session.prepare("INSERT INTO " + TimelineUtil.timelineToTableName(timeline) + " (slice, tt_offset, event_id, payload) VALUES (?, ?, ?, ?)");
-        prepared.setConsistencyLevel(ConsistencyLevel.QUORUM);
-        this.prepared = prepared;
+        this.prepared = session.prepare(
+                "INSERT INTO " + TimelineUtil.timelineToTableName(timeline) +
+                        " (slice, tt_offset, event_id, payload)" +
+                        " VALUES (?, ?, ?, ?)");
 
         this.timeline = timeline;
         this.slicer = slicer;
