@@ -40,14 +40,14 @@ public class SentrySender extends Sender {
 
     @Override
     protected int send(List<Event> events) throws BackendServiceFailedException {
-        int droppedCount = 0;
+        int rejectedEvents = 0;
         for (Event event : events) {
             boolean processed = processor.process(event);
             if (!processed) {
-                droppedCount++;
+                rejectedEvents++;
             }
         }
-        return events.size() - droppedCount;
+        return events.size() - rejectedEvents;
     }
 
     @Override

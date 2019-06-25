@@ -23,6 +23,10 @@
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-sink</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-tags</artifactId>
         </dependency>
 
@@ -59,10 +63,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-sink</artifactId>
         </dependency>
     </dependencies>
 
