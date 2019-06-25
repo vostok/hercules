@@ -54,13 +54,17 @@ public class StreamApiApplication {
 
             StreamRepository repository = new StreamRepository(curatorClient);
 
-            StreamReader streamReader = new StreamReader(PropertiesUtil.ofScope(properties, "stream.api.reader"), consumerPool);
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+
+            StreamReader streamReader = new StreamReader(
+                    PropertiesUtil.ofScope(properties, "stream.api.reader"),
+                    consumerPool,
+                    metricsCollector);
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            metricsCollector = new MetricsCollector(metricsProperties);
-            metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
             server = new HttpServer(
@@ -109,14 +113,6 @@ public class StreamApiApplication {
             LOGGER.error("Error on stopping metrics collector");
             //TODO: Process error
         }
-        try {
-            if (curatorClient != null) {
-                curatorClient.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping curator client", t);
-            //TODO: Process error
-        }
 
         try {
             if (consumerPool != null) {
@@ -128,11 +124,12 @@ public class StreamApiApplication {
         }
 
         try {
-            if (authManager != null) {
-                authManager.stop();
+            if (curatorClient != null) {
+                curatorClient.stop();
             }
         } catch (Throwable t) {
-            LOGGER.error("Error on stopping auth manager", t);
+            LOGGER.error("Error on stopping curator client", t);
+            //TODO: Process error
         }
 
         LOGGER.info("Finished Stream API shutdown for {} millis", System.currentTimeMillis() - start);
