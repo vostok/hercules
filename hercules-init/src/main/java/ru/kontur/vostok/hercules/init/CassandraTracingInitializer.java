@@ -35,6 +35,7 @@ public class CassandraTracingInitializer {
 
     public void init() {
         try (CqlSession session = CqlSession.builder().
+                withLocalDatacenter(dataCenter).
                 addContactEndPoints(
                         Stream.of(nodes).
                                 map(x -> new DefaultEndPoint(InetSocketAddressUtil.fromString(x, CassandraDefaults.DEFAULT_CASSANDRA_PORT))).
