@@ -1,6 +1,5 @@
 package ru.kontur.hercules.tracing.api;
 
-import com.datastax.driver.core.exceptions.PagingStateException;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
@@ -25,12 +24,10 @@ public class GetTraceHandler implements HttpHandler {
 
     private static final int DEFAULT_COUNT = 10_000;
 
-    private final CassandraTracingReader cassandraTracingReader;
+    private final TracingReader tracingReader;
 
-    public GetTraceHandler(
-        CassandraTracingReader cassandraTracingReader
-    ) {
-        this.cassandraTracingReader = cassandraTracingReader;
+    public GetTraceHandler(TracingReader tracingReader) {
+        this.tracingReader = tracingReader;
     }
 
     @Override
@@ -38,9 +35,9 @@ public class GetTraceHandler implements HttpHandler {
 
         // TODO: Replace with good parameters extractor
         final Result<UUID, String> traceIdResult = ExchangeUtil.extractQueryParam(exchange, "traceId")
-            .map(Result::<String, String>ok)
-            .orElse(Result.error("Required parameter missing"))
-            .flatMap(Parsers::parseUuid);
+                .map(Result::<String, String>ok)
+                .orElse(Result.error("Required parameter missing"))
+                .flatMap(Parsers::parseUuid);
 
         if (!traceIdResult.isOk()) {
             ResponseUtil.badRequest(exchange, String.format("Parameter traceId has illegal value: %s", traceIdResult.getError()));
@@ -49,8 +46,8 @@ public class GetTraceHandler implements HttpHandler {
 
         // TODO: Replace with good parameters extractor
         final Result<UUID, String> parentSpanIdResult = ExchangeUtil.extractQueryParam(exchange, "parentSpanId")
-            .map(Parsers::parseUuid)
-            .orElse(Result.ok(null));
+                .map(Parsers::parseUuid)
+                .orElse(Result.ok(null));
 
         if (!parentSpanIdResult.isOk()) {
             ResponseUtil.badRequest(exchange, String.format("Parameter parentTraceId has illegal value: %s", traceIdResult.getError()));
@@ -59,8 +56,8 @@ public class GetTraceHandler implements HttpHandler {
 
         // TODO: Replace with good parameters extractor
         final Result<Integer, String> limitResult = ExchangeUtil.extractQueryParam(exchange, "limit")
-            .map(Parsers::parseInteger)
-            .orElse(Result.ok(DEFAULT_COUNT));
+                .map(Parsers::parseInteger)
+                .orElse(Result.ok(DEFAULT_COUNT));
 
         if (!limitResult.isOk()) {
             ResponseUtil.badRequest(exchange, String.format("Parameter limit has illegal value: %s", limitResult.getError()));
@@ -69,31 +66,27 @@ public class GetTraceHandler implements HttpHandler {
         // TODO: Replace with good parameters extractor
         final Optional<String> pagingState = ExchangeUtil.extractQueryParam(exchange, "pagingState");
 
-        try {
-            if (Objects.nonNull(parentSpanIdResult.get())) {
-                final PagedResult<Event> traceSpansByTraceIdAndParentSpanId = cassandraTracingReader.getTraceSpansByTraceIdAndParentSpanId(
+        if (Objects.nonNull(parentSpanIdResult.get())) {
+            final PagedResult<Event> traceSpansByTraceIdAndParentSpanId = tracingReader.getTraceSpansByTraceIdAndParentSpanId(
                     traceIdResult.get(),
                     parentSpanIdResult.get(),
                     limitResult.get(),
                     pagingState.orElse(null)
-                );
+            );
 
-                exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-                exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceIdAndParentSpanId));
-                exchange.endExchange();
-            } else {
-                final PagedResult<Event> traceSpansByTraceId = cassandraTracingReader.getTraceSpansByTraceId(
+            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
+            exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceIdAndParentSpanId));
+            exchange.endExchange();
+        } else {
+            final PagedResult<Event> traceSpansByTraceId = tracingReader.getTraceSpansByTraceId(
                     traceIdResult.get(),
                     limitResult.get(),
                     pagingState.orElse(null)
-                );
+            );
 
-                exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-                exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));
-                exchange.endExchange();
-            }
-        } catch (PagingStateException e) {
-            ResponseUtil.badRequest(exchange, "Incorrect pagingState value");
+            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
+            exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));
+            exchange.endExchange();
         }
     }
 }

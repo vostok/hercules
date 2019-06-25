@@ -76,7 +76,7 @@ public class EventUtil {
             throw new IllegalArgumentException("Binary representation of event id must be " + ID_SIZE_IN_BYTES + " bytes length");
         }
 
-        return ByteUtil.bytesToHexString(bytes);
+        return ByteUtil.toHexString(bytes);
     }
 
     public static String extractStringId(final Event event) {
