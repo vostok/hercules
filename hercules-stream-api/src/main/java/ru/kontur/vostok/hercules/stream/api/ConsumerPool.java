@@ -110,7 +110,7 @@ public class ConsumerPool<K, V> {
 
         static final PropertyDescription<Integer> MAX_POLL_RECORDS =
                 PropertyDescriptions.integerProperty("max.poll.records").
-                        withDefaultValue(1_000).
+                        withDefaultValue(10_000).
                         withValidator(Validators.interval(1, 100_000)).
                         build();
 

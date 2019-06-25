@@ -54,13 +54,17 @@ public class StreamApiApplication {
 
             StreamRepository repository = new StreamRepository(curatorClient);
 
-            StreamReader streamReader = new StreamReader(PropertiesUtil.ofScope(properties, "stream.api.reader"), consumerPool);
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+
+            StreamReader streamReader = new StreamReader(
+                    PropertiesUtil.ofScope(properties, "stream.api.reader"),
+                    consumerPool,
+                    metricsCollector);
 
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            metricsCollector = new MetricsCollector(metricsProperties);
-            metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
             server = new HttpServer(
