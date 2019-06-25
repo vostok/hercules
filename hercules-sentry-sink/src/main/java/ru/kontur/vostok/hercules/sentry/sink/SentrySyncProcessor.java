@@ -155,8 +155,15 @@ public class SentrySyncProcessor {
             return Result.error(processErrorInfo);
         }
 
+        io.sentry.event.Event sentryEvent;
         try {
-            io.sentry.event.Event sentryEvent = SentryEventConverter.convert(event);
+            sentryEvent = SentryEventConverter.convert(event);
+        } catch (Exception e) {
+            LOGGER.error("An exception occurred while converting Hercules-event to Sentry-event.", e);
+            return Result.error(new ErrorInfo(false));
+        }
+
+        try {
             sentryClientResult.get().sendEvent(sentryEvent);
             return Result.ok();
         } catch (InvalidDsnException e) {
