@@ -106,10 +106,9 @@ public final class StringUtil {
     }
 
     public static String requireNotEmpty(final String value) {
-        if (!isNullOrEmpty(value)) {
-            return value;
-        } else {
-            throw new IllegalArgumentException("Value cannot be an empty string or null");
+        if (isNullOrEmpty(value)) {
+            throw new IllegalArgumentException("String cannot be an empty string or null");
         }
+        return value;
     }
 }

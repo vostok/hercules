@@ -5,11 +5,11 @@
     <parent>
         <artifactId>hercules</artifactId>
         <groupId>ru.kontur.vostok.hercules</groupId>
-        <version>0.23.1-SNAPSHOT</version>
+        <version>0.24.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>hercules-cassandra-common-sink</artifactId>
+    <artifactId>hercules-cassandra-sink</artifactId>
     <dependencies>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
@@ -26,6 +26,10 @@
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-kafka-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-sink</artifactId>
         </dependency>
     </dependencies>
 </project>

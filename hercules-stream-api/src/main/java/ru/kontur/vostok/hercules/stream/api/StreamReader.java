@@ -14,6 +14,7 @@ import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.util.Maps;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.time.StopwatchUtil;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.time.Duration;
@@ -88,8 +89,8 @@ public class StreamReader {
             consumer.assign(partitionsToRead);
             seekToNextOffsets(consumer, partitionsToRead, nextOffsets);
 
-            elapsedTimeMs = elapsedTime(readStartedMs);
-            remainingTimeMs = remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
+            elapsedTimeMs = StopwatchUtil.elapsedTime(readStartedMs);
+            remainingTimeMs = StopwatchUtil.remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
 
             List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, remainingTimeMs);
             receivedEvents.mark(events.size());
@@ -139,20 +140,12 @@ public class StreamReader {
                 }
             }
 
-            elapsedTimeMs = elapsedTime(pollStartedAt);
-            remainingTimeMs = remainingTimeOrZero(timeoutMs, elapsedTimeMs);
+            elapsedTimeMs = StopwatchUtil.elapsedTime(pollStartedAt);
+            remainingTimeMs = StopwatchUtil.remainingTimeOrZero(timeoutMs, elapsedTimeMs);
         }
         while ((count < take) && (remainingTimeMs > 0));
 
         return events;
-    }
-
-    private static long remainingTimeOrZero(long timeoutMs, long elapsedTimeMs) {
-        return Math.max(timeoutMs - elapsedTimeMs, 0L );
-    }
-
-    private static long elapsedTime(long startedAtMs) {
-        return System.currentTimeMillis() - startedAtMs;
     }
 
     static class Props {

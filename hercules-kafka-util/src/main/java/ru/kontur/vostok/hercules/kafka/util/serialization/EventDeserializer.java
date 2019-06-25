@@ -37,7 +37,7 @@ public class EventDeserializer implements Deserializer<Event> {
             EventReader reader = EventReader.readTags(tags);
             return reader.read(new Decoder(data));
         } catch (Exception e) {
-            LOGGER.warn("Error on deserialize bytes '{}'", ByteUtil.bytesToHexString(data), e);
+            LOGGER.warn("Error on deserialize bytes '{}'", ByteUtil.toHexString(data), e);
             return null;
         }
     }
