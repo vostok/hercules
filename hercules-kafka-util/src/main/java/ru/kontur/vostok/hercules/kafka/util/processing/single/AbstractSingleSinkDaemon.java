@@ -24,6 +24,7 @@ import java.util.UUID;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public abstract class AbstractSingleSinkDaemon {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSingleSinkDaemon.class);

@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class CommonSingleSinkProcessor extends AbstractProcessor<UUID, Event> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonSingleSinkProcessor.class);

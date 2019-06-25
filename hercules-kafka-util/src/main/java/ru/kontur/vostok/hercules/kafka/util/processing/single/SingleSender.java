@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public interface SingleSender<Key, Value> extends AutoCloseable {
 
     boolean process(Key key, Value value) throws BackendServiceFailedException;

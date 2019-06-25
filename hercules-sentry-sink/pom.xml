@@ -23,6 +23,10 @@
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-sink</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-tags</artifactId>
         </dependency>
 
