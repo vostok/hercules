@@ -1,11 +1,13 @@
 package ru.kontur.vostok.hercules.stream.api;
 
+import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
@@ -31,14 +33,17 @@ public class StreamReader {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamReader.class);
 
     private final Properties properties;
-
+    private final Meter receivedEvents;
     private final ConsumerPool<Void, byte[]> consumerPool;
 
     private final long readTimeoutMs;
 
-    public StreamReader(Properties properties, ConsumerPool<Void, byte[]> consumerPool) {
+    public StreamReader(Properties properties,
+                        ConsumerPool<Void, byte[]> consumerPool,
+                        MetricsCollector metricsCollector) {
         this.properties = properties;
         this.consumerPool = consumerPool;
+        this.receivedEvents = metricsCollector.meter("receivedEvents");
 
         readTimeoutMs = Props.READ_TIMEOUT_MS.extract(properties);
     }
@@ -88,6 +93,7 @@ public class StreamReader {
             remainingTimeMs = StopwatchUtil.remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
 
             List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, remainingTimeMs);
+            receivedEvents.mark(events.size());
 
             return new ByteStreamContent(
                     StreamReadStateUtil.stateFromMap(stream.getName(), nextOffsets),

@@ -5,18 +5,17 @@ Sentry Sink is used to move Log Event with exceptions from Kafka to Sentry.
 Application is configured through properties file.
 
 ### Sink settings
-`sink.sentry.url` - URL of Sentry
+`sink.pattern` - pattern of streams are subscribed by consumers 
 
-`sink.sentry.token` - token of Sentry user. It is used for authentication on Sentry
+`sink.consumer.bootstrap.servers` - list of Apache Kafka hosts
 
-`sink.sentry.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `WARNING`
+`sink.sender.sentry.url` - URL of Sentry
 
-`sink.sentry.retryLimit` - the number of attempts to send event with retryable errors, default value: `3`
+`sink.sender.sentry.token` - token of Sentry user. It is used for authentication on Sentry
 
-### Stream settings
-`streams.bootstrap.servers` - list of host/port pairs to use for establishing the initial connection to the Kafka cluster
+`sink.sender.sentry.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `WARNING`
 
-`streams.stream.pattern` - stream pattern. This stream is used to get events from Kafka
+`sink.sender.sentry.retryLimit` - the number of attempts to send event with retryable errors, default value: `3`
 
 ### Application context settings
 `context.environment` - id of environment
@@ -49,12 +48,12 @@ Stream with log events should be predefined.
 
 ### `application.properties` sample:
 ```properties
-sink.sentry.url=https://sentry.io
-sink.sentry.token=1234567890768132cde645f1ba1bcd4ef67ab78cd9ef89801a45be5747c68f87
-sink.sentry.level=warning
+sink.sender.sentry.url=https://sentry.io
+sink.sender.sentry.token=1234567890768132cde645f1ba1bcd4ef67ab78cd9ef89801a45be5747c68f87
+sink.sender.sentry.level=warning
 
-streams.bootstrap.servers=localhost:9092
-streams.stream.pattern=mystream
+sink.consumer.bootstrap.servers=localhost:9092
+sink.pattern=mystream
 
 context.environment=dev
 context.zone=default

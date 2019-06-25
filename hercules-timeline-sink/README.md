@@ -7,13 +7,14 @@ Application is configured through properties file.
 ### Apache Cassandra settings 
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
-`cassandra.nodes`
+`cassandra.dataCenter` - default value: `datacenter1`
 
-`cassandra.port`
+`cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
 
 `cassandra.keyspace`
 
-`cassandra.readTimeoutMs`
+`cassandra.requestTimeoutMs`
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -72,10 +73,10 @@ Timeline Sink uses Timeline's and Stream's metadata from ZooKeeper. Thus, ZK sho
 
 ### `application.properties` sample:
 ```properties
-cassandra.nodes=localhost
-cassandra.port=9042
+cassandra.dataCenter=datacenter1
+cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
 cassandra.keyspace=hercules
-cassandra.readTimeoutMs=12000
+cassandra.requestTimeoutMs=12000
 
 curator.connectString=localhost:2181,localhost:2182,localhost:2183
 curator.connectionTimeout=10000

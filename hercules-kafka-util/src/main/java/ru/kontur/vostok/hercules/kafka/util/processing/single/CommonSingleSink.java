@@ -35,6 +35,7 @@ import java.util.function.Supplier;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class CommonSingleSink {
 
     private static class StreamProps {

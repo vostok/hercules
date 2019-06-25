@@ -163,7 +163,7 @@ See Consumer's Config from Apache Kafka documentation. Main settings are present
 
 `consumer.bootstrap.servers` - see KafkaConsumer's `bootstrap.servers` property. Required.
 
-`consumer.max.poll.records` - see KafkaConsumer's `max.poll.records` property. Default value: `1000`.
+`consumer.max.poll.records` - see KafkaConsumer's `max.poll.records` property. Default value: `10000`.
 
 `consumer.poolSize` - consumers pool size. Default value: `4`.
 
@@ -219,7 +219,7 @@ Stream Api uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should
 ### `application.properties` sample:
 ```properties
 consumer.bootstrap.servers=localhost:9092
-consumer.max.poll.records=1000
+consumer.max.poll.records=10000
 consumer.poolSize=16
 
 curator.connectString=localhost:2181

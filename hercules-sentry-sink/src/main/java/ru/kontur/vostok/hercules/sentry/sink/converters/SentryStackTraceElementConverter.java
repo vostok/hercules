@@ -26,7 +26,7 @@ public class SentryStackTraceElementConverter {
             ContainerUtil.extract(container, StackFrameTags.FUNCTION_TAG).orElse(null),
             file,
             ContainerUtil.extract(container, StackFrameTags.LINE_NUMBER_TAG).orElse(0),
-            ContainerUtil.extract(container, StackFrameTags.COLUMN_NUMBER_TAG).map(s -> (int) s).orElse(null),
+            ContainerUtil.extract(container, StackFrameTags.COLUMN_NUMBER_TAG).orElse(null),
             file,
             null
         );

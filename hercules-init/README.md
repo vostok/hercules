@@ -29,14 +29,33 @@ See Kafka Config from Apache Kafka documentation. Main settings are presented be
 
 `kafka.replication.factor` - default value: `3`
 
-### Cassandra settings
-`cassandra.nodes` - default value: `127.0.0.1`
+### Timeline Cassandra settings
+Settings for Timeline Cassandra. Configuration for Tracing Cassandra see below.
 
-`cassandra.port` - default value: `9042`
+`cassandra.dataCenter` - default value: `datacenter1`
+
+`cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
 
 `cassandra.keyspace` - default value: `hercules`
 
 `cassandra.replication.factor` - default value: `3`
+
+### Tracing Cassandra settings
+Settings for Tracing Cassandra.
+
+`tracing.cassandra.dataCenter` - default value: `datacenter1`
+
+`tracing.cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
+
+`tracing.cassandra.keyspace` - default value: `hercules`
+
+`tracing.cassandra.replication.factor` - default value: `3`
+
+`tracing.cassandra.tableName` - default value: `tracing_spans`
+
+`tracing.cassandra.ttl.seconds` - default value: 3 days
 
 ## Command line
 `java $JAVA_OPTS -jar  hercules-init.jar application.properties=file://path/to/file/application.properties init-zk=true init-kafka=true init-cassandra=true init-tracing-cassandra=true`
@@ -63,9 +82,15 @@ zk.retryPolicy.maxSleepTime=8000
  
 kafka.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 kafka.replication.factor=3
- 
+
+cassandra.dataCenter=datacenter1
 cassandra.nodes=localhost
-cassandra.port=9042
 cassandra.keyspace=hercules
 cassandra.replication.factor=3
+
+tracing.cassandra.dataCenter=datacenter1
+tracing.cassandra.nodes=localhost
+tracing.cassandra.keyspace=hercules_traces
+tracing.cassandra.replication.factor=1
+tracing.cassandra.tableName=tracing_spans
 ```

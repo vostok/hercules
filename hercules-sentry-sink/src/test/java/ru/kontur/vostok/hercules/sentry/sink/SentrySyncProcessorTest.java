@@ -69,7 +69,7 @@ public class SentrySyncProcessorTest {
                 ))
                 .build();
 
-        assertFalse(sentrySyncProcessor.process(someUuid, event));
+        assertFalse(sentrySyncProcessor.process(event));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class SentrySyncProcessorTest {
                 ))
                 .tag(LogEventTags.LEVEL_TAG, Variant.ofString("debug"))
                 .build();
-        assertFalse(sentrySyncProcessor.process(someUuid, event));
+        assertFalse(sentrySyncProcessor.process(event));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class SentrySyncProcessorTest {
                 .tag(LogEventTags.LEVEL_TAG, Variant.ofString("Error"))
                 .build();
 
-        assertFalse(sentrySyncProcessor.process(someUuid, event));
+        assertFalse(sentrySyncProcessor.process(event));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class SentrySyncProcessorTest {
                 .tag(LogEventTags.LEVEL_TAG, Variant.ofString("Error"))
                 .build();
 
-        assertFalse(sentrySyncProcessor.process(someUuid, event));
+        assertFalse(sentrySyncProcessor.process(event));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class SentrySyncProcessorTest {
                 .thenReturn(Result.ok(sentryClientMock));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
-        assertTrue(sentrySyncProcessor.process(someUuid, event));
+        assertTrue(sentrySyncProcessor.process(event));
     }
 
     @Test(expected = BackendServiceFailedException.class)
@@ -132,7 +132,7 @@ public class SentrySyncProcessorTest {
                 .thenReturn(Result.error(new ErrorInfo(404)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
-        sentrySyncProcessor.process(someUuid, EVENT);
+        sentrySyncProcessor.process(EVENT);
     }
 
     @Test
@@ -142,7 +142,7 @@ public class SentrySyncProcessorTest {
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
-            sentrySyncProcessor.process(someUuid, EVENT);
+            sentrySyncProcessor.process(EVENT);
         } catch (BackendServiceFailedException e) {
 
             verify(sentryClientHolderMock, times(RETRY_COUNT + 1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
@@ -154,7 +154,7 @@ public class SentrySyncProcessorTest {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(400)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
-        boolean result = sentrySyncProcessor.process(someUuid, EVENT);
+        boolean result = sentrySyncProcessor.process(EVENT);
 
         assertFalse(result);
     }
@@ -164,7 +164,7 @@ public class SentrySyncProcessorTest {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(400)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
-        sentrySyncProcessor.process(someUuid, EVENT);
+        sentrySyncProcessor.process(EVENT);
 
         verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
     }
@@ -175,7 +175,7 @@ public class SentrySyncProcessorTest {
                 .thenReturn(Result.error(new ErrorInfo(402)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
-        sentrySyncProcessor.process(someUuid, EVENT);
+        sentrySyncProcessor.process(EVENT);
     }
 
     @Test
@@ -185,7 +185,7 @@ public class SentrySyncProcessorTest {
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
-            sentrySyncProcessor.process(someUuid, EVENT);
+            sentrySyncProcessor.process(EVENT);
         } catch (BackendServiceFailedException e) {
 
             verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
@@ -198,7 +198,7 @@ public class SentrySyncProcessorTest {
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(InvalidDsnException.class).when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
-        boolean result = sentrySyncProcessor.process(someUuid, EVENT);
+        boolean result = sentrySyncProcessor.process(EVENT);
 
         assertFalse(result);
     }
@@ -209,7 +209,7 @@ public class SentrySyncProcessorTest {
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(InvalidDsnException.class).when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
-        sentrySyncProcessor.process(someUuid, EVENT);
+        sentrySyncProcessor.process(EVENT);
 
         verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
     }
@@ -221,7 +221,7 @@ public class SentrySyncProcessorTest {
         doThrow(new ConnectionException("UNAUTHORIZED", new Exception(), null, 401))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
-        sentrySyncProcessor.process(someUuid, EVENT);
+        sentrySyncProcessor.process(EVENT);
     }
 
 
@@ -233,7 +233,7 @@ public class SentrySyncProcessorTest {
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
-            sentrySyncProcessor.process(someUuid, EVENT);
+            sentrySyncProcessor.process(EVENT);
         } catch (BackendServiceFailedException e) {
 
             verify(sentryClientMock, times(RETRY_COUNT + 1)).sendEvent(any(io.sentry.event.Event.class));
@@ -246,7 +246,7 @@ public class SentrySyncProcessorTest {
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(new ConnectionException("BED_REQUEST", new Exception(), null, 400))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
-        boolean result = sentrySyncProcessor.process(someUuid, EVENT);
+        boolean result = sentrySyncProcessor.process(EVENT);
 
         assertFalse(result);
     }
@@ -257,7 +257,7 @@ public class SentrySyncProcessorTest {
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(new ConnectionException("BED_REQUEST", new Exception(), null, 400))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
-        sentrySyncProcessor.process(someUuid, EVENT);
+        sentrySyncProcessor.process(EVENT);
 
         verify(sentryClientMock, times(1)).sendEvent(any(io.sentry.event.Event.class));
     }

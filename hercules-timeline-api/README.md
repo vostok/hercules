@@ -118,13 +118,14 @@ Application is configured through properties file.
 ### Apache Cassandra settings
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
-`cassandra.nodes` - default value: `127.0.0.1`
+`cassandra.dataCenter` - local Cassandra DC, default value: `datacenter1`
 
-`cassandra.port` - default value: `9042`
+`cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
 
 `cassandra.keyspace` - default value: `hercules`
 
-`cassandra.readTimeoutMs` - default value: `12000`
+`cassandra.requestTimeoutMs` - default value: `12000`
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -176,10 +177,10 @@ Timeline Api uses Timeline's metadata, Stream's metadata and auth rules from Zoo
 
 ### `application.properties` sample:
 ```properties
-cassandra.nodes=localhost:2181,localhost:2182,localhost:2183
-cassandra.port=9042
+cassandra.dataCenter=datacenter1
+cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
 cassandra.keyspace=hercules
-cassandra.readTimeoutMs=12000
+cassandra.requestTimeoutMs=12000
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000

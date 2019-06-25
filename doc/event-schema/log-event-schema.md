@@ -21,7 +21,7 @@ StackFrame:
   type?: String # Type where function is declared
   file?: String # File name
   line?: Integer # Line number
-  column?: Short # Column number
+  column?: [Short, Integer] # Column number
 Properties:
   project?: String
   application?: String
