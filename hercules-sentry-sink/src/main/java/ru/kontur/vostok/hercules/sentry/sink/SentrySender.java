@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.sink.Sender;
-import ru.kontur.vostok.hercules.sink.SenderStatus;
+import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -51,8 +51,8 @@ public class SentrySender extends Sender {
     }
 
     @Override
-    public SenderStatus ping() {
-        return sentryApiClient.ping().isOk() ? SenderStatus.AVAILABLE : SenderStatus.UNAVAILABLE;
+    public ProcessorStatus checkStatus() {
+        return sentryApiClient.ping().isOk() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
     }
 
     private static class Props {
