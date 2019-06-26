@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.timeline.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.cassandra.util.Slicer;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
@@ -17,8 +16,6 @@ import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.RandomPartitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
-import ru.kontur.vostok.hercules.sink.AbstractSinkDaemon;
-import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.sink.SinkPool;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
