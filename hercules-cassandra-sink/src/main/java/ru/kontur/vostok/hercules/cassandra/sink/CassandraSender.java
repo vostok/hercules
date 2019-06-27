@@ -33,6 +33,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
+ * Base Cassandra Sender.
+ * <p>
+ * Sends events with batches.
+ *
  * @author Gregory Koshelev
  */
 public abstract class CassandraSender extends Sender {
@@ -148,8 +152,12 @@ public abstract class CassandraSender extends Sender {
 
     @Override
     public boolean stop(long timeout, TimeUnit unit) {
-        boolean stopped = super.stop(timeout, unit);
-        cassandraConnector.close();
+        boolean stopped = false;
+        try {
+            stopped = super.stop(timeout, unit);
+        } finally {
+            cassandraConnector.close();
+        }
         return stopped;
     }
 

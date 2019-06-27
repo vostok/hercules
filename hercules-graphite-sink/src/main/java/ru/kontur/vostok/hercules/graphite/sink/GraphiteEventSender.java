@@ -9,7 +9,7 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
 import ru.kontur.vostok.hercules.sink.Sender;
-import ru.kontur.vostok.hercules.sink.SenderStatus;
+import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
@@ -43,7 +43,7 @@ public class GraphiteEventSender extends Sender {
     }
 
     @Override
-    protected SenderStatus ping() {
+    protected ProcessorStatus checkStatus() {
         return graphitePinger.ping();
     }
 
@@ -81,10 +81,11 @@ public class GraphiteEventSender extends Sender {
 
     @Override
     public boolean stop(long timeout, TimeUnit unit) {
+        boolean stopped = super.stop(timeout, unit);
 
         graphiteClient.close();
 
-        return super.stop(timeout, unit);
+        return stopped;
     }
 
     private boolean validate(Event event) {

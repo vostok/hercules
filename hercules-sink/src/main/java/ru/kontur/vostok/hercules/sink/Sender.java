@@ -17,11 +17,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public abstract class Sender {
+public abstract class Sender extends Processor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Sender.class);
-
-    private volatile SenderStatus status = SenderStatus.AVAILABLE;
-    private final Object mutex = new Object();
 
     private final MetricsCollector metricsCollector;
 
@@ -71,64 +68,18 @@ public abstract class Sender {
      * @param events events to be processed
      * @return result of processing
      */
-    public final SenderResult process(List<Event> events) {
+    @Override
+    public final ProcessorResult process(List<Event> events) {
         try {
             int processedEvents = send(events);
-            return SenderResult.ok(processedEvents, events.size() - processedEvents);
+            return ProcessorResult.ok(processedEvents, events.size() - processedEvents);
         } catch (BackendServiceFailedException ex) {
             LOGGER.error("Backend failed with exception", ex);
-            status = SenderStatus.UNAVAILABLE;
-            return SenderResult.fail();
+            disable();
+            return ProcessorResult.fail();
         }
     }
 
-    /**
-     * Return {@code true} if sender is available.
-     *
-     * @return {@code true} if sender is available, {@code false} otherwise
-     */
-    public final boolean isAvailable() {
-        return status == SenderStatus.AVAILABLE;
-    }
-
-    /**
-     * Wait for sender's availability
-     *
-     * @param timeoutMs maximum time (in millis) to wait
-     * @return {@code true} if sender is available, {@code false} otherwise
-     */
-    public boolean awaitAvailability(long timeoutMs) {
-        if (isAvailable()) {
-            return true;
-        }
-
-        long nanoTime = System.nanoTime();
-        long remainingTimeoutMs;
-        synchronized (mutex) {
-            if (isAvailable()) {
-                return true;
-            }
-            while ((remainingTimeoutMs = timeoutMs - TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nanoTime)) > 0
-                    && !isAvailable()) {
-                try {
-                    mutex.wait(remainingTimeoutMs);
-                } catch (InterruptedException e) {
-                    /* Interruption during shutdown */
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        }
-        return isAvailable();
-
-    }
-
-    /**
-     * Check sender's availability status. Sender is available by default.
-     */
-    protected SenderStatus ping() {
-        return SenderStatus.AVAILABLE;
-    }
 
     /**
      * Send events to some backend (storage or processing unit).
@@ -138,14 +89,6 @@ public abstract class Sender {
      * @throws BackendServiceFailedException if backend failed
      */
     protected abstract int send(List<Event> events) throws BackendServiceFailedException;
-
-    private void updateStatus() {
-        SenderStatus status = ping();
-        synchronized (mutex) {
-            this.status = status;
-            mutex.notifyAll();
-        }
-    }
 
     private static class Props {
         static final PropertyDescription<Long> PING_PERIOD_MS =

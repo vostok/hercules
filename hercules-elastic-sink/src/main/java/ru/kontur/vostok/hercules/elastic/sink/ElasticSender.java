@@ -17,7 +17,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.sink.Sender;
-import ru.kontur.vostok.hercules.sink.SenderStatus;
+import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
@@ -101,12 +101,12 @@ public class ElasticSender extends Sender {
     }
 
     @Override
-    public SenderStatus ping() {
+    public ProcessorStatus checkStatus() {
         try {
             Response response = restClient.performRequest("HEAD", "/", Collections.emptyMap());
-            return (200 == response.getStatusLine().getStatusCode()) ? SenderStatus.AVAILABLE : SenderStatus.UNAVAILABLE;
+            return (200 == response.getStatusLine().getStatusCode()) ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
         } catch (Exception e) {
-            return SenderStatus.UNAVAILABLE;
+            return ProcessorStatus.UNAVAILABLE;
         }
     }
 
