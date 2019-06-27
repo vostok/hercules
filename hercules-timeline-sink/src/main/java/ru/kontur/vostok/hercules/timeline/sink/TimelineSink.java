@@ -34,7 +34,6 @@ public class TimelineSink extends Sink {
                 Stream.of(timeline.getStreams()).map(PatternMatcher::new).collect(Collectors.toList()),
                 fromTimeline(timeline),
                 metricsCollector);
-        properties.put(StreamsConfig.APPLICATION_ID_CONFIG, TimelineUtil.timelineToApplicationId(timeline));
     }
 
     private static EventDeserializer fromTimeline(Timeline timeline) {
