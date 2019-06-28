@@ -43,7 +43,7 @@ public class GraphiteEventSender extends Sender {
     }
 
     @Override
-    protected ProcessorStatus checkStatus() {
+    protected ProcessorStatus ping() {
         return graphitePinger.ping();
     }
 
