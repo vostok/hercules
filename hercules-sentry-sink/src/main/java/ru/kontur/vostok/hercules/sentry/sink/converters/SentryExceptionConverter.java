@@ -30,18 +30,18 @@ public class SentryExceptionConverter {
         final String message = ContainerUtil.extract(container, ExceptionTags.MESSAGE_TAG).orElse(null);
 
         final Optional<ClassPackagePair> classPackagePair = ContainerUtil.extract(container, ExceptionTags.TYPE_TAG)
-            .map(SentryExceptionConverter::extractClassPackagePair);
+                .map(SentryExceptionConverter::extractClassPackagePair);
 
         final String className = classPackagePair.map(ClassPackagePair::getClassName).orElse(null);
         final String packageName = classPackagePair.map(ClassPackagePair::getPackageName).orElse(null);
 
         final StackTraceInterface stacktrace = ContainerUtil.extract(container, ExceptionTags.STACK_FRAMES)
-            .map(containers -> Arrays.stream(containers)
-                .map(SentryStackTraceElementConverter::convert)
-                .toArray(SentryStackTraceElement[]::new)
-            )
-            .map(StackTraceInterface::new)
-            .orElse(null);
+                .map(containers -> Arrays.stream(containers)
+                        .map(SentryStackTraceElementConverter::convert)
+                        .toArray(SentryStackTraceElement[]::new)
+                )
+                .map(StackTraceInterface::new)
+                .orElse(new StackTraceInterface(new StackTraceElement[0]));
 
         return new SentryException(
                 message,
