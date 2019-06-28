@@ -1,16 +1,16 @@
 package ru.kontur.vostok.hercules.sink;
 
 /**
- * Result of Sender's processing of events.
+ * Result of events processing.
  *
  * @author Gregory Koshelev
  */
-public class SenderResult {
+public class ProcessorResult {
     private final boolean success;
     private final int processedEvents;
     private final int rejectedEvents;
 
-    private SenderResult(boolean success, int processedEvents, int rejectedEvents) {
+    private ProcessorResult(boolean success, int processedEvents, int rejectedEvents) {
         this.success = success;
         this.processedEvents = processedEvents;
         this.rejectedEvents = rejectedEvents;
@@ -45,8 +45,8 @@ public class SenderResult {
      * @param rejectedEvents  count of rejected events
      * @return successful result
      */
-    public static SenderResult ok(int processedEvents, int rejectedEvents) {
-        return new SenderResult(true, processedEvents, rejectedEvents);
+    public static ProcessorResult ok(int processedEvents, int rejectedEvents) {
+        return new ProcessorResult(true, processedEvents, rejectedEvents);
     }
 
     /**
@@ -54,7 +54,7 @@ public class SenderResult {
      *
      * @return failed result
      */
-    public static SenderResult fail() {
-        return new SenderResult(false, 0, 0);
+    public static ProcessorResult fail() {
+        return new ProcessorResult(false, 0, 0);
     }
 }

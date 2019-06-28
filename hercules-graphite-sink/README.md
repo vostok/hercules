@@ -7,8 +7,6 @@ Application is configured through properties file.
 ### Sink settings
 `sink.poolSize` - number of threads the are reading from Kafka, default value: `1`
 
-`sink.senderTimeoutMs` - time quota to insert metrics to Graphite, default value: `2000`
-
 `sink.pollTimeoutMs` - poll duration when reading from Kafka, default value: `6000`
 
 `sink.batchSize` - preferred size of event batches, default value: `1000`
@@ -65,7 +63,6 @@ Streams with log events should be predefined.
 ### `application.properties` sample:
 ```properties
 sink.poolSize=4
-sink.senderTimeoutMs=120000
 sink.pollTimeoutMs=5000
 sink.batchSize=10000
 sink.pattern=metrics_*

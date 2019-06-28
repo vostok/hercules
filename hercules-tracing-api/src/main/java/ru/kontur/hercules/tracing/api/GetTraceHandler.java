@@ -76,7 +76,6 @@ public class GetTraceHandler implements HttpHandler {
 
             exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
             exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceIdAndParentSpanId));
-            exchange.endExchange();
         } else {
             final PagedResult<Event> traceSpansByTraceId = tracingReader.getTraceSpansByTraceId(
                     traceIdResult.get(),
@@ -86,7 +85,6 @@ public class GetTraceHandler implements HttpHandler {
 
             exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
             exchange.getResponseSender().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));
-            exchange.endExchange();
         }
     }
 }

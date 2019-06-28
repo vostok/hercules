@@ -7,8 +7,6 @@ Application is configured through properties file.
 ### Sink settings
 `sink.poolSize` - number of threads are reading from Apache Kafka, default value: `1`
 
-`sink.senderTimeoutMs` - time quota to process Log Events by elastic, default value: `2000`
-
 `sink.pollTimeoutMs` - poll duration when read from Apache Kafka, default value: `6000`
 
 `sink.batchSize` - size of batch with Log Events, default value: `1000`
@@ -75,7 +73,6 @@ Streams with log events should be predefined.
 ### `application.properties` sample:
 ```properties
 sink.poolSize=3
-sink.senderTimeoutMs=120000
 sink.pollTimeoutMs=5000
 sink.batchSize=10000
 sink.pattern=logs_*
