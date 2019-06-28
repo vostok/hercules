@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.sink;
 
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.util.List;
@@ -58,19 +59,22 @@ public abstract class Processor {
     /**
      * Disable processor
      */
-    protected void disable() {
-        status = ProcessorStatus.UNAVAILABLE;
+    protected final void disable() {
+        status(ProcessorStatus.UNAVAILABLE);
     }
 
     /**
-     * Check processor's availability status. Processor is available by default.
+     * Enable processor
      */
-    protected ProcessorStatus checkStatus() {
-        return ProcessorStatus.AVAILABLE;
+    protected final void enable() {
+        status(ProcessorStatus.AVAILABLE);
     }
 
-    protected final void updateStatus() {
-        ProcessorStatus status = checkStatus();
+    /**
+     * Set processor status
+     * @param status
+     */
+    protected final void status(@NotNull ProcessorStatus status) {
         synchronized (mutex) {
             this.status = status;
             mutex.notifyAll();

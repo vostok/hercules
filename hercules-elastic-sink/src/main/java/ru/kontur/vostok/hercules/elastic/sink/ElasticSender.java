@@ -101,7 +101,7 @@ public class ElasticSender extends Sender {
     }
 
     @Override
-    public ProcessorStatus checkStatus() {
+    public ProcessorStatus ping() {
         try {
             Response response = restClient.performRequest("HEAD", "/", Collections.emptyMap());
             return (200 == response.getStatusLine().getStatusCode()) ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;

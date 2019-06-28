@@ -145,8 +145,8 @@ public class Sink {
      */
     public final void run() {
         while (isRunning()) {
-            try {
-                if (processor.isAvailable()) {
+            if (processor.isAvailable()) {
+                try {
 
                     subscribe();
 
@@ -195,11 +195,11 @@ public class Sink {
                             }
                         }
                     }
+                } catch (Exception ex) {
+                    LOGGER.error("Unspecified exception has been acquired", ex);
+                } finally {
+                    unsubscribe();
                 }
-            } catch (Exception ex) {
-                LOGGER.error("Unspecified exception has been acquired", ex);
-            } finally {
-                unsubscribe();
             }
 
             processor.awaitAvailability(availabilityTimeoutMs);

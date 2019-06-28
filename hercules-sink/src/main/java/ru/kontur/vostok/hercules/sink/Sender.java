@@ -80,6 +80,16 @@ public abstract class Sender extends Processor {
         }
     }
 
+    protected final void updateStatus() {
+        status(ping());
+    }
+
+    /**
+     * Ping backend to update availability status of the sender. Sender is available by default.
+     */
+    protected ProcessorStatus ping() {
+        return ProcessorStatus.AVAILABLE;
+    }
 
     /**
      * Send events to some backend (storage or processing unit).

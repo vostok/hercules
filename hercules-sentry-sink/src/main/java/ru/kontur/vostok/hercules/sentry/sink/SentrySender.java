@@ -51,7 +51,7 @@ public class SentrySender extends Sender {
     }
 
     @Override
-    public ProcessorStatus checkStatus() {
+    public ProcessorStatus ping() {
         return sentryApiClient.ping().isOk() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
     }
 
