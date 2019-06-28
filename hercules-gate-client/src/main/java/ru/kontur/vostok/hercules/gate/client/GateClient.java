@@ -270,6 +270,8 @@ public class GateClient implements Closeable {
                 }
             }
         }
+
+        throw new UnavailableClusterException();
     }
 
     //TODO: metrics
