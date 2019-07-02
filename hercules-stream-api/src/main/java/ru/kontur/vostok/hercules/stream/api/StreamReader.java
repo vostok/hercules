@@ -33,8 +33,10 @@ public class StreamReader {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamReader.class);
 
     private final Properties properties;
-    private final Meter receivedEvents;
     private final ConsumerPool<Void, byte[]> consumerPool;
+
+    private final MetricsCollector metricsCollector;
+    private final Meter receivedEventsCountMeter;
 
     private final long readTimeoutMs;
 
@@ -43,12 +45,17 @@ public class StreamReader {
                         MetricsCollector metricsCollector) {
         this.properties = properties;
         this.consumerPool = consumerPool;
-        this.receivedEvents = metricsCollector.meter("receivedEvents");
+
+        this.metricsCollector = metricsCollector;
+        this.receivedEventsCountMeter = metricsCollector.meter("receivedEventsCount");
 
         readTimeoutMs = Props.READ_TIMEOUT_MS.extract(properties);
     }
 
     public ByteStreamContent read(Stream stream, StreamReadState state, int shardIndex, int shardCount, int take) {
+
+        StreamMetricsCollector streamMetricsCollector = new StreamMetricsCollector(metricsCollector, stream.getName());
+
         List<TopicPartition> partitions = StreamUtil.getTopicPartitions(stream, shardIndex, shardCount);
 
         long elapsedTimeMs = 0L;
@@ -92,8 +99,15 @@ public class StreamReader {
             elapsedTimeMs = StopwatchUtil.elapsedTime(readStartedMs);
             remainingTimeMs = StopwatchUtil.remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
 
-            List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, remainingTimeMs);
-            receivedEvents.mark(events.size());
+            List<byte[]> events = pollAndUpdateNextOffsets(consumer,
+                    nextOffsets,
+                    take,
+                    remainingTimeMs,
+                    metricsCollector,
+                    streamMetricsCollector);
+
+            receivedEventsCountMeter.mark(events.size());
+            streamMetricsCollector.markReceivedEventsCount(events.size());
 
             return new ByteStreamContent(
                     StreamReadStateUtil.stateFromMap(stream.getName(), nextOffsets),
@@ -113,7 +127,12 @@ public class StreamReader {
         }
     }
 
-    private static <K, V> List<V> pollAndUpdateNextOffsets(Consumer<K, V> consumer, Map<TopicPartition, Long> nextOffsets, int take, long timeoutMs) {
+    private static <K, V> List<V> pollAndUpdateNextOffsets(Consumer<K, V> consumer,
+                                                           Map<TopicPartition, Long> nextOffsets,
+                                                           int take,
+                                                           long timeoutMs,
+                                                           MetricsCollector metricsCollector,
+                                                           StreamMetricsCollector streamMetricsCollector) {
         List<V> events = new ArrayList<>(take);
         int count = 0;
 
@@ -128,6 +147,9 @@ public class StreamReader {
                 long nextOffset = nextOffsets.get(partition);
                 for (ConsumerRecord<K, V> record : records.records(partition)) {
                     if (++count <= take) {
+                        int receivedBytesCount = ((byte[]) record.value()).length;
+                        streamMetricsCollector.markReceivedBytesCount(receivedBytesCount);
+                        metricsCollector.meter("receivedBytesCount").mark(receivedBytesCount);
                         events.add(record.value());
                         nextOffset = record.offset() + 1;
                     } else {
