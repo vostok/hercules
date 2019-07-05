@@ -4,6 +4,8 @@ import com.codahale.metrics.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 
 /**
+ * Class for creation metrics by stream name.
+ *
  * @author Vladimir Tsypaev
  */
 public class StreamMetricsCollector {
