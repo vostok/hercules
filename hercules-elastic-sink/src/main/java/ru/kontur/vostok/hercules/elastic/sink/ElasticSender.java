@@ -16,14 +16,14 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
-import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
+import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,9 +32,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
@@ -228,37 +228,37 @@ public class ElasticSender extends Sender {
 
         static final PropertyDescription<Integer> MAX_CONNECTIONS = PropertyDescriptions
                 .integerProperty("elastic.maxConnections")
-                .withValidator(Validators.greaterThan(0))
+                .withValidator(IntegerValidators.positive())
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL)
                 .build();
 
         static final PropertyDescription<Integer> MAX_CONNECTIONS_PER_ROUTE = PropertyDescriptions
                 .integerProperty("elastic.maxConnectionsPerRoute")
-                .withValidator(Validators.greaterThan(0))
+                .withValidator(IntegerValidators.positive())
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE)
                 .build();
 
         static final PropertyDescription<Integer> RETRY_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("elastic.retryTimeoutMs")
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .withDefaultValue(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("elastic.connectionTimeoutMs")
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .withDefaultValue(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> CONNECTION_REQUEST_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("elastic.connectionRequestTimeoutMs")
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .withDefaultValue(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
                 .build();
 
         static final PropertyDescription<Integer> SOCKET_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("elastic.socketTimeoutMs")
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .withDefaultValue(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
                 .build();
 

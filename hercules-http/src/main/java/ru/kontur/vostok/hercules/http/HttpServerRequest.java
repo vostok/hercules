@@ -94,6 +94,19 @@ public interface HttpServerRequest {
         complete();
     }
 
+    /**
+     * Complete request processing with specified code and content in response body.
+     *
+     * @param code response status code
+     * @param contentType content type
+     * @param data data to send in response body
+     */
+    default  void complete(int code, String contentType, String data) {
+        getResponse().setStatusCode(code);
+        getResponse().setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+        getResponse().send(data);
+    }
+
     default Optional<Integer> getContentLength() {
         String headerValue = getHeader(HttpHeaders.CONTENT_LENGTH);
 

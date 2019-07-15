@@ -30,9 +30,6 @@ public class AboutHandler implements HttpHandler {
             }
         }
 
-        HttpServerResponse response = request.getResponse();
-        response.setStatusCode(HttpStatusCodes.OK);
-        response.setHeader(HttpHeaders.CONTENT_TYPE, MimeTypes.APPLICATION_JSON);
-        response.send(about);
+        request.complete(HttpStatusCodes.OK, MimeTypes.APPLICATION_JSON, about);
     }
 }

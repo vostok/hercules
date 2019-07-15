@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
 import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
 import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.io.IOException;
@@ -70,8 +71,8 @@ public class CreateStreamHandler implements HttpHandler {
                     stream.setShardingKey(new String[0]);
                 }
 
-                Optional<String> streamError = STREAM_VALIDATOR.validate(stream);
-                if (streamError.isPresent()) {
+                ValidationResult validationResult = STREAM_VALIDATOR.validate(stream);
+                if (validationResult.isError()) {
                     ResponseUtil.badRequest(exch);
                     return;
                 }

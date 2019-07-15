@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.util.Optional;
@@ -30,9 +31,9 @@ public final class StreamValidators {
      */
     public static Validator<Stream> streamValidatorForHandler() {
         return stream -> {
-            if(stream instanceof BaseStream) {
+            if (stream instanceof BaseStream) {
                 return baseStreamValidator.validate((BaseStream) stream);
-            } else if(stream instanceof DerivedStream) {
+            } else if (stream instanceof DerivedStream) {
                 return derivedStreamValidator.validate((DerivedStream) stream);
             }
             throw new NotImplementedException(String.format(
@@ -43,22 +44,22 @@ public final class StreamValidators {
 
     private static <T extends Stream> Validator<T> streamValidator() {
         return stream -> {
-            final Optional<String> nameError = nameValidator.validate(stream.getName());
-            if(nameError.isPresent()) {
-                return Optional.of("Name is invalid: " + nameError.get());
+            ValidationResult result = nameValidator.validate(stream.getName());
+            if (result.isError()) {
+                return ValidationResult.error("Name is invalid: " + result.error());
             }
 
-            final Optional<String> partitionError = partitionValidator.validate(stream.getPartitions());
-            if(partitionError.isPresent()) {
-                return Optional.of("Partition is invalid: " + partitionError.get());
+            result = partitionValidator.validate(stream.getPartitions());
+            if (result.isError()) {
+                return ValidationResult.error("Partition is invalid: " + result.error());
             }
 
-            final Optional<String> ttlError = ttlValidator.validate(stream.getTtl());
-            if(ttlError.isPresent()){
-                return Optional.of("Ttl is invalid: " + ttlError.get());
+            result = ttlValidator.validate(stream.getTtl());
+            if (result.isError()) {
+                return ValidationResult.error("Ttl is invalid: " + result.error());
             }
 
-            return Optional.empty();
+            return ValidationResult.ok();
         };
     }
 
@@ -71,29 +72,25 @@ public final class StreamValidators {
         final Validator<DerivedStream> baseStreamNamesValidator = baseStreamNamesValidator();
 
         return stream -> {
-            final Optional<String> streamError = streamValidator.validate(stream);
-            if(streamError.isPresent()) {
-                return streamError;
+            ValidationResult result = streamValidator.validate(stream);
+            if (result.isError()) {
+                return result;
             }
 
-            final Optional<String> baseStreamsNamesError = baseStreamNamesValidator.validate(stream);
-            if (baseStreamsNamesError.isPresent()) {
-                return baseStreamsNamesError;
-            }
-
-            return Optional.empty();
+            result = baseStreamNamesValidator.validate(stream);
+            return result;
         };
     }
 
     private static Validator<DerivedStream> baseStreamNamesValidator() {
         return stream -> {
-            for(String streamName : stream.getStreams()) {
-                final Optional<String> nameError = nameValidator.validate(streamName);
-                if(nameError.isPresent()) {
-                    return Optional.of("One of source streams is invalid: " + nameError.get());
+            for (String streamName : stream.getStreams()) {
+                final ValidationResult result = nameValidator.validate(streamName);
+                if (result.isError()) {
+                    return ValidationResult.error("One of source streams is invalid: " + result.error());
                 }
             }
-            return Optional.empty();
+            return ValidationResult.ok();
         };
     }
 

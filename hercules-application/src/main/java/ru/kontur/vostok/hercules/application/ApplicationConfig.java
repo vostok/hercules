@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.application;
 
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Properties;
 
@@ -35,7 +35,7 @@ public class ApplicationConfig {
         static final PropertyDescription<Integer> PORT = PropertyDescriptions
                 .integerProperty("port")
                 .withDefaultValue(ApplicationConfigDefaults.DEFAULT_PORT)
-                .withValidator(Validators.portValidator())
+                .withValidator(IntegerValidators.portValidator())
                 .build();
 
     }

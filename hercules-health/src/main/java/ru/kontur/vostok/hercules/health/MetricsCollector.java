@@ -13,7 +13,7 @@ import ru.kontur.vostok.hercules.util.application.ApplicationContext;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.net.InetSocketAddress;
 import java.util.Properties;
@@ -34,7 +34,7 @@ public class MetricsCollector {
         static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
                 .integerProperty("graphite.server.port")
                 .withDefaultValue(2003)
-                .withValidator(Validators.portValidator())
+                .withValidator(IntegerValidators.portValidator())
                 .build();
 
         static final PropertyDescription<String> GRAPHITE_PREFIX = PropertyDescriptions
@@ -44,7 +44,7 @@ public class MetricsCollector {
         static final PropertyDescription<Integer> REPORT_PERIOD_SECONDS = PropertyDescriptions
                 .integerProperty("period")
                 .withDefaultValue(60)
-                .withValidator(Validators.greaterThan(0))
+                .withValidator(IntegerValidators.positive())
                 .build();
     }
 
