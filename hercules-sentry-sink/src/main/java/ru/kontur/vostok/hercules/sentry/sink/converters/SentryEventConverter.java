@@ -14,12 +14,14 @@ import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
+import ru.kontur.vostok.hercules.tags.SentryTags;
 import ru.kontur.vostok.hercules.util.Lazy;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
@@ -39,35 +41,29 @@ public class SentryEventConverter {
             null
     ));
 
-    private static final Set<String> IGNORED_TAGS = Stream.of(
-            CommonTags.ENVIRONMENT_TAG
-    ).map(TagDescription::getName).collect(Collectors.toSet());
+    private static final Set<String> SENTRY_ATTRIBUTES = Stream.of(
+            CommonTags.ENVIRONMENT_TAG,
+            SentryTags.RELEASE_TAG,
+            SentryTags.TRANSACTION_TAG,
+            SentryTags.FINGERPRINT_TAG,
+            SentryTags.PLATFORM_TAG)
+            .map(TagDescription::getName).collect(Collectors.toSet());
 
+    private static final String DEFAULT_SERVER_NAME = "";
     private static final String DEFAULT_PLATFORM = "";
 
     public static io.sentry.event.Event convert(Event logEvent) {
 
         EventBuilder eventBuilder = new EventBuilder(logEvent.getUuid());
         eventBuilder.withTimestamp(Date.from(TimeUtil.unixTicksToInstant(logEvent.getTimestamp())));
+        eventBuilder.withServerName(DEFAULT_SERVER_NAME);
 
         ContainerUtil.extract(logEvent.getPayload(), LogEventTags.MESSAGE_TAG)
-            .ifPresent(eventBuilder::withMessage);
+                .ifPresent(eventBuilder::withMessage);
 
         ContainerUtil.extract(logEvent.getPayload(), LogEventTags.LEVEL_TAG)
-            .flatMap(SentryLevelEnumParser::parse)
-            .ifPresent(eventBuilder::withLevel);
-
-        ContainerUtil.extract(logEvent.getPayload(), CommonTags.PROPERTIES_TAG).ifPresent(properties -> {
-            ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG)
-                .ifPresent(eventBuilder::withEnvironment);
-
-            for (Map.Entry<String, Variant> entry : properties) {
-                String key = entry.getKey();
-                if (!IGNORED_TAGS.contains(key)) {
-                    VariantUtil.extractPrimitiveAsString(entry.getValue()).ifPresent(value -> eventBuilder.withTag(key, value));
-                }
-            }
-        });
+                .flatMap(SentryLevelEnumParser::parse)
+                .ifPresent(eventBuilder::withLevel);
 
         ContainerUtil.extract(logEvent.getPayload(), LogEventTags.EXCEPTION_TAG).ifPresent(exception -> {
             final ExceptionInterface exceptionInterface = convertException(exception);
@@ -77,6 +73,36 @@ public class SentryEventConverter {
 
         ContainerUtil.extract(logEvent.getPayload(), LogEventTags.STACK_TRACE_TAG).ifPresent(stackTrace -> {
             eventBuilder.withExtra("stackTrace", stackTrace);
+        });
+
+        ContainerUtil.extract(logEvent.getPayload(), CommonTags.PROPERTIES_TAG).ifPresent(properties -> {
+
+            ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG)
+                    .ifPresent(eventBuilder::withEnvironment);
+
+            ContainerUtil.extract(properties, SentryTags.RELEASE_TAG)
+                    .ifPresent(eventBuilder::withRelease);
+
+            ContainerUtil.extract(properties, SentryTags.TRANSACTION_TAG)
+                    .ifPresent(eventBuilder::withTransaction);
+
+            ContainerUtil.extract(properties, SentryTags.FINGERPRINT_TAG)
+                    .ifPresent(eventBuilder::withFingerprint);
+
+            Optional<String> platformOptional = ContainerUtil.extract(properties, SentryTags.PLATFORM_TAG);
+            if (platformOptional.isPresent()) {
+                String platform = platformOptional.get().toLowerCase();
+                if (PLATFORMS.contains(platform)) {
+                    eventBuilder.withPlatform(platform);
+                }
+            }
+
+            for (Map.Entry<String, Variant> entry : properties) {
+                String key = entry.getKey();
+                if (!SENTRY_ATTRIBUTES.contains(key)) {
+                    VariantUtil.extractPrimitiveAsString(entry.getValue()).ifPresent(value -> eventBuilder.withTag(key, value));
+                }
+            }
         });
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
@@ -94,13 +120,11 @@ public class SentryEventConverter {
 
     private static void convertException(final Container currentException, final LinkedList<SentryException> converted) {
         converted.add(SentryExceptionConverter.convert(currentException));
-
         ContainerUtil.extract(currentException, ExceptionTags.INNER_EXCEPTIONS_TAG)
             .ifPresent(exceptions -> Arrays.stream(exceptions).forEach(exception -> convertException(exception, converted)));
     }
 
     private static String extractPlatform(final ExceptionInterface exceptionInterface) {
-
         return exceptionInterface.getExceptions().stream()
             .flatMap(e -> Arrays.stream(e.getStackTraceInterface().getStackTrace()))
             .map(SentryStackTraceElement::getFileName)
@@ -128,4 +152,23 @@ public class SentryEventConverter {
             return Optional.empty();
         }
     }
+
+    private static final Set<String> PLATFORMS = new HashSet<>(Arrays.asList(
+            "as3",
+            "c",
+            "cfml",
+            "cocoa",
+            "csharp",
+            "go",
+            "java",
+            "javascript",
+            "native",
+            "node",
+            "objc",
+            "other",
+            "perl",
+            "php",
+            "python",
+            "ruby"
+    ));
 }
