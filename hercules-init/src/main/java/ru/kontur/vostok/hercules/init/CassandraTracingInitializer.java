@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.cassandra.util.CassandraDefaults;
 import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +21,7 @@ public class CassandraTracingInitializer {
     private final String[] nodes;
     private final String keyspace;
     private final String tableName;
-    private final short replicationFactor;
+    private final int replicationFactor;
     private final int ttl;
 
     public CassandraTracingInitializer(Properties properties) {
@@ -97,10 +97,10 @@ public class CassandraTracingInitializer {
                         withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE).
                         build();
 
-        static final PropertyDescription<Short> REPLICATION_FACTOR =
-                PropertyDescriptions.shortProperty("replication.factor").
+        static final PropertyDescription<Integer> REPLICATION_FACTOR =
+                PropertyDescriptions.integerProperty("replication.factor").
                         withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR).
-                        withValidator(Validators.greaterThan((short) 0)).
+                        withValidator(IntegerValidators.positive()).
                         build();
 
         static final PropertyDescription<String> TABLE_NAME =
@@ -111,7 +111,7 @@ public class CassandraTracingInitializer {
         static final PropertyDescription<Integer> TTL_SECONDS =
                 PropertyDescriptions.integerProperty("ttl.seconds").
                         withDefaultValue((int) TimeUnit.DAYS.toSeconds(3)).
-                        withValidator(Validators.greaterThan(0)).
+                        withValidator(IntegerValidators.positive()).
                         build();
     }
 }

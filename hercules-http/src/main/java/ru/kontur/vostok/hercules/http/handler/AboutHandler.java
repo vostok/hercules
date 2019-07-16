@@ -4,9 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.http.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
-import ru.kontur.vostok.hercules.http.HttpServerResponse;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
@@ -30,9 +28,6 @@ public class AboutHandler implements HttpHandler {
             }
         }
 
-        HttpServerResponse response = request.getResponse();
-        response.setStatusCode(HttpStatusCodes.OK);
-        response.setHeader(HttpHeaders.CONTENT_TYPE, MimeTypes.APPLICATION_JSON);
-        response.send(about);
+        request.complete(HttpStatusCodes.OK, MimeTypes.APPLICATION_JSON, about);
     }
 }

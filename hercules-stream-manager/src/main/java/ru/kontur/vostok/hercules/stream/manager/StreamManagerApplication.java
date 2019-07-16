@@ -15,10 +15,9 @@ import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServ
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -28,10 +27,10 @@ import java.util.concurrent.TimeUnit;
 public class StreamManagerApplication {
 
     private static class Props {
-        static final PropertyDescription<Short> REPLICATION_FACTOR = PropertyDescriptions
-                .shortProperty("replicationFactor")
-                .withDefaultValue((short) 1)
-                .withValidator(Validators.greaterThan((short) 0))
+        static final PropertyDescription<Integer> REPLICATION_FACTOR = PropertyDescriptions
+                .integerProperty("replicationFactor")
+                .withDefaultValue(1)
+                .withValidator(IntegerValidators.positive())
                 .build();
     }
 
@@ -56,11 +55,11 @@ public class StreamManagerApplication {
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
-            final short replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
+            final int replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
 
             ApplicationContextHolder.init("Hercules Stream manager", "stream-manager", contextProperties);
 
-            kafkaManager = new KafkaManager(kafkaProperties, replicationFactor);
+            kafkaManager = new KafkaManager(kafkaProperties, (short) replicationFactor);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

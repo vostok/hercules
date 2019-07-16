@@ -14,6 +14,7 @@ import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.sentry.sink.client.HerculesClientFactory;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.net.MalformedURLException;
@@ -143,9 +144,9 @@ public class SentryClientHolder {
     public Result<Void, ErrorInfo> validateSlugs(String... slugs) {
         Result<Void, ErrorInfo> result = Result.ok();
         for(String slug : slugs) {
-            Optional<String> slugError = slugValidator.validate(slug);
-            if (slugError.isPresent()) {
-                LOGGER.error(String.format("Invalid name: '%s'. This name cannot be Sentry slug: %s", slug, slugError.get()));
+            ValidationResult validationResult = slugValidator.validate(slug);
+            if (validationResult.isError()) {
+                LOGGER.error(String.format("Invalid name: '%s'. This name cannot be Sentry slug: %s", slug, validationResult.error()));
                 return Result.error(new ErrorInfo(false));
             }
         }

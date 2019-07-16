@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
 import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Properties;
 
@@ -26,7 +26,7 @@ public class ApplicationStatusHttpServer {
 
         static final PropertyDescription<Integer> PORT = PropertyDescriptions
                 .integerProperty("port")
-                .withValidator(Validators.portValidator())
+                .withValidator(IntegerValidators.portValidator())
                 .build();
     }
 
