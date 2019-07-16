@@ -28,14 +28,14 @@ public class SentryTags {
 
 
     /**
-     * Strings which are used for grouping events by issues in Sentry
+     * The strings which are used for grouping the events by the issues in Sentry
      */
     public static final TagDescription<Optional<String[]>> FINGERPRINT_TAG = TagDescriptionBuilder.stringVector("fingerprint")
             .optional()
             .build();
 
     /**
-     * Platform of the application which generated event
+     * The platform of the application which generated the event
      */
     public static TagDescription<Optional<String>> PLATFORM_TAG = TagDescriptionBuilder.string("platform")
             .optional()

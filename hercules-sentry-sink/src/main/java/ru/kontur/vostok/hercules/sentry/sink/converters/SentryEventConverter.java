@@ -49,14 +49,16 @@ public class SentryEventConverter {
             SentryTags.PLATFORM_TAG)
             .map(TagDescription::getName).collect(Collectors.toSet());
 
-    private static final String DEFAULT_SERVER_NAME = "";
+    private static final String HIDING_SERVER_NAME = " ";
     private static final String DEFAULT_PLATFORM = "";
 
     public static io.sentry.event.Event convert(Event logEvent) {
 
         EventBuilder eventBuilder = new EventBuilder(logEvent.getUuid());
+
         eventBuilder.withTimestamp(Date.from(TimeUtil.unixTicksToInstant(logEvent.getTimestamp())));
-        eventBuilder.withServerName(DEFAULT_SERVER_NAME);
+
+        eventBuilder.withServerName(HIDING_SERVER_NAME);
 
         ContainerUtil.extract(logEvent.getPayload(), LogEventTags.MESSAGE_TAG)
                 .ifPresent(eventBuilder::withMessage);
