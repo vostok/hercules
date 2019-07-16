@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.util.validation;
 
-import java.util.Optional;
-
 /**
  * Validator is used to test values with some conditions
  *

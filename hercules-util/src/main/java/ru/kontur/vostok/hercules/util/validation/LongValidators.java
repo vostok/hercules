@@ -15,7 +15,7 @@ public final class LongValidators {
         return value ->
                 (value >= 0)
                         ? ValidationResult.ok()
-                        : ValidationResult.error("Value should be positive long but was " + value);
+                        : ValidationResult.error("Value should be non negative long but was " + value);
     }
 
     private LongValidators() {

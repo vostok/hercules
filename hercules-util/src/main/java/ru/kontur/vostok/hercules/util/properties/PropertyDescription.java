@@ -8,7 +8,6 @@ import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 
 /**

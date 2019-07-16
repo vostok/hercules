@@ -10,8 +10,6 @@ import ru.kontur.vostok.hercules.util.validation.StringValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
-import java.util.Optional;
-
 /**
  * @author Petr Demenev
  */
