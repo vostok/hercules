@@ -19,7 +19,7 @@ import ru.kontur.vostok.hercules.curator.result.ReadResult;
 import ru.kontur.vostok.hercules.curator.result.UpdateResult;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Arrays;
 import java.util.List;
@@ -226,31 +226,31 @@ public class CuratorClient {
         static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("connectionTimeout")
                 .withDefaultValue(10_000)
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .build();
 
         static final PropertyDescription<Integer> SESSION_TIMEOUT_MS = PropertyDescriptions
                 .integerProperty("sessionTimeout")
                 .withDefaultValue(30_000)
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .build();
 
         static final PropertyDescription<Integer> BASE_SLEEP_TIME_MS = PropertyDescriptions
                 .integerProperty("retryPolicy.baseSleepTime")
                 .withDefaultValue(1_000)
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .build();
 
         static final PropertyDescription<Integer> MAX_RETRIES = PropertyDescriptions
                 .integerProperty("retryPolicy.maxRetries")
                 .withDefaultValue(5)
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .build();
 
         static final PropertyDescription<Integer> MAX_SLEEP_TIME_MS = PropertyDescriptions
                 .integerProperty("retryPolicy.maxSleepTime")
                 .withDefaultValue(8_000)
-                .withValidator(Validators.greaterOrEquals(0))
+                .withValidator(IntegerValidators.nonNegative())
                 .build();
     }
 }

@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.DurationUtil;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -111,13 +111,13 @@ public class ConsumerPool<K, V> {
         static final PropertyDescription<Integer> MAX_POLL_RECORDS =
                 PropertyDescriptions.integerProperty("max.poll.records").
                         withDefaultValue(10_000).
-                        withValidator(Validators.interval(1, 100_000)).
+                        withValidator(IntegerValidators.positive()).
                         build();
 
         static final PropertyDescription<Integer> POOL_SIZE =
                 PropertyDescriptions.integerProperty("poolSize").
                         withDefaultValue(4).
-                        withValidator(Validators.greaterThan(0)).
+                        withValidator(IntegerValidators.positive()).
                         build();
     }
 }

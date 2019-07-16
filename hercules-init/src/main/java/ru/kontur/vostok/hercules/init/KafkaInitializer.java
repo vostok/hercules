@@ -4,7 +4,7 @@ import org.apache.kafka.clients.admin.AdminClient;
 import ru.kontur.vostok.hercules.kafka.util.KafkaDefaults;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Properties;
 
@@ -14,15 +14,15 @@ import java.util.Properties;
 public class KafkaInitializer {
 
     private static class Props {
-        static final PropertyDescription<Short> REPLICATION_FACTOR = PropertyDescriptions
-                .shortProperty("replication.factor")
+        static final PropertyDescription<Integer> REPLICATION_FACTOR = PropertyDescriptions
+                .integerProperty("replication.factor")
                 .withDefaultValue(KafkaDefaults.DEFAULT_REPLICATION_FACTOR)
-                .withValidator(Validators.greaterThan((short) 0))
+                .withValidator(IntegerValidators.positive())
                 .build();
     }
 
     private final Properties kafkaProperties;
-    private final short replicationFactor;
+    private final int replicationFactor;
 
     public KafkaInitializer(Properties properties) {
         this.kafkaProperties = properties;

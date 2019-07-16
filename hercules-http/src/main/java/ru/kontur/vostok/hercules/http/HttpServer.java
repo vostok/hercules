@@ -5,7 +5,6 @@ import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
-import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;

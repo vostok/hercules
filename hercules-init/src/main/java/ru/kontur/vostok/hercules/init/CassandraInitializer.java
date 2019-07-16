@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.cassandra.util.CassandraDefaults;
 import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -19,7 +19,7 @@ public class CassandraInitializer {
     private final String dataCenter;
     private final String[] nodes;
     private final String keyspace;
-    private final short replicationFactor;
+    private final int replicationFactor;
 
     public CassandraInitializer(Properties properties) {
         this.dataCenter = Props.DATA_CENTER.extract(properties);
@@ -62,10 +62,10 @@ public class CassandraInitializer {
                         withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE).
                         build();
 
-        static final PropertyDescription<Short> REPLICATION_FACTOR =
-                PropertyDescriptions.shortProperty("replication.factor").
+        static final PropertyDescription<Integer> REPLICATION_FACTOR =
+                PropertyDescriptions.integerProperty("replication.factor").
                         withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR).
-                        withValidator(Validators.greaterThan((short) 0)).
+                        withValidator(IntegerValidators.positive()).
                         build();
     }
 }
