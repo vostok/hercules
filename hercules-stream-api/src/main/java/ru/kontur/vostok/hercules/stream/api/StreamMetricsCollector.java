@@ -12,12 +12,12 @@ public class StreamMetricsCollector {
 
     private static final String PREFIX = "byStream.";
 
-    private MetricsCollector metricsCollector;
-    private String streamName;
+    private final MetricsCollector metricsCollector;
+    private final String metricBaseName;
 
     public StreamMetricsCollector(MetricsCollector metricsCollector, String streamName) {
         this.metricsCollector = metricsCollector;
-        this.streamName = addPrefix(streamName);
+        this.metricBaseName = addPrefix(streamName);
     }
 
     public void markReceivedEventsCount(int count) {
@@ -29,7 +29,7 @@ public class StreamMetricsCollector {
     }
 
     private Meter meter(String name) {
-        return metricsCollector.meter(streamName + "." + name);
+        return metricsCollector.meter(metricBaseName + "." + name);
     }
 
     private static String addPrefix(final String streamName) {
