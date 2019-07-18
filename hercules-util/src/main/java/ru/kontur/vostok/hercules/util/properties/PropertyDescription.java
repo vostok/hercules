@@ -3,11 +3,11 @@ package ru.kontur.vostok.hercules.util.properties;
 import ru.kontur.vostok.hercules.util.arguments.Preconditions;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parsing.Parser;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -63,10 +63,10 @@ public class PropertyDescription<T> {
 
         if (!required) {
             for (Validator<T> validator : validators) {
-                Optional<String> validationError = validator.validate(defaultValue);
-                if (validationError.isPresent()) {
+                ValidationResult result = validator.validate(defaultValue);
+                if (result.isError()) {
                     throw new IllegalArgumentException(
-                            String.format("Validation of default value failed: %s", validationError.get())
+                            String.format("Validation of default value failed: %s", result.error())
                     );
                 }
             }
@@ -101,12 +101,12 @@ public class PropertyDescription<T> {
 
         T value = parseResult.get();
         for (Validator<T> validator : validators) {
-            Optional<String> validationError = validator.validate(value);
-            if (validationError.isPresent()) {
+            ValidationResult result = validator.validate(value);
+            if (result.isError()) {
                 throw new PropertyException(String.format("Validation of value '%s' of property '%s' failed: %s",
                         stringValue,
                         name,
-                        validationError.get()
+                        result.error()
                 ));
             }
         }

@@ -1,12 +1,12 @@
 package ru.kontur.vostok.hercules.cassandra.sink;
 
+import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
-import com.datastax.oss.driver.api.core.cql.BatchStatement;
-import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
-import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.metadata.Node;
+import com.datastax.oss.driver.api.core.metadata.TokenMap;
 import com.datastax.oss.driver.api.core.servererrors.QueryValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +23,15 @@ import ru.kontur.vostok.hercules.util.time.StopwatchUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -85,12 +90,14 @@ public abstract class CassandraSender extends Sender {
     @Override
     protected int send(List<Event> events) throws BackendServiceFailedException {
         CqlSession session = cassandraConnector.session();
+        CqlIdentifier keyspace = session.getKeyspace().get();
+        Optional<TokenMap> tokenMap = session.getMetadata().getTokenMap();
 
         int rejectedEvents = 0;
 
+
         List<CompletionStage<AsyncResultSet>> asyncTasks = new ArrayList<>(events.size());
-        BatchStatementBuilder batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
-        int batchSizeBytes = batchSizeBytesMinimum;
+        Map<Set<Node>, BatchBuilder> batchBuilders = new HashMap<>();
         for (Event event : events) {
             Optional<Object[]> converted = convert(event);
             if (!converted.isPresent()) {
@@ -101,23 +108,31 @@ public abstract class CassandraSender extends Sender {
             BoundStatement statement = preparedStatement.bind(converted.get());
             int statementSizeBytes = cassandraConnector.computeInnerBatchStatementSizeBytes(statement);
 
+            // Send statement without batch if it's too large
             if (statementSizeBytes + batchSizeBytesMinimum >= batchSizeBytesLimit) {
                 asyncTasks.add(session.executeAsync(statement));
                 continue;
             }
 
-            if (statementSizeBytes + batchSizeBytes > batchSizeBytesLimit || batchBuilder.getStatementsCount() >= batchSize) {
-                asyncTasks.add(session.executeAsync(batchBuilder.build()));
+            // Otherwise, implement node awareness
+            ByteBuffer routingKey = statement.getRoutingKey();
+            Set<Node> nodes =
+                    (routingKey != null && tokenMap.isPresent())
+                            ? tokenMap.get().getReplicas(keyspace, routingKey)
+                            : Collections.emptySet();
+            BatchBuilder batchBuilder = batchBuilders.computeIfAbsent(
+                    nodes,
+                    k -> new BatchBuilder(cassandraConnector));
 
-                batchBuilder = BatchStatement.builder(DefaultBatchType.UNLOGGED);
-                batchSizeBytes = batchSizeBytesMinimum;
+            if (statementSizeBytes + batchBuilder.getBatchSizeBytes() > batchSizeBytesLimit || batchBuilder.getStatementsCount() >= batchSize) {
+                asyncTasks.add(session.executeAsync(batchBuilder.build()));
+                batchBuilders.remove(nodes);
             }
 
-            batchBuilder.addStatement(statement);
-            batchSizeBytes += statementSizeBytes;
+            batchBuilder.addStatement(statement, statementSizeBytes);
         }
 
-        if (batchBuilder.getStatementsCount() > 0) {
+        for (BatchBuilder batchBuilder : batchBuilders.values()) {
             asyncTasks.add(session.executeAsync(batchBuilder.build()));
         }
 

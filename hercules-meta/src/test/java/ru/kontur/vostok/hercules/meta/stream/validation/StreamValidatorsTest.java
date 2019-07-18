@@ -20,7 +20,7 @@ public class StreamValidatorsTest {
         stream.setTtl(86400000);
         Validator<Stream> validator = StreamValidators.streamValidatorForHandler();
 
-        assertFalse(validator.validate(stream).isPresent());
+        assertFalse(validator.validate(stream).isError());
     }
 
     @Test
@@ -32,7 +32,7 @@ public class StreamValidatorsTest {
         Validator<Stream> validator = StreamValidators.streamValidatorForHandler();
 
         assertEquals("Partition is invalid: Value should be positive integer but was 0",
-                validator.validate(stream).get());
+                validator.validate(stream).error());
     }
 
     @Test
@@ -47,6 +47,6 @@ public class StreamValidatorsTest {
 
         assertEquals("One of source streams is invalid: "
                         + "String should match the pattern '[a-z0-9_]{1,48}' but was 'TEST_t1_3'",
-                validator.validate(stream).get());
+                validator.validate(stream).error());
     }
 }

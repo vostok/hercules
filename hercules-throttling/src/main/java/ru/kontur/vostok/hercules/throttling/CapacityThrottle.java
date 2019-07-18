@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.util.Properties;
 import java.util.concurrent.Semaphore;
@@ -19,13 +19,13 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
         static final PropertyDescription<Long> CAPACITY = PropertyDescriptions
                 .longProperty(ThrottlingProperties.CAPACITY)
                 .withDefaultValue(ThrottlingDefaults.DEFAULT_CAPACITY)
-                .withValidator(Validators.greaterThan(0L))
+                .withValidator(LongValidators.positive())
                 .build();
 
         static final PropertyDescription<Long> REQUEST_TIMEOUT_MS = PropertyDescriptions
                 .longProperty(ThrottlingProperties.REQUEST_TIMEOUT)
                 .withDefaultValue(ThrottlingDefaults.DEFAULT_REQUEST_TIMEOUT)
-                .withValidator(Validators.greaterThan(0L))
+                .withValidator(LongValidators.positive())
                 .build();
     }
 

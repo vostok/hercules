@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.undertow.util.handlers.HerculesRoutingHandler;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Properties;
 
@@ -22,7 +22,7 @@ public class HttpServer {
         static final PropertyDescription<Integer> PORT = PropertyDescriptions
                 .integerProperty("port")
                 .withDefaultValue(6307)
-                .withValidator(Validators.portValidator())
+                .withValidator(IntegerValidators.portValidator())
                 .build();
     }
 

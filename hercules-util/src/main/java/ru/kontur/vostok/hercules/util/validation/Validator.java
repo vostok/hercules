@@ -1,20 +1,18 @@
 package ru.kontur.vostok.hercules.util.validation;
 
-import java.util.Optional;
-
 /**
- * Validator - common interface for validator
+ * Validator is used to test values with some conditions
  *
- * @author Kirill Sulim
+ * @author Gregory Koshelev
  */
 @FunctionalInterface
 public interface Validator<T> {
 
     /**
-     * Validate value of type t
+     * Validate the value of type {@link T}
      *
-     * @param value value to validate
-     * @return empty or validation error description
+     * @param value the value to validate
+     * @return validation result
      */
-    Optional<String> validate(T value);
+    ValidationResult validate(T value);
 }

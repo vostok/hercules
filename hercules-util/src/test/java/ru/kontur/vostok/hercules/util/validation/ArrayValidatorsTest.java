@@ -13,7 +13,7 @@ public class ArrayValidatorsTest {
     public void shouldValidateNonEmptyArray() {
         Validator<String[]> validator = ArrayValidators.notEmpty();
 
-        assertTrue(validator.validate(new String[0]).isPresent());
-        assertFalse(validator.validate(new String[]{"a"}).isPresent());
+        assertTrue(validator.validate(new String[0]).isError());
+        assertFalse(validator.validate(new String[]{"a"}).isError());
     }
 }

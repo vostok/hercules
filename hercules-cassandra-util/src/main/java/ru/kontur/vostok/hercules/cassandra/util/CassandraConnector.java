@@ -6,7 +6,6 @@ import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.BatchStatement;
-import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.BatchableStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
@@ -52,7 +51,7 @@ public class CassandraConnector {
     private final int batchSizeBytesLimit;
 
     private volatile CqlSession session;
-
+    private volatile int batchSizeBytesMinimum;
 
     public CassandraConnector(Properties properties) {
         this.dataCenter = Props.DATA_CENTER.extract(properties);
@@ -88,6 +87,9 @@ public class CassandraConnector {
                 withKeyspace(keyspace).
                 withConfigLoader(configLoader).
                 build();
+
+        BatchStatement batchStatement = BatchStatement.builder(DefaultBatchType.UNLOGGED).build();
+        batchSizeBytesMinimum = batchStatement.computeSizeInBytes(session.getContext());
     }
 
     public CqlSession session() {
@@ -105,8 +107,7 @@ public class CassandraConnector {
      * @return minimum {@link BatchStatement} size in bytes
      */
     public int batchSizeBytesMinimum() {
-        BatchStatement batchStatement = BatchStatement.builder(DefaultBatchType.UNLOGGED).build();
-        return batchStatement.computeSizeInBytes(session.getContext());
+        return batchSizeBytesMinimum;
     }
 
     /**

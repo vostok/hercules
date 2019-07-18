@@ -8,12 +8,12 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
-import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
+import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.List;
 import java.util.Properties;
@@ -109,7 +109,7 @@ public class GraphiteEventSender extends Sender {
 
         static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
                 .integerProperty("graphite.port")
-                .withValidator(Validators.portValidator())
+                .withValidator(IntegerValidators.portValidator())
                 .build();
 
         static final PropertyDescription<Integer> RETRY_LIMIT = PropertyDescriptions

@@ -1,8 +1,7 @@
 package ru.kontur.vostok.hercules.util.validation;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Matcher;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
+
 import java.util.regex.Pattern;
 
 /**
@@ -16,13 +15,10 @@ public final class StringValidators {
      * @return validator
      */
     public static Validator<String> notEmpty() {
-        return value -> {
-            if (Objects.nonNull(value) && !value.isEmpty()) {
-                return Optional.empty();
-            } else {
-                return Optional.of("String is empty");
-            }
-        };
+        return value ->
+                (!StringUtil.isNullOrEmpty(value))
+                        ? ValidationResult.ok()
+                        : ValidationResult.error("String is empty");
     }
 
     /**
@@ -32,15 +28,10 @@ public final class StringValidators {
      */
     public static Validator<String> matchesWith(String regex) {
         final Pattern pattern = Pattern.compile(regex);
-        return value -> {
-            Matcher matcher = pattern.matcher(value);
-            if (matcher.matches()) {
-                return Optional.empty();
-            } else {
-                return Optional.of(String.format("String should match the pattern '%s' but was '%s'",
-                        regex, value));
-            }
-        };
+        return value ->
+                (pattern.matcher(value).matches())
+                        ? ValidationResult.ok()
+                        : ValidationResult.error("String should match the pattern '" + regex + "' but was '" + value + "'");
     }
 
     private StringValidators() {
