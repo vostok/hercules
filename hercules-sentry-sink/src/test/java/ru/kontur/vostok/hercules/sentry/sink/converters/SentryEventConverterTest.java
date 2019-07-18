@@ -24,6 +24,7 @@ import java.util.Properties;
 public class SentryEventConverterTest {
 
     private static final String someUuid = "00000000-0000-1000-994f-8fcf383f0000";
+    private static final String platformFromStacktrace = "java";
 
     private static Container createException() {
         return ContainerBuilder.create()
@@ -113,7 +114,22 @@ public class SentryEventConverterTest {
 
         final Event sentryEvent = SentryEventConverter.convert(event);
 
-        Assert.assertEquals("java", sentryEvent.getPlatform());
+        Assert.assertEquals(platformFromStacktrace, sentryEvent.getPlatform());
+    }
+
+    @Test
+    public void shouldSetPlatformIfPlatformTagAbsentInPropertiesTag() {
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Assert.assertEquals(platformFromStacktrace, sentryEvent.getPlatform());
     }
 
     @Test
@@ -148,7 +164,6 @@ public class SentryEventConverterTest {
     @Test
     public void shouldNotSetUnknownPlatform() {
         final String unknownPlatform = "pascal";
-        final String platformFromStacktrace = "java";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
                 .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
