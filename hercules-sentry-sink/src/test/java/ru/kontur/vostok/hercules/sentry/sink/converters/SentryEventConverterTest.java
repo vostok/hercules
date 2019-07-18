@@ -23,6 +23,8 @@ import java.util.Properties;
 
 public class SentryEventConverterTest {
 
+    private static final String someUuid = "00000000-0000-1000-994f-8fcf383f0000";
+
     private static Container createException() {
         return ContainerBuilder.create()
             .tag(ExceptionTags.TYPE_TAG, Variant.ofString("com.example.test.exceptions.ExceptionClass"))
@@ -57,20 +59,21 @@ public class SentryEventConverterTest {
 
     @Test
     public void shouldConvertEventWithMessage() {
+        final String message = "This is message sample";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-            .create(0, "00000000-0000-1000-994f-8fcf383f0000")
-            .tag(LogEventTags.MESSAGE_TAG, Variant.ofString("This is message sample"))
+            .create(0, someUuid)
+            .tag(LogEventTags.MESSAGE_TAG, Variant.ofString(message))
             .build();
 
         final Event sentryEvent = SentryEventConverter.convert(event);
 
-        Assert.assertEquals("This is message sample", sentryEvent.getMessage());
+        Assert.assertEquals(message, sentryEvent.getMessage());
     }
 
     @Test
     public void shouldConvertEventWithExceptions() {
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-            .create(0, "00000000-0000-1000-994f-8fcf383f0000")
+            .create(0, someUuid)
             .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
             .build();
 
@@ -104,7 +107,7 @@ public class SentryEventConverterTest {
     @Test
     public void shouldExtractPlatformValue() {
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-            .create(0, "00000000-0000-1000-994f-8fcf383f0000")
+            .create(0, someUuid)
             .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
             .build();
 
@@ -119,14 +122,15 @@ public class SentryEventConverterTest {
         final String release = "my_release 0.1.0";
         final String fingerprintWord1 = "{{ default }}";
         final String fingerprintWord2 = "my_label";
+        final String platform = "Python";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-                .create(0, "00000000-0000-1000-994f-8fcf383f0000")
+                .create(0, someUuid)
                 .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
                         .tag(SentryTags.TRANSACTION_TAG, Variant.ofString(transaction))
                         .tag(SentryTags.RELEASE_TAG, Variant.ofString(release))
                         .tag(SentryTags.FINGERPRINT_TAG, Variant.ofVector(Vector.ofStrings(fingerprintWord1, fingerprintWord2)))
-                        .tag(SentryTags.PLATFORM_TAG, Variant.ofString("Python"))
+                        .tag(SentryTags.PLATFORM_TAG, Variant.ofString(platform))
                         .build()
                 ))
                 .build();
@@ -138,22 +142,24 @@ public class SentryEventConverterTest {
         Assert.assertTrue(sentryEvent.getFingerprint().contains(fingerprintWord1));
         Assert.assertTrue(sentryEvent.getFingerprint().contains(fingerprintWord2));
         Assert.assertEquals(2, sentryEvent.getFingerprint().size());
-        Assert.assertEquals("python", sentryEvent.getPlatform());
+        Assert.assertEquals(platform.toLowerCase(), sentryEvent.getPlatform());
     }
 
     @Test
     public void shouldNotSetUnknownPlatform() {
+        final String unknownPlatform = "pascal";
+        final String platformFromStacktrace = "java";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-                .create(0, "00000000-0000-1000-994f-8fcf383f0000")
+                .create(0, someUuid)
                 .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.PLATFORM_TAG, Variant.ofString("pascal"))
+                        .tag(SentryTags.PLATFORM_TAG, Variant.ofString(unknownPlatform))
                         .build()
                 ))
                 .build();
 
         final Event sentryEvent = SentryEventConverter.convert(event);
 
-        Assert.assertEquals("java", sentryEvent.getPlatform());
+        Assert.assertEquals(platformFromStacktrace, sentryEvent.getPlatform());
     }
 }

@@ -91,13 +91,10 @@ public class SentryEventConverter {
             ContainerUtil.extract(properties, SentryTags.FINGERPRINT_TAG)
                     .ifPresent(eventBuilder::withFingerprint);
 
-            Optional<String> platformOptional = ContainerUtil.extract(properties, SentryTags.PLATFORM_TAG);
-            if (platformOptional.isPresent()) {
-                String platform = platformOptional.get().toLowerCase();
-                if (PLATFORMS.contains(platform)) {
-                    eventBuilder.withPlatform(platform);
-                }
-            }
+            ContainerUtil.extract(properties, SentryTags.PLATFORM_TAG)
+                    .map(String::toLowerCase)
+                    .filter(PLATFORMS::contains)
+                    .ifPresent(eventBuilder::withPlatform);
 
             for (Map.Entry<String, Variant> entry : properties) {
                 String key = entry.getKey();
