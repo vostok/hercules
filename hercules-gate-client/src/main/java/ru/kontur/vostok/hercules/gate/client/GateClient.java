@@ -261,7 +261,9 @@ public class GateClient implements Closeable {
                 sender.send(url);
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
-                whiteList.remove(url);
+                if (!whiteList.remove(url)){
+                    continue;
+                }
                 if (!greyList.offer(new GreyListTopologyElement(url))) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Send fails", e);
