@@ -28,7 +28,7 @@ Properties:
   service?: String # Service name
   environment?: String # Environment
   release?: String # Release version of application
-  transaction?: String # Transaction which caused exception
+  traceId?: String # Trace identifier
   fingerprint?: Vector<String> # Labels for grouping in Sentry
   platform?: String # Platform of application
 ```

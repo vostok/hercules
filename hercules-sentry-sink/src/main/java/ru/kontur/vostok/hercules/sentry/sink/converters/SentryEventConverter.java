@@ -44,7 +44,7 @@ public class SentryEventConverter {
     private static final Set<String> SENTRY_ATTRIBUTES = Stream.of(
             CommonTags.ENVIRONMENT_TAG,
             SentryTags.RELEASE_TAG,
-            SentryTags.TRANSACTION_TAG,
+            SentryTags.TRACE_ID_TAG,
             SentryTags.FINGERPRINT_TAG,
             SentryTags.PLATFORM_TAG)
             .map(TagDescription::getName).collect(Collectors.toSet());
@@ -85,7 +85,7 @@ public class SentryEventConverter {
             ContainerUtil.extract(properties, SentryTags.RELEASE_TAG)
                     .ifPresent(eventBuilder::withRelease);
 
-            ContainerUtil.extract(properties, SentryTags.TRANSACTION_TAG)
+            ContainerUtil.extract(properties, SentryTags.TRACE_ID_TAG)
                     .ifPresent(eventBuilder::withTransaction);
 
             ContainerUtil.extract(properties, SentryTags.FINGERPRINT_TAG)

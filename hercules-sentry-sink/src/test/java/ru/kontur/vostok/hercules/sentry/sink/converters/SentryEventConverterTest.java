@@ -143,7 +143,7 @@ public class SentryEventConverterTest {
                 .create(0, someUuid)
                 .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.TRANSACTION_TAG, Variant.ofString(transaction))
+                        .tag(SentryTags.TRACE_ID_TAG, Variant.ofString(transaction))
                         .tag(SentryTags.RELEASE_TAG, Variant.ofString(release))
                         .tag(SentryTags.FINGERPRINT_TAG, Variant.ofVector(Vector.ofStrings(fingerprintWord1, fingerprintWord2)))
                         .tag(SentryTags.PLATFORM_TAG, Variant.ofString(platform))

@@ -20,12 +20,11 @@ public class SentryTags {
             .build();
 
     /**
-     * The name of the transaction which caused this exception
+     * Trace identifier of the event
      */
-    public static final TagDescription<Optional<String>> TRANSACTION_TAG = TagDescriptionBuilder.string("transaction")
+    public static final TagDescription<Optional<String>> TRACE_ID_TAG = TagDescriptionBuilder.string("traceId")
             .optional()
             .build();
-
 
     /**
      * The strings which are used for grouping the events by the issues in Sentry
