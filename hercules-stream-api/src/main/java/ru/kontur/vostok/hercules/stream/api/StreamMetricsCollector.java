@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.stream.api;
 
-import com.codahale.metrics.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 
 /**
@@ -13,26 +12,25 @@ public class StreamMetricsCollector {
     private static final String PREFIX = "byStream.";
 
     private final MetricsCollector metricsCollector;
-    private final String metricBaseName;
+    private final String receivedEventsCountMetricName;
+    private final String receivedBytesCountMetricName;
 
     public StreamMetricsCollector(MetricsCollector metricsCollector, String streamName) {
+        String metricBaseName = addPrefix(streamName);
         this.metricsCollector = metricsCollector;
-        this.metricBaseName = addPrefix(streamName);
+        this.receivedEventsCountMetricName = metricBaseName + "receivedBytesCount";
+        this.receivedBytesCountMetricName = metricBaseName + "receivedBytesCount";
     }
 
     public void markReceivedEventsCount(int count) {
-        meter("receivedEventsCount").mark(count);
+        metricsCollector.meter(receivedEventsCountMetricName).mark(count);
     }
 
     public void markReceivedBytesCount(int count) {
-        meter("receivedBytesCount").mark(count);
-    }
-
-    private Meter meter(String name) {
-        return metricsCollector.meter(metricBaseName + "." + name);
+        metricsCollector.meter(receivedBytesCountMetricName).mark(count);
     }
 
     private static String addPrefix(final String streamName) {
-        return PREFIX + streamName;
+        return PREFIX + streamName + ".";
     }
 }
