@@ -88,7 +88,7 @@ public class GateClient implements Closeable {
      * Request to {@value #PING}
      *
      * @param url Gate Url
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws BadRequestException      throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
     public void ping(String url) throws BadRequestException, UnavailableHostException, HttpProtocolException {
@@ -101,11 +101,11 @@ public class GateClient implements Closeable {
     /**
      * Request to {@value #SEND_ASYNC}
      *
-     * @param url Gate url
+     * @param url    Gate url
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param data   payload
+     * @throws BadRequestException      throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
     public void sendAsync(String url, String apiKey, String stream, final byte[] data)
@@ -119,11 +119,11 @@ public class GateClient implements Closeable {
     /**
      * Request to {@value #SEND_ACK}
      *
-     * @param url Gate url
+     * @param url    Gate url
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param data   payload
+     * @throws BadRequestException      throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
     public void send(String url, String apiKey, String stream, final byte[] data)
@@ -138,7 +138,7 @@ public class GateClient implements Closeable {
      * Request to {@value #PING}
      *
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void ping(int retryLimit)
@@ -150,10 +150,10 @@ public class GateClient implements Closeable {
      * Request to {@value #SEND_ASYNC}
      *
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
-     * @param apiKey key for sending
-     * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param apiKey     key for sending
+     * @param stream     topic name in kafka
+     * @param data       payload
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void sendAsync(int retryLimit, String apiKey, String stream, final byte[] data)
@@ -165,10 +165,10 @@ public class GateClient implements Closeable {
      * Request to {@value #SEND_ACK}
      *
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
-     * @param apiKey key for sending
-     * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param apiKey     key for sending
+     * @param stream     topic name in kafka
+     * @param data       payload
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void send(int retryLimit, String apiKey, String stream, final byte[] data)
@@ -179,7 +179,7 @@ public class GateClient implements Closeable {
     /**
      * Request to {@value #PING}. Count of retry is <code>whitelist.size() + 1</code>
      *
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void ping()
@@ -192,8 +192,8 @@ public class GateClient implements Closeable {
      *
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param data   payload
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void sendAsync(String apiKey, String stream, final byte[] data)
@@ -206,8 +206,8 @@ public class GateClient implements Closeable {
      *
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param data   payload
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void send(String apiKey, String stream, final byte[] data)
@@ -216,6 +216,8 @@ public class GateClient implements Closeable {
     }
 
     public void close() {
+        scheduler.shutdown();
+
         try {
             client.close();
         } catch (IOException e) {
@@ -243,6 +245,7 @@ public class GateClient implements Closeable {
     }
 
     //TODO: metrics
+
     /**
      * Strategy of sending data to addresses pool
      */
@@ -261,7 +264,7 @@ public class GateClient implements Closeable {
                 sender.send(url);
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
-                if (!whiteList.remove(url)){
+                if (!whiteList.remove(url)) {
                     continue;
                 }
                 if (!greyList.offer(new GreyListTopologyElement(url))) {
@@ -277,6 +280,7 @@ public class GateClient implements Closeable {
     }
 
     //TODO: metrics
+
     /**
      * Strategy of sending data to single host
      */
@@ -328,9 +332,9 @@ public class GateClient implements Closeable {
     /**
      * Tuning of {@link CloseableHttpClient}
      *
-     * @param requestTimeout request timeout aka socket timeout (in millis)
+     * @param requestTimeout    request timeout aka socket timeout (in millis)
      * @param connectionTimeout connection timeout (in millis)
-     * @param connectionCount maximum client connections
+     * @param connectionCount   maximum client connections
      * @return Customized http client
      */
     private static CloseableHttpClient createHttpClient(int requestTimeout, int connectionTimeout, int connectionCount) {
