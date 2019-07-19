@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
+import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.HerculesProtocolAssert;
@@ -55,6 +56,20 @@ public class TagDescriptionBuilderTest {
         );
 
         assertThat(stringVariantValue, is("abc"));
+    }
+
+    @Test
+    public void shouldExtractVectorOfStrings() {
+        TagDescription<String[]> description = TagDescriptionBuilder.stringVector("test").build();
+
+        String[] extractedStringVector = ContainerUtil.extract(
+                ContainerBuilder.create()
+                        .tag("test", Variant.ofVector(Vector.ofStrings("string1", "string2")))
+                        .build(),
+                description
+        );
+
+        HerculesProtocolAssert.assertArrayEquals(new String[]{"string1", "string2"}, extractedStringVector, Assert::assertEquals);
     }
 
     @Test

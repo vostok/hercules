@@ -23,10 +23,14 @@ StackFrame:
   line?: Integer # Line number
   column?: [Short, Integer] # Column number
 Properties:
-  project?: String
-  application?: String
-  service?: String
-  environment?: String
+  project?: String # Project name
+  application?: String # Application name
+  service?: String # Service name
+  environment?: String # Environment
+  release?: String # Release version of application
+  traceId?: String # Trace identifier
+  fingerprint?: Vector<String> # Labels for grouping in Sentry
+  platform?: String # Platform of application
 ```
 
 Tags `properties/project`, `properties/application`, `properties/service` and `properties/environment` are [common tags](../../hercules-protocol/doc/common-tags.md).
