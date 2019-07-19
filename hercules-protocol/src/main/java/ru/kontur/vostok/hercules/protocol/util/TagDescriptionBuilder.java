@@ -35,6 +35,11 @@ public class TagDescriptionBuilder<T> {
                 .addScalarExtractor(Type.STRING, StandardExtractors::extractString);
     }
 
+    public static TagDescriptionBuilder<String[]> stringVector(String name) {
+        return new TagDescriptionBuilder<String[]>(name)
+                .addVectorExtractor(Type.STRING, StandardExtractors::extractStringArray);
+    }
+
     public static TagDescriptionBuilder<Container[]> containerVector(String name) {
         return new TagDescriptionBuilder<Container[]>(name)
                 .addVectorExtractor(Type.CONTAINER, StandardExtractors::extractContainerArray);

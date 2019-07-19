@@ -227,7 +227,7 @@ public class SentryClientHolder {
         if (dsnResult.isOk()){
             SentryClient sentryClient = SentryClientFactory.sentryClient(applySettings(dsnResult.get()), sentryClientFactory);
             clients.get(organization).put(project, sentryClient);
-            LOGGER.info(String.format("The client for project '%s' is uploaded into cache", organization));
+            LOGGER.info(String.format("The client for project '%s' is uploaded into cache", project));
         } else {
             return Result.error(dsnResult.getError());
         }
