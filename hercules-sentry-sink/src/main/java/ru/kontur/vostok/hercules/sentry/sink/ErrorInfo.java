@@ -159,24 +159,4 @@ public class ErrorInfo {
         }
         return string;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ErrorInfo errorInfo = (ErrorInfo) o;
-        return code == errorInfo.code &&
-                waitingTimeMs == errorInfo.waitingTimeMs &&
-                Objects.equals(message, errorInfo.message) &&
-                Objects.equals(isRetryable, errorInfo.isRetryable);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(message, code, isRetryable, waitingTimeMs);
-    }
 }
