@@ -126,7 +126,7 @@ public abstract class CassandraSender extends Sender {
 
             if (statementSizeBytes + batchBuilder.getBatchSizeBytes() > batchSizeBytesLimit || batchBuilder.getStatementsCount() >= batchSize) {
                 asyncTasks.add(session.executeAsync(batchBuilder.build()));
-                batchBuilders.remove(nodes);
+                batchBuilders.put(nodes, batchBuilder = new BatchBuilder(cassandraConnector));
             }
 
             batchBuilder.addStatement(statement, statementSizeBytes);
