@@ -95,7 +95,6 @@ public class SentrySyncProcessor {
      */
     private boolean tryToSend(Event event, String organization, String sentryProject)
             throws BackendServiceFailedException {
-        ErrorInfo previousErrorInfo = null;
         int retryCount = retryLimit;
         do {
             ErrorInfo processErrorInfo;
@@ -116,13 +115,6 @@ public class SentrySyncProcessor {
             if (processErrorInfo.getWaitingTimeMs() > 0) {
                 throw new BackendServiceFailedException();
             }
-
-            if (previousErrorInfo != null) {
-                if (!processErrorInfo.equals(previousErrorInfo)) {
-                    retryCount = retryLimit;
-                }
-            }
-            previousErrorInfo = processErrorInfo;
         } while (0 < retryCount--);
         throw new BackendServiceFailedException();
     }
