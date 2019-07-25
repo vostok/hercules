@@ -37,6 +37,7 @@ public class StreamReader {
 
     private final MetricsCollector metricsCollector;
     private final Meter receivedEventsCountMeter;
+    private final Meter receivedBytesCountMeter;
 
     private final long readTimeoutMs;
 
@@ -48,6 +49,7 @@ public class StreamReader {
 
         this.metricsCollector = metricsCollector;
         this.receivedEventsCountMeter = metricsCollector.meter("receivedEventsCount");
+        this.receivedBytesCountMeter = metricsCollector.meter("receivedBytesCount");
 
         readTimeoutMs = Props.READ_TIMEOUT_MS.extract(properties);
     }
@@ -99,13 +101,15 @@ public class StreamReader {
             elapsedTimeMs = StopwatchUtil.elapsedTime(readStartedMs);
             remainingTimeMs = StopwatchUtil.remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
 
-            List<byte[]> events = pollAndUpdateNextOffsets(consumer,
-                    nextOffsets,
-                    take,
-                    remainingTimeMs,
-                    metricsCollector,
-                    streamMetricsCollector);
+            List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, remainingTimeMs);
 
+            int receivedBytesCount = 0;
+            for (byte[] event : events) {
+                receivedBytesCount += event.length;
+            }
+
+            receivedBytesCountMeter.mark(receivedBytesCount);
+            streamMetricsCollector.markReceivedBytesCount(receivedBytesCount);
             receivedEventsCountMeter.mark(events.size());
             streamMetricsCollector.markReceivedEventsCount(events.size());
 
@@ -130,9 +134,7 @@ public class StreamReader {
     private static <K, V> List<V> pollAndUpdateNextOffsets(Consumer<K, V> consumer,
                                                            Map<TopicPartition, Long> nextOffsets,
                                                            int take,
-                                                           long timeoutMs,
-                                                           MetricsCollector metricsCollector,
-                                                           StreamMetricsCollector streamMetricsCollector) {
+                                                           long timeoutMs) {
         List<V> events = new ArrayList<>(take);
         int count = 0;
 
@@ -147,9 +149,6 @@ public class StreamReader {
                 long nextOffset = nextOffsets.get(partition);
                 for (ConsumerRecord<K, V> record : records.records(partition)) {
                     if (++count <= take) {
-                        int receivedBytesCount = ((byte[]) record.value()).length;
-                        streamMetricsCollector.markReceivedBytesCount(receivedBytesCount);
-                        metricsCollector.meter("receivedBytesCount").mark(receivedBytesCount);
                         events.add(record.value());
                         nextOffset = record.offset() + 1;
                     } else {
