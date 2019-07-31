@@ -18,7 +18,7 @@ public class StreamMetricsCollector {
     public StreamMetricsCollector(MetricsCollector metricsCollector, String streamName) {
         String metricBaseName = addPrefix(streamName);
         this.metricsCollector = metricsCollector;
-        this.receivedEventsCountMetricName = metricBaseName + "receivedBytesCount";
+        this.receivedEventsCountMetricName = metricBaseName + "receivedEventsCount";
         this.receivedBytesCountMetricName = metricBaseName + "receivedBytesCount";
     }
 
