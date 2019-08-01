@@ -19,12 +19,11 @@ public class ByteUtil {
         for (char hex = '0'; hex <= '9'; hex++) {
             hexCharToByte[hex] = (byte) (hex - '0');
         }
-        int letterOffset = 10;
         for (char hex = 'a'; hex <= 'f'; hex++) {
-            hexCharToByte[hex] = (byte) (hex - 'a' + letterOffset);
+            hexCharToByte[hex] = (byte) (hex - 'a' + 0x0A);
         }
         for (char hex = 'A'; hex <= 'F'; hex++) {
-            hexCharToByte[hex] = (byte) (hex - 'A' + letterOffset);
+            hexCharToByte[hex] = (byte) (hex - 'A' + 0x0A);
         }
 
         HEX_CHAR_TO_BYTE = hexCharToByte;
