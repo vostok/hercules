@@ -22,6 +22,7 @@ public class ExceptionHandler implements HttpHandler {
         try {
             handler.handle(request);
         } catch (Throwable throwable) {
+            LOGGER.error("Internal Server Error due to exception", throwable);
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
