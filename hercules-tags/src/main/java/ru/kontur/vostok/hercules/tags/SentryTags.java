@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.tags;
 
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 
@@ -37,6 +38,13 @@ public class SentryTags {
      * The platform of the application which generated the event
      */
     public static TagDescription<Optional<String>> PLATFORM_TAG = TagDescriptionBuilder.string("platform")
+            .optional()
+            .build();
+
+    /**
+     * Info about user
+     */
+    public static TagDescription<Optional<Container>> USER_TAG = TagDescriptionBuilder.container("user")
             .optional()
             .build();
 }

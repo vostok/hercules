@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.sentry.sink.converters;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.Sdk;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -41,12 +43,13 @@ public class SentryEventConverter {
             null
     ));
 
-    private static final Set<String> SENTRY_ATTRIBUTES = Stream.of(
+    private static final Set<String> STANDARD_PROPERTIES = Stream.of(
             CommonTags.ENVIRONMENT_TAG,
             SentryTags.RELEASE_TAG,
             SentryTags.TRACE_ID_TAG,
             SentryTags.FINGERPRINT_TAG,
-            SentryTags.PLATFORM_TAG)
+            SentryTags.PLATFORM_TAG,
+            SentryTags.USER_TAG)
             .map(TagDescription::getName).collect(Collectors.toSet());
 
     private static final String HIDING_SERVER_NAME = " ";
@@ -60,24 +63,25 @@ public class SentryEventConverter {
 
         eventBuilder.withServerName(HIDING_SERVER_NAME);
 
-        ContainerUtil.extract(logEvent.getPayload(), LogEventTags.MESSAGE_TAG)
+        final Container payload = logEvent.getPayload();
+        ContainerUtil.extract(payload, LogEventTags.MESSAGE_TAG)
                 .ifPresent(eventBuilder::withMessage);
 
-        ContainerUtil.extract(logEvent.getPayload(), LogEventTags.LEVEL_TAG)
+        ContainerUtil.extract(payload, LogEventTags.LEVEL_TAG)
                 .flatMap(SentryLevelEnumParser::parse)
                 .ifPresent(eventBuilder::withLevel);
 
-        ContainerUtil.extract(logEvent.getPayload(), LogEventTags.EXCEPTION_TAG).ifPresent(exception -> {
-            final ExceptionInterface exceptionInterface = convertException(exception);
-            eventBuilder.withSentryInterface(exceptionInterface);
-            eventBuilder.withPlatform(SentryEventConverter.extractPlatform(exceptionInterface));
-        });
+        ContainerUtil.extract(payload, LogEventTags.EXCEPTION_TAG)
+                .ifPresent(exception -> {
+                    final ExceptionInterface exceptionInterface = convertException(exception);
+                    eventBuilder.withSentryInterface(exceptionInterface);
+                    eventBuilder.withPlatform(SentryEventConverter.extractPlatform(exceptionInterface));
+                });
 
-        ContainerUtil.extract(logEvent.getPayload(), LogEventTags.STACK_TRACE_TAG).ifPresent(stackTrace -> {
-            eventBuilder.withExtra("stackTrace", stackTrace);
-        });
+        ContainerUtil.extract(payload, LogEventTags.STACK_TRACE_TAG)
+                .ifPresent(stackTrace -> eventBuilder.withExtra("stackTrace", stackTrace));
 
-        ContainerUtil.extract(logEvent.getPayload(), CommonTags.PROPERTIES_TAG).ifPresent(properties -> {
+        ContainerUtil.extract(payload, CommonTags.PROPERTIES_TAG).ifPresent(properties -> {
 
             ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG)
                     .ifPresent(eventBuilder::withEnvironment);
@@ -96,18 +100,36 @@ public class SentryEventConverter {
                     .filter(PLATFORMS::contains)
                     .ifPresent(eventBuilder::withPlatform);
 
-            for (Map.Entry<String, Variant> entry : properties) {
-                String key = entry.getKey();
-                if (!SENTRY_ATTRIBUTES.contains(key)) {
-                    VariantUtil.extractPrimitiveAsString(entry.getValue()).ifPresent(value -> eventBuilder.withTag(key, value));
-                }
-            }
+            ContainerUtil.extract(properties, SentryTags.USER_TAG)
+                    .ifPresent(user -> eventBuilder.withSentryInterface(SentryUserConverter.convert(user)));
+
+            writeExtraData(eventBuilder, properties);
         });
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
         sentryEvent.setSdk(SDK.get());
 
         return sentryEvent;
+    }
+
+    private static void writeExtraData(EventBuilder eventBuilder, final Container properties) {
+        for (Map.Entry<String, Variant> entry : properties) {
+            String key = entry.getKey();
+            if (!STANDARD_PROPERTIES.contains(key)) {
+                Optional<String> valueOptional = VariantUtil.extractAsString(entry.getValue());
+                if (valueOptional.isPresent()) {
+                    eventBuilder.withTag(key, valueOptional.get());
+                } else {
+                    String value;
+                    try {
+                        value = (new ObjectMapper()).writeValueAsString(entry.getValue());
+                    } catch (JsonProcessingException e) {
+                        continue;
+                    }
+                    eventBuilder.withExtra(key, value);
+                }
+            }
+        }
     }
 
     private static ExceptionInterface convertException(final Container exception) {
@@ -120,18 +142,18 @@ public class SentryEventConverter {
     private static void convertException(final Container currentException, final LinkedList<SentryException> converted) {
         converted.add(SentryExceptionConverter.convert(currentException));
         ContainerUtil.extract(currentException, ExceptionTags.INNER_EXCEPTIONS_TAG)
-            .ifPresent(exceptions -> Arrays.stream(exceptions).forEach(exception -> convertException(exception, converted)));
+                .ifPresent(exceptions -> Arrays.stream(exceptions).forEach(exception -> convertException(exception, converted)));
     }
 
     private static String extractPlatform(final ExceptionInterface exceptionInterface) {
         return exceptionInterface.getExceptions().stream()
-            .flatMap(e -> Arrays.stream(e.getStackTraceInterface().getStackTrace()))
-            .map(SentryStackTraceElement::getFileName)
-            .map(SentryEventConverter::resolvePlatformByFileName)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .findFirst()
-            .orElse(DEFAULT_PLATFORM);
+                .flatMap(e -> Arrays.stream(e.getStackTraceInterface().getStackTrace()))
+                .map(SentryStackTraceElement::getFileName)
+                .map(SentryEventConverter::resolvePlatformByFileName)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .orElse(DEFAULT_PLATFORM);
     }
 
     private static Optional<String> resolvePlatformByFileName(final String fileName) {
