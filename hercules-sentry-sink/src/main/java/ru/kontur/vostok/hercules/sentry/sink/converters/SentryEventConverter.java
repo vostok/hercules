@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.sentry.sink.converters;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.Sdk;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -9,13 +7,11 @@ import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
-import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
 import ru.kontur.vostok.hercules.tags.SentryTags;
 import ru.kontur.vostok.hercules.util.Lazy;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
@@ -51,7 +47,8 @@ public class SentryEventConverter {
             SentryTags.PLATFORM_TAG,
             SentryTags.LOGGER_TAG,
             SentryTags.USER_TAG,
-            SentryTags.CONTEXT_TAG)
+            SentryTags.CONTEXT_TAG,
+            SentryTags.EXTRA_TAG)
             .map(TagDescription::getName).collect(Collectors.toSet());
 
     private static final String HIDING_SERVER_NAME = " ";
@@ -109,9 +106,12 @@ public class SentryEventConverter {
                     .ifPresent(user -> eventBuilder.withSentryInterface(SentryUserConverter.convert(user)));
 
             ContainerUtil.extract(properties, SentryTags.CONTEXT_TAG)
-                    .ifPresent(context -> eventBuilder.withContexts(SentryContextsConverter.convert(context)));
+                    .ifPresent(contexts -> eventBuilder.withContexts(SentryContextsConverter.convert(contexts)));
 
-            writeExtraData(eventBuilder, properties);
+            writeTags(eventBuilder, properties);
+
+            ContainerUtil.extract(properties, SentryTags.EXTRA_TAG)
+                    .ifPresent(extra -> writeExtraData(eventBuilder, extra));
         });
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
@@ -120,23 +120,22 @@ public class SentryEventConverter {
         return sentryEvent;
     }
 
-    private static void writeExtraData(EventBuilder eventBuilder, final Container properties) {
-        for (Map.Entry<String, Variant> entry : properties) {
-            String key = entry.getKey();
-            if (!STANDARD_PROPERTIES.contains(key)) {
-                Optional<String> valueOptional = VariantUtil.extractAsString(entry.getValue());
-                if (valueOptional.isPresent()) {
-                    eventBuilder.withTag(key, valueOptional.get());
-                } else {
-                    String value;
-                    try {
-                        value = (new ObjectMapper()).writeValueAsString(entry.getValue());
-                    } catch (JsonProcessingException e) {
-                        continue;
-                    }
-                    eventBuilder.withExtra(key, value);
-                }
+    private static void writeTags(EventBuilder eventBuilder, final Container properties) {
+        Map<String, Object> map = SentryToMapConverter.convert(properties, STANDARD_PROPERTIES);
+        for (Map.Entry<String, Object> pair : map.entrySet()) {
+            if (pair.getValue() != null) {
+                eventBuilder.withTag(pair.getKey(), pair.getValue().toString());
+            } else {
+                eventBuilder.withTag(pair.getKey(), "null");
             }
+
+        }
+    }
+
+    private static void writeExtraData(EventBuilder eventBuilder, final Container extra) {
+        Map<String, Object> map = SentryToMapConverter.convert(extra, null);
+        for (Map.Entry<String, Object> pair : map.entrySet()) {
+            eventBuilder.withExtra(pair.getKey(), pair.getValue());
         }
     }
 

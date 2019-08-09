@@ -31,7 +31,7 @@ public class SentryUserConverter {
 
         String email = ContainerUtil.extract(user, UserTags.EMAIL_TAG).orElse(null);
 
-        Map<String, Object> additionalData = SentryToMapConverter.containerToMap(user, STANDARD_USER_FIELDS);
+        Map<String, Object> additionalData = SentryToMapConverter.convert(user, STANDARD_USER_FIELDS);
 
         return new UserInterface(id, username, ipAddress, email, additionalData);
     }

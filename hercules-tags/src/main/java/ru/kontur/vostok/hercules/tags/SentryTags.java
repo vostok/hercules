@@ -61,4 +61,11 @@ public class SentryTags {
     public static TagDescription<Optional<Container>> CONTEXT_TAG = TagDescriptionBuilder.container("contexts")
             .optional()
             .build();
+
+    /**
+     * Additional data
+     */
+    public static TagDescription<Optional<Container>> EXTRA_TAG = TagDescriptionBuilder.container("extra")
+            .optional()
+            .build();
 }

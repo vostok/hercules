@@ -22,7 +22,7 @@ public class SentryContextsConverter {
             } catch (ClassCastException e) {
                 continue;
             }
-            Map<String, Object> map = SentryToMapConverter.containerToMap(container, null);
+            Map<String, Object> map = SentryToMapConverter.convert(container, null);
             contextMap.put(containerKey, map);
         }
         return contextMap;
