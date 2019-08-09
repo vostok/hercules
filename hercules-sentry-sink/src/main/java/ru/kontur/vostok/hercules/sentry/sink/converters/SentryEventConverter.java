@@ -49,7 +49,9 @@ public class SentryEventConverter {
             SentryTags.TRACE_ID_TAG,
             SentryTags.FINGERPRINT_TAG,
             SentryTags.PLATFORM_TAG,
-            SentryTags.USER_TAG)
+            SentryTags.LOGGER_TAG,
+            SentryTags.USER_TAG,
+            SentryTags.CONTEXT_TAG)
             .map(TagDescription::getName).collect(Collectors.toSet());
 
     private static final String HIDING_SERVER_NAME = " ";
@@ -100,8 +102,14 @@ public class SentryEventConverter {
                     .filter(PLATFORMS::contains)
                     .ifPresent(eventBuilder::withPlatform);
 
+            ContainerUtil.extract(properties, SentryTags.LOGGER_TAG)
+                    .ifPresent(eventBuilder::withLogger);
+
             ContainerUtil.extract(properties, SentryTags.USER_TAG)
                     .ifPresent(user -> eventBuilder.withSentryInterface(SentryUserConverter.convert(user)));
+
+            ContainerUtil.extract(properties, SentryTags.CONTEXT_TAG)
+                    .ifPresent(context -> eventBuilder.withContexts(SentryContextsConverter.convert(context)));
 
             writeExtraData(eventBuilder, properties);
         });

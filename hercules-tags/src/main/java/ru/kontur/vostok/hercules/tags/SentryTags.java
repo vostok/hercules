@@ -42,9 +42,23 @@ public class SentryTags {
             .build();
 
     /**
-     * Info about user
+     * The name of the logger which created the event
+     */
+    public static TagDescription<Optional<String>> LOGGER_TAG = TagDescriptionBuilder.string("logger")
+            .optional()
+            .build();
+
+    /**
+     * The information about user
      */
     public static TagDescription<Optional<Container>> USER_TAG = TagDescriptionBuilder.container("user")
+            .optional()
+            .build();
+
+    /**
+     * Additional context data
+     */
+    public static TagDescription<Optional<Container>> CONTEXT_TAG = TagDescriptionBuilder.container("contexts")
             .optional()
             .build();
 }
