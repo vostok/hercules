@@ -11,7 +11,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
+/**
+ * Allows to convert the user information to Sentry user fields
+ *
+ * @author Petr Demenev
+ */
 public class SentryUserConverter {
 
     private static final Set<String> STANDARD_USER_FIELDS = Stream.of(
@@ -31,7 +35,7 @@ public class SentryUserConverter {
 
         String email = ContainerUtil.extract(user, UserTags.EMAIL_TAG).orElse(null);
 
-        Map<String, Object> additionalData = SentryToMapConverter.convert(user, STANDARD_USER_FIELDS);
+        Map<String, Object> additionalData = ContainerUtil.toObjectMap(user, STANDARD_USER_FIELDS);
 
         return new UserInterface(id, username, ipAddress, email, additionalData);
     }

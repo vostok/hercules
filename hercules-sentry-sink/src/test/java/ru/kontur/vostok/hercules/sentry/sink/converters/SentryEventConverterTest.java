@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
+/**
+ * @author Petr Demenev
+ */
 public class SentryEventConverterTest {
 
     private static final String someUuid = "00000000-0000-1000-994f-8fcf383f0000";
@@ -215,7 +218,7 @@ public class SentryEventConverterTest {
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.CONTEXT_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag(SentryTags.CONTEXTS_TAG, Variant.ofContainer(ContainerBuilder.create()
                                 .tag("browser", Variant.ofContainer(ContainerBuilder.create()
                                         .tag("name", Variant.ofString(name))
                                         .tag("version", Variant.ofString(version))

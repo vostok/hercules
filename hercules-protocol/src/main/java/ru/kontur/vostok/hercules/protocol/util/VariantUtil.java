@@ -11,11 +11,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * VariantUtil
+ *
+ * @author Petr Demenev
+ */
 public final class VariantUtil {
 
     private VariantUtil() {
     }
 
+    /**
+     * Extract Optional<Object> from Variant
+     *
+     * @param variant Variant object
+     * @return Variant value as Object wrapped by Optional
+     */
     public static Optional<Object> extract(Variant variant) {
         switch (variant.getType()) {
             case BYTE:

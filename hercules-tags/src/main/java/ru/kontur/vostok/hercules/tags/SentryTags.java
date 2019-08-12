@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 import java.util.Optional;
 
 /**
- * Tags for Sentry attributes
+ * Tags for Sentry attributes and Sentry interfaces
  *
  * @author Petr Demenev
  */
@@ -58,7 +58,7 @@ public class SentryTags {
     /**
      * Additional context data
      */
-    public static TagDescription<Optional<Container>> CONTEXT_TAG = TagDescriptionBuilder.container("contexts")
+    public static TagDescription<Optional<Container>> CONTEXTS_TAG = TagDescriptionBuilder.container("contexts")
             .optional()
             .build();
 

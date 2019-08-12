@@ -31,6 +31,15 @@ Properties:
   traceId?: String # Trace identifier
   fingerprint?: Vector<String> # Labels for grouping in Sentry
   platform?: String # Platform of application
+  logger?: String # Logger which created the event
+  User?: Container # Information about user
+  contexts?: Container # Additional context data
+  extra?: Container # Additional data
+User:
+  id?: String # Unique ID of user
+  username?: String # Username of user
+  ipAddress?: String # IP of user.
+  email?: String # The email address of user
 ```
 
 Tags `properties/project`, `properties/application`, `properties/service` and `properties/environment` are [common tags](../../hercules-protocol/doc/common-tags.md).

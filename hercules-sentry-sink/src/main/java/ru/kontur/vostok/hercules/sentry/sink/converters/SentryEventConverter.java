@@ -47,7 +47,7 @@ public class SentryEventConverter {
             SentryTags.PLATFORM_TAG,
             SentryTags.LOGGER_TAG,
             SentryTags.USER_TAG,
-            SentryTags.CONTEXT_TAG,
+            SentryTags.CONTEXTS_TAG,
             SentryTags.EXTRA_TAG)
             .map(TagDescription::getName).collect(Collectors.toSet());
 
@@ -105,7 +105,7 @@ public class SentryEventConverter {
             ContainerUtil.extract(properties, SentryTags.USER_TAG)
                     .ifPresent(user -> eventBuilder.withSentryInterface(SentryUserConverter.convert(user)));
 
-            ContainerUtil.extract(properties, SentryTags.CONTEXT_TAG)
+            ContainerUtil.extract(properties, SentryTags.CONTEXTS_TAG)
                     .ifPresent(contexts -> eventBuilder.withContexts(SentryContextsConverter.convert(contexts)));
 
             writeTags(eventBuilder, properties);
@@ -121,7 +121,7 @@ public class SentryEventConverter {
     }
 
     private static void writeTags(EventBuilder eventBuilder, final Container properties) {
-        Map<String, Object> map = SentryToMapConverter.convert(properties, STANDARD_PROPERTIES);
+        Map<String, Object> map = ContainerUtil.toObjectMap(properties, STANDARD_PROPERTIES);
         for (Map.Entry<String, Object> pair : map.entrySet()) {
             if (pair.getValue() != null) {
                 eventBuilder.withTag(pair.getKey(), pair.getValue().toString());
@@ -133,7 +133,7 @@ public class SentryEventConverter {
     }
 
     private static void writeExtraData(EventBuilder eventBuilder, final Container extra) {
-        Map<String, Object> map = SentryToMapConverter.convert(extra, null);
+        Map<String, Object> map = ContainerUtil.toObjectMap(extra);
         for (Map.Entry<String, Object> pair : map.entrySet()) {
             eventBuilder.withExtra(pair.getKey(), pair.getValue());
         }

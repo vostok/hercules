@@ -3,10 +3,16 @@ package ru.kontur.vostok.hercules.sentry.sink.converters;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Allows to convert the context information to Sentry context fields
+ *
+ * @author Petr Demenev
+ */
 public class SentryContextsConverter {
 
     public static Map<String, Map<String, Object>> convert(Container contexts) {
@@ -22,7 +28,7 @@ public class SentryContextsConverter {
             } catch (ClassCastException e) {
                 continue;
             }
-            Map<String, Object> map = SentryToMapConverter.convert(container, null);
+            Map<String, Object> map = ContainerUtil.toObjectMap(container, null);
             contextMap.put(containerKey, map);
         }
         return contextMap;
