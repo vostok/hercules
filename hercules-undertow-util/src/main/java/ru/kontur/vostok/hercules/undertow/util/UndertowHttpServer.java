@@ -5,6 +5,7 @@ import io.undertow.server.HttpServerExchange;
 import org.xnio.Options;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.handler.ExceptionHandler;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 
 import java.util.Properties;
@@ -24,9 +25,11 @@ public class UndertowHttpServer extends HttpServer {
     protected void startInternal() {
         int connectionThreshold = Props.CONNECTION_THRESHOLD.extract(properties);
 
+        final ExceptionHandler exceptionHandler = new ExceptionHandler(handler);
+
         undertow = Undertow.builder().
                 addHttpListener(port, host).
-                setHandler(exchange -> handler.handle(wrap(exchange))).
+                setHandler(exchange -> exceptionHandler.handle(wrap(exchange))).
                 setSocketOption(Options.CONNECTION_HIGH_WATER, connectionThreshold).
                 setSocketOption(Options.CONNECTION_LOW_WATER, connectionThreshold).
                 build();
