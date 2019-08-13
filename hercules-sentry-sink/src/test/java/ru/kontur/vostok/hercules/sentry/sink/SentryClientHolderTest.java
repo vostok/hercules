@@ -49,11 +49,16 @@ public class SentryClientHolderTest {
 
     @Before
     public void init() {
-        List<String> keyList = new ArrayList<>();
-        keyList.add(MY_DSN);
+        List<KeyInfo> keyList = new ArrayList<>();
+        DsnInfo dsnInfo = new DsnInfo();
+        dsnInfo.setPublicDsn(MY_DSN);
+        KeyInfo keyInfo = new KeyInfo();
+        keyInfo.setDsn(dsnInfo);
+        keyInfo.setIsActive(true);
+        keyList.add(keyInfo);
         Set<String> teamInfoSet = new HashSet<>();
         teamInfoSet.add(MY_TEAM);
-        Map<String, List<String>> projectMap = new HashMap<>();
+        Map<String, List<KeyInfo>> projectMap = new HashMap<>();
         projectMap.put(MY_PROJECT, keyList);
 
         sentrySimulator = new HashMap<>();
@@ -177,6 +182,18 @@ public class SentryClientHolderTest {
     }
 
     @Test
+    public void shouldReturnErrorIfDsnExistsButIsInactive() {
+        SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
+        sentrySimulator.get(MY_ORGANIZATION).getProjectMap().get(MY_PROJECT).get(0).setIsActive(false);
+
+        sentryClientHolder.update();
+        Result<Void, ErrorInfo> result = sentryClientHolder.createProjectIfNotExists(MY_ORGANIZATION, MY_PROJECT);
+
+        verify(sentryApiClientMock, times(2)).getProjects(MY_ORGANIZATION);
+        assertFalse(result.isOk());
+    }
+
+    @Test
     public void shouldReturnErrorOfProjectCreation() {
         createProjectMock(MY_ORGANIZATION, EXISTING_PROJECT);
         getTeamsMock(MY_ORGANIZATION);
@@ -219,10 +236,15 @@ public class SentryClientHolderTest {
     }
 
     private void initWithoutTeams() {
-        List<String> keyList = new ArrayList<>();
-        keyList.add(MY_DSN);
+        List<KeyInfo> keyList = new ArrayList<>();
+        DsnInfo dsnInfo = new DsnInfo();
+        dsnInfo.setPublicDsn(MY_DSN);
+        KeyInfo keyInfo = new KeyInfo();
+        keyInfo.setDsn(dsnInfo);
+        keyInfo.setIsActive(true);
+        keyList.add(keyInfo);
         Set<String> teamInfoSet = new HashSet<>();
-        Map<String, List<String>> projectMap = new HashMap<>();
+        Map<String, List<KeyInfo>> projectMap = new HashMap<>();
         projectMap.put(MY_PROJECT, keyList);
 
         sentrySimulator = new HashMap<>();
@@ -268,22 +290,17 @@ public class SentryClientHolderTest {
     private void getPublicDsnMock(String organization, String project) {
         Result<List<KeyInfo>, ErrorInfo> result;
         if (project.equals(NEW_PROJECT)) {
-            List<String> keyList = new ArrayList<>();
-            keyList.add(NEW_DSN);
+            List<KeyInfo> keyList = new ArrayList<>();
+            DsnInfo dsnInfo = new DsnInfo();
+            dsnInfo.setPublicDsn(NEW_DSN);
+            KeyInfo keyInfo = new KeyInfo();
+            keyInfo.setDsn(dsnInfo);
+            keyInfo.setIsActive(true);
+            keyList.add(keyInfo);
             sentrySimulator.get(organization).getProjectMap().put(project, keyList);
         }
         try {
-            result = Result.ok(
-                    sentrySimulator.get(organization).getProjectMap().get(project).stream()
-                            .map(dsn -> {
-                                DsnInfo dsnInfo = new DsnInfo();
-                                dsnInfo.setPublicDsn(dsn);
-                                KeyInfo keyInfo = new KeyInfo();
-                                keyInfo.setDsn(dsnInfo);
-                                return keyInfo;
-                            })
-                            .collect(Collectors.toList())
-            );
+            result = Result.ok(sentrySimulator.get(organization).getProjectMap().get(project));
         } catch (NullPointerException e) {
             result = Result.error(new ErrorInfo("NOT_FOUND", 404));
         }
@@ -327,8 +344,13 @@ public class SentryClientHolderTest {
             if (project.equals(EXISTING_PROJECT)) {
                 return Result.error("CONFLICT");
             } else {
-                List<String> dsnList = new ArrayList<>();
-                dsnList.add("https://1234567813ef4c6ca4fbabc4b8f8cb7e@mysentry.io/1000002");
+                List<KeyInfo> dsnList = new ArrayList<>();
+                DsnInfo dsnInfo = new DsnInfo();
+                dsnInfo.setPublicDsn(NEW_DSN);
+                KeyInfo keyInfo = new KeyInfo();
+                keyInfo.setDsn(dsnInfo);
+                keyInfo.setIsActive(true);
+                dsnList.add(keyInfo);
                 sentrySimulator.get(organization).getProjectMap().put(project, dsnList);
                 ProjectInfo projectInfo = new ProjectInfo();
                 projectInfo.setSlug(project);
@@ -350,9 +372,9 @@ public class SentryClientHolderTest {
 
     private class SentryOrg {
         private Set<String> teamSet;
-        private Map<String, List<String>> projectMap;
+        private Map<String, List<KeyInfo>> projectMap;
 
-        private SentryOrg(Set<String> teamSet, Map<String, List<String>> projectMap) {
+        private SentryOrg(Set<String> teamSet, Map<String, List<KeyInfo>> projectMap) {
             this.teamSet = teamSet;
             this.projectMap = projectMap;
         }
@@ -361,7 +383,7 @@ public class SentryClientHolderTest {
             return teamSet;
         }
 
-        private Map<String, List<String>> getProjectMap() {
+        private Map<String, List<KeyInfo>> getProjectMap() {
             return projectMap;
         }
     }

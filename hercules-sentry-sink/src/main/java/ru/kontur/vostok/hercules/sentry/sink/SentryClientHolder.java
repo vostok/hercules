@@ -324,7 +324,7 @@ public class SentryClientHolder {
         }
     }
 
-    private  Result<String, ErrorInfo> getDsnKey(String organization, String project) {
+    private Result<String, ErrorInfo> getDsnKey(String organization, String project) {
         Result<List<KeyInfo>, ErrorInfo> publicDsn = sentryApiClient.getPublicDsn(organization, project);
         if (publicDsn.isOk()) {
             Optional<String> dsn = publicDsn.get().stream()
