@@ -17,5 +17,5 @@ public enum ParameterType {
     /**
      * Optional parameter without default value.
      */
-    EMPTY;
+    OPTIONAL;
 }

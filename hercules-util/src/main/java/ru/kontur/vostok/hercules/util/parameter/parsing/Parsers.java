@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.util.parameter.parsing;
 
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 /**
  * Parsers
@@ -15,7 +16,7 @@ public final class Parsers {
      */
     public static Parser<Integer> forInteger() {
         return s -> {
-            if (s == null) {
+            if (StringUtil.isNullOrEmpty(s)) {
                 return ParameterValue.empty();
             }
             try {
@@ -33,7 +34,7 @@ public final class Parsers {
      */
     public static Parser<Long> forLong() {
         return s -> {
-            if (s == null) {
+            if (StringUtil.isNullOrEmpty(s)) {
                 return ParameterValue.empty();
             }
             try {

@@ -44,7 +44,7 @@ public class Parameter<T> {
         }
 
         if (parsed.isEmpty()) {
-            if (type == ParameterType.EMPTY) {
+            if (type == ParameterType.OPTIONAL) {
                 return parsed;
             }
 
@@ -101,10 +101,9 @@ public class Parameter<T> {
         return new StringParameterBuilder(name);
     }
 
-    private static class ParameterBuilder<T> {
+    public static class ParameterBuilder<T> {
         private String name;
-        private ParameterType type = ParameterType.EMPTY;
-        ;
+        private ParameterType type = ParameterType.OPTIONAL;
         private T defaultValue = null;
         private Parser<T> parser;
         private Validator<T> validator = Validators.any();
@@ -168,19 +167,19 @@ public class Parameter<T> {
         }
     }
 
-    private static class IntegerParameterBuilder extends ParameterBuilder<Integer> {
+    public final static class IntegerParameterBuilder extends ParameterBuilder<Integer> {
         private IntegerParameterBuilder(String name) {
             super(name, Parsers.forInteger());
         }
     }
 
-    private static class LongParameterBuilder extends ParameterBuilder<Long> {
+    public static class LongParameterBuilder extends ParameterBuilder<Long> {
         private LongParameterBuilder(String name) {
             super(name, Parsers.forLong());
         }
     }
 
-    private static class StringParameterBuilder extends ParameterBuilder<String> {
+    public static class StringParameterBuilder extends ParameterBuilder<String> {
         private StringParameterBuilder(String name) {
             super(name, Parsers.forString());
         }

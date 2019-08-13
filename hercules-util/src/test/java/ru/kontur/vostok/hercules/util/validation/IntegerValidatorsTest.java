@@ -26,4 +26,14 @@ public class IntegerValidatorsTest {
         assertFalse(validator.validate(0).isError());
         assertTrue(validator.validate(-1).isError());
     }
+
+    @Test
+    public void shouldAcceptNonNullValuesOnly() {
+        Validator<Integer> validator = Validators.notEmpty();
+
+        assertTrue(validator.validate(null).isError());
+        assertTrue(validator.validate(0).isOk());
+        assertTrue(validator.validate(42).isOk());
+        assertTrue(validator.validate(-42).isOk());
+    }
 }
