@@ -9,7 +9,9 @@ package ru.kontur.vostok.hercules.util.validation;
 public interface Validator<T> {
 
     /**
-     * Validate the value of type {@link T}
+     * Validate the value of type {@link T}.
+     * <p>
+     * Also, {@code null} is acceptable.
      *
      * @param value the value to validate
      * @return validation result
