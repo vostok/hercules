@@ -126,7 +126,7 @@ public class SentryClientHolder {
         }
         SentryClient sentryClient = projectMap.get(project);
         if (sentryClient == null) {
-            String message = String.format("The project '%s' in the organization '%s' is not found in the cache",
+            String message = String.format("The client for the project '%s' in the organization '%s' is not found in the cache",
                     project, organization);
             LOGGER.info(message);
             return Result.error(new ErrorInfo(message));
@@ -324,11 +324,12 @@ public class SentryClientHolder {
         }
     }
 
-    private  Result<String, ErrorInfo> getDsnKey(String organization, String project) {
+    private Result<String, ErrorInfo> getDsnKey(String organization, String project) {
         Result<List<KeyInfo>, ErrorInfo> publicDsn = sentryApiClient.getPublicDsn(organization, project);
         if (publicDsn.isOk()) {
             Optional<String> dsn = publicDsn.get().stream()
-                    .findAny()
+                    .filter(KeyInfo::isActive)
+                    .findFirst()
                     .map(KeyInfo::getDsn)
                     .map(DsnInfo::getPublicDsn);
             if (dsn.isPresent()) {
@@ -341,7 +342,7 @@ public class SentryClientHolder {
                 }
                 return Result.ok(dsnString);
             } else {
-                LOGGER.error(String.format("dsn is not present for project %s", project));
+                LOGGER.error(String.format("Active dsn is not present for project %s", project));
                 return Result.error(new ErrorInfo(false));
             }
         } else {
