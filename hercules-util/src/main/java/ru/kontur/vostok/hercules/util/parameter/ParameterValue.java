@@ -116,7 +116,7 @@ public class ParameterValue<T> {
     }
 
     /**
-     * Returns invalid null paramter's value.
+     * Returns invalid null parameter's value.
      *
      * @param <T> the value type
      * @return invalid parameter's value
