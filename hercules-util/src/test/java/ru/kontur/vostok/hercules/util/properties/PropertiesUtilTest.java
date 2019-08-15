@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.configuration.util;
+package ru.kontur.vostok.hercules.util.properties;
 
 import java.util.Properties;
 
