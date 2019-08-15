@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.file.FilePropertiesSource;
+import ru.kontur.vostok.hercules.configuration.resource.ResourcePropertiesSource;
 import ru.kontur.vostok.hercules.configuration.zk.ZkPropertiesSource;
 
 import java.util.HashMap;

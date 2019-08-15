@@ -16,6 +16,7 @@ public final class PropertyDescriptions {
      * Starts description of property of type short
      * @param name name of property
      * @return PropertyDescriptionBuilder
+     * @deprecated use {@link ru.kontur.vostok.hercules.util.parameter.Parameter#shortParameter(String)}
      */
     public static PropertyDescriptionBuilder<Short> shortProperty(String name) {
         return PropertyDescriptionBuilder.start(name, Short.class, Parsers::parseShort);
@@ -25,6 +26,7 @@ public final class PropertyDescriptions {
      * Starts description of property of type integer
      * @param name name of property
      * @return PropertyDescriptionBuilder
+     * @deprecated use {@link ru.kontur.vostok.hercules.util.parameter.Parameter#integerParameter(String)}
      */
     public static PropertyDescriptionBuilder<Integer> integerProperty(String name) {
         return PropertyDescriptionBuilder.start(name, Integer.class, Parsers::parseInteger);
@@ -34,6 +36,7 @@ public final class PropertyDescriptions {
      * Starts description of property of type long
      * @param name name of property
      * @return PropertyDescriptionBuilder
+     * @deprecated use {@link ru.kontur.vostok.hercules.util.parameter.Parameter#longParameter(String)}
      */
     public static PropertyDescriptionBuilder<Long> longProperty(String name) {
         return PropertyDescriptionBuilder.start(name, Long.class, Parsers::parseLong);
@@ -43,6 +46,7 @@ public final class PropertyDescriptions {
      * Starts description of property of type string
      * @param name name of property
      * @return PropertyDescriptionBuilder
+     * @deprecated use {@link ru.kontur.vostok.hercules.util.parameter.Parameter#stringParameter(String)}
      */
     public static PropertyDescriptionBuilder<String> stringProperty(String name) {
         return PropertyDescriptionBuilder.start(name, String.class, Parsers::parseString);
@@ -52,6 +56,7 @@ public final class PropertyDescriptions {
      * Starts description of property of type boolean
      * @param name name of property
      * @return PropertyDescriptionBuilder
+     * @deprecated use {@link ru.kontur.vostok.hercules.util.parameter.Parameter#booleanParameter(String)}
      */
     public static PropertyDescriptionBuilder<Boolean> booleanProperty(String name) {
         return PropertyDescriptionBuilder.start(name, Boolean.class, Parsers::parseBoolean);
