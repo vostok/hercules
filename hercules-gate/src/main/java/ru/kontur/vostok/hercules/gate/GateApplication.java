@@ -178,7 +178,7 @@ public class GateApplication {
                 new DefaultThrottledHttpServerRequestProcessor()
         );
 
-        long maxContentLength = HttpServer.Props.MAX_CONTENT_LENGTH.extract(httpServerProperies);
+        long maxContentLength = PropertiesUtil.get(HttpServer.Props.MAX_CONTENT_LENGTH, httpServerProperies).get();
         HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, true, maxContentLength);
         HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, false, maxContentLength);
 

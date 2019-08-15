@@ -1,8 +1,7 @@
 package ru.kontur.vostok.hercules.http;
 
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
@@ -62,15 +61,25 @@ public abstract class HttpServer {
     }
 
     public static final class Props {
-        public static final PropertyDescription<Long> MAX_CONTENT_LENGTH =
-                PropertyDescriptions.longProperty("maxContentLength").
-                        withDefaultValue(HttpServerDefaults.DEFAULT_MAX_CONTENT_LENGTH).
+        public static final Parameter<Long> MAX_CONTENT_LENGTH =
+                Parameter.longParameter("maxContentLength").
+                        withDefault(HttpServerDefaults.DEFAULT_MAX_CONTENT_LENGTH).
                         withValidator(LongValidators.positive()).
                         build();
 
-        public static final PropertyDescription<Integer> CONNECTION_THRESHOLD =
-                PropertyDescriptions.integerProperty("connection.threshold").
-                        withDefaultValue(HttpServerDefaults.DEFAULT_CONNECTION_THRESHOLD).
+        public static final Parameter<Integer> CONNECTION_THRESHOLD =
+                Parameter.integerParameter("connection.threshold").
+                        withDefault(HttpServerDefaults.DEFAULT_CONNECTION_THRESHOLD).
+                        withValidator(IntegerValidators.positive()).
+                        build();
+
+        public static final Parameter<Integer> IO_THREADS =
+                Parameter.integerParameter("ioThreads").
+                        withValidator(IntegerValidators.positive()).
+                        build();
+
+        public static final Parameter<Integer> WORKER_THREADS =
+                Parameter.integerParameter("workerThreads").
                         withValidator(IntegerValidators.positive()).
                         build();
 

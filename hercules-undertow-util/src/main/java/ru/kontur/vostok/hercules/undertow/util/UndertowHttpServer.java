@@ -7,6 +7,8 @@ import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.handler.ExceptionHandler;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -23,16 +25,26 @@ public class UndertowHttpServer extends HttpServer {
 
     @Override
     protected void startInternal() {
-        int connectionThreshold = Props.CONNECTION_THRESHOLD.extract(properties);
+        int connectionThreshold = PropertiesUtil.get(Props.CONNECTION_THRESHOLD, properties).get();
+        ParameterValue<Integer> ioThreads = PropertiesUtil.get(Props.IO_THREADS, properties);
+        ParameterValue<Integer> workerThreads = PropertiesUtil.get(Props.WORKER_THREADS, properties);
 
         final ExceptionHandler exceptionHandler = new ExceptionHandler(handler);
 
-        undertow = Undertow.builder().
+        Undertow.Builder builder = Undertow.builder().
                 addHttpListener(port, host).
                 setHandler(exchange -> exceptionHandler.handle(wrap(exchange))).
                 setSocketOption(Options.CONNECTION_HIGH_WATER, connectionThreshold).
-                setSocketOption(Options.CONNECTION_LOW_WATER, connectionThreshold).
-                build();
+                setSocketOption(Options.CONNECTION_LOW_WATER, connectionThreshold);
+
+        if (!ioThreads.isEmpty()) {
+            builder.setIoThreads(ioThreads.get());
+        }
+        if (!workerThreads.isEmpty()) {
+            builder.setWorkerThreads(workerThreads.get());
+        }
+
+        undertow = builder.build();
 
         undertow.start();
     }
