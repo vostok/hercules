@@ -44,6 +44,8 @@ public class SentryClientHolderTest {
     private static final String MY_DSN = "https://1234567813ef4c6ca4fbabc4b8f8cb7d@mysentry.io/1000001";
     private static final String NEW_DSN = "https://0234567813ef4c6ca4fbabc4b8f8cb7d@mysentry.io/1000002";
 
+    private static final ErrorInfo CONFLICT = new ErrorInfo("CONFLICT", 409);
+
     private Map<String, SentryOrg> sentrySimulator;
     private SentryApiClient sentryApiClientMock;
 
@@ -151,7 +153,7 @@ public class SentryClientHolderTest {
 
         verify(sentryApiClientMock, times(2)).getOrganizations();
         verify(sentryApiClientMock).createOrganization(EXISTING_ORGANIZATION);
-        assertEquals("CONFLICT", result.getError());
+        assertEquals(CONFLICT, result.getError());
     }
 
     @Test
@@ -205,7 +207,7 @@ public class SentryClientHolderTest {
         verify(sentryApiClientMock, times(2)).getProjects(MY_ORGANIZATION);
         verify(sentryApiClientMock).getTeams(MY_ORGANIZATION);
         verify(sentryApiClientMock).createProject(MY_ORGANIZATION, MY_TEAM, EXISTING_PROJECT);
-        assertEquals("CONFLICT", result.getError());
+        assertEquals(CONFLICT, result.getError());
     }
 
     @Test
@@ -328,7 +330,7 @@ public class SentryClientHolderTest {
     private void createOrganizationMock(String organization) {
         doAnswer(invocation -> {
             if (organization.equals(EXISTING_ORGANIZATION)) {
-                return Result.error("CONFLICT");
+                return Result.error(CONFLICT);
             } else {
                 sentrySimulator.put(organization, new SentryOrg(new HashSet<>(), new HashMap<>()));
                 OrganizationInfo organizationInfo = new OrganizationInfo();
@@ -342,7 +344,7 @@ public class SentryClientHolderTest {
     private void createProjectMock(String organization, String project) {
         doAnswer(invocation -> {
             if (project.equals(EXISTING_PROJECT)) {
-                return Result.error("CONFLICT");
+                return Result.error(CONFLICT);
             } else {
                 List<KeyInfo> dsnList = new ArrayList<>();
                 DsnInfo dsnInfo = new DsnInfo();
