@@ -4,12 +4,59 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author Gregory Koshelev
  */
 public class ParameterTest {
+
+    @Test
+    public void optionalBooleanParameterTest() {
+        Parameter<Boolean> booleanParameter = Parameter.booleanParameter("optional").build();
+
+        ParameterValue<Boolean> trueValue = booleanParameter.from("true");
+        assertTrue(trueValue.isOk());
+        assertTrue(trueValue.get());
+
+        ParameterValue<Boolean> falseValue = booleanParameter.from("false");
+        assertTrue(falseValue.isOk());
+        assertFalse(falseValue.get());
+
+        ParameterValue<Boolean> invalidValue = booleanParameter.from("qwerty");
+        assertTrue(invalidValue.isError());
+
+        ParameterValue<Boolean> emptyValueFromNullString = booleanParameter.from(null);
+        assertTrue(emptyValueFromNullString.isEmpty());
+
+        ParameterValue<Boolean> emptyValueFromEmptyString = booleanParameter.from("");
+        assertTrue(emptyValueFromEmptyString.isEmpty());
+    }
+
+
+    @Test
+    public void optionalShortParameterTest() {
+        Parameter<Short> shortParameter = Parameter.shortParameter("optional").build();
+
+        ParameterValue<Short> validValue = shortParameter.from("42");
+        assertTrue(validValue.isOk());
+        assertEquals(42, (short) validValue.get());
+
+        ParameterValue<Short> invalidValue = shortParameter.from("1000000");
+        assertTrue(invalidValue.isError());
+
+        ParameterValue<Short> invalidValueFromNonDigitString = shortParameter.from("qwerty");
+        assertTrue(invalidValueFromNonDigitString.isError());
+
+        ParameterValue<Short> emptyValueFromNullString = shortParameter.from(null);
+        assertTrue(emptyValueFromNullString.isEmpty());
+
+        ParameterValue<Short> emptyValueFromEmptyString = shortParameter.from("");
+        assertTrue(emptyValueFromEmptyString.isEmpty());
+    }
+
+
     @Test
     public void optionalIntegerParameterTest() {
         Parameter<Integer> integerParameter = Parameter.integerParameter("optional").build();
@@ -63,6 +110,36 @@ public class ParameterTest {
     }
 
     @Test
+    public void requiredBooleanParameterTest() {
+        Parameter<Boolean> booleanParameter = Parameter.booleanParameter("required").required().build();
+
+        ParameterValue<Boolean> validValue = booleanParameter.from("true");
+        assertTrue(validValue.isOk());
+        assertTrue(validValue.get());
+
+        ParameterValue<Boolean> invalidValueFromNullString = booleanParameter.from(null);
+        assertTrue(invalidValueFromNullString.isError());
+
+        ParameterValue<Boolean> invalidValueFromEmptyString = booleanParameter.from("");
+        assertTrue(invalidValueFromEmptyString.isError());
+    }
+
+    @Test
+    public void requiredShortParameterTest() {
+        Parameter<Short> shortParameter = Parameter.shortParameter("required").required().build();
+
+        ParameterValue<Short> validValue = shortParameter.from("42");
+        assertTrue(validValue.isOk());
+        assertEquals(42, (int) validValue.get());
+
+        ParameterValue<Short> invalidValueFromNullString = shortParameter.from(null);
+        assertTrue(invalidValueFromNullString.isError());
+
+        ParameterValue<Short> invalidValueFromEmptyString = shortParameter.from("");
+        assertTrue(invalidValueFromEmptyString.isError());
+    }
+
+    @Test
     public void requiredIntegerParameterTest() {
         Parameter<Integer> integerParameter = Parameter.integerParameter("required").required().build();
 
@@ -106,6 +183,40 @@ public class ParameterTest {
         ParameterValue<String> validValueFromEmptyString = stringParameter.from("");
         assertTrue(validValueFromEmptyString.isOk());
         assertEquals("", validValueFromEmptyString.get());
+    }
+
+    @Test
+    public void defaultBooleanParameterTest() {
+        Parameter<Boolean> booleanParameter = Parameter.booleanParameter("default").withDefault(false).build();
+
+        ParameterValue<Boolean> validValue = booleanParameter.from("true");
+        assertTrue(validValue.isOk());
+        assertTrue(validValue.get());
+
+        ParameterValue<Boolean> defaultValueFromNullString = booleanParameter.from(null);
+        assertTrue(defaultValueFromNullString.isOk());
+        assertFalse(defaultValueFromNullString.get());
+
+        ParameterValue<Boolean> defaultValueFromEmptyString = booleanParameter.from("");
+        assertTrue(defaultValueFromEmptyString.isOk());
+        assertFalse(defaultValueFromEmptyString.get());
+    }
+
+    @Test
+    public void defaultShortParameterTest() {
+        Parameter<Short> shortParameter = Parameter.shortParameter("default").withDefault((short) 1).build();
+
+        ParameterValue<Short> validValue = shortParameter.from("42");
+        assertTrue(validValue.isOk());
+        assertEquals(42, (short) validValue.get());
+
+        ParameterValue<Short> defaultValueFromNullString = shortParameter.from(null);
+        assertTrue(defaultValueFromNullString.isOk());
+        assertEquals(1, (short) defaultValueFromNullString.get());
+
+        ParameterValue<Short> defaultValueFromEmptyString = shortParameter.from("");
+        assertTrue(defaultValueFromEmptyString.isOk());
+        assertEquals(1, (short) defaultValueFromEmptyString.get());
     }
 
     @Test
@@ -181,5 +292,17 @@ public class ParameterTest {
                         withDefault(-5).
                         withValidator(IntegerValidators.positive()).
                         build();
+    }
+
+    @Test
+    public void optionalParameterValidationTest() {
+        Parameter<Integer> integerParameter =
+                Parameter.integerParameter("optional").
+                        withValidator(IntegerValidators.positive()).
+                        build();
+
+        ParameterValue<Integer> emptyValueIsValid = integerParameter.from("");
+        assertTrue(emptyValueIsValid.isOk());
+        assertTrue(emptyValueIsValid.isEmpty());
     }
 }
