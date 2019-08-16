@@ -136,11 +136,13 @@ with total of 65 bytes.
 
 ## Naming convention
 
-Name of tag has following restrictions:
-- Length in bytes does not exceed 255,
-- String of alphanumeric characters and underscores `[a-zA-Z0-9_]`.
+The tag name has following restrictions:
+- Length in bytes does not exceed `255`,
+- String is not empty,
+- String of `[a-zA-Z0-9_.-]` characters only: alphanumeric characters, underscores `_`, dots `.` and minus signs `-`.
 
-Tag's name is case sensitive.
+Note that the tag name is case sensitive.
+Thus, uniform case is preferred to avoid inconsistency: choose one of `camelCase`, `kebab-case` or `snake_case` you like.
 
 ### HPath
 [HPath](./doc/h-path.md) describes hierarchy of tags.
