@@ -1,6 +1,7 @@
-package ru.kontur.vostok.hercules.configuration;
+package ru.kontur.vostok.hercules.configuration.resource;
 
 import org.jetbrains.annotations.NotNull;
+import ru.kontur.vostok.hercules.configuration.PropertiesSource;
 import ru.kontur.vostok.hercules.configuration.util.PropertiesReader;
 
 import java.io.IOException;

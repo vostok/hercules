@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.gate.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;

@@ -12,7 +12,6 @@ import ru.kontur.vostok.hercules.util.validation.Validators;
  * Parameter
  *
  * @param <T> the type of parameter value
- *
  * @author Gregory Koshelev
  */
 public class Parameter<T> {
@@ -69,6 +68,26 @@ public class Parameter<T> {
      */
     public String name() {
         return name;
+    }
+
+    /**
+     * Boolean parameter builder.
+     *
+     * @param name the name of parameter
+     * @return builder
+     */
+    public static BooleanParameterBuilder booleanParameter(String name) {
+        return new BooleanParameterBuilder(name);
+    }
+
+    /**
+     * Short parameter builder.
+     *
+     * @param name the name of parameter
+     * @return builder
+     */
+    public static ShortParameterBuilder shortParameter(String name) {
+        return new ShortParameterBuilder(name);
     }
 
     /**
@@ -164,6 +183,18 @@ public class Parameter<T> {
             }
 
             return new Parameter<>(name, type, defaultValue != null ? ParameterValue.of(defaultValue) : ParameterValue.empty(), parser, validator);
+        }
+    }
+
+    public static class BooleanParameterBuilder extends ParameterBuilder<Boolean> {
+        private BooleanParameterBuilder(String name) {
+            super(name, Parsers.forBoolean());
+        }
+    }
+
+    public static class ShortParameterBuilder extends ParameterBuilder<Short> {
+        private ShortParameterBuilder(String name) {
+            super(name, Parsers.forShort());
         }
     }
 

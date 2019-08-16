@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;

@@ -25,9 +25,14 @@ public class ParameterValue<T> {
      * Returns valid value. Otherwise throws exception.
      *
      * @return the value of type {@link T}
+     * @throws IllegalStateException is value is empty
      * @throws IllegalStateException if value is invalid
      */
     public T get() {
+        if (isEmpty()) {
+            throw new IllegalStateException("Is empty");
+        }
+
         if (result.isOk()) {
             return value;
         }
