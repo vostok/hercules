@@ -54,17 +54,15 @@ public class ErrorInfo {
         return message;
     }
 
-    public boolean isRetryable() {
+    public Boolean isRetryable() {
         return isRetryable;
     }
 
     /**
      * Set the "isRetryable" field using the http code of the error
      * on the stage of Sentry client getting or creation
-     *
-     * @throws BackendServiceFailedException if the error is not "retryable" or "non retryable"
      */
-    public void setIsRetryableForApiClient() throws BackendServiceFailedException {
+    public void setIsRetryableForApiClient() {
         if (isRetryable != null) {
             return;
         }
@@ -72,8 +70,6 @@ public class ErrorInfo {
             this.isRetryable = true;
         } else if (NON_RETRYABLE_ERROR_CODES_FOR_API_CLIENT.contains(code)) {
             this.isRetryable = false;
-        } else {
-            throw new BackendServiceFailedException();
         }
     }
 
@@ -87,10 +83,8 @@ public class ErrorInfo {
     /**
      * Set the "isRetryable" field using the http code of the error
      * on the stage of event converting and sending to Sentry
-     *
-     * @throws BackendServiceFailedException if the error is not "retryable" or "non retryable"
      */
-    public void setIsRetryableForSending() throws BackendServiceFailedException {
+    public void setIsRetryableForSending() {
         if (isRetryable != null) {
             return;
         }
@@ -98,8 +92,6 @@ public class ErrorInfo {
             this.isRetryable = true;
         } else if (NON_RETRYABLE_ERROR_CODES_FOR_SENDING.contains(code)) {
             this.isRetryable = false;
-        } else {
-            throw new BackendServiceFailedException();
         }
     }
 

@@ -86,10 +86,10 @@ public class SentrySyncProcessor {
             LOGGER.warn("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
             return false;
         }
-        String organization = correctName(organizationName.get());
+        String organization = sanitizeName(organizationName.get());
 
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
-        String sentryProject = sentryProjectName.map(this::correctName).orElse(organization);
+        String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
 
         boolean processed = tryToSend(event, organization, sentryProject);
 
@@ -131,6 +131,9 @@ public class SentrySyncProcessor {
                     t -> createMeter(t, organization, sentryProject)
             ).mark();
 
+            if (processErrorInfo.isRetryable() == null) {
+                throw new BackendServiceFailedException();
+            }
             if (!processErrorInfo.isRetryable()) {
                 return false;
             }
@@ -158,10 +161,8 @@ public class SentrySyncProcessor {
      * @param organization Sentry organization where to send event
      * @param sentryProject Sentry project where to send event
      * @return the {@link Result} object with error information in case of error
-     * @throws BackendServiceFailedException if not described exception occurred
      */
-    private Result<Void, ErrorInfo> sendToSentry(Event event, String organization, String sentryProject)
-            throws BackendServiceFailedException {
+    private Result<Void, ErrorInfo> sendToSentry(Event event, String organization, String sentryProject) {
 
         ErrorInfo processErrorInfo;
 
@@ -205,26 +206,23 @@ public class SentrySyncProcessor {
                 }
             } else {
                 LOGGER.error(String.format("ConnectionException: %s", message));
-                throw new BackendServiceFailedException(e);
+                processErrorInfo = new ErrorInfo(message);
             }
         } catch (Exception e) {
-            throw new BackendServiceFailedException(e);
+            processErrorInfo = new ErrorInfo(e.getMessage());
         }
         processErrorInfo.setIsRetryableForSending();
 
         return Result.error(processErrorInfo);
     }
 
-    private String correctName(String name) {
-        return name.toLowerCase()
-                .replace('.', '_')
-                .replace('/', '_')
-                .replace(',', '_')
-                .replace(' ', '_');
+    private String sanitizeName(String name) {
+        Pattern pattern = Pattern.compile("[^-_a-z0-9]");
+        return pattern.matcher(name.toLowerCase()).replaceAll("_");
     }
 
-    private String makePrefix(final String organization, final String sentryProject) {
-        return "byOrgsAndProjects." + organization + "." + sentryProject + ".";
+    private String makePrefix(final String organization, final String project) {
+        return "byOrgsAndProjects." + organization + "." + project + ".";
     }
 
     private Meter createMeter(String errorType, final String organization, final String project) {
