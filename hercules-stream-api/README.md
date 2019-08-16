@@ -158,6 +158,11 @@ ResponseBody    State
 ## Settings
 Application is configured through properties file.
 
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
+
+`application.port` - server port, default value: `8080`
+
 ### Kafka Consumer settings
 See Consumer's Config from Apache Kafka documentation. Main settings are presented below.
 
@@ -193,9 +198,9 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
 ### Http Server settings
-`http.server.host` - server host, default value: `0.0.0.0`
+`http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
-`http.server.port` - server port, default value: `6307`
+`http.server.workerThreads` - the number of worker threads. Worker threads are used to process long running requests and perform blocking tasks. Default value is implementation specific.
 
 ### Application context settings
 `context.instance.id` - id of instance
@@ -218,6 +223,12 @@ Stream Api uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should
 
 ### `application.properties` sample:
 ```properties
+application.host=0.0.0.0
+application.port=6307
+
+http.server.ioThreads=8
+http.server.workerThreads=32
+
 consumer.bootstrap.servers=localhost:9092
 consumer.max.poll.records=10000
 consumer.poolSize=16
@@ -228,9 +239,6 @@ curator.sessionTimeout=30000
 curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
-
-http.server.host=0.0.0.0
-http.server.port=6307
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
