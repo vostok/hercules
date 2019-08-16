@@ -5,7 +5,6 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -30,27 +29,29 @@ public class ErrorInfo {
         this.code = code;
     }
 
-    public ErrorInfo(boolean isRetryable) {
+    public ErrorInfo(String message, boolean isRetryable) {
+        this.message = message;
         this.isRetryable = isRetryable;
     }
 
-    public ErrorInfo(boolean isRetryable, long waitingTimeMs) {
+    public ErrorInfo(String message, boolean isRetryable, long waitingTimeMs) {
+        this.message = message;
         this.isRetryable = isRetryable;
         this.waitingTimeMs = waitingTimeMs;
     }
 
-
-    public ErrorInfo(int code) {
-        this.code = code;
-    }
-
-    public ErrorInfo(int code, long waitingTimeMs) {
+    public ErrorInfo(String message, int code, long waitingTimeMs) {
+        this.message = message;
         this.code = code;
         this.waitingTimeMs = waitingTimeMs;
     }
 
     public long getWaitingTimeMs() {
         return waitingTimeMs;
+    }
+
+    public String getMessage() {
+        return message;
     }
 
     public boolean isRetryable() {

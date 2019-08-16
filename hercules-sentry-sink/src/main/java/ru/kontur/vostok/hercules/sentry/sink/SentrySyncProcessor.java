@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.connection.LockdownManager;
@@ -8,6 +10,7 @@ import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -17,11 +20,15 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.functional.Result;
+import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * @author Gregory Koshelev
@@ -33,15 +40,20 @@ public class SentrySyncProcessor {
     private final Level requiredLevel;
     private final int retryLimit;
     private final SentryClientHolder sentryClientHolder;
+    private final MetricsCollector metricsCollector;
+    private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
 
     public SentrySyncProcessor(
             Properties sinkProperties,
-            SentryClientHolder sentryClientHolder
+            SentryClientHolder sentryClientHolder,
+            MetricsCollector metricsCollector
     ) {
         this.requiredLevel = Props.REQUIRED_LEVEL.extract(sinkProperties);
         this.retryLimit = Props.RETRY_LIMIT.extract(sinkProperties);
         this.sentryClientHolder = sentryClientHolder;
         this.sentryClientHolder.update();
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -55,6 +67,8 @@ public class SentrySyncProcessor {
      * or not described exception occurred
      */
     public boolean process(Event event) throws BackendServiceFailedException {
+        final long sendingStart = System.currentTimeMillis();
+
         final Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
                 .flatMap(SentryLevelEnumParser::parse);
         if (!level.isPresent() || requiredLevel.compareTo(level.get()) < 0) {
@@ -77,7 +91,14 @@ public class SentrySyncProcessor {
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
         String sentryProject = sentryProjectName.map(this::correctName).orElse(organization);
 
-        return tryToSend(event, organization, sentryProject);
+        boolean processed = tryToSend(event, organization, sentryProject);
+
+        final long processingTimeMs = System.currentTimeMillis() - sendingStart;
+        final String prefix = makePrefix(organization, sentryProject);
+        eventProcessingTimerMap.computeIfAbsent(prefix, p -> metricsCollector.timer(p + "eventProcessingTimeMs"))
+                .update(processingTimeMs, TimeUnit.MILLISECONDS);
+
+        return processed;
     }
 
     /**
@@ -103,6 +124,13 @@ public class SentrySyncProcessor {
                 return true;
             }
             processErrorInfo = result.getError();
+
+            String type = processErrorInfo.getMessage();
+            errorTypesMeterMap.computeIfAbsent(
+                    type == null ? "null" : type,
+                    t -> createMeter(t, organization, sentryProject)
+            ).mark();
+
             if (!processErrorInfo.isRetryable()) {
                 return false;
             }
@@ -152,7 +180,7 @@ public class SentrySyncProcessor {
             sentryEvent = SentryEventConverter.convert(event);
         } catch (Exception e) {
             LOGGER.error("An exception occurred while converting Hercules-event to Sentry-event.", e);
-            return Result.error(new ErrorInfo(false));
+            return Result.error(new ErrorInfo("Converting error", false));
         }
 
         try {
@@ -160,19 +188,20 @@ public class SentrySyncProcessor {
             return Result.ok();
         } catch (InvalidDsnException e) {
             LOGGER.error("InvalidDsnException: " + e.getMessage());
-            processErrorInfo = new ErrorInfo(false);
+            processErrorInfo = new ErrorInfo("Invalid DSN", false);
         } catch (LockedDownException e) {
             LOGGER.error("LockedDownException: a temporary lockdown is switched on");
-            processErrorInfo = new ErrorInfo(true, LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME);
+            processErrorInfo = new ErrorInfo(
+                    "LockedDown", true, LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME);
         } catch (ConnectionException e) {
             Integer responseCode = e.getResponseCode();
             String message = e.getMessage();
             if (responseCode != null) {
                 LOGGER.error(String.format("ConnectionException: %d %s", responseCode, message));
                 if (e.getRecommendedLockdownTime() != null) {
-                    processErrorInfo = new ErrorInfo(responseCode, e.getRecommendedLockdownTime());
+                    processErrorInfo = new ErrorInfo(message, responseCode, e.getRecommendedLockdownTime());
                 } else {
-                    processErrorInfo = new ErrorInfo(responseCode);
+                    processErrorInfo = new ErrorInfo(message, responseCode);
                 }
             } else {
                 LOGGER.error(String.format("ConnectionException: %s", message));
@@ -192,6 +221,15 @@ public class SentrySyncProcessor {
                 .replace('/', '_')
                 .replace(',', '_')
                 .replace(' ', '_');
+    }
+
+    private String makePrefix(final String organization, final String sentryProject) {
+        return "byOrgsAndProjects." + organization + "." + sentryProject + ".";
+    }
+
+    private Meter createMeter(String errorType, final String organization, final String project) {
+        String prefix = makePrefix(organization, project);
+        return metricsCollector.meter(prefix + "errorTypes." + GraphiteMetricsUtil.sanitizeMetricName(errorType));
     }
 
     private static class Props {
