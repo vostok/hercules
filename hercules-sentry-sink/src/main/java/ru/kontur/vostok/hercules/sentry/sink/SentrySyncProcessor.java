@@ -43,6 +43,7 @@ public class SentrySyncProcessor {
     private final MetricsCollector metricsCollector;
     private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
 
     public SentrySyncProcessor(
             Properties sinkProperties,
@@ -97,6 +98,10 @@ public class SentrySyncProcessor {
         final String prefix = makePrefix(organization, sentryProject);
         eventProcessingTimerMap.computeIfAbsent(prefix, p -> metricsCollector.timer(p + "eventProcessingTimeMs"))
                 .update(processingTimeMs, TimeUnit.MILLISECONDS);
+        if (processed) {
+            processedEventsMeterMap.computeIfAbsent(prefix, p -> metricsCollector.meter(p + "processedEventCount"))
+                    .mark();
+        }
 
         return processed;
     }
