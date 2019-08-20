@@ -182,7 +182,7 @@ public class GateApplication {
         HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, true, maxContentLength);
         HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, false, maxContentLength);
 
-        RouteHandler handler = new InstrumentedRouteHandlerBuilder(metricsCollector).
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperies, metricsCollector).
                 post("/stream/sendAsync", sendAsyncHandler).
                 post("/stream/send", sendHandler).
                 build();

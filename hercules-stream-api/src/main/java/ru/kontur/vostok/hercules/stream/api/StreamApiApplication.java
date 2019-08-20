@@ -139,7 +139,7 @@ public class StreamApiApplication {
     public static HttpServer createHttpServer(Properties httpServerProperties) {
         StreamRepository repository = new StreamRepository(curatorClient);
 
-        RouteHandler handler = new InstrumentedRouteHandlerBuilder(metricsCollector).
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
                 post("/stream/read", new ReadStreamHandler(streamReader, authManager, repository)).
                 get("/stream/seekToEnd", new SeekToEndHandler(authManager, repository, consumerPool)).
                 build();

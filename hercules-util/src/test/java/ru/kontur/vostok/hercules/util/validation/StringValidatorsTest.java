@@ -37,7 +37,7 @@ public class StringValidatorsTest {
 
     @Test
     public void shouldAcceptNonNullValuesOnly() {
-        Validator<String> validator = Validators.notEmpty();
+        Validator<String> validator = Validators.notNull();
 
         assertTrue(validator.validate(null).isError());
         assertTrue(validator.validate("").isOk());

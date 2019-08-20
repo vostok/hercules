@@ -10,13 +10,16 @@ import ru.kontur.vostok.hercules.http.handler.PingHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 
+import java.util.Properties;
+
 /**
  * @author Gregory Koshelev
  */
 public class InstrumentedRouteHandlerBuilder extends RouteHandlerBuilder {
     private final MetricsCollector metricsCollector;
 
-    public InstrumentedRouteHandlerBuilder(MetricsCollector metricsCollector) {
+    public InstrumentedRouteHandlerBuilder(Properties properties, MetricsCollector metricsCollector) {
+        super(properties);
         this.metricsCollector = metricsCollector;
 
         get("/ping", new PingHandler());
