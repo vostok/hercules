@@ -4,4 +4,5 @@ target
 # IDE specific resources
 *.iml
 .idea
+*.log
 
