@@ -24,4 +24,11 @@ public class ByteStreamContent {
     public byte[][] getEvents() {
         return events;
     }
+
+    public static ByteStreamContent empty() {
+        return new ByteStreamContent(
+                new StreamReadState(new StreamShardReadState[]{}),
+                new byte[][]{}
+        );
+    }
 }
