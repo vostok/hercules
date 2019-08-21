@@ -5,7 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.RoutingHandler;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+import ru.kontur.vostok.hercules.health.MetricsUtil;
 
 /**
  * HerculesRoutingHandler
@@ -56,6 +56,6 @@ public class HerculesRoutingHandler implements HttpHandler {
         if (template.startsWith("/")) {
             template = template.substring(1);
         }
-        return httpMethodName + "_" + GraphiteMetricsUtil.sanitizeMetricName(template);
+        return MetricsUtil.toMetricName(httpMethodName, template);
     }
 }
