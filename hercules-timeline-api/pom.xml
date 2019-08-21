@@ -11,6 +11,10 @@
     <dependencies>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-application</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-util</artifactId>
         </dependency>
         <dependency>

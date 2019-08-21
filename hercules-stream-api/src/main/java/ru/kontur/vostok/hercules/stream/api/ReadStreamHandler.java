@@ -26,6 +26,9 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
+/**
+ * @author Gregory Koshelev
+ */
 public class ReadStreamHandler implements HttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadStreamHandler.class);
@@ -139,8 +142,7 @@ public class ReadStreamHandler implements HttpHandler {
                                         STATE_READER.read(new Decoder(bytes)),
                                         shardIndex.get(),
                                         shardCount.get(),
-                                        take.get()
-                                );
+                                        take.get());
 
                                 request.getResponse().setHeader(HttpHeaders.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
 
