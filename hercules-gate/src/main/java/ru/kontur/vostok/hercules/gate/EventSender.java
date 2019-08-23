@@ -5,6 +5,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerializer;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
@@ -31,8 +33,10 @@ public class EventSender {
         this.partitioner = partitioner;
     }
 
-    public EventSender(Properties properties, Partitioner partitioner) {
+    public EventSender(Properties properties, Partitioner partitioner, MetricsCollector metricsCollector) {
+        properties.put(KafkaConfigs.METRIC_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
         this.producer = new KafkaProducer<>(properties, new UuidSerializer(), new ByteArraySerializer());
+
         this.partitioner = partitioner;
     }
 
