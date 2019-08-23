@@ -144,7 +144,7 @@ public class ReadStreamHandler implements HttpHandler {
                                         shardCount.get(),
                                         take.get());
 
-                                request.getResponse().setHeader(HttpHeaders.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
+                                request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
                                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                                 Encoder encoder = new Encoder(baos);

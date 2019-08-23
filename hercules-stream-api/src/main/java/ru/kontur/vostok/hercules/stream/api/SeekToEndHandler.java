@@ -135,7 +135,7 @@ public class SeekToEndHandler implements HttpHandler {
                     collect(Collectors.toList());
             Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
 
-            request.getResponse().setHeader(HttpHeaders.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
+            request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Encoder encoder = new Encoder(outputStream);

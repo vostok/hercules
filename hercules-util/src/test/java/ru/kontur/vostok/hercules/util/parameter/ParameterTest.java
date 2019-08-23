@@ -1,7 +1,10 @@
 package ru.kontur.vostok.hercules.util.parameter;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
+
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -286,7 +289,7 @@ public class ParameterTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void shouldPreventInvalidDefaultValue() {
+    public void shouldPreventInvalidDefaultValueTest() {
         Parameter<Integer> invalidParameter =
                 Parameter.integerParameter("invalid").
                         withDefault(-5).
@@ -304,5 +307,18 @@ public class ParameterTest {
         ParameterValue<Integer> emptyValueIsValid = integerParameter.from("");
         assertTrue(emptyValueIsValid.isOk());
         assertTrue(emptyValueIsValid.isEmpty());
+    }
+
+    @Test
+    public void parameterWithFunctionParserTest() {
+        Parameter<UUID> uuidParameter =
+                Parameter.parameter("uuid", Parsers.fromFunction(UUID::fromString)).
+                        build();
+
+        assertTrue(uuidParameter.from("").isEmpty());
+
+        ParameterValue<UUID> uuid = uuidParameter.from("11203800-63FD-11E8-83E2-3A587D902000");
+        assertTrue(uuid.isOk());
+        assertEquals(UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000"), uuid.get());
     }
 }
