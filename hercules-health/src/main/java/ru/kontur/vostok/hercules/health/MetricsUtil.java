@@ -23,7 +23,7 @@ public final class MetricsUtil {
      * @param metricName the metric name
      * @return sanitized metric name
      */
-    public static String sanitizeMetricName(String metricName) {
+    public static String sanitizeMetricName(@NotNull String metricName) {
         return METRIC_NAME_FORBIDDEN_CHARACTERS.matcher(metricName).replaceAll("_");
     }
 
