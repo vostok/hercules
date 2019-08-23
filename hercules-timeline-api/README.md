@@ -115,6 +115,11 @@ Events          Count, Event*
 ## Settings
 Application is configured through properties file.
 
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
+
+`application.port` - server port, default value: `8080`
+
 ### Apache Cassandra settings
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
@@ -152,9 +157,9 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
 ### HTTP Server settings
-`http.server.host` - server host, default value: `"0.0.0.0"`
+`http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
-`http.server.port` - server port
+`http.server.workerThreads` - the number of worker threads. Worker threads are used to process long running requests and perform blocking tasks. Default value is implementation specific.
 
 ### Application context settings
 `context.instance.id` - id of instance
@@ -177,6 +182,12 @@ Timeline Api uses Timeline's metadata, Stream's metadata and auth rules from Zoo
 
 ### `application.properties` sample:
 ```properties
+application.host=0.0.0.0
+application.port=6307
+
+http.server.ioThreads=8
+http.server.workerThreads=32
+
 cassandra.dataCenter=datacenter1
 cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
 cassandra.keyspace=hercules
@@ -194,9 +205,6 @@ metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
-
-http.server.host=0.0.0.0
-http.server.port=6306
 
 context.instance.id=1
 context.environment=dev
