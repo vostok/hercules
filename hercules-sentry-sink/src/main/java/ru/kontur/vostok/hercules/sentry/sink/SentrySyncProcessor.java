@@ -11,6 +11,7 @@ import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -20,7 +21,6 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.functional.Result;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -232,7 +232,7 @@ public class SentrySyncProcessor {
 
     private Meter createMeter(String errorType, final String organization, final String project) {
         String prefix = makePrefix(organization, project);
-        return metricsCollector.meter(prefix + "errorTypes." + GraphiteMetricsUtil.sanitizeMetricName(errorType));
+        return metricsCollector.meter(prefix + "errorTypes." + MetricsUtil.sanitizeMetricName(errorType));
     }
 
     private static class Props {
