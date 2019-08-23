@@ -97,7 +97,7 @@ public class MetricsCollector {
     }
 
     /**
-     * Get thoughput meter by the name
+     * Get throughput meter by the name
      * @param name is the name of the metric
      * @return requested meter
      */
@@ -131,15 +131,6 @@ public class MetricsCollector {
      */
     public <T> void gauge(String name, Supplier<T> supplier) {
         registry.register(name, (Gauge<T>) supplier::get);
-    }
-
-    /**
-     * Register metric by the name with custom function
-     * @param name is the name of the metric
-     * @param supplier is the custom function to provide status handler
-     */
-    public void status(String name, Supplier<IHaveStatusCode> supplier) {
-        registry.register(name, (Gauge<Integer>) () -> supplier.get().getStatusCode());
     }
 
     /**
