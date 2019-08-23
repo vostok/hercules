@@ -133,6 +133,10 @@ public class MetricsCollector {
         registry.register(name, (Gauge<T>) supplier::get);
     }
 
+    public boolean remove(String name) {
+        return registry.remove(name);
+    }
+
     /**
      * Get histogram by the name
      * @param name is the name of the histogram
