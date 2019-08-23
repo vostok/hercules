@@ -2,73 +2,75 @@ package ru.kontur.vostok.hercules.timeline.api;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.http.HttpServer;
+import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
+import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 public class TimelineApiApplication {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TimelineApiApplication.class);
 
-    private static HttpServer server;
     private static CuratorClient curatorClient;
-    private static TimelineReader timelineReader;
-    private static CassandraConnector cassandraConnector;
-    private static AuthManager authManager;
     private static MetricsCollector metricsCollector;
+    private static AuthManager authManager;
+    private static CassandraConnector cassandraConnector;
+    private static TimelineReader timelineReader;
+    private static HttpServer server;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
 
         try {
+            Application.run("Hercules Timeline API", "timeline-api", args);
+
             Map<String, String> parameters = ArgsParser.parse(args);
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
-            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
-            Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
+            Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
+            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
-            final Integer timetrapCountLimit = Props.TIMETRAP_COUNT_LIMIT.extract(properties);
-
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             ApplicationContextHolder.init("Hercules timeline API", "timeline-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
-            cassandraConnector = new CassandraConnector(cassandraProperties);
-            cassandraConnector.connect();
-
-            timelineReader = new TimelineReader(cassandraConnector);
-
-            authManager = new AuthManager(curatorClient);
-            authManager.start();
-
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            server = new HttpServer(
-                    httpServerProperties,
-                    authManager,
-                    new ReadTimelineHandler(new TimelineRepository(curatorClient), timelineReader, authManager, timetrapCountLimit),
-                    metricsCollector
-            );
+            authManager = new AuthManager(curatorClient);
+            authManager.start();
+
+            cassandraConnector = new CassandraConnector(cassandraProperties);
+            cassandraConnector.connect();
+
+            timelineReader = new TimelineReader(
+                    PropertiesUtil.ofScope(properties, "timeline.api.reader"),
+                    cassandraConnector,
+                    metricsCollector);
+
+            server = createHttpServer(httpServerProperties);
             server.start();
         } catch (Throwable t) {
             LOGGER.error("Error on starting timeline api", t);
@@ -86,11 +88,37 @@ public class TimelineApiApplication {
         LOGGER.info("Started Timeline API shutdown");
         try {
             if (server != null) {
-                server.stop();
+                server.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping server", t);
             //TODO: Process error
+        }
+
+        try {
+            if (timelineReader != null) {
+                timelineReader.shutdown();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping time line reader", t);
+            //TODO: Process error
+        }
+
+        try {
+            if (cassandraConnector != null) {
+                cassandraConnector.close();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping cassandra connector", t);
+            //TODO: Process error
+        }
+
+        try {
+            if (authManager != null) {
+                authManager.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping auth manager", t);
         }
 
         try {
@@ -111,37 +139,20 @@ public class TimelineApiApplication {
             //TODO: Process error
         }
 
-        try {
-            if (authManager != null) {
-                authManager.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping auth manager", t);
-        }
-
-        try {
-            if (cassandraConnector != null) {
-                cassandraConnector.close();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping cassandra connector", t);
-            //TODO: Process error
-        }
-        try {
-            if (timelineReader != null) {
-                timelineReader.shutdown();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping time line reader", t);
-            //TODO: Process error
-        }
         LOGGER.info("Finished Timeline API shutdown for {} millis", System.currentTimeMillis() - start);
     }
-    private static class Props {
 
-        static final PropertyDescription<Integer> TIMETRAP_COUNT_LIMIT = PropertyDescriptions
-                .integerProperty("timelineApi.timetrapCountLimit")
-                .withDefaultValue(30)
-                .build();
+    public static HttpServer createHttpServer(Properties httpServerProperties) {
+        TimelineRepository repository = new TimelineRepository(curatorClient);
+
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
+                post("/timeline/read", new ReadTimelineHandler(repository, timelineReader, authManager)).
+                build();
+
+        return new UndertowHttpServer(
+                Application.application().getConfig().getHost(),
+                Application.application().getConfig().getPort(),
+                httpServerProperties,
+                handler);
     }
 }

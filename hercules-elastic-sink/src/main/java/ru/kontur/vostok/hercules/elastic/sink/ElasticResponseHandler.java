@@ -11,7 +11,7 @@ import org.apache.http.HttpEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.util.Arrays;
@@ -226,7 +226,7 @@ public class ElasticResponseHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticResponseHandler.class);
 
-    private static final String METRIC_PREFIX = "bulkResponseHandler.";
+    private static final String METRIC_PREFIX = "bulkResponseHandler";
 
     private static final JsonFactory FACTORY = new JsonFactory();
     private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
@@ -243,9 +243,9 @@ public class ElasticResponseHandler {
     public ElasticResponseHandler(final MetricsCollector metricsCollector) {
         this.metricsCollector = metricsCollector;
 
-        this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "retryableErrors");
-        this.nonRetryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "nonRetryableErrors");
-        this.unknownErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "unknownErrors");
+        this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".retryableErrors");
+        this.nonRetryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".nonRetryableErrors");
+        this.unknownErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".unknownErrors");
     }
 
     // TODO: Replace with a good parser
@@ -311,9 +311,9 @@ public class ElasticResponseHandler {
     /**
      * Process error JSON node
      *
-     * @param errorNode JSON node with error data
-     * @param id event id
-     * @param index index
+     * @param errorNode           JSON node with error data
+     * @param id                  event id
+     * @param index               index
      * @param redefinedExceptions exceptions for overriding
      * @return error type, which determines retryability of the error
      */
@@ -334,14 +334,14 @@ public class ElasticResponseHandler {
             //TODO: Build "caused by" trace
 
             errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
-            if (redefinedExceptions.contains(type)){
-                LOGGER.error("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type,reason);
+            if (redefinedExceptions.contains(type)) {
+                LOGGER.error("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type, reason);
                 return ErrorType.NON_RETRYABLE;
             } else if (RETRYABLE_ERRORS_CODES.contains(type)) {
-                LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
                 return ErrorType.RETRYABLE;
             } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
                 return ErrorType.NON_RETRYABLE;
             } else {
                 LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
@@ -354,6 +354,6 @@ public class ElasticResponseHandler {
     }
 
     private Meter createMeter(final String errorType) {
-        return metricsCollector.meter(METRIC_PREFIX + "errorTypes." + GraphiteMetricsUtil.sanitizeMetricName(errorType));
+        return metricsCollector.meter(METRIC_PREFIX + ".errorTypes." + MetricsUtil.sanitizeMetricName(errorType));
     }
 }

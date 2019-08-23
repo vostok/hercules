@@ -60,6 +60,10 @@ public class StreamReader {
 
         List<TopicPartition> partitions = StreamUtil.getTopicPartitions(stream, shardIndex, shardCount);
 
+        if (partitions.isEmpty()) {
+            return ByteStreamContent.empty();
+        }
+
         long elapsedTimeMs = 0L;
         long remainingTimeMs = readTimeoutMs;
         final long readStartedMs = System.currentTimeMillis();

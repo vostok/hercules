@@ -7,7 +7,7 @@ package ru.kontur.vostok.hercules.util.validation;
  */
 public final class Validators {
     private static Validator<?> ANY = (x) -> ValidationResult.ok();
-    private static Validator<?> NOT_EMPTY = (x) -> x != null ? ValidationResult.ok() : ValidationResult.notPresent();
+    private static Validator<?> NOT_NULL = (x) -> x != null ? ValidationResult.ok() : ValidationResult.notPresent();
 
     /**
      * Validator accepts any value. Also, null value is acceptable.
@@ -27,8 +27,8 @@ public final class Validators {
      * @return validator
      */
     @SuppressWarnings("unchecked")
-    public static <T> Validator<T> notEmpty() {
-        return (Validator<T>) NOT_EMPTY;
+    public static <T> Validator<T> notNull() {
+        return (Validator<T>) NOT_NULL;
     }
 
     /**

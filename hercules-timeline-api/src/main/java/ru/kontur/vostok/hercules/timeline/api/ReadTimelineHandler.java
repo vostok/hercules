@@ -1,11 +1,16 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.MimeTypes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.protocol.TimelineByteContent;
@@ -14,42 +19,33 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
-import ru.kontur.vostok.hercules.util.functional.Result;
-import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
+/**
+ * @author Gregory Koshelev
+ */
 public class ReadTimelineHandler implements HttpHandler {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadTimelineHandler.class);
 
     private static final TimelineStateReader STATE_READER = new TimelineStateReader();
     private static final TimelineByteContentWriter CONTENT_WRITER = new TimelineByteContentWriter();
-
-    private static final String REASON_MISSING_PARAM = "Missing required parameter ";
-
-    private static final String PARAM_TIMELINE = "timeline";
-    private static final String PARAM_SHARD_INDEX = "shardIndex";
-    private static final String PARAM_SHARD_COUNT = "shardCount";
-    private static final String PARAM_TAKE = "take";
-    private static final String PARAM_FROM = "from";
-    private static final String PARAM_TO = "to";
 
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
     private final AuthManager authManager;
     private final int timetrapCountLimit;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager, int timetrapCountLimit) {
+    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager) {
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
         this.authManager = authManager;
-        this.timetrapCountLimit = timetrapCountLimit;
+        this.timetrapCountLimit = timelineReader.getTimetrapCountLimit();
     }
 
     public static boolean isTimetrapCountLimitExceeded(long from, long to, long timetrapSize, int timetrapCountLimit) {
@@ -57,137 +53,143 @@ public class ReadTimelineHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange httpServerExchange) throws Exception {
-
-        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(httpServerExchange);
+    public void handle(HttpServerRequest request) {
+        Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
-            ResponseUtil.lengthRequired(httpServerExchange);
+            request.complete(HttpStatusCodes.LENGTH_REQUIRED);
             return;
         }
 
-        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(httpServerExchange, "apiKey");
-        if (!optionalApiKey.isPresent()) {
-            ResponseUtil.unauthorized(httpServerExchange);
-            return;
-        }
-        String apiKey = optionalApiKey.get();
-
-        Optional<String> optionalTimelineName = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TIMELINE);
-        if (!optionalTimelineName.isPresent()) {
-            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TIMELINE);
+        String apiKey = request.getHeader("apiKey");
+        if (StringUtil.isNullOrEmpty(apiKey)) {
+            request.complete(HttpStatusCodes.UNAUTHORIZED);
             return;
         }
 
-        AuthResult authResult = authManager.authRead(apiKey, optionalTimelineName.get());
+        ParameterValue<String> timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
+        if (!timelineName.isOk()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.TIMELINE.name() + " error: " + timelineName.result().error());
+            return;
+        }
+
+        AuthResult authResult = authManager.authRead(apiKey, timelineName.get());
 
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
-                ResponseUtil.unauthorized(httpServerExchange);
+                request.complete(HttpStatusCodes.UNAUTHORIZED);
                 return;
             }
-            ResponseUtil.forbidden(httpServerExchange);
+            request.complete(HttpStatusCodes.FORBIDDEN);
             return;
         }
 
-        Optional<String> optionalShardIndex = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_SHARD_INDEX);
-        if (!optionalShardIndex.isPresent()) {
-            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_SHARD_INDEX);
-            return;
-        }
-
-        Result<Integer, String> shardIndex = Parsers.parseInteger(optionalShardIndex.get());
+        ParameterValue<Integer> shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
         if (!shardIndex.isOk()) {
-            ResponseUtil.badRequest(httpServerExchange, shardIndex.getError() + " in parameter " + PARAM_SHARD_INDEX);
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.SHARD_INDEX.name() + " error: " + shardIndex.result().error());
             return;
         }
 
-        Optional<String> optionalShardCount = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_SHARD_COUNT);
-        if (!optionalShardCount.isPresent()) {
-            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_SHARD_COUNT);
-            return;
-        }
-
-        Result<Integer, String> shardCount = Parsers.parseInteger(optionalShardCount.get());
+        ParameterValue<Integer> shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
         if (!shardCount.isOk()) {
-            ResponseUtil.badRequest(httpServerExchange, shardCount.getError() + " in parameter " + PARAM_SHARD_COUNT);
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.SHARD_COUNT.name() + " error: " + shardCount.result().error());
             return;
         }
 
-        Optional<String> optionalTake = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TAKE);
-        if (!optionalTake.isPresent()) {
-            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TAKE);
+        if (shardCount.get() <= shardIndex.get()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Invalid parameters: " + QueryParameters.SHARD_COUNT.name() + " must be > " + QueryParameters.SHARD_INDEX.name());
             return;
         }
 
-        Result<Integer, String> take = Parsers.parseInteger(optionalTake.get());
+        ParameterValue<Integer> take = QueryUtil.get(QueryParameters.TAKE, request);
         if (!take.isOk()) {
-            ResponseUtil.badRequest(httpServerExchange, take.getError() + " in parameter " + PARAM_TAKE);
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.TAKE.name() + " error: " + take.result().error());
             return;
         }
 
-        Optional<String> optionalFrom = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_FROM);
-        if (!optionalFrom.isPresent()) {
-            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_FROM);
-            return;
-        }
-
-        Result<Long, String> from = Parsers.parseLong(optionalFrom.get());
+        ParameterValue<Long> from = QueryUtil.get(QueryParameters.FROM, request);
         if (!from.isOk()) {
-            ResponseUtil.badRequest(httpServerExchange, take.getError() + " in parameter " + PARAM_FROM);
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.FROM.name() + " error: " + from.result().error());
             return;
         }
 
-        Optional<String> optionalTo = ExchangeUtil.extractQueryParam(httpServerExchange, PARAM_TO);
-        if (!optionalTo.isPresent()) {
-            ResponseUtil.badRequest(httpServerExchange, REASON_MISSING_PARAM + PARAM_TO);
-            return;
-        }
-
-        Result<Long, String> to = Parsers.parseLong(optionalTo.get());
+        ParameterValue<Long> to = QueryUtil.get(QueryParameters.TO, request);
         if (!to.isOk()) {
-            ResponseUtil.badRequest(httpServerExchange, take.getError() + " in parameter " + PARAM_TO);
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.TO.name() + " error: " + to.result().error());
             return;
         }
 
-        Optional<Timeline> optionalTimeline = timelineRepository.read(optionalTimelineName.get());
-        if (!optionalTimeline.isPresent()) {
-            ResponseUtil.notFound(httpServerExchange);
+        Timeline timeline;
+        try {
+            Optional<Timeline> optionalTimeline = timelineRepository.read(timelineName.get());
+            if (!optionalTimeline.isPresent()) {
+                request.complete(HttpStatusCodes.NOT_FOUND);
+                return;
+            }
+            timeline = optionalTimeline.get();
+        } catch (CuratorException ex) {
+            LOGGER.error("Curator exception when read Stream", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return;
+        } catch (DeserializationException ex) {
+            LOGGER.error("Deserialization exception of Stream", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
 
-        Timeline timeline = optionalTimeline.get();
         if (isTimetrapCountLimitExceeded(from.get(), to.get(), timeline.getTimetrapSize(), timetrapCountLimit)) {
-            ResponseUtil.badRequest(
-                    httpServerExchange,
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
                     "Time interval should not exceeded " + TimeUtil.millisToTicks(timetrapCountLimit * timeline.getTimetrapSize()) + " ticks, but requested " + (to.get() - from.get()) + " ticks");
             return;
         }
 
-        httpServerExchange.getRequestReceiver().receiveFullBytes((exchange, message) -> {
-            exchange.dispatch(() -> {
-                try {
-                    TimelineState readState = STATE_READER.read(new Decoder(message));
+        request.readBodyAsync((r, bytes) -> request.dispatchAsync(
+                () -> {
+                    try {
+                        TimelineState readState = STATE_READER.read(new Decoder(bytes));
 
-                    TimelineByteContent byteContent = timelineReader.readTimeline(optionalTimeline.get(),
-                            readState,
-                            shardIndex.get(),
-                            shardCount.get(),
-                            take.get(),
-                            from.get(),
-                            to.get());
+                        TimelineByteContent byteContent = timelineReader.readTimeline(
+                                timeline,
+                                readState,
+                                shardIndex.get(),
+                                shardCount.get(),
+                                take.get(),
+                                from.get(),
+                                to.get());
 
-                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    Encoder encoder = new Encoder(stream);
-                    CONTENT_WRITER.write(encoder, byteContent);
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        Encoder encoder = new Encoder(stream);
+                        CONTENT_WRITER.write(encoder, byteContent);
 
-                    exchange.getResponseSender().send(ByteBuffer.wrap(stream.toByteArray()));
-                } catch (Exception e) {
-                    LOGGER.error("Error on processing request", e);
-                    ResponseUtil.internalServerError(exchange);
-                } finally {
-                    exchange.endExchange();
-                }
-            });
-        });
+                        request.getResponse().send(ByteBuffer.wrap(stream.toByteArray()));
+                    } catch (Exception e) {
+                        LOGGER.error("Error on processing request", e);
+                        request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+                    }
+                }));
     }
+
+
 }

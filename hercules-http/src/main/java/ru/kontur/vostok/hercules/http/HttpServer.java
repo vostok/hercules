@@ -2,8 +2,11 @@ package ru.kontur.vostok.hercules.http;
 
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
+import ru.kontur.vostok.hercules.util.validation.Validators;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -81,6 +84,14 @@ public abstract class HttpServer {
         public static final Parameter<Integer> WORKER_THREADS =
                 Parameter.integerParameter("workerThreads").
                         withValidator(IntegerValidators.positive()).
+                        build();
+
+        public static final Parameter<String> ROOT_PATH =
+                Parameter.stringParameter("rootPath").
+                        withDefault("/").
+                        withValidator(Validators.and(
+                                Validators.notNull(),
+                                x -> x.startsWith("/") ? ValidationResult.ok() : ValidationResult.error("Should start with '/'"))).
                         build();
 
         private Props() {
