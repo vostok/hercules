@@ -31,20 +31,10 @@ import java.util.Optional;
  * @author Gregory Koshelev
  */
 public class ReadTimelineHandler implements HttpHandler {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadTimelineHandler.class);
 
     private static final TimelineStateReader STATE_READER = new TimelineStateReader();
     private static final TimelineByteContentWriter CONTENT_WRITER = new TimelineByteContentWriter();
-
-    private static final String REASON_MISSING_PARAM = "Missing required parameter ";
-
-    private static final String PARAM_TIMELINE = "timeline";
-    private static final String PARAM_SHARD_INDEX = "shardIndex";
-    private static final String PARAM_SHARD_COUNT = "shardCount";
-    private static final String PARAM_TAKE = "take";
-    private static final String PARAM_FROM = "from";
-    private static final String PARAM_TO = "to";
 
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
