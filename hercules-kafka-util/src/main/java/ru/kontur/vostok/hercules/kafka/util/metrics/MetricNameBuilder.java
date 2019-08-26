@@ -1,9 +1,11 @@
 package ru.kontur.vostok.hercules.kafka.util.metrics;
 
 import org.apache.kafka.common.MetricName;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+import ru.kontur.vostok.hercules.health.MetricsUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class MetricNameBuilder {
     public static String build(MetricName name) {
@@ -16,6 +18,6 @@ public class MetricNameBuilder {
         }
         tokens.add(name.name());
 
-        return GraphiteMetricsUtil.buildMetricName(tokens);
+        return MetricsUtil.toMetricNameFromTokens(tokens);
     }
 }

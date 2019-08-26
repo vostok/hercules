@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,12 @@ public final class MetricsUtil {
      */
     public static String toMetricName(String... elements) {
         return sanitizeMetricName(String.join("_", elements));
+    }
+
+    public static String toMetricNameFromTokens(final List<String> tokens) {
+        return tokens.stream()
+                .map(MetricsUtil::sanitizeMetricName)
+                .collect(Collectors.joining("."));
     }
 
     private MetricsUtil() {
