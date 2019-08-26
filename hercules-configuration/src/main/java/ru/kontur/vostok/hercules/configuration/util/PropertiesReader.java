@@ -1,9 +1,5 @@
 package ru.kontur.vostok.hercules.configuration.util;
 
-import ru.kontur.vostok.hercules.util.text.StringUtil;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;

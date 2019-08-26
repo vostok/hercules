@@ -3,6 +3,8 @@ package ru.kontur.vostok.hercules.util.parameter.parsing;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
+import java.util.function.Function;
+
 /**
  * Parsers
  *
@@ -99,6 +101,27 @@ public final class Parsers {
                 return ParameterValue.empty();
             }
             return ParameterValue.of(s);
+        };
+    }
+
+    /**
+     * Object parser uses provided function to parse value from string.
+     *
+     * @param function the parsing function
+     * @param <T>      the object type
+     * @return object parser
+     */
+    public static <T> Parser<T> fromFunction(Function<String, T> function) {
+        return s -> {
+            if (StringUtil.isNullOrEmpty(s)) {
+                return ParameterValue.empty();
+            }
+            try {
+                T result = function.apply(s);
+                return result != null ? ParameterValue.of(result) : ParameterValue.empty();
+            } catch (Exception ex) {
+                return ParameterValue.invalid(ex.getMessage());
+            }
         };
     }
 

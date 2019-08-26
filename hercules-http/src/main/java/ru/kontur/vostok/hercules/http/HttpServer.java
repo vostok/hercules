@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.http;
 
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
