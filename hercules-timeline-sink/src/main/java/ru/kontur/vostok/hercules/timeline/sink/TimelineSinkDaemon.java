@@ -60,6 +60,8 @@ public class TimelineSinkDaemon {
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
+        Properties senderProperties = PropertiesUtil.ofScope(sinkProperties, Scopes.SENDER);
+
         ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
 
         //TODO: Validate sinkProperties
@@ -92,7 +94,7 @@ public class TimelineSinkDaemon {
                             ShardingKey.fromKeyPaths(timeline.getShardingKey()),
                             timeline.getSlices());
 
-            sender = new TimelineSender(timeline, slicer, properties, metricsCollector);
+            sender = new TimelineSender(timeline, slicer, senderProperties, metricsCollector);
             sender.start();
 
             int poolSize = Props.POOL_SIZE.extract(sinkProperties);
