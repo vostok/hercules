@@ -121,7 +121,7 @@ public class TracingApiApplication {
         LOGGER.info("Finished Tracing API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 
-    public static HttpServer createHttpServer(Properties httpServerProperties) {
+    private static HttpServer createHttpServer(Properties httpServerProperties) {
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
                 get("/trace", new GetTraceHandler(tracingReader)).
                 build();

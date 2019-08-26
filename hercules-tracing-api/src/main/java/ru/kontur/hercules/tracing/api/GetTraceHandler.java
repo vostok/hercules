@@ -18,9 +18,6 @@ import java.util.UUID;
  * @author Gregory Koshelev
  */
 public class GetTraceHandler implements HttpHandler {
-
-    private static final int DEFAULT_COUNT = 10_000;
-
     private final TracingReader tracingReader;
 
     public GetTraceHandler(TracingReader tracingReader) {
@@ -70,7 +67,7 @@ public class GetTraceHandler implements HttpHandler {
                     traceId.get(),
                     parentSpanId.get(),
                     limit.get(),
-                    pagingState.orEmpty(null));
+                    pagingState.get());
 
             request.getResponse().setContentType(MimeTypes.APPLICATION_JSON);
             request.getResponse().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceIdAndParentSpanId));
@@ -78,7 +75,7 @@ public class GetTraceHandler implements HttpHandler {
             final PagedResult<Event> traceSpansByTraceId = tracingReader.getTraceSpansByTraceId(
                     traceId.get(),
                     limit.get(),
-                    pagingState.orEmpty(null));
+                    pagingState.get());
 
             request.getResponse().setContentType(MimeTypes.APPLICATION_JSON);
             request.getResponse().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));

@@ -125,7 +125,7 @@ public class ParameterValue<T> {
      * @return invalid parameter's value
      */
     public static <T> ParameterValue<T> invalid(String error) {
-        return new ParameterValue<>(null, ValidationResult.error(error));
+        return new ParameterValue<>(null, ValidationResult.error(error != null ? error : "unknown"));
     }
 
     /**
