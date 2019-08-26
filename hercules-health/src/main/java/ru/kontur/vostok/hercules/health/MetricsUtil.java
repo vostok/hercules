@@ -1,9 +1,7 @@
 package ru.kontur.vostok.hercules.health;
 
 import org.jetbrains.annotations.NotNull;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;

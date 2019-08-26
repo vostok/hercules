@@ -120,6 +120,10 @@ public class Parameter<T> {
         return new StringParameterBuilder(name);
     }
 
+    public static <T> ParameterBuilder<T> parameter(String name, Parser<T> parser) {
+        return new ParameterBuilder<>(name, parser);
+    }
+
     public static class ParameterBuilder<T> {
         private String name;
         private ParameterType type = ParameterType.OPTIONAL;

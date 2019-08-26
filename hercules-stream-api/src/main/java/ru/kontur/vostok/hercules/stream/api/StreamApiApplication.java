@@ -136,7 +136,7 @@ public class StreamApiApplication {
         LOGGER.info("Finished Stream API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 
-    public static HttpServer createHttpServer(Properties httpServerProperties) {
+    private static HttpServer createHttpServer(Properties httpServerProperties) {
         StreamRepository repository = new StreamRepository(curatorClient);
 
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
