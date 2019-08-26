@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.gate;
 
 import com.codahale.metrics.Meter;
-import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
@@ -15,7 +14,6 @@ import ru.kontur.vostok.hercules.protocol.decoder.ReaderIterator;
 import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
 import ru.kontur.vostok.hercules.throttling.RequestProcessor;
 import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 
 import java.util.concurrent.atomic.AtomicBoolean;

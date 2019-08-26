@@ -170,7 +170,6 @@ Application is configured through properties file.
 
 `context.instance.id` - id of instance
 
-
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
 
