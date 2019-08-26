@@ -34,7 +34,7 @@ public class EventSender {
     }
 
     public EventSender(Properties properties, Partitioner partitioner, MetricsCollector metricsCollector) {
-        properties.put(KafkaConfigs.METRIC_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
+        properties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
         this.producer = new KafkaProducer<>(properties, new UuidSerializer(), new ByteArraySerializer());
 
         this.partitioner = partitioner;

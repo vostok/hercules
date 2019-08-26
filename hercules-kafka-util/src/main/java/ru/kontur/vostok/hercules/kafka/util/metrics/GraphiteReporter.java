@@ -32,12 +32,12 @@ public class GraphiteReporter implements MetricsReporter {
 
     @Override
     public void configure(Map<String, ?> map) {
-        if (!map.containsKey(KafkaConfigs.METRIC_COLLECTOR_INSTANCE_CONFIG)) {
+        if (!map.containsKey(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG)) {
             throw new IllegalArgumentException(String.format("There is no '%s' property",
-                    KafkaConfigs.METRIC_COLLECTOR_INSTANCE_CONFIG));
+                    KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG));
         }
 
-        metricsCollector = ((MetricsCollector) map.get(KafkaConfigs.METRIC_COLLECTOR_INSTANCE_CONFIG));
+        metricsCollector = ((MetricsCollector) map.get(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG));
     }
 
     private void register(KafkaMetric kafkaMetric) {
