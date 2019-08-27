@@ -11,13 +11,16 @@ import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class GraphiteEventSender extends Sender {
@@ -30,16 +33,25 @@ public class GraphiteEventSender extends Sender {
     private final GraphiteClient graphiteClient;
     private final Timer graphiteClientTimer;
 
+    private final AtomicInteger sentMetricsCounter = new AtomicInteger(0);
+
     public GraphiteEventSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
-        final String graphiteHost = Props.GRAPHITE_HOST.extract(properties);
-        final int graphitePort = Props.GRAPHITE_PORT.extract(properties);
-        final int retryLimit = Props.RETRY_LIMIT.extract(properties);
+        final String graphiteHost = PropertiesUtil.get(Props.GRAPHITE_HOST, properties).get();
+        final int graphitePort = PropertiesUtil.get(Props.GRAPHITE_PORT, properties).get();
+        final int retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
+        final int logSentMetricsCountTimeoutMs = PropertiesUtil.get(Props.LOG_SENT_METRICS_COUNT_TIMEOUT_MS, properties).get();
 
         graphitePinger = new GraphitePinger(graphiteHost, graphitePort);
         graphiteClient = new GraphiteClient(graphiteHost, graphitePort, retryLimit);
         graphiteClientTimer = metricsCollector.timer("graphiteClientRequestTimeMs");
+
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        executor.scheduleWithFixedDelay(this::logSentMetricsCount,
+                logSentMetricsCountTimeoutMs,
+                logSentMetricsCountTimeoutMs,
+                TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -76,6 +88,8 @@ public class GraphiteEventSender extends Sender {
             events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
 
+        sentMetricsCounter.addAndGet(metricsToSend.size());
+
         return metricsToSend.size();
     }
 
@@ -102,19 +116,29 @@ public class GraphiteEventSender extends Sender {
         return false;
     }
 
+    private void logSentMetricsCount() {
+        LOGGER.info("Successfully sent {} metric(s) to Graphite.", sentMetricsCounter.get());
+        sentMetricsCounter.set(0);
+    }
+
     private static class Props {
-        static final PropertyDescription<String> GRAPHITE_HOST = PropertyDescriptions
-                .stringProperty("graphite.host")
-                .build();
+        static final Parameter<String> GRAPHITE_HOST =
+                Parameter.stringParameter("graphite.host").
+                        build();
 
-        static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
-                .integerProperty("graphite.port")
-                .withValidator(IntegerValidators.portValidator())
-                .build();
+        static final Parameter<Integer> GRAPHITE_PORT =
+                Parameter.integerParameter("graphite.port").
+                        withValidator(IntegerValidators.portValidator()).
+                        build();
 
-        static final PropertyDescription<Integer> RETRY_LIMIT = PropertyDescriptions
-                .integerProperty("retryLimit")
-                .withDefaultValue(3)
-                .build();
+        static final Parameter<Integer> RETRY_LIMIT =
+                Parameter.integerParameter("retryLimit").
+                        withDefault(3).
+                        build();
+
+        static final Parameter<Integer> LOG_SENT_METRICS_COUNT_TIMEOUT_MS =
+                Parameter.integerParameter("logSentMetricsCountTimeoutMs").
+                        withDefault(60000).
+                        build();
     }
 }
