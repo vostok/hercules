@@ -56,6 +56,6 @@ public class HerculesRoutingHandler implements HttpHandler {
         if (template.startsWith("/")) {
             template = template.substring(1);
         }
-        return MetricsUtil.toMetricName(httpMethodName, template);
+        return MetricsUtil.toMetricNameComponent(httpMethodName, template);
     }
 }

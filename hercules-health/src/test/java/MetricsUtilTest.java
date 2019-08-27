@@ -8,8 +8,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class MetricsUtilTest {
     @Test
-    public void shouldBuildSanitizedMetricName() {
-        assertEquals("impossibly_cool_metric_name", MetricsUtil.toMetricName("impossibly cool", "metric.name"));
+    public void shouldBuildSanitizedMetricNameComponent() {
+        assertEquals("impossibly_cool_metric_name", MetricsUtil.toMetricNameComponent("impossibly cool", "metric.name"));
     }
 
     @Test

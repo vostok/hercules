@@ -27,17 +27,23 @@ public final class MetricsUtil {
     }
 
     /**
+     * Build sanitized metric name component from string elements.
+     *
+     * @param elements elements are used to build metric name
+     * @return sanitized metric name component
+     */
+    public static String toMetricNameComponent(String... elements) {
+        return sanitizeMetricName(String.join("_", elements));
+    }
+
+    /**
      * Build sanitized metric name from string elements.
      *
      * @param elements elements are used to build metric name
      * @return sanitized metric name
      */
-    public static String toMetricName(String... elements) {
-        return sanitizeMetricName(String.join("_", elements));
-    }
-
-    public static String toMetricNameFromTokens(final List<String> tokens) {
-        return tokens.stream()
+    public static String toMetricName(final List<String> elements) {
+        return elements.stream()
                 .map(MetricsUtil::sanitizeMetricName)
                 .collect(Collectors.joining("."));
     }

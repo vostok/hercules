@@ -7,8 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class MetricNameBuilder {
-    public static String build(MetricName name) {
+/**
+ * @author Grigory Ovchinnikov
+ */
+class KafkaMetricsUtil {
+    /**
+     * Build metric name in Graphite format from metric name in Apache Kafka format
+     *
+     * @param name is the metric name in Apache Kafka format
+     * @return metric name in Graphite format
+     */
+    public static String toGraphiteMetricName(MetricName name) {
         List<String> tokens = new ArrayList<>();
 
         tokens.add("kafka");
@@ -18,6 +27,6 @@ public class MetricNameBuilder {
         }
         tokens.add(name.name());
 
-        return MetricsUtil.toMetricNameFromTokens(tokens);
+        return MetricsUtil.toMetricName(tokens);
     }
 }
