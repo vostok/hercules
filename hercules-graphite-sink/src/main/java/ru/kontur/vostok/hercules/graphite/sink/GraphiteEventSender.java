@@ -41,7 +41,7 @@ public class GraphiteEventSender extends Sender {
         final String graphiteHost = PropertiesUtil.get(Props.GRAPHITE_HOST, properties).get();
         final int graphitePort = PropertiesUtil.get(Props.GRAPHITE_PORT, properties).get();
         final int retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
-        final int logSentMetricsCountTimeoutMs = PropertiesUtil.get(Props.LOG_SENT_METRICS_COUNT_TIMEOUT_MS, properties).get();
+        final int diagnosticLogWritePeriodMs = PropertiesUtil.get(Props.DIAGNOSTIC_LOG_WRITE_PERIOD_MS, properties).get();
 
         graphitePinger = new GraphitePinger(graphiteHost, graphitePort);
         graphiteClient = new GraphiteClient(graphiteHost, graphitePort, retryLimit);
@@ -49,8 +49,8 @@ public class GraphiteEventSender extends Sender {
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleWithFixedDelay(this::logSentMetricsCount,
-                logSentMetricsCountTimeoutMs,
-                logSentMetricsCountTimeoutMs,
+                diagnosticLogWritePeriodMs,
+                diagnosticLogWritePeriodMs,
                 TimeUnit.MILLISECONDS);
     }
 
@@ -117,8 +117,7 @@ public class GraphiteEventSender extends Sender {
     }
 
     private void logSentMetricsCount() {
-        LOGGER.info("Successfully sent {} metric(s) to Graphite.", sentMetricsCounter.get());
-        sentMetricsCounter.set(0);
+        LOGGER.info("Successfully sent {} metric(s) to Graphite.", sentMetricsCounter.getAndSet(0));
     }
 
     private static class Props {
@@ -136,8 +135,8 @@ public class GraphiteEventSender extends Sender {
                         withDefault(3).
                         build();
 
-        static final Parameter<Integer> LOG_SENT_METRICS_COUNT_TIMEOUT_MS =
-                Parameter.integerParameter("logSentMetricsCountTimeoutMs").
+        static final Parameter<Integer> DIAGNOSTIC_LOG_WRITE_PERIOD_MS =
+                Parameter.integerParameter("diagnosticLogWritePeriodMs").
                         withDefault(60000).
                         build();
     }
