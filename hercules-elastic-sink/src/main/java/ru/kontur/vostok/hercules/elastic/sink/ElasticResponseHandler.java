@@ -32,6 +32,7 @@ public class ElasticResponseHandler {
                 0,
                 0,
                 0,
+                Collections.emptySet(),
                 Collections.emptySet()
         );
 
@@ -39,17 +40,20 @@ public class ElasticResponseHandler {
         private final int nonRetryableErrorCount;
         private final int unknownErrorCount;
         private final Set<String> badIds;
+        private final Set<ErrorResponseWrapper> nonRetryableErrors;
 
         public Result(
                 int retryableErrorCount,
                 int nonRetryableErrorCount,
                 int unknownErrorCount,
-                Set<String> badIds
+                Set<String> badIds,
+                Set<ErrorResponseWrapper> nonRetryableErrors
         ) {
             this.retryableErrorCount = retryableErrorCount;
             this.nonRetryableErrorCount = nonRetryableErrorCount;
             this.unknownErrorCount = unknownErrorCount;
             this.badIds = badIds;
+            this.nonRetryableErrors = nonRetryableErrors;
         }
 
         public int getRetryableErrorCount() {
@@ -78,6 +82,44 @@ public class ElasticResponseHandler {
 
         public Set<String> getBadIds() {
             return badIds;
+        }
+
+        public Set<ErrorResponseWrapper> getNonRetryableErrors() {
+            return nonRetryableErrors;
+        }
+
+        public boolean hasNonRetryableErrors() {
+            return nonRetryableErrors.size() != 0;
+        }
+    }
+
+    public class ErrorResponseWrapper {
+        private final ErrorType type;
+        private final String eventId;
+        private final String index;
+        private final String reason;
+
+        public ErrorResponseWrapper(ErrorType type, String eventId, String index, String reason) {
+            this.type = type;
+            this.eventId = eventId;
+            this.index = index;
+            this.reason = reason;
+        }
+
+        public ErrorType getType() {
+            return type;
+        }
+
+        public String getEventId() {
+            return eventId;
+        }
+
+        public String getIndex() {
+            return index;
+        }
+
+        public String getReason() {
+            return reason;
         }
     }
 
@@ -255,6 +297,7 @@ public class ElasticResponseHandler {
             int nonRetryableErrorCount = 0;
             int unknownErrorCount = 0;
             Set<String> badIds = new HashSet<>();
+            Set<ErrorResponseWrapper> nonRetryableErrors = new HashSet<>();
 
             JsonParser parser = FACTORY.createParser(httpEntity.getContent());
 
@@ -279,13 +322,14 @@ public class ElasticResponseHandler {
                 }
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
-                    final ErrorType errorType = processError(MAPPER.readTree(parser), currentId, currentIndex, redefinedExceptions);
-                    switch (errorType) {
+                    final ErrorResponseWrapper errorResponseWrapper = processError(MAPPER.readTree(parser), currentId, currentIndex, redefinedExceptions);
+                    switch (errorResponseWrapper.getType()) {
                         case RETRYABLE:
                             retryableErrorCount++;
                             break;
                         case NON_RETRYABLE:
                             nonRetryableErrorCount++;
+                            nonRetryableErrors.add(errorResponseWrapper);
                             break;
                         case UNKNOWN:
                             unknownErrorCount++;
@@ -294,7 +338,7 @@ public class ElasticResponseHandler {
                             }
                             break;
                         default:
-                            throw new RuntimeException(String.format("Unsupported error type '%s'", errorType));
+                            throw new RuntimeException(String.format("Unsupported error type '%s'", errorResponseWrapper.getType()));
                     }
 
                 }
@@ -304,7 +348,7 @@ public class ElasticResponseHandler {
             nonRetryableErrorsMeter.mark(nonRetryableErrorCount);
             unknownErrorsMeter.mark(unknownErrorCount);
 
-            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, badIds);
+            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, badIds, nonRetryableErrors);
         });
     }
 
@@ -317,10 +361,10 @@ public class ElasticResponseHandler {
      * @param redefinedExceptions exceptions for overriding
      * @return error type, which determines retryability of the error
      */
-    private ErrorType processError(TreeNode errorNode, String id, String index, Set<String> redefinedExceptions) {
+    private ErrorResponseWrapper processError(TreeNode errorNode, String id, String index, Set<String> redefinedExceptions) {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
-            LOGGER.error("Original error: {}", error);
+            LOGGER.warn("Original error: {}", error);
 
             final String type = Optional.ofNullable(error.get("type"))
                     .map(JsonNode::asText)
@@ -334,22 +378,23 @@ public class ElasticResponseHandler {
             //TODO: Build "caused by" trace
 
             errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
-            if (redefinedExceptions.contains(type)) {
-                LOGGER.error("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return ErrorType.NON_RETRYABLE;
+            if (redefinedExceptions.contains(type)){
+                LOGGER.warn("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                return new ErrorResponseWrapper(ErrorType.NON_RETRYABLE, id, index, reason);
             } else if (RETRYABLE_ERRORS_CODES.contains(type)) {
-                LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return ErrorType.RETRYABLE;
+                LOGGER.warn("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                return new ErrorResponseWrapper(ErrorType.RETRYABLE, id, index, reason);
             } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return ErrorType.NON_RETRYABLE;
+                LOGGER.warn("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
+                return new ErrorResponseWrapper(ErrorType.NON_RETRYABLE, id, index, reason);
             } else {
                 LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return ErrorType.UNKNOWN;
+                return new ErrorResponseWrapper(ErrorType.UNKNOWN, id, index, reason);
             }
         } else {
-            LOGGER.error("Error node is not object note, cannot parse");
-            return ErrorType.NON_RETRYABLE;
+            String errorMessage = "Error node is not object note, cannot parse";
+            LOGGER.warn(errorMessage);
+            return new ErrorResponseWrapper(ErrorType.NON_RETRYABLE, id, index, errorMessage);
         }
     }
 

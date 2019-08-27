@@ -53,6 +53,7 @@ public class ElasticSender extends Sender {
 
     private final RestClient restClient;
     private final ElasticResponseHandler elasticResponseHandler;
+    private final ErrorSender errorSender;
 
     private final int retryLimit;
     private final boolean retryOnUnknownErrors;
@@ -60,8 +61,10 @@ public class ElasticSender extends Sender {
 
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
+    private final Meter elasticsearchDroppedNonRetryableErrorsMeter;
 
     private final Set<String> redefinedExceptions;
+    private final boolean nonRetryableResendingMode;
 
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
@@ -75,6 +78,8 @@ public class ElasticSender extends Sender {
         final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
         final int connectionRequestTimeout = Props.CONNECTION_REQUEST_TIMEOUT_MS.extract(properties);
         final int socketTimeout = Props.SOCKET_TIMEOUT_MS.extract(properties);
+
+        this.nonRetryableResendingMode = Props.NON_RETRYABLE_RESENDING_MODE.extract(properties);
 
         this.redefinedExceptions = new HashSet<>(Arrays.asList(Props.REDEFINED_EXCEPTIONS.extract(properties)));
 
@@ -96,8 +101,11 @@ public class ElasticSender extends Sender {
 
         this.elasticResponseHandler = new ElasticResponseHandler(metricsCollector);
 
+        this.errorSender = new ErrorSender(properties, metricsCollector);
+
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
+        this.elasticsearchDroppedNonRetryableErrorsMeter  = metricsCollector.meter("elasticsearchDroppedNonRetryableErrors");
     }
 
     @Override
@@ -159,6 +167,18 @@ public class ElasticSender extends Sender {
                             result.getUnknownErrorCount(),
                             result.getTotalErrors()
                     );
+                }
+                if (result.hasNonRetryableErrors()) {
+                    if (nonRetryableResendingMode) {
+                        errorSender.sendNonRetryableEvents(events, result.getNonRetryableErrors());
+                    } else {
+                        result.getNonRetryableErrors().forEach(errorResponseWrapper ->
+                                LOGGER.warn("Non reatryable error info: id = {}, index = {}, reason = {}",
+                                        errorResponseWrapper.getEventId(),
+                                        errorResponseWrapper.getIndex(),
+                                        errorResponseWrapper.getReason()));
+                        elasticsearchDroppedNonRetryableErrorsMeter.mark(result.getNonRetryableErrorCount());
+                    }
                 }
                 if (result.hasUnknownErrors() && LOGGER.isInfoEnabled()) {
                     for (Event event : events) {
@@ -270,6 +290,10 @@ public class ElasticSender extends Sender {
         static final PropertyDescription<String[]> REDEFINED_EXCEPTIONS = PropertyDescriptions
                 .arrayOfStringsProperty("elastic.redefinedExceptions")
                 .withDefaultValue(new String[]{})
+                .build();
+        static final PropertyDescription<Boolean> NON_RETRYABLE_RESENDING_MODE = PropertyDescriptions
+                .booleanProperty("elastic.nonRetryableResendingMode")
+                .withDefaultValue(false)
                 .build();
     }
 }
