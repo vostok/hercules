@@ -65,7 +65,7 @@ public class StreamApiApplication {
             authManager.start();
 
             consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer());
-            consumerPool.start();
+            consumerPool.start(metricsCollector);
 
             streamReader = new StreamReader(
                     PropertiesUtil.ofScope(properties, "stream.api.reader"),

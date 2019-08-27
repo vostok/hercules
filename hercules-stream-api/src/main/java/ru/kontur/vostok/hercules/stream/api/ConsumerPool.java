@@ -6,6 +6,10 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.DurationUtil;
@@ -34,6 +38,7 @@ public class ConsumerPool<K, V> {
     private final String bootstrapServers;
     private final int maxPollRecords;
     private final int poolSize;
+    private final String metricReporterClasses;
 
     private ArrayBlockingQueue<Consumer<K, V>> consumers;
 
@@ -43,16 +48,17 @@ public class ConsumerPool<K, V> {
         this.keyDeserializer = keyDeserializer;
         this.valueDeserializer = valueDeserializer;
 
-        bootstrapServers = Props.BOOTSTRAP_SERVERS.extract(properties);
-        maxPollRecords = Props.MAX_POLL_RECORDS.extract(properties);
-        poolSize = Props.POOL_SIZE.extract(properties);
+        bootstrapServers = PropertiesUtil.get(Props.BOOTSTRAP_SERVERS, properties).get();
+        maxPollRecords = PropertiesUtil.get(Props.MAX_POLL_RECORDS, properties).get();
+        poolSize = PropertiesUtil.get(Props.POOL_SIZE, properties).get();
+        metricReporterClasses = PropertiesUtil.get(Props.METRIC_REPORTERS, properties).get();
 
         consumers = new ArrayBlockingQueue<>(poolSize);
     }
 
-    public void start() {
+    public void start(MetricsCollector metricsCollector) {
         for (int i = 0; i < poolSize; i++) {
-            consumers.offer(create());
+            consumers.offer(create(metricsCollector));
         }
     }
 
@@ -94,30 +100,35 @@ public class ConsumerPool<K, V> {
         }
     }
 
-    private Consumer<K, V> create() {
+    private Consumer<K, V> create(MetricsCollector metricsCollector) {
         Properties consumerProperties = new Properties();
         consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "stub");
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
+        consumerProperties.put(ConsumerConfig.METRIC_REPORTER_CLASSES_CONFIG, metricReporterClasses);
+        consumerProperties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
 
         return new KafkaConsumer<K, V>(consumerProperties, keyDeserializer, valueDeserializer);
     }
 
     static final class Props {
-        static final PropertyDescription<String> BOOTSTRAP_SERVERS =
-                PropertyDescriptions.stringProperty("bootstrap.servers").build();
+        static final Parameter<String> BOOTSTRAP_SERVERS =
+                Parameter.stringParameter("bootstrap.servers").build();
 
-        static final PropertyDescription<Integer> MAX_POLL_RECORDS =
-                PropertyDescriptions.integerProperty("max.poll.records").
-                        withDefaultValue(10_000).
+        static final Parameter<Integer> MAX_POLL_RECORDS =
+                Parameter.integerParameter("max.poll.records").
+                        withDefault(10_000).
                         withValidator(IntegerValidators.positive()).
                         build();
 
-        static final PropertyDescription<Integer> POOL_SIZE =
-                PropertyDescriptions.integerProperty("poolSize").
-                        withDefaultValue(4).
+        static final Parameter<Integer> POOL_SIZE =
+                Parameter.integerParameter("poolSize").
+                        withDefault(4).
                         withValidator(IntegerValidators.positive()).
                         build();
+
+        static final Parameter<String> METRIC_REPORTERS =
+                Parameter.stringParameter("metric.reporters").build();
     }
 }

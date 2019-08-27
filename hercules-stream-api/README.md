@@ -203,6 +203,8 @@ See Consumer's Config from Apache Kafka documentation. Main settings are present
 
 `consumer.poolSize` - consumers pool size. Default value: `4`.
 
+`consumer.metric.reporters` - a list of classes to use as metrics reporters
+
 ### Http Server settings
 `http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
@@ -249,6 +251,7 @@ metrics.period=60
 consumer.bootstrap.servers=localhost:9092
 consumer.max.poll.records=10000
 consumer.poolSize=16
+consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 http.server.ioThreads=8
 http.server.workerThreads=32
