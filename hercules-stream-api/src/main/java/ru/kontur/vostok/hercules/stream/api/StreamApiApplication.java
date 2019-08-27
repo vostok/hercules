@@ -64,8 +64,9 @@ public class StreamApiApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer());
-            consumerPool.start(metricsCollector);
+            consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer(),
+                    metricsCollector);
+            consumerPool.start();
 
             streamReader = new StreamReader(
                     PropertiesUtil.ofScope(properties, "stream.api.reader"),

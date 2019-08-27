@@ -10,8 +10,6 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.time.DurationUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
@@ -35,6 +33,8 @@ public class ConsumerPool<K, V> {
     private final Deserializer<K> keyDeserializer;
     private final Deserializer<V> valueDeserializer;
 
+    private final MetricsCollector metricsCollector;
+
     private final String bootstrapServers;
     private final int maxPollRecords;
     private final int poolSize;
@@ -42,11 +42,14 @@ public class ConsumerPool<K, V> {
 
     private ArrayBlockingQueue<Consumer<K, V>> consumers;
 
-    public ConsumerPool(Properties properties, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
+    public ConsumerPool(Properties properties, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer,
+                        MetricsCollector metricsCollector) {
         this.properties = properties;
 
         this.keyDeserializer = keyDeserializer;
         this.valueDeserializer = valueDeserializer;
+
+        this.metricsCollector = metricsCollector;
 
         bootstrapServers = PropertiesUtil.get(Props.BOOTSTRAP_SERVERS, properties).get();
         maxPollRecords = PropertiesUtil.get(Props.MAX_POLL_RECORDS, properties).get();
@@ -56,9 +59,9 @@ public class ConsumerPool<K, V> {
         consumers = new ArrayBlockingQueue<>(poolSize);
     }
 
-    public void start(MetricsCollector metricsCollector) {
+    public void start() {
         for (int i = 0; i < poolSize; i++) {
-            consumers.offer(create(metricsCollector));
+            consumers.offer(create());
         }
     }
 
@@ -100,7 +103,7 @@ public class ConsumerPool<K, V> {
         }
     }
 
-    private Consumer<K, V> create(MetricsCollector metricsCollector) {
+    private Consumer<K, V> create() {
         Properties consumerProperties = new Properties();
         consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "stub");
