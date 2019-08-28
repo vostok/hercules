@@ -2,11 +2,34 @@ package ru.kontur.vostok.hercules.management.api;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.http.HttpServer;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.handler.RouteHandler;
+import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
+import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
+import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
+import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
+import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
+import ru.kontur.vostok.hercules.management.api.stream.ChangeStreamTtlHandler;
+import ru.kontur.vostok.hercules.management.api.stream.CreateStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.DeleteStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.IncreasePartitionsStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.InfoStreamHandler;
+import ru.kontur.vostok.hercules.management.api.stream.ListStreamHandler;
+import ru.kontur.vostok.hercules.management.api.timeline.ChangeTimelineTtlHandler;
+import ru.kontur.vostok.hercules.management.api.timeline.CreateTimelineHandler;
+import ru.kontur.vostok.hercules.management.api.timeline.DeleteTimelineHandler;
+import ru.kontur.vostok.hercules.management.api.timeline.InfoTimelineHandler;
+import ru.kontur.vostok.hercules.management.api.timeline.ListTimelineHandler;
+import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
+import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
+import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
@@ -42,61 +65,47 @@ public class ManagementApiApplication {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ManagementApiApplication.class);
 
-    private static HttpServer server;
     private static CuratorClient curatorClient;
+    private static MetricsCollector metricsCollector;
+    private static AuthManager authManager;
+    private static AdminAuthManager adminAuthManager;
     private static TaskQueue<StreamTask> streamTaskQueue;
     private static TaskQueue<TimelineTask> timelineTaskQueue;
-    private static AuthManager authManager;
-    private static MetricsCollector metricsCollector;
+    private static HttpServer server;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
 
         try {
+            Application.run("Hercules Management API", "management-api", args);
+
             Map<String, String> parameters = ArgsParser.parse(args);
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
-            Properties httpserverProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
+            Properties httpserverProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             ApplicationContextHolder.init("Hercules management API", "management-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
-            StreamRepository streamRepository = new StreamRepository(curatorClient);
-            TimelineRepository timelineRepository = new TimelineRepository(curatorClient);
-
-            BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
-            RuleRepository ruleRepository = new RuleRepository(curatorClient);
-
-            streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
-            timelineTaskQueue  = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
-
-            AdminAuthManager adminAuthManager = new AdminAuthManager(Props.ADMIN_KEYS.extract(properties));
-
-            authManager = new AuthManager(curatorClient);
-            authManager.start();
-
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            server = new HttpServer(
-                    httpserverProperties,
-                    adminAuthManager,
-                    authManager,
-                    streamRepository,
-                    timelineRepository,
-                    streamTaskQueue,
-                    timelineTaskQueue,
-                    blacklistRepository,
-                    ruleRepository,
-                    metricsCollector
-            );
+            authManager = new AuthManager(curatorClient);
+            authManager.start();
+
+            adminAuthManager = new AdminAuthManager(Props.ADMIN_KEYS.extract(properties));
+
+            streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
+            timelineTaskQueue  = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
+
+            server = createHttpServer(httpserverProperties);
             server.start();
         } catch (Throwable e) {
             LOGGER.error("Error on starting management api", e);
@@ -114,7 +123,7 @@ public class ManagementApiApplication {
         LOGGER.info("Started Management API shutdown");
         try {
             if (server != null) {
-                server.stop();
+                server.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             LOGGER.error("Error on server stopping", e);
@@ -138,19 +147,19 @@ public class ManagementApiApplication {
         }
 
         try {
-            if (metricsCollector != null) {
-                metricsCollector.stop();
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on metrics collector stopping", e);
-        }
-
-        try {
             if (authManager != null) {
                 authManager.stop();
             }
         } catch (Throwable e) {
             LOGGER.error("Error on auth manager stopping", e);
+        }
+
+        try {
+            if (metricsCollector != null) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Error on metrics collector stopping", e);
         }
 
         try {
@@ -163,5 +172,61 @@ public class ManagementApiApplication {
         }
 
         LOGGER.info("Finished Management API shutdown for {} millis", System.currentTimeMillis() - start);
+    }
+
+    private static HttpServer createHttpServer(Properties httpServerProperties) {
+        StreamRepository streamRepository = new StreamRepository(curatorClient);
+        TimelineRepository timelineRepository = new TimelineRepository(curatorClient);
+
+        BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
+        RuleRepository ruleRepository = new RuleRepository(curatorClient);
+
+        AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
+
+        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue, streamRepository);
+        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue, streamRepository);
+        ChangeStreamTtlHandler changeStreamTtlHandler = new ChangeStreamTtlHandler(authManager, streamTaskQueue, streamRepository);
+        IncreasePartitionsStreamHandler increasePartitionsStreamHandler =
+                new IncreasePartitionsStreamHandler(authManager, streamTaskQueue, streamRepository);
+        ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
+        InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
+
+        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
+        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
+        ChangeTimelineTtlHandler changeTimelineTtlHandler = new ChangeTimelineTtlHandler(authManager, timelineTaskQueue, timelineRepository);
+        ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
+        InfoTimelineHandler infoTimelineHandler = new InfoTimelineHandler(timelineRepository, authManager);
+
+        HttpHandler setRuleHandler = adminAuthManagerWrapper.wrap(new SetRuleHandler(ruleRepository));
+        HttpHandler listRuleHandler = adminAuthManagerWrapper.wrap(new ListRuleHandler(ruleRepository));
+
+        HttpHandler addBlacklistHandler = adminAuthManagerWrapper.wrap(new AddBlacklistHandler(blacklistRepository));
+        HttpHandler removeBlacklistHandler = adminAuthManagerWrapper.wrap(new RemoveBlacklistHandler(blacklistRepository));
+        HttpHandler listBlacklistHandler = adminAuthManagerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
+
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
+                post("/streams/create", createStreamHandler).
+                post("/streams/delete", deleteStreamHandler).
+                post("/streams/changeTtl", changeStreamTtlHandler).
+                post("/streams/increasePartitions", increasePartitionsStreamHandler).
+                get("/streams/list", listStreamHandler).
+                get("/streams/info", infoStreamHandler).
+                post("/timelines/create", createTimelineHandler).
+                post("/timelines/delete", deleteTimelineHandler).
+                post("/timelines/changeTtl", changeTimelineTtlHandler).
+                get("/timelines/list", listTimelineHandler).
+                get("/timelines/info", infoTimelineHandler).
+                post("/rules/set", setRuleHandler).
+                get("/rules/list", listRuleHandler).
+                post("/blacklist/add", addBlacklistHandler).
+                post("/blacklist/remove", removeBlacklistHandler).
+                get("/blacklist/list", listBlacklistHandler).
+                build();
+
+        return new UndertowHttpServer(
+                Application.application().getConfig().getHost(),
+                Application.application().getConfig().getPort(),
+                httpServerProperties,
+                handler);
     }
 }

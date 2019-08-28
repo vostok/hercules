@@ -630,6 +630,18 @@ ContentType: application/json
 ## Settings
 Application is configured through properties file.
 
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
+
+`application.port` - server port, default value: `8080`
+
+### Application context settings
+`context.environment` - id of environment
+
+`context.zone` - id of zone
+
+`context.instance.id` - id of instance
+
 ### Apache Curator settings
 See Curator Config from Apache Curator documentation. Main settings are presented below.
 
@@ -645,21 +657,6 @@ See Curator Config from Apache Curator documentation. Main settings are presente
 
 `curator.retryPolicy.maxSleepTime` - default value: `8000`
 
-### Apache Kafka settings
-See Apache Kafka Config from Apache Kafka documentation. Main settings are presented below.
-
-`kafka.bootstrap.servers`
-
-`kafka.acks`
-
-`kafka.retries`
-
-`kafka.batch.size`
-
-`kafka.linger.ms`
-
-`kafka.buffer.memory`
-
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance to which metrics are sent, default value: `localhost`
 
@@ -670,16 +667,14 @@ See Apache Kafka Config from Apache Kafka documentation. Main settings are prese
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
 ### Http Server settings
-`http.server.host` - server host, default value: `0.0.0.0`
+`http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
-`http.server.port` - server port, default value: `6309`
+`http.server.workerThreads` - the number of worker threads. Worker threads are used to process long running requests and perform blocking tasks. Default value is implementation specific.
 
-### Application context settings
-`context.instance.id` - id of instance
+`http.server.rootPath` - base url, default value: `/`
 
-`context.environment` - id of environment
-
-`context.zone` - id of zone
+### Management API settings
+`keys` - master API keys.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-management-api.jar application.properties=file://path/to/file/application.properties`
@@ -695,6 +690,14 @@ Management Api uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK sh
 
 ### `application.properties` sample:
 ```properties
+keys=123,456
+
+application.host=0.0.0.0
+application.port=6309
+
+context.environment=dev
+context.zone=default
+context.instance.id=1
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000
@@ -703,24 +706,12 @@ curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
 
-kafka.bootstrap.servers=localhost:9092
-kafka.acks=all
-kafka.retries=0
-kafka.batch.size=16384
-kafka.linger.ms=1
-kafka.buffer.memory=33554432
-
-keys=123,456
-
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-http.server.host=0.0.0.0
-http.server.port=6309
-
-context.instance.id=1
-context.environment=dev
-context.zone=default
+http.server.ioThreads=4
+http.server.workerThreads=16
+http.server.rootPath=/
 ```

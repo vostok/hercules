@@ -12,11 +12,19 @@
     <dependencies>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-application</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-util</artifactId>
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-configuration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-http</artifactId>
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
@@ -29,10 +37,6 @@
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-auth</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ru.kontur.vostok.hercules</groupId>
-            <artifactId>hercules-kafka-util</artifactId>
         </dependency>
 
         <dependency>

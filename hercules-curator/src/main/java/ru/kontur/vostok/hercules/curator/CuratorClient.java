@@ -68,8 +68,14 @@ public class CuratorClient {
      * @param path path
      * @return unordered list of children
      */
-    public List<String> children(String path) throws Exception {
-        return curatorFramework.getChildren().forPath(path);
+    public List<String> children(String path) throws CuratorInternalException, CuratorUnknownException {
+        try {
+            return curatorFramework.getChildren().forPath(path);
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Get children failed with KeeperException", ex);
+        } catch (Exception ex) {
+            throw new CuratorUnknownException("Get children failed with Exception", ex);
+        }
     }
 
     /**
@@ -81,11 +87,15 @@ public class CuratorClient {
         return curatorFramework.getChildren().usingWatcher(watcher).forPath(path);
     }
 
-    public void createIfAbsent(String path) throws Exception {
+    public void createIfAbsent(String path) throws CuratorUnknownException, CuratorInternalException {
         try {
             curatorFramework.create().forPath(path);
         } catch (KeeperException.NodeExistsException ex) {
             return; /* nothing to do: node already exists */
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Create node failed with KeeperException", ex);
+        } catch (Exception ex) {
+            throw new CuratorUnknownException("Create node failed with Exception", ex);
         }
     }
 

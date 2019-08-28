@@ -1,12 +1,13 @@
 package ru.kontur.vostok.hercules.management.api.rule;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 
 /**
  * @author Gregory Koshelev
  */
+
 public abstract class RuleHandler implements HttpHandler {
     protected final RuleRepository repository;
 
@@ -15,13 +16,13 @@ public abstract class RuleHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
+    public void handle(HttpServerRequest request) {
         try {
-            process(exchange);
+            process(request);
         } finally {
-            exchange.endExchange();
+            request.complete();
         }
     }
 
-    public abstract void process(HttpServerExchange exchange) throws Exception;
+    public abstract void process(HttpServerRequest request);
 }
