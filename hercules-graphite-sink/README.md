@@ -19,6 +19,8 @@ Application is configured through properties file.
 
 `sink.consumer.max.poll.interval.ms` - timeout after which Kafka will exclude the consumer from group if it doesn't poll or commit
 
+`sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
+
 `sink.sender.graphite.host` - Graphite host address
 
 `sink.sender.graphite.port` - Graphite port
@@ -70,6 +72,7 @@ sink.pattern=metrics_*
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.max.partition.fetch.bytes=8388608
 sink.consumer.max.poll.interval.ms=370000
+sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 sink.sender.graphite.host=graphite.ru
 sink.sender.graphite.port=2003

@@ -21,6 +21,8 @@ Application is configured through properties file.
 
 `sink.consumer.max.poll.interval.ms` - time, after which Apache Kafka will exclude the consumer from group if it doesn't poll or commit
 
+`sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
+
 #### Cassandra Sender settings
 `sink.sender.pingPeriodMs` - period to update Cassandra's availability status, default value: `5000`
 
@@ -91,6 +93,7 @@ sink.pattern=traces_*
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.max.partition.fetch.bytes=52428800
 sink.consumer.max.poll.interval.ms=240000
+sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 sink.sender.pingPeriodMs=60000
 sink.sender.sendTimeoutMs=60000

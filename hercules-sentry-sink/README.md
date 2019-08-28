@@ -9,6 +9,8 @@ Application is configured through properties file.
 
 `sink.consumer.bootstrap.servers` - list of Apache Kafka hosts
 
+`sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
+
 `sink.sender.sentry.url` - URL of Sentry
 
 `sink.sender.sentry.token` - token of Sentry user. It is used for authentication on Sentry
@@ -53,6 +55,8 @@ sink.sender.sentry.token=1234567890768132cde645f1ba1bcd4ef67ab78cd9ef89801a45be5
 sink.sender.sentry.level=warning
 
 sink.consumer.bootstrap.servers=localhost:9092
+sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
+
 sink.pattern=mystream
 
 context.environment=dev

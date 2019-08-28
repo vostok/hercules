@@ -12,6 +12,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
@@ -87,6 +88,7 @@ public class Sink {
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, batchSize);
+        consumerProperties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
 
         UuidDeserializer keyDeserializer = new UuidDeserializer();
         EventDeserializer valueDeserializer = deserializer;
