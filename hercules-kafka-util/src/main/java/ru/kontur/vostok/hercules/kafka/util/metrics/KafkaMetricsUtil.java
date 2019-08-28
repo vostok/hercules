@@ -27,6 +27,6 @@ class KafkaMetricsUtil {
         }
         tokens.add(name.name());
 
-        return MetricsUtil.toMetricName(tokens);
+        return MetricsUtil.toMetricPath(tokens);
     }
 }

@@ -27,22 +27,23 @@ public final class MetricsUtil {
     }
 
     /**
-     * Build sanitized metric name component from string elements.
-     *
-     * @param elements elements are used to build metric name
-     * @return sanitized metric name component
-     */
-    public static String toMetricNameComponent(String... elements) {
-        return sanitizeMetricName(String.join("_", elements));
-    }
-
-    /**
      * Build sanitized metric name from string elements.
      *
      * @param elements elements are used to build metric name
      * @return sanitized metric name
      */
-    public static String toMetricName(final List<String> elements) {
+    public static String toMetricName(String... elements) {
+        return sanitizeMetricName(String.join("_", elements));
+    }
+
+    /**
+     * Build sanitized metric path from string elements.
+     * Metric path consists of elements joined by `_`.
+     *
+     * @param elements elements are used to build metric path
+     * @return sanitized metric path
+     */
+    public static String toMetricPath(final List<String> elements) {
         return elements.stream()
                 .map(MetricsUtil::sanitizeMetricName)
                 .collect(Collectors.joining("."));

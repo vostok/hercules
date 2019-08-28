@@ -34,7 +34,7 @@ public class InstrumentedRouteHandlerBuilder extends RouteHandlerBuilder {
                 new MetricsHandler(
                         handler,
                         metricsCollector.httpMetrics(
-                                MetricsUtil.toMetricNameComponent(method.toString(), path))));
+                                MetricsUtil.toMetricName(method.toString(), path))));
     }
 
     private static class MetricsHandler implements HttpHandler {
