@@ -117,7 +117,9 @@ public class ConsumerPool<K, V> {
 
     static final class Props {
         static final Parameter<String> BOOTSTRAP_SERVERS =
-                Parameter.stringParameter("bootstrap.servers").build();
+                Parameter.stringParameter("bootstrap.servers").
+                        required().
+                        build();
 
         static final Parameter<Integer> MAX_POLL_RECORDS =
                 Parameter.integerParameter("max.poll.records").
