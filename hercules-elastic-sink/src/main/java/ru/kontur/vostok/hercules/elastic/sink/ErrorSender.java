@@ -17,8 +17,10 @@ import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
+import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptionBuilder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
@@ -48,14 +50,16 @@ public class ErrorSender {
     private final MetricsCollector metricsCollector;
 
     ErrorSender(Properties properties, MetricsCollector metricsCollector) {
-        this.leproseryStream = Props.LEPROSERY_STREAM.extract(properties);
-        this.leproseryIndex = Props.LEPROSERY_INDEX.extract(properties);
-        this.leproseryApiKey = Props.LEPROSERY_API_KEY.extract(properties);
+        Properties gateProperties = PropertiesUtil.ofScope(properties, "gate");
+
+        this.leproseryStream = Props.LEPROSERY_STREAM.extract(gateProperties);
+        this.leproseryIndex = Props.LEPROSERY_INDEX.extract(gateProperties);
+        this.leproseryApiKey = Props.LEPROSERY_API_KEY.extract(gateProperties);
         this.metricsCollector = metricsCollector;
 
-        this.urls = Props.URLS.extract(properties);
+        this.urls = Props.URLS.extract(gateProperties);
         Topology<String> whiteList = new Topology<>(urls);
-        this.gateClient = new GateClient(properties, whiteList);
+        this.gateClient = new GateClient(gateProperties, whiteList);
     }
 
     void sendNonRetryableEvents(List<Event> events, Set<ErrorResponseWrapper> errorResponseWrappers) {
@@ -122,19 +126,21 @@ public class ErrorSender {
     }
 
     private static class Props {
-        static final PropertyDescription<String> LEPROSERY_STREAM = PropertyDescriptions
-                .stringProperty("gate.leproseryStream")
+        static final PropertyDescription<String> LEPROSERY_STREAM = PropertyDescriptionBuilder
+                .start("leproseryStream", String.class, Parsers::parseString)
                 .build();
-        static final PropertyDescription<String> LEPROSERY_INDEX = PropertyDescriptions
-                .stringProperty("gate.leproseryIndex")
+
+        static final PropertyDescription<String> LEPROSERY_INDEX = PropertyDescriptionBuilder
+                .start("leproseryIndex", String.class, Parsers::parseString)
                 .withDefaultValue("leprosery")
                 .build();
-        static final PropertyDescription<String> LEPROSERY_API_KEY = PropertyDescriptions
-                .stringProperty("gate.leproseryApiKey")
+
+        static final PropertyDescription<String> LEPROSERY_API_KEY = PropertyDescriptionBuilder
+                .start("leproseryApiKey", String.class, Parsers::parseString)
                 .build();
-        static final PropertyDescription<String[]> URLS = PropertyDescriptions
-                .arrayOfStringsProperty("gate.urls")
-                .withDefaultValue(new String[]{})
+
+        static final PropertyDescription<String[]> URLS = PropertyDescriptionBuilder
+                .start("urls", String[].class, Parsers.parseArray(String.class, Parsers::parseString))
                 .build();
     }
 

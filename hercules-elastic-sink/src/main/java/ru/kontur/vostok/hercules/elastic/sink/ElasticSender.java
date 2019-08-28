@@ -22,6 +22,7 @@ import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
+import ru.kontur.vostok.hercules.util.properties.PropertyDescriptionBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
@@ -101,11 +102,15 @@ public class ElasticSender extends Sender {
 
         this.elasticResponseHandler = new ElasticResponseHandler(metricsCollector);
 
-        this.errorSender = new ErrorSender(properties, metricsCollector);
+        if (nonRetryableResendingMode) {
+            this.errorSender = new ErrorSender(properties, metricsCollector);
+        } else {
+            this.errorSender = null;
+        }
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
-        this.elasticsearchDroppedNonRetryableErrorsMeter  = metricsCollector.meter("elasticsearchDroppedNonRetryableErrors");
+        this.elasticsearchDroppedNonRetryableErrorsMeter = metricsCollector.meter("elasticsearchDroppedNonRetryableErrors");
     }
 
     @Override
@@ -291,8 +296,9 @@ public class ElasticSender extends Sender {
                 .arrayOfStringsProperty("elastic.redefinedExceptions")
                 .withDefaultValue(new String[]{})
                 .build();
-        static final PropertyDescription<Boolean> NON_RETRYABLE_RESENDING_MODE = PropertyDescriptions
-                .booleanProperty("elastic.nonRetryableResendingMode")
+
+        static final PropertyDescription<Boolean> NON_RETRYABLE_RESENDING_MODE = PropertyDescriptionBuilder
+                .start("elastic.nonRetryableResendingMode", Boolean.class, Parsers::parseBoolean)
                 .withDefaultValue(false)
                 .build();
     }

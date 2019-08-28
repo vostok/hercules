@@ -89,7 +89,7 @@ public class ElasticResponseHandler {
         }
 
         public boolean hasNonRetryableErrors() {
-            return nonRetryableErrors.size() != 0;
+            return !nonRetryableErrors.isEmpty();
         }
     }
 
