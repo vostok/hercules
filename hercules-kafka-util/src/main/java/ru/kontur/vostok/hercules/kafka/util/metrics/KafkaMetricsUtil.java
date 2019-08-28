@@ -23,6 +23,12 @@ class KafkaMetricsUtil {
         tokens.add("kafka");
         tokens.add(name.group());
         for (Map.Entry<String, String> tag : name.tags().entrySet()) {
+            if (tag.getKey().length() <= 0 || tag.getValue().length() <= 0)
+            {
+                continue;
+            }
+
+            tokens.add(tag.getKey());
             tokens.add(tag.getValue());
         }
         tokens.add(name.name());
