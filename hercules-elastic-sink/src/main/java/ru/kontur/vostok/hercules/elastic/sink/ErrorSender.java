@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.elastic.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.elastic.sink.ElasticResponseHandler.ErrorResponseWrapper;
 import ru.kontur.vostok.hercules.gate.client.GateClient;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
@@ -17,10 +16,9 @@ import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
-import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptionBuilder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
@@ -50,20 +48,21 @@ public class ErrorSender {
     private final MetricsCollector metricsCollector;
 
     ErrorSender(Properties properties, MetricsCollector metricsCollector) {
-        Properties gateProperties = PropertiesUtil.ofScope(properties, "gate");
-
-        this.leproseryStream = Props.LEPROSERY_STREAM.extract(gateProperties);
-        this.leproseryIndex = Props.LEPROSERY_INDEX.extract(gateProperties);
-        this.leproseryApiKey = Props.LEPROSERY_API_KEY.extract(gateProperties);
         this.metricsCollector = metricsCollector;
 
-        this.urls = Props.URLS.extract(gateProperties);
+        Properties leproseryProperties = PropertiesUtil.ofScope(properties, "leprosery");
+        this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, leproseryProperties).get();
+        this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, leproseryProperties).get();
+        this.leproseryApiKey = PropertiesUtil.get(Props.LEPROSERY_API_KEY, leproseryProperties).get();
+
+        Properties gateProperties = PropertiesUtil.ofScope(properties, "gate");
+        this.urls = PropertiesUtil.get(Props.URLS, gateProperties).get();
         Topology<String> whiteList = new Topology<>(urls);
         this.gateClient = new GateClient(gateProperties, whiteList);
     }
 
-    void sendNonRetryableEvents(List<Event> events, Set<ErrorResponseWrapper> errorResponseWrappers) {
-        List<Event> nonRetyableEvents = extractAndWrap(events, errorResponseWrappers);
+    void sendNonRetryableEvents(List<Event> events, Set<ElasticErrorInfo> errorInfoSet) {
+        List<Event> nonRetyableEvents = extractAndWrap(events, errorInfoSet);
         byte[] data = EventWriterUtil.toBytes(nonRetyableEvents.toArray(new Event[events.size()]));
         try {
             gateClient.send(leproseryApiKey, leproseryStream, data);
@@ -81,19 +80,19 @@ public class ErrorSender {
      * Method extracts from all events only non-retryable events and wrap their to leprosery like event
      *
      * @param events                all input events
-     * @param errorResponseWrappers wrapper of elastic error with event id, reason
+     * @param errorInfoSet wrapper of elastic error with event id, reason
      * @return list of wrapped non-retryable events
      */
-    private List<Event> extractAndWrap(List<Event> events, Set<ErrorResponseWrapper> errorResponseWrappers) {
-        Map<String, ErrorResponseWrapper> errorsMap = errorResponseWrappers.stream()
-                .collect(Collectors.toMap(ErrorResponseWrapper::getEventId, errorResponseWrapper -> errorResponseWrapper));
+    private List<Event> extractAndWrap(List<Event> events, Set<ElasticErrorInfo> errorInfoSet) {
+        Map<String, ElasticErrorInfo> errorsMap = errorInfoSet.stream()
+                .collect(Collectors.toMap(ElasticErrorInfo::getEventId, errorInfo -> errorInfo));
         List<Event> wrappers = new ArrayList<>(events.size());
         for (Event event : events) {
             String id = EventUtil.extractStringId(event);
-            ErrorResponseWrapper errorResponseWrapper = errorsMap.get(id);
-            if (errorResponseWrapper != null) {
-                String index = errorResponseWrapper.getIndex();
-                String reason = errorResponseWrapper.getReason();
+            ElasticErrorInfo errorInfo = errorsMap.get(id);
+            if (errorInfo != null) {
+                String index = errorInfo.getIndex();
+                String reason = errorInfo.getReason();
                 Event leproseryEvent = toLeproseryEvent(event, index, reason);
                 wrappers.add(leproseryEvent);
             }
@@ -126,21 +125,21 @@ public class ErrorSender {
     }
 
     private static class Props {
-        static final PropertyDescription<String> LEPROSERY_STREAM = PropertyDescriptionBuilder
-                .start("leproseryStream", String.class, Parsers::parseString)
+        static final Parameter<String> LEPROSERY_STREAM = Parameter
+                .stringParameter("stream")
                 .build();
 
-        static final PropertyDescription<String> LEPROSERY_INDEX = PropertyDescriptionBuilder
-                .start("leproseryIndex", String.class, Parsers::parseString)
-                .withDefaultValue("leprosery")
+        static final Parameter<String> LEPROSERY_INDEX = Parameter
+                .stringParameter("index")
+                .withDefault("leprosery")
                 .build();
 
-        static final PropertyDescription<String> LEPROSERY_API_KEY = PropertyDescriptionBuilder
-                .start("leproseryApiKey", String.class, Parsers::parseString)
+        static final Parameter<String> LEPROSERY_API_KEY = Parameter
+                .stringParameter("apiKey")
                 .build();
 
-        static final PropertyDescription<String[]> URLS = PropertyDescriptionBuilder
-                .start("urls", String[].class, Parsers.parseArray(String.class, Parsers::parseString))
+        static final Parameter<String[]> URLS = Parameter
+                .parameter("urls", Parsers.fromFunction(s -> s.split(",")))
                 .build();
     }
 

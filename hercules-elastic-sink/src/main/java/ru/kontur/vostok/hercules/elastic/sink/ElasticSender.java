@@ -20,9 +20,10 @@ import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptionBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
@@ -80,7 +81,7 @@ public class ElasticSender extends Sender {
         final int connectionRequestTimeout = Props.CONNECTION_REQUEST_TIMEOUT_MS.extract(properties);
         final int socketTimeout = Props.SOCKET_TIMEOUT_MS.extract(properties);
 
-        this.nonRetryableResendingMode = Props.NON_RETRYABLE_RESENDING_MODE.extract(properties);
+        this.nonRetryableResendingMode = PropertiesUtil.get(Props.NON_RETRYABLE_RESENDING_MODE, properties).get();
 
         this.redefinedExceptions = new HashSet<>(Arrays.asList(Props.REDEFINED_EXCEPTIONS.extract(properties)));
 
@@ -297,9 +298,9 @@ public class ElasticSender extends Sender {
                 .withDefaultValue(new String[]{})
                 .build();
 
-        static final PropertyDescription<Boolean> NON_RETRYABLE_RESENDING_MODE = PropertyDescriptionBuilder
-                .start("elastic.nonRetryableResendingMode", Boolean.class, Parsers::parseBoolean)
-                .withDefaultValue(false)
+        static final Parameter<Boolean> NON_RETRYABLE_RESENDING_MODE = Parameter
+                .booleanParameter("nonRetryableResendingMode")
+                .withDefault(false)
                 .build();
     }
 }
