@@ -38,7 +38,7 @@ public final class MetricsUtil {
 
     /**
      * Build sanitized metric path from string elements.
-     * Metric path consists of elements joined by `_`.
+     * Metric path consists of elements joined by dot.
      *
      * @param elements elements are used to build metric path
      * @return sanitized metric path
