@@ -100,7 +100,8 @@ public class SentryClientHolder {
                 }
                 if (triedToCreateClient) {
                     LOGGER.error("Cannot find Sentry client in cache and cannot create new Sentry client");
-                    sentryClientResult = Result.error(new ErrorInfo(true));
+                    sentryClientResult = Result.error(
+                            new ErrorInfo("Client is not found in cache", true));
                     break;
                 }
                 triedToCreateClient = true;
@@ -147,7 +148,7 @@ public class SentryClientHolder {
             ValidationResult validationResult = slugValidator.validate(slug);
             if (validationResult.isError()) {
                 LOGGER.error(String.format("Invalid name: '%s'. This name cannot be Sentry slug: %s", slug, validationResult.error()));
-                return Result.error(new ErrorInfo(false));
+                return Result.error(new ErrorInfo("Slug validation error",false));
             }
         }
         return result;
@@ -338,12 +339,12 @@ public class SentryClientHolder {
                     new URL(dsnString);
                 } catch (MalformedURLException e) {
                     LOGGER.error(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
-                    return Result.error(new ErrorInfo(false));
+                    return Result.error(new ErrorInfo("Malformed dsn",false));
                 }
                 return Result.ok(dsnString);
             } else {
                 LOGGER.error(String.format("Active dsn is not present for project %s", project));
-                return Result.error(new ErrorInfo(false));
+                return Result.error(new ErrorInfo("No active dsn", false));
             }
         } else {
             return Result.error(publicDsn.getError());

@@ -146,7 +146,7 @@ public class SentryApiClient {
             body = objectMapper.writeValueAsBytes(organizationModel);
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Cannot create JSON from model for organization creation: %s", e.getMessage()));
-            return Result.error(new ErrorInfo( false));
+            return Result.error(new ErrorInfo("Cannot create JSON", false));
         }
         HttpPost post = new HttpPost(ORGANIZATIONS_URL);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -169,7 +169,7 @@ public class SentryApiClient {
             body = objectMapper.writeValueAsBytes(teamModel);
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Cannot create JSON from model for team creation: %s", e.getMessage()));
-            return Result.error(new ErrorInfo(false));
+            return Result.error(new ErrorInfo("Cannot create JSON", false));
         }
         HttpPost post = new HttpPost(String.format(CREATE_TEAM_URL, organization));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
@@ -193,7 +193,7 @@ public class SentryApiClient {
             body = objectMapper.writeValueAsBytes(projectModel);
         } catch (JsonProcessingException e) {
             LOGGER.error(String.format("Cannot create JSON from model for project creation: %s", e.getMessage()));
-            return Result.error(new ErrorInfo(false));
+            return Result.error(new ErrorInfo("Cannot create JSON", false));
         }
         HttpPost post = new HttpPost(String.format(CREATE_PROJECT_URL, organization, team));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
