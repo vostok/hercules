@@ -93,12 +93,6 @@ public class ElasticResponseHandler {
         }
     }
 
-    public enum ErrorType {
-        RETRYABLE,
-        NON_RETRYABLE,
-        UNKNOWN
-    }
-
     static final Set<String> RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
             "process_cluster_event_timeout_exception",
             "es_rejected_execution_exception",
