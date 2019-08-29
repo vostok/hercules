@@ -142,7 +142,7 @@ public class TimelineApiApplication {
         LOGGER.info("Finished Timeline API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 
-    public static HttpServer createHttpServer(Properties httpServerProperties) {
+    private static HttpServer createHttpServer(Properties httpServerProperties) {
         TimelineRepository repository = new TimelineRepository(curatorClient);
 
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).

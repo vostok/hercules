@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.timeline.sink;
 
-import org.apache.kafka.streams.StreamsConfig;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.meta.filter.Filter;

@@ -103,7 +103,7 @@ public interface HttpServerRequest {
      */
     default  void complete(int code, String contentType, String data) {
         getResponse().setStatusCode(code);
-        getResponse().setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+        getResponse().setContentType(contentType);
         getResponse().send(data);
     }
 

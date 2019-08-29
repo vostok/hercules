@@ -70,7 +70,7 @@ public class GateApplication {
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()));
+            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -164,7 +164,7 @@ public class GateApplication {
         LOGGER.info("Finished Gateway shutdown for {}  millis", System.currentTimeMillis() - start);
     }
 
-    public static HttpServer createHttpServer(Properties httpServerProperies) {
+    private static HttpServer createHttpServer(Properties httpServerProperies) {
         StreamRepository streamRepository = new StreamRepository(curatorClient);
         StreamStorage streamStorage = new StreamStorage(streamRepository, 30_000L /* TODO: for test usages; It should be moved to configuration */);
 

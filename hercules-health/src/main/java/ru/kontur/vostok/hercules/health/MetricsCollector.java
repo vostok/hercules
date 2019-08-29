@@ -134,6 +134,13 @@ public class MetricsCollector {
     }
 
     /**
+     * Removes the metric with the given name
+     * @param name is the name of the metric
+     * @return whether or not the metric was removed
+     */
+    public boolean remove(String name) { return registry.remove(name); }
+
+    /**
      * Get histogram by the name
      * @param name is the name of the histogram
      * @return requested histogram

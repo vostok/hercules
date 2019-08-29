@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
-import ru.kontur.vostok.hercules.http.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
@@ -144,7 +143,7 @@ public class ReadStreamHandler implements HttpHandler {
                                         shardCount.get(),
                                         take.get());
 
-                                request.getResponse().setHeader(HttpHeaders.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
+                                request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
                                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                                 Encoder encoder = new Encoder(baos);

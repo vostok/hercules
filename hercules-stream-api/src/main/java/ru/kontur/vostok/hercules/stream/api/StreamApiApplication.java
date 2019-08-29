@@ -64,7 +64,8 @@ public class StreamApiApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer());
+            consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer(),
+                    metricsCollector);
             consumerPool.start();
 
             streamReader = new StreamReader(
@@ -136,7 +137,7 @@ public class StreamApiApplication {
         LOGGER.info("Finished Stream API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 
-    public static HttpServer createHttpServer(Properties httpServerProperties) {
+    private static HttpServer createHttpServer(Properties httpServerProperties) {
         StreamRepository repository = new StreamRepository(curatorClient);
 
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).

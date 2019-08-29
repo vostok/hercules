@@ -1,9 +1,8 @@
 package ru.kontur.vostok.hercules.health;
 
 import org.jetbrains.annotations.NotNull;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -35,6 +34,19 @@ public final class MetricsUtil {
      */
     public static String toMetricName(String... elements) {
         return sanitizeMetricName(String.join("_", elements));
+    }
+
+    /**
+     * Build sanitized metric path from string elements.
+     * Metric path consists of elements joined by dot.
+     *
+     * @param elements elements are used to build metric path
+     * @return sanitized metric path
+     */
+    public static String toMetricPath(final List<String> elements) {
+        return elements.stream()
+                .map(MetricsUtil::sanitizeMetricName)
+                .collect(Collectors.joining("."));
     }
 
     private MetricsUtil() {
