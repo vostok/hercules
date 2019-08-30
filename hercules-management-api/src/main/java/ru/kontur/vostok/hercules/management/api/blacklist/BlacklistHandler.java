@@ -1,13 +1,8 @@
 package ru.kontur.vostok.hercules.management.api.blacklist;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import ru.kontur.vostok.hercules.auth.AdminAuthManager;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
-
-import java.util.Optional;
 
 /**
  * @author Gregory Koshelev
@@ -20,13 +15,18 @@ public abstract class BlacklistHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
+    public void handle(HttpServerRequest request) {
         try {
-            process(exchange);
+            process(request);
         } finally {
-            exchange.endExchange();
+            request.complete();
         }
     }
 
-    public abstract void process(HttpServerExchange exchange) throws Exception;
+    /**
+     * Non async method to process HTTP request.
+     *
+     * @param request the HTTP request
+     */
+    public abstract void process(HttpServerRequest request);
 }

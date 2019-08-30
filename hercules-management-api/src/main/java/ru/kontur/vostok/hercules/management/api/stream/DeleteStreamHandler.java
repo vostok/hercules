@@ -1,25 +1,33 @@
 package ru.kontur.vostok.hercules.management.api.stream;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.MimeTypes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
+import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
+import ru.kontur.vostok.hercules.management.api.QueryParameters;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
  */
 public class DeleteStreamHandler implements HttpHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeleteStreamHandler.class);
+
     private final AuthManager authManager;
     private final TaskQueue<StreamTask> taskQueue;
     private final StreamRepository streamRepository;
@@ -31,37 +39,44 @@ public class DeleteStreamHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        Optional<String> apiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!apiKey.isPresent()) {
-            ResponseUtil.unauthorized(exchange);
+    public void handle(HttpServerRequest request) {
+        String apiKey = request.getHeader("apiKey");
+        if (apiKey == null) {
+            request.complete(HttpStatusCodes.UNAUTHORIZED);
+            return;
+        }
+        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        if (streamName.isError()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.STREAM.name() + " error: " + streamName.result().error());
             return;
         }
 
-        Optional<String> optionalStream = ExchangeUtil.extractQueryParam(exchange, "stream");
-        if (!optionalStream.isPresent()) {
-            ResponseUtil.badRequest(exchange);
-            return;
-        }
-        String stream = optionalStream.get();
-
-        AuthResult authResult = authManager.authManage(apiKey.get(), stream);
+        AuthResult authResult = authManager.authManage(apiKey, streamName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
-                ResponseUtil.unauthorized(exchange);
+                request.complete(HttpStatusCodes.UNAUTHORIZED);
                 return;
             }
-            ResponseUtil.forbidden(exchange);
+            request.complete(HttpStatusCodes.FORBIDDEN);
             return;
         }
 
-        if (!streamRepository.exists(stream)) {
-            ResponseUtil.notFound(exchange);
+        try {
+            if (!streamRepository.exists(streamName.get())) {
+                request.complete(HttpStatusCodes.NOT_FOUND);
+                return;
+            }
+        } catch (CuratorException ex) {
+            LOGGER.error("Stream existence check failed with exception", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
 
         BaseStream stub = new BaseStream();
-        stub.setName(stream);
+        stub.setName(streamName.get());
 
         TaskFuture taskFuture =
                 taskQueue.submit(
@@ -69,20 +84,6 @@ public class DeleteStreamHandler implements HttpHandler {
                         stub.getName(),
                 10_000L,//TODO: Move to Properties
                 TimeUnit.MILLISECONDS);
-        if (taskFuture.isFailed()) {
-            ResponseUtil.internalServerError(exchange);
-            return;
-        }
-
-        if (!ExchangeUtil.extractQueryParam(exchange, "async").isPresent()) {
-            taskFuture.await();
-            if (taskFuture.isDone()) {
-                ResponseUtil.ok(exchange);
-                return;
-            }
-            ResponseUtil.requestTimeout(exchange);
-            return;
-        }
-        ResponseUtil.ok(exchange);
+        HttpAsyncApiHelper.awaitAndComplete(taskFuture, request);
     }
 }
