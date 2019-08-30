@@ -19,6 +19,8 @@ Application is configured through properties file.
 
 `sink.consumer.max.poll.interval.ms` - timeout after which Kafka will exclude the consumer from group if it doesn't poll or commit
 
+`sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
+
 `sink.sender.graphite.host` - Graphite host address
 
 `sink.sender.graphite.port` - Graphite port
@@ -26,6 +28,8 @@ Application is configured through properties file.
 `sink.sender.pingPeriodMs` - Graphite server ping period in case of unavailability, default value: `5000`
 
 `sink.sender.retryLimit` - maximum attempts count when sending metrics to Graphite, default value: `3`
+
+`sink.sender.diagnosticLogWritePeriodMs` - timeout for log count sent metrics to Graphite, default value: `60000`
 
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
@@ -70,11 +74,13 @@ sink.pattern=metrics_*
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.max.partition.fetch.bytes=8388608
 sink.consumer.max.poll.interval.ms=370000
+sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 sink.sender.graphite.host=graphite.ru
 sink.sender.graphite.port=2003
 sink.sender.retryLimit=3
 sink.sender.pingPeriodMs=30000
+sink.sender.diagnosticLogWritePeriodMs=60000
 
 metrics.graphite.server.addr=graphite.ru
 metrics.graphite.server.port=2003

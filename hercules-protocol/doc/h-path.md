@@ -1,5 +1,8 @@
 # HPath
-**HPath** describes hierarchy of tags. Each parent tag must be a Container. Leaf tag can be any of type. Currently, HPath does not support individual elements of inner vector tag.
+**HPath** describes hierarchy of tags.
+Each parent tag must be a Container.
+Leaf tag can be any of type.
+Currently, HPath does not support individual elements of inner vector tag.
 
 String representation of HPath consists of tag names are joined by slash `/`.
 

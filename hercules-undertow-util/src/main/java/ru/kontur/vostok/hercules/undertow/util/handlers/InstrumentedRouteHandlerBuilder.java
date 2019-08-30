@@ -2,13 +2,15 @@ package ru.kontur.vostok.hercules.undertow.util.handlers;
 
 import ru.kontur.vostok.hercules.health.HttpMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.http.HttpMethod;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.handler.AboutHandler;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.handler.PingHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandlerBuilder;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+
+import java.util.Properties;
 
 /**
  * @author Gregory Koshelev
@@ -16,7 +18,8 @@ import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 public class InstrumentedRouteHandlerBuilder extends RouteHandlerBuilder {
     private final MetricsCollector metricsCollector;
 
-    public InstrumentedRouteHandlerBuilder(MetricsCollector metricsCollector) {
+    public InstrumentedRouteHandlerBuilder(Properties properties, MetricsCollector metricsCollector) {
+        super(properties);
         this.metricsCollector = metricsCollector;
 
         get("/ping", new PingHandler());
@@ -30,7 +33,8 @@ public class InstrumentedRouteHandlerBuilder extends RouteHandlerBuilder {
                 method,
                 new MetricsHandler(
                         handler,
-                        metricsCollector.httpMetrics(method + GraphiteMetricsUtil.sanitizeMetricName(path))));
+                        metricsCollector.httpMetrics(
+                                MetricsUtil.toMetricName(method.toString(), path))));
     }
 
     private static class MetricsHandler implements HttpHandler {

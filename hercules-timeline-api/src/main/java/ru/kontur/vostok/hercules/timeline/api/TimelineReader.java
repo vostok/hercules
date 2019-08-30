@@ -7,6 +7,7 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
@@ -15,6 +16,8 @@ import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Arrays;
@@ -23,11 +26,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
  * Read event timeline from Cassandra cluster
- *
+ * <p>
  * FIXME: Should be revised and refactored
  */
 public class TimelineReader {
@@ -114,6 +118,7 @@ public class TimelineReader {
     }
 
     private static final byte[] NIL = new byte[24];
+
     private static boolean isNil(byte[] eventId) {
         return Arrays.equals(NIL, eventId);
     }
@@ -160,20 +165,27 @@ public class TimelineReader {
             "LIMIT %d;";
 
     private final CqlSession session;
+    private final int timetrapCountLimit;
 
-    public TimelineReader(CassandraConnector connector) {
+    public TimelineReader(
+            Properties properties,
+            CassandraConnector connector,
+            MetricsCollector metricsCollector) {
         this.session = connector.session();
+
+        this.timetrapCountLimit = PropertiesUtil.get(Props.TIMETRAP_COUNT_LIMIT, properties).get();
     }
 
     /**
      * Read timeline content from Cassandra cluster
-     * @param timeline timeline info
-     * @param readState offsets data
+     *
+     * @param timeline   timeline info
+     * @param readState  offsets data
      * @param shardIndex parameter for logical partitioning
      * @param shardCount parameter for logical partitioning
-     * @param take fetch size
-     * @param from lower timestamp bound in 100-ns ticks from Unix epoch
-     * @param to upper timestamp bound exclusive in 100-ns ticks from Unix epoch
+     * @param take       fetch size
+     * @param from       lower timestamp bound in 100-ns ticks from Unix epoch
+     * @param to         upper timestamp bound exclusive in 100-ns ticks from Unix epoch
      * @return timeline content
      */
     public TimelineByteContent readTimeline(
@@ -205,7 +217,7 @@ public class TimelineReader {
             );
             if (params.ttOffset < offset.ttOffset) {
                 continue; // Skip already red timetrap offsets
-            } else if (offset.ttOffset < params.ttOffset ) {
+            } else if (offset.ttOffset < params.ttOffset) {
                 offsetMap.put(params.slice, getEmptyReadStateOffset(params.ttOffset));
                 offset = offsetMap.get(params.slice);
             }
@@ -231,6 +243,10 @@ public class TimelineReader {
         }
 
         return new TimelineByteContent(toState(offsetMap), result.toArray(new byte[0][]));
+    }
+
+    public int getTimetrapCountLimit() {
+        return timetrapCountLimit;
     }
 
     public void shutdown() {
@@ -287,4 +303,10 @@ public class TimelineReader {
         );
     }
 
+    static class Props {
+        static final Parameter<Integer> TIMETRAP_COUNT_LIMIT =
+                Parameter.integerParameter("timetrapCountLimit").
+                        withDefault(30).
+                        build();
+    }
 }

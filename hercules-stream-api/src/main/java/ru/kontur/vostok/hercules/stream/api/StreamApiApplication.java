@@ -46,12 +46,12 @@ public class StreamApiApplication {
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
-            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
-            Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+            Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
+            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
+            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             ApplicationContextHolder.init("Hercules stream API", "stream-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
@@ -64,7 +64,8 @@ public class StreamApiApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer());
+            consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer(),
+                    metricsCollector);
             consumerPool.start();
 
             streamReader = new StreamReader(
@@ -136,10 +137,10 @@ public class StreamApiApplication {
         LOGGER.info("Finished Stream API shutdown for {} millis", System.currentTimeMillis() - start);
     }
 
-    public static HttpServer createHttpServer(Properties httpServerProperties) {
+    private static HttpServer createHttpServer(Properties httpServerProperties) {
         StreamRepository repository = new StreamRepository(curatorClient);
 
-        RouteHandler handler = new InstrumentedRouteHandlerBuilder(metricsCollector).
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
                 post("/stream/read", new ReadStreamHandler(streamReader, authManager, repository)).
                 get("/stream/seekToEnd", new SeekToEndHandler(authManager, repository, consumerPool)).
                 build();

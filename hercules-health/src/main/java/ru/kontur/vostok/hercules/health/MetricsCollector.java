@@ -97,7 +97,7 @@ public class MetricsCollector {
     }
 
     /**
-     * Get thoughput meter by the name
+     * Get throughput meter by the name
      * @param name is the name of the metric
      * @return requested meter
      */
@@ -134,13 +134,11 @@ public class MetricsCollector {
     }
 
     /**
-     * Register metric by the name with custom function
+     * Removes the metric with the given name
      * @param name is the name of the metric
-     * @param supplier is the custom function to provide status handler
+     * @return whether or not the metric was removed
      */
-    public void status(String name, Supplier<IHaveStatusCode> supplier) {
-        registry.register(name, (Gauge<Integer>) () -> supplier.get().getStatusCode());
-    }
+    public boolean remove(String name) { return registry.remove(name); }
 
     /**
      * Get histogram by the name

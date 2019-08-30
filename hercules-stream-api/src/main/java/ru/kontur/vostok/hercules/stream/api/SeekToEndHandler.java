@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
-import ru.kontur.vostok.hercules.http.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
@@ -135,7 +134,7 @@ public class SeekToEndHandler implements HttpHandler {
                     collect(Collectors.toList());
             Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
 
-            request.getResponse().setHeader(HttpHeaders.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
+            request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Encoder encoder = new Encoder(outputStream);

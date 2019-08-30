@@ -2,14 +2,14 @@
 
 Each hercules event contains common data like version, id and timestamp.
 Additional data can be passed via tags as described in [hercules protocol](../README.md).
-Tag set is actualy a container and both can be described the same way.
+Tag set is actually a container and both can be described the same way.
 
 The main purpose of schema description is to create a common language to describe event structure for different group of developers.
 At this moment there is no instruments of event validation.
 
 ## Container
 
-To describe container type you have to describe all possible tags.
+To describe container type you have to describe all possible tags:
 
 ```yaml
 TypeName:
@@ -21,10 +21,10 @@ If tag can contain value of several types, all of that types must be enlisted in
 
 ```yaml
 AnotherTypeName:
-  multyTypeTagName: [Integer, String]
+  multyTypeTagName: [Integer, String, "Null"]
 ```
 
-In this example integer, string and null values will be valid.
+In the example above integer, string and null values will be valid.
 
 ### Optional tags
 
@@ -47,8 +47,7 @@ SomeType:
 
 ## Primitive types
 
-Part of hercules types are primitive:
-
+Most hercules types are primitive:
 - Byte
 - Short
 - Integer
@@ -119,12 +118,12 @@ As alternate variant type of the nested container can be described separately:
 
 ```yaml
 TypeWithNestedContainer:
-  nestedIntegerTag: Integer
-  nestedFloatTag: Float
-SomeType:
   integerTag: Integer
   flagTag: Flag
   nestedContainerTag: NestedType
+NestedType:
+  nestedIntegerTag: Integer
+  nestedFloatTag: Float
 ```
 
 In some cases this is the only option to describe type, e.g. tree-like structures:

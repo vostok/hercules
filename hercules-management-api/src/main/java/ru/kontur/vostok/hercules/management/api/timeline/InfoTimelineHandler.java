@@ -1,15 +1,21 @@
 package ru.kontur.vostok.hercules.management.api.timeline;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.Headers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.MimeTypes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
+import ru.kontur.vostok.hercules.management.api.QueryParameters;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.undertow.util.HttpResponseContentWriter;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 import java.util.Optional;
 
@@ -17,9 +23,9 @@ import java.util.Optional;
  * @author Vladimir Tsypaev
  */
 public class InfoTimelineHandler implements HttpHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InfoTimelineHandler.class);
 
     private final AuthManager authManager;
-    private final ObjectMapper mapper = new ObjectMapper();
     private final TimelineRepository repository;
 
     public InfoTimelineHandler(TimelineRepository repository, AuthManager authManager) {
@@ -28,40 +34,50 @@ public class InfoTimelineHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!optionalApiKey.isPresent()) {
-            ResponseUtil.unauthorized(exchange);
+    public void handle(HttpServerRequest request) {
+        String apiKey = request.getHeader("apiKey");
+        if (apiKey == null) {
+            request.complete(HttpStatusCodes.UNAUTHORIZED);
             return;
         }
 
-        Optional<String> optionalTimeline = ExchangeUtil.extractQueryParam(exchange, "timeline");
-        if (!optionalTimeline.isPresent()) {
-            ResponseUtil.badRequest(exchange);
+        ParameterValue<String> timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
+        if (timelineName.isError()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.TIMELINE.name() + " error: " + timelineName.result().error());
             return;
         }
 
-        String apiKeyName = optionalApiKey.get();
-        String timelineName = optionalTimeline.get();
-
-        AuthResult authResult = authManager.authManage(apiKeyName, timelineName);
-
+        AuthResult authResult = authManager.authManage(apiKey, timelineName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
-                ResponseUtil.unauthorized(exchange);
+                request.complete(HttpStatusCodes.UNAUTHORIZED);
                 return;
             }
-            ResponseUtil.forbidden(exchange);
+            request.complete(HttpStatusCodes.FORBIDDEN);
             return;
         }
 
-        Optional<Timeline> timeline = repository.read(timelineName);
-        if (!timeline.isPresent()) {
-            ResponseUtil.notFound(exchange);
+        Timeline timeline;
+        try {
+            Optional<Timeline> optionalTimeline = repository.read(timelineName.get());
+            if (!optionalTimeline.isPresent()) {
+                request.complete(HttpStatusCodes.NOT_FOUND);
+                return;
+            }
+            timeline = optionalTimeline.get();
+        } catch (CuratorException ex) {
+            LOGGER.error("Curator exception when read Stream", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return;
+        } catch (DeserializationException ex) {
+            LOGGER.error("Deserialization exception of Stream", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
 
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-        exchange.getResponseSender().send(mapper.writeValueAsString(timeline.get()));
+        HttpResponseContentWriter.writeJson(timeline, request);
     }
 }

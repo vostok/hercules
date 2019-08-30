@@ -1,12 +1,9 @@
 package ru.kontur.vostok.hercules.undertow.util.authorization;
 
-import io.undertow.server.HandlerWrapper;
-import io.undertow.server.HttpHandler;
 import ru.kontur.vostok.hercules.auth.AdminAuthManager;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
-
-import java.util.Optional;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.handler.HandlerWrapper;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 
 /**
  * AdminAuthManagerWrapper
@@ -23,12 +20,12 @@ public class AdminAuthManagerWrapper implements HandlerWrapper {
 
     @Override
     public HttpHandler wrap(HttpHandler handler) {
-        return exchange -> {
-            Optional<String> apiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-            if (!apiKey.isPresent() || !adminAuthManager.auth(apiKey.get()).isSuccess()) {
-                ResponseUtil.unauthorized(exchange);
+        return request -> {
+            String masterApiKey = request.getHeader("masterApiKey");
+            if (masterApiKey == null || !adminAuthManager.auth(masterApiKey).isSuccess()) {
+                request.complete(HttpStatusCodes.UNAUTHORIZED);
             } else {
-                handler.handleRequest(exchange);
+                handler.handle(request);
             }
         };
     }

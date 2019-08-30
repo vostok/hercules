@@ -35,7 +35,7 @@ public class SentrySender extends Sender {
         final String sentryToken = Props.SENTRY_TOKEN.extract(senderProperties);
         sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient);
-        this.processor = new SentrySyncProcessor(senderProperties, sentryClientHolder);
+        this.processor = new SentrySyncProcessor(senderProperties, sentryClientHolder, metricsCollector);
     }
 
     @Override

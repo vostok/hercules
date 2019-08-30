@@ -25,7 +25,7 @@ public class ParameterValue<T> {
      * Returns valid value. Otherwise throws exception.
      *
      * @return the value of type {@link T}
-     * @throws IllegalStateException is value is empty
+     * @throws IllegalStateException if value is empty
      * @throws IllegalStateException if value is invalid
      */
     public T get() {
@@ -34,6 +34,25 @@ public class ParameterValue<T> {
         }
 
         if (result.isOk()) {
+            return value;
+        }
+
+        throw new IllegalStateException(result.error());
+    }
+
+    /**
+     * Returns value if it exists or {@code other} if {@link ParameterValue#isEmpty()}. Otherwise throws exception.
+     *
+     * @param other the other value to return if {@link ParameterValue#isEmpty()}
+     * @return the value of type {@link T}
+     * @throws IllegalStateException if value is invalid
+     */
+    public T orEmpty(T other) {
+        if (isEmpty()) {
+            return other;
+        }
+
+        if (isOk()) {
             return value;
         }
 
@@ -106,7 +125,7 @@ public class ParameterValue<T> {
      * @return invalid parameter's value
      */
     public static <T> ParameterValue<T> invalid(String error) {
-        return new ParameterValue<>(null, ValidationResult.error(error));
+        return new ParameterValue<>(null, ValidationResult.error(error != null ? error : "unknown"));
     }
 
     /**

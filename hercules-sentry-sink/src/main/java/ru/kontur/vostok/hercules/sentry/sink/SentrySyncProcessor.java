@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.connection.LockdownManager;
@@ -8,6 +10,8 @@ import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -22,6 +26,9 @@ import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * @author Gregory Koshelev
@@ -33,15 +40,21 @@ public class SentrySyncProcessor {
     private final Level requiredLevel;
     private final int retryLimit;
     private final SentryClientHolder sentryClientHolder;
+    private final MetricsCollector metricsCollector;
+    private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
 
     public SentrySyncProcessor(
             Properties sinkProperties,
-            SentryClientHolder sentryClientHolder
+            SentryClientHolder sentryClientHolder,
+            MetricsCollector metricsCollector
     ) {
         this.requiredLevel = Props.REQUIRED_LEVEL.extract(sinkProperties);
         this.retryLimit = Props.RETRY_LIMIT.extract(sinkProperties);
         this.sentryClientHolder = sentryClientHolder;
         this.sentryClientHolder.update();
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -55,6 +68,8 @@ public class SentrySyncProcessor {
      * or not described exception occurred
      */
     public boolean process(Event event) throws BackendServiceFailedException {
+        final long sendingStart = System.currentTimeMillis();
+
         final Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
                 .flatMap(SentryLevelEnumParser::parse);
         if (!level.isPresent() || requiredLevel.compareTo(level.get()) < 0) {
@@ -72,12 +87,23 @@ public class SentrySyncProcessor {
             LOGGER.warn("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
             return false;
         }
-        String organization = correctName(organizationName.get());
+        String organization = sanitizeName(organizationName.get());
 
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
-        String sentryProject = sentryProjectName.map(this::correctName).orElse(organization);
+        String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
 
-        return tryToSend(event, organization, sentryProject);
+        boolean processed = tryToSend(event, organization, sentryProject);
+
+        final long processingTimeMs = System.currentTimeMillis() - sendingStart;
+        final String prefix = makePrefix(organization, sentryProject);
+        eventProcessingTimerMap.computeIfAbsent(prefix, p -> metricsCollector.timer(p + "eventProcessingTimeMs"))
+                .update(processingTimeMs, TimeUnit.MILLISECONDS);
+        if (processed) {
+            processedEventsMeterMap.computeIfAbsent(prefix, p -> metricsCollector.meter(p + "processedEventCount"))
+                    .mark();
+        }
+
+        return processed;
     }
 
     /**
@@ -103,6 +129,16 @@ public class SentrySyncProcessor {
                 return true;
             }
             processErrorInfo = result.getError();
+
+            String type = processErrorInfo.getMessage();
+            errorTypesMeterMap.computeIfAbsent(
+                    type == null ? "null" : type,
+                    t -> createMeter(t, organization, sentryProject)
+            ).mark();
+
+            if (processErrorInfo.isRetryable() == null) {
+                throw new BackendServiceFailedException();
+            }
             if (!processErrorInfo.isRetryable()) {
                 return false;
             }
@@ -130,10 +166,8 @@ public class SentrySyncProcessor {
      * @param organization Sentry organization where to send event
      * @param sentryProject Sentry project where to send event
      * @return the {@link Result} object with error information in case of error
-     * @throws BackendServiceFailedException if not described exception occurred
      */
-    private Result<Void, ErrorInfo> sendToSentry(Event event, String organization, String sentryProject)
-            throws BackendServiceFailedException {
+    private Result<Void, ErrorInfo> sendToSentry(Event event, String organization, String sentryProject) {
 
         ErrorInfo processErrorInfo;
 
@@ -152,7 +186,7 @@ public class SentrySyncProcessor {
             sentryEvent = SentryEventConverter.convert(event);
         } catch (Exception e) {
             LOGGER.error("An exception occurred while converting Hercules-event to Sentry-event.", e);
-            return Result.error(new ErrorInfo(false));
+            return Result.error(new ErrorInfo("Converting error", false));
         }
 
         try {
@@ -160,38 +194,45 @@ public class SentrySyncProcessor {
             return Result.ok();
         } catch (InvalidDsnException e) {
             LOGGER.error("InvalidDsnException: " + e.getMessage());
-            processErrorInfo = new ErrorInfo(false);
+            processErrorInfo = new ErrorInfo("Invalid DSN", false);
         } catch (LockedDownException e) {
             LOGGER.error("LockedDownException: a temporary lockdown is switched on");
-            processErrorInfo = new ErrorInfo(true, LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME);
+            processErrorInfo = new ErrorInfo(
+                    "LockedDown", true, LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME);
         } catch (ConnectionException e) {
             Integer responseCode = e.getResponseCode();
             String message = e.getMessage();
             if (responseCode != null) {
                 LOGGER.error(String.format("ConnectionException: %d %s", responseCode, message));
                 if (e.getRecommendedLockdownTime() != null) {
-                    processErrorInfo = new ErrorInfo(responseCode, e.getRecommendedLockdownTime());
+                    processErrorInfo = new ErrorInfo(message, responseCode, e.getRecommendedLockdownTime());
                 } else {
-                    processErrorInfo = new ErrorInfo(responseCode);
+                    processErrorInfo = new ErrorInfo(message, responseCode);
                 }
             } else {
                 LOGGER.error(String.format("ConnectionException: %s", message));
-                throw new BackendServiceFailedException(e);
+                processErrorInfo = new ErrorInfo(message);
             }
         } catch (Exception e) {
-            throw new BackendServiceFailedException(e);
+            processErrorInfo = new ErrorInfo(e.getMessage());
         }
         processErrorInfo.setIsRetryableForSending();
 
         return Result.error(processErrorInfo);
     }
 
-    private String correctName(String name) {
-        return name.toLowerCase()
-                .replace('.', '_')
-                .replace('/', '_')
-                .replace(',', '_')
-                .replace(' ', '_');
+    private String sanitizeName(String name) {
+        Pattern pattern = Pattern.compile("[^-_a-z0-9]");
+        return pattern.matcher(name.toLowerCase()).replaceAll("_");
+    }
+
+    private String makePrefix(final String organization, final String project) {
+        return "byOrgsAndProjects." + organization + "." + project + ".";
+    }
+
+    private Meter createMeter(String errorType, final String organization, final String project) {
+        String prefix = makePrefix(organization, project);
+        return metricsCollector.meter(prefix + "errorTypes." + MetricsUtil.sanitizeMetricName(errorType));
     }
 
     private static class Props {

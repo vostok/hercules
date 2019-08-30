@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.gate.validation;
 
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 /**
  * @author Gregory Koshelev

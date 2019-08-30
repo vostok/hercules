@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * @author Gregory Koshelev
  */
+@Deprecated
 public class ResponseUtil {
 
     public static void ok(HttpServerExchange exchange) {
