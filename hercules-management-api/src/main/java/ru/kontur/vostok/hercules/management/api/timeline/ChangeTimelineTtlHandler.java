@@ -3,8 +3,6 @@ package ru.kontur.vostok.hercules.management.api.timeline;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
-import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
@@ -71,7 +69,7 @@ public class ChangeTimelineTtlHandler implements HttpHandler {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
                     MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.NEW_TTL.name() + " error: " + newTtl.result().error());;
+                    "Parameter " + QueryParameters.NEW_TTL.name() + " error: " + newTtl.result().error());
             return;
         }
 

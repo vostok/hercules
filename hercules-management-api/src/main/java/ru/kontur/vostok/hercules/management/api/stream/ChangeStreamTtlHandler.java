@@ -72,7 +72,7 @@ public class ChangeStreamTtlHandler implements HttpHandler {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
                     MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.NEW_TTL.name() + " error: " + newTtl.result().error());;
+                    "Parameter " + QueryParameters.NEW_TTL.name() + " error: " + newTtl.result().error());
             return;
         }
 

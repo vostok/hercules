@@ -103,7 +103,7 @@ public class ManagementApiApplication {
             adminAuthManager = new AdminAuthManager(Props.ADMIN_KEYS.extract(properties));
 
             streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
-            timelineTaskQueue  = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
+            timelineTaskQueue = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
 
             server = createHttpServer(httpserverProperties);
             server.start();
@@ -131,19 +131,19 @@ public class ManagementApiApplication {
         }
 
         try {
-            if (streamTaskQueue != null) {
-                streamTaskQueue.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on stream's task queue stopping", e);
-        }
-
-        try {
             if (timelineTaskQueue != null) {
                 timelineTaskQueue.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             LOGGER.error("Error on timeline's task queue stopping", e);
+        }
+
+        try {
+            if (streamTaskQueue != null) {
+                streamTaskQueue.stop(5_000, TimeUnit.MILLISECONDS);
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Error on stream's task queue stopping", e);
         }
 
         try {
