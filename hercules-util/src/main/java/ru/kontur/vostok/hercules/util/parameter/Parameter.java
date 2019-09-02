@@ -48,7 +48,7 @@ public class Parameter<T> {
             }
 
             if (type == ParameterType.REQUIRED) {
-                return ParameterValue.ofNull();
+                return ParameterValue.missed();
             }
 
             return defaultValue;
@@ -153,7 +153,7 @@ public class Parameter<T> {
          * @param value the default value
          * @return the same builder
          */
-        public ParameterBuilder<T> withDefault(T value) {
+        public ParameterBuilder<T> withDefault(@NotNull T value) {
             this.defaultValue = value;
             this.type = ParameterType.DEFAULT;
 

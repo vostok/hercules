@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ValidationResult {
     private static final ValidationResult OK = new ValidationResult();
-    private static final ValidationResult NOT_PRESENT = new ValidationResult("Value not present");
+    private static final ValidationResult MISSED = new ValidationResult("Value is missing");
 
     private final String errorReason;
 
@@ -60,7 +60,7 @@ public final class ValidationResult {
      *
      * @return unsuccessful validation result
      */
-    public static ValidationResult notPresent() {
-        return NOT_PRESENT;
+    public static ValidationResult missed() {
+        return MISSED;
     }
 }
