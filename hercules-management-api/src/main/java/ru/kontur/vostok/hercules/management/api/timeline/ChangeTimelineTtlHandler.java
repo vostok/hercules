@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.management.api.timeline;
 
-import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -10,6 +9,7 @@ import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
 import ru.kontur.vostok.hercules.management.api.QueryParameters;
+import ru.kontur.vostok.hercules.management.api.auth.AuthProvider;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
@@ -27,12 +27,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class ChangeTimelineTtlHandler implements HttpHandler {
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final TaskQueue<TimelineTask> taskQueue;
     private final TimelineRepository timelineRepository;
 
-    public ChangeTimelineTtlHandler(AuthManager authManager, TaskQueue<TimelineTask> taskQueue, TimelineRepository timelineRepository) {
-        this.authManager = authManager;
+    public ChangeTimelineTtlHandler(AuthProvider authProvider, TaskQueue<TimelineTask> taskQueue, TimelineRepository timelineRepository) {
+        this.authProvider = authProvider;
         this.taskQueue = taskQueue;
         this.timelineRepository = timelineRepository;
     }
@@ -54,7 +54,7 @@ public class ChangeTimelineTtlHandler implements HttpHandler {
             return;
         }
 
-        AuthResult authResult = authManager.authManage(apiKey, timelineName.get());
+        AuthResult authResult = authProvider.authManage(request, timelineName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
                 request.complete(HttpStatusCodes.UNAUTHORIZED);

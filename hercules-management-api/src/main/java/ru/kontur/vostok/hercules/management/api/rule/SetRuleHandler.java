@@ -21,7 +21,7 @@ public class SetRuleHandler extends RuleHandler {
     }
 
     @Override
-    public void process(HttpServerRequest request) {
+    public void handle(HttpServerRequest request) {
         ParameterValue<String> key = QueryUtil.get(QueryParameters.KEY, request);
         ParameterValue<String> pattern = QueryUtil.get(QueryParameters.PATTERN, request);
         ParameterValue<String> rights = QueryUtil.get(QueryParameters.RIGHTS, request);
