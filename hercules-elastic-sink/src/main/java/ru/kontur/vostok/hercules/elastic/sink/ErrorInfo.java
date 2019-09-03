@@ -1,12 +1,12 @@
 package ru.kontur.vostok.hercules.elastic.sink;
 
-public class ElasticErrorInfo {
+public class ErrorInfo {
     private final ErrorType type;
     private final String eventId;
     private final String index;
     private final String reason;
 
-    public ElasticErrorInfo(ErrorType type, String eventId, String index, String reason) {
+    public ErrorInfo(ErrorType type, String eventId, String index, String reason) {
         this.type = type;
         this.eventId = eventId;
         this.index = index;
@@ -28,4 +28,5 @@ public class ElasticErrorInfo {
     public String getReason() {
         return reason;
     }
+
 }

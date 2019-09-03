@@ -30,6 +30,8 @@ public final class Scopes {
 
     public static final String SERVICE_DISCOVERY = "sd";
 
+    public static final String LEPROSERY = "leprosery";
+
     private Scopes() {
         /* static class */
     }

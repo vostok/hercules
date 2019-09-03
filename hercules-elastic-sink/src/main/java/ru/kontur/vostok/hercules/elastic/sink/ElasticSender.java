@@ -15,7 +15,6 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
-import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.functional.Result;
@@ -26,18 +25,21 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
+import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
@@ -66,7 +68,10 @@ public class ElasticSender extends Sender {
     private final Meter elasticsearchDroppedNonRetryableErrorsMeter;
 
     private final Set<String> redefinedExceptions;
-    private final boolean nonRetryableResendingMode;
+    private final boolean leproseryEnable;
+    private final String leproseryIndex;
+
+    private final EventValidator eventValidator;
 
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
@@ -81,7 +86,8 @@ public class ElasticSender extends Sender {
         final int connectionRequestTimeout = Props.CONNECTION_REQUEST_TIMEOUT_MS.extract(properties);
         final int socketTimeout = Props.SOCKET_TIMEOUT_MS.extract(properties);
 
-        this.nonRetryableResendingMode = PropertiesUtil.get(Props.NON_RETRYABLE_RESENDING_MODE, properties).get();
+        this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_MODE, properties).get();
+        this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, properties).get();
 
         this.redefinedExceptions = new HashSet<>(Arrays.asList(Props.REDEFINED_EXCEPTIONS.extract(properties)));
 
@@ -103,7 +109,7 @@ public class ElasticSender extends Sender {
 
         this.elasticResponseHandler = new ElasticResponseHandler(metricsCollector);
 
-        if (nonRetryableResendingMode) {
+        if (leproseryEnable) {
             this.errorSender = new ErrorSender(properties, metricsCollector);
         } else {
             this.errorSender = null;
@@ -112,6 +118,8 @@ public class ElasticSender extends Sender {
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
         this.elasticsearchDroppedNonRetryableErrorsMeter = metricsCollector.meter("elasticsearchDroppedNonRetryableErrors");
+
+        this.eventValidator = new EventValidator();
     }
 
     @Override
@@ -134,67 +142,25 @@ public class ElasticSender extends Sender {
             events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE_BYTES);
-        int droppedCount = writeEventRecords(stream, events);
-        if (stream.size() == 0) {
-            return 0;
-        }
-
-        ElasticResponseHandler.Result result;
+        int processed = 0;
+        Map<String, ValidationResult> badValidationResultMap = new HashMap<>(events.size());
+        Map<String, EventWrapper> wrappersMap = events.stream()
+                .map(EventWrapper::new)
+                .collect(Collectors.toMap(EventWrapper::getId, wrapper -> wrapper));
         try {
-            ByteArrayEntity body = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
-
             int retryCount = retryLimit;
             boolean needToRetry;
+            SendIterationInfo iteration = validateAndPrepare(wrappersMap);
+            badValidationResultMap.putAll(iteration.badValidations);
             do {
-                Response response;
-                try (AutoMetricStopwatch requestTime = new AutoMetricStopwatch(elasticsearchRequestTimeTimer, TimeUnit.MILLISECONDS)) {
-                    response = restClient.performRequest(
-                            "POST",
-                            "/_bulk",
-                            Collections.emptyMap(),
-                            body
+                ElasticResponseHandler.Result result = trySend(iteration.entity);
+                processed += iteration.readyCount - result.getTotalErrors();
 
-                    );
-                } catch (IOException ex) {
-                    elasticsearchRequestErrorsMeter.mark();
-                    throw ex;
-                }
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    elasticsearchRequestErrorsMeter.mark();
-                    throw new RuntimeException("Bad response");
-                }
-                result = elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
-                if (result.getTotalErrors() != 0) {
-                    LOGGER.info(
-                            "Error statistics (retryanble/non retyable/unknown/total): {}/{}/{}/{}",
-                            result.getRetryableErrorCount(),
-                            result.getNonRetryableErrorCount(),
-                            result.getUnknownErrorCount(),
-                            result.getTotalErrors()
-                    );
-                }
-                if (result.hasNonRetryableErrors()) {
-                    if (nonRetryableResendingMode) {
-                        errorSender.sendNonRetryableEvents(events, result.getNonRetryableErrors());
-                    } else {
-                        result.getNonRetryableErrors().forEach(errorResponseWrapper ->
-                                LOGGER.warn("Non reatryable error info: id = {}, index = {}, reason = {}",
-                                        errorResponseWrapper.getEventId(),
-                                        errorResponseWrapper.getIndex(),
-                                        errorResponseWrapper.getReason()));
-                        elasticsearchDroppedNonRetryableErrorsMeter.mark(result.getNonRetryableErrorCount());
-                    }
-                }
-                if (result.hasUnknownErrors() && LOGGER.isInfoEnabled()) {
-                    for (Event event : events) {
-                        if (result.getBadIds().contains(EventUtil.extractStringId(event))) {
-                            LOGGER.info("Event caused unknown error: {}", EventFormatter.format(event, false));
-                        }
-                    }
-                }
-                needToRetry = result.hasRetryableErrors() || (result.hasUnknownErrors() && retryOnUnknownErrors);
+                iteration = resultProcess(result, wrappersMap);
+                badValidationResultMap.putAll(iteration.badValidations);
+                needToRetry = iteration.readyCount > 0;
             } while (0 < retryCount-- && needToRetry);
+
             if (needToRetry) {
                 throw new Exception("Have retryable errors in elasticsearch response");
             }
@@ -202,32 +168,123 @@ public class ElasticSender extends Sender {
             throw new BackendServiceFailedException(e);
         }
 
-        if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
-            events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
+        if (!badValidationResultMap.isEmpty()) {
+            handleNonRetryableErrors(wrappersMap, badValidationResultMap);
         }
 
-        droppedCount += result.getTotalErrors();
+        if (PROCESSED_EVENT_LOGGER.isTraceEnabled())
+            events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
 
-        return events.size() - droppedCount;
-
+        return processed;
     }
 
-    private int writeEventRecords(OutputStream stream, Collection<Event> events) {
-        return toUnchecked(() -> {
-            int droppedCount = 0;
-            for (Event event : events) {
-                boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
-                if (result) {
-                    stream.write('\n');
-                    EventToElasticJsonWriter.writeEvent(stream, event, mergePropertiesTagToRoot);
-                    stream.write('\n');
+    private SendIterationInfo validateAndPrepare(Map<String, EventWrapper> wrappers) {
+        int ready = 0;
+        Map<String, ValidationResult> bads = new HashMap<>(wrappers.size());
+        ByteArrayOutputStream stream = new ByteArrayOutputStream(wrappers.size() * EXPECTED_EVENT_SIZE_BYTES);
+        for (Map.Entry<String, EventWrapper> entry : wrappers.entrySet()) {
+            ValidationResult validationResult = eventValidator.validate(entry.getValue());
+            if (validationResult.isOk()) {
+                writeEventToStream(stream, entry.getValue());
+                ready += 1;
+            } else {
+                bads.put(entry.getKey(), validationResult);
+            }
+        }
+        ByteArrayEntity entity = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
+        return new SendIterationInfo(entity, bads, ready);
+    }
+
+    private SendIterationInfo resultProcess(ElasticResponseHandler.Result result, Map<String, EventWrapper> wrappersMap) {
+        if (result.getTotalErrors() == 0 ) {
+            return new SendIterationInfo(null, Collections.emptyMap(), 0);
+        } else {
+            LOGGER.info(
+                    "Error statistics (retryable/non retryable/unknown/total): {}/{}/{}/{}",
+                    result.getRetryableErrorCount(),
+                    result.getNonRetryableErrorCount(),
+                    result.getUnknownErrorCount(),
+                    result.getTotalErrors()
+            );
+
+            int ready = 0;
+            Map<String, ValidationResult> bads = new HashMap<>(wrappersMap.size());
+            ByteArrayOutputStream stream = new ByteArrayOutputStream(wrappersMap.size());
+            for (Map.Entry<String, ErrorInfo> errorInfoEntry : result.getErrors().entrySet()) {
+                String eventId = errorInfoEntry.getKey();
+                EventWrapper wrapper = wrappersMap.get(eventId);
+                ErrorInfo errorInfo = errorInfoEntry.getValue();
+                ErrorType type = errorInfo.getType();
+                if (type.equals(ErrorType.RETRYABLE) || (type.equals(ErrorType.UNKNOWN) && retryOnUnknownErrors)) {
+                    writeEventToStream(stream, wrapper);
+                    ready += 1;
                 } else {
-                    droppedCount++;
-                    DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
+                    bads.put(eventId, ValidationResult.error(errorInfoEntry.getValue().getReason()));
+                }
+                if (type.equals(ErrorType.UNKNOWN)) {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.info("Event caused unknown error: {}", EventFormatter.format(wrapper.getEvent(), false));
+                    }
                 }
             }
-            return droppedCount;
+            ByteArrayEntity entity = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
+            return new SendIterationInfo(entity, bads, ready);
+        }
+    }
+
+    private void handleNonRetryableErrors(Map<String, EventWrapper> wrappersMap, Map<String, ValidationResult> badValidationResultMap) {
+        if (leproseryEnable) {
+            errorSender.sendErrors(
+                    badValidationResultMap.entrySet().stream()
+                            .map(entry -> {
+                                String eventId = entry.getKey();
+                                EventWrapper eventWrapper = wrappersMap.get(eventId);
+                                String index = eventWrapper.getIndex();
+                                return EventToLeproseryEvent.toLeproseryEvent(
+                                        wrappersMap.get(eventId).getEvent(),
+                                        leproseryIndex,
+                                        index,
+                                        entry.getValue().error()
+                                );
+                            })
+                            .collect(Collectors.toList())
+            );
+        } else {
+            badValidationResultMap.forEach((eventId, validationResult) -> {
+                EventWrapper eventWrapper = wrappersMap.get(eventId);
+                LOGGER.warn("Non retryable error info: id = {}, index = {}, reason = {}",
+                        eventWrapper.getId(),
+                        eventWrapper.getIndex(),
+                        validationResult.error());
+                Event event = eventWrapper.getEvent();
+                DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
+            });
+            elasticsearchDroppedNonRetryableErrorsMeter.mark(badValidationResultMap.size());
+        }
+    }
+
+    private void writeEventToStream(ByteArrayOutputStream stream, EventWrapper wrapper) {
+        toUnchecked(() -> {
+            IndexToElasticJsonWriter.writeIndex(stream, wrapper.getIndex(), wrapper.getId());
+            stream.write('\n');
+            EventToElasticJsonWriter.writeEvent(stream, wrapper.getEvent(), mergePropertiesTagToRoot);
+            stream.write('\n');
         });
+    }
+
+    private ElasticResponseHandler.Result trySend(ByteArrayEntity body) {
+        Response response;
+        try (AutoMetricStopwatch requestTime = new AutoMetricStopwatch(elasticsearchRequestTimeTimer, TimeUnit.MILLISECONDS)) {
+            response = restClient.performRequest("POST", "/_bulk", Collections.emptyMap(), body);
+        } catch (IOException ex) {
+            elasticsearchRequestErrorsMeter.mark();
+            throw new RuntimeException(ex);
+        }
+        if (response.getStatusLine().getStatusCode() != 200) {
+            elasticsearchRequestErrorsMeter.mark();
+            throw new RuntimeException("Bad response");
+        }
+        return elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
     }
 
     private static class Props {
@@ -298,9 +355,43 @@ public class ElasticSender extends Sender {
                 .withDefaultValue(new String[]{})
                 .build();
 
-        static final Parameter<Boolean> NON_RETRYABLE_RESENDING_MODE = Parameter
-                .booleanParameter("nonRetryableResendingMode")
+        static final Parameter<Boolean> LEPROSERY_MODE = Parameter
+                .booleanParameter("leprosery.enable")
                 .withDefault(false)
                 .build();
+
+        static final Parameter<String> LEPROSERY_INDEX = Parameter
+                .stringParameter("index")
+                .withDefault("leprosery")
+                .build();
     }
+
+    private static class EventValidator implements Validator<EventWrapper> {
+
+        @Override
+        public ValidationResult validate(EventWrapper value) {
+            boolean hasIndex = value.getIndex() != null;
+            boolean withValidSize = value.getEvent().getBytes().length <= EXPECTED_EVENT_SIZE_BYTES;
+            if (hasIndex && withValidSize) {
+                return ValidationResult.ok();
+            } else if (!hasIndex) {
+                return ValidationResult.error("Event has unknown index");
+            } else {
+                return ValidationResult.error("Event has invalid size");
+            }
+        }
+    }
+
+    private class SendIterationInfo {
+        private ByteArrayEntity entity;
+        private Map<String, ValidationResult> badValidations;
+        private int readyCount;
+
+        SendIterationInfo(ByteArrayEntity entity, Map<String, ValidationResult> badValidations, int readyCount) {
+            this.entity = entity;
+            this.badValidations = badValidations;
+            this.readyCount = readyCount;
+        }
+    }
+
 }
