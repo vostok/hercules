@@ -12,6 +12,7 @@ import java.util.List;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class PropertyDescriptionBuilder<T> {
 
     private String name;

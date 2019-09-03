@@ -55,6 +55,18 @@ public final class AuthManager {
         scheduler.shutdown(5_000, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Check if the provided api key is known.
+     *
+     * @param apiKey the api key
+     * @return {@code true} if the api key exists or {@code false} otherwise
+     */
+    public boolean hasApiKey(String apiKey) {
+        return readRules.get().containsKey(apiKey)
+                || writeRules.get().containsKey(apiKey)
+                || manageRules.get().containsKey(apiKey);
+    }
+
     public AuthResult authRead(String apiKey, String name) {
         return auth(apiKey, name, readRules.get());
     }

@@ -27,7 +27,6 @@ public final class QueryParameters {
 
     public static final Parameter<String> PAGING_STATE =
             Parameter.stringParameter("pagingState").
-                    withDefault(null).
                     build();
 
     private QueryParameters() {

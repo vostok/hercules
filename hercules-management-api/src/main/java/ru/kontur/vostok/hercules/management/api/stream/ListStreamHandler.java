@@ -26,12 +26,6 @@ public class ListStreamHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        String apiKey = request.getHeader("apiKey");
-        if (apiKey == null) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
-
         List<String> list;
         try {
             list = repository.list().stream()

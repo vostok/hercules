@@ -48,7 +48,7 @@ public class Parameter<T> {
             }
 
             if (type == ParameterType.REQUIRED) {
-                return ParameterValue.ofNull();
+                return ParameterValue.missed();
             }
 
             return defaultValue;
@@ -120,6 +120,32 @@ public class Parameter<T> {
         return new StringParameterBuilder(name);
     }
 
+    /**
+     * String array parameter builder.
+     *
+     * @param name the name of parameter
+     * @return builder
+     */
+    public static StringArrayParameterBuilder stringArrayParameter(String name) {
+        return new StringArrayParameterBuilder(name);
+    }
+
+    /**
+     * Parameter builder with parser.
+     * <p>
+     * Should be used for uncommon parameters of various types. In simple cases use appropriate parameter builders instead.
+     *
+     * @param name   the name of parameter
+     * @param parser the parser
+     * @param <T>    the type of parameter's value
+     * @return builder
+     * @see #booleanParameter(String)
+     * @see #shortParameter(String)
+     * @see #integerParameter(String)
+     * @see #longParameter(String)
+     * @see #stringParameter(String)
+     * @see #stringArrayParameter(String)
+     */
     public static <T> ParameterBuilder<T> parameter(String name, Parser<T> parser) {
         return new ParameterBuilder<>(name, parser);
     }
@@ -153,7 +179,7 @@ public class Parameter<T> {
          * @param value the default value
          * @return the same builder
          */
-        public ParameterBuilder<T> withDefault(T value) {
+        public ParameterBuilder<T> withDefault(@NotNull T value) {
             this.defaultValue = value;
             this.type = ParameterType.DEFAULT;
 
@@ -217,6 +243,12 @@ public class Parameter<T> {
     public static class StringParameterBuilder extends ParameterBuilder<String> {
         private StringParameterBuilder(String name) {
             super(name, Parsers.forString());
+        }
+    }
+
+    public static class StringArrayParameterBuilder extends ParameterBuilder<String[]> {
+        private StringArrayParameterBuilder(String name) {
+            super(name, Parsers.forStringArray());
         }
     }
 }

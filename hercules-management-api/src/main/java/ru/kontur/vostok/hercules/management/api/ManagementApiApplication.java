@@ -8,9 +8,15 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.health.CommonMetrics;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
+import ru.kontur.vostok.hercules.management.api.auth.AdminAuthHandlerWrapper;
+import ru.kontur.vostok.hercules.management.api.auth.AuthHandlerWrapper;
+import ru.kontur.vostok.hercules.management.api.auth.AuthProvider;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
@@ -27,13 +33,6 @@ import ru.kontur.vostok.hercules.management.api.timeline.CreateTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.DeleteTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.InfoTimelineHandler;
 import ru.kontur.vostok.hercules.management.api.timeline.ListTimelineHandler;
-import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
-import ru.kontur.vostok.hercules.undertow.util.authorization.AdminAuthManagerWrapper;
-import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.curator.CuratorClient;
-import ru.kontur.vostok.hercules.health.CommonMetrics;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -43,7 +42,10 @@ import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
+import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
 import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
@@ -181,28 +183,40 @@ public class ManagementApiApplication {
         BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
         RuleRepository ruleRepository = new RuleRepository(curatorClient);
 
-        AdminAuthManagerWrapper adminAuthManagerWrapper = new AdminAuthManagerWrapper(adminAuthManager);
+        AuthProvider authProvider = new AuthProvider(adminAuthManager, authManager);
+        AdminAuthHandlerWrapper adminAuthHandlerWrapper = new AdminAuthHandlerWrapper(authProvider);
+        AuthHandlerWrapper authHandlerWrapper = new AuthHandlerWrapper(authProvider);
 
-        CreateStreamHandler createStreamHandler = new CreateStreamHandler(authManager, streamTaskQueue, streamRepository);
-        DeleteStreamHandler deleteStreamHandler = new DeleteStreamHandler(authManager, streamTaskQueue, streamRepository);
-        ChangeStreamTtlHandler changeStreamTtlHandler = new ChangeStreamTtlHandler(authManager, streamTaskQueue, streamRepository);
-        IncreasePartitionsStreamHandler increasePartitionsStreamHandler =
-                new IncreasePartitionsStreamHandler(authManager, streamTaskQueue, streamRepository);
-        ListStreamHandler listStreamHandler = new ListStreamHandler(streamRepository);
-        InfoStreamHandler infoStreamHandler = new InfoStreamHandler(streamRepository, authManager);
+        HttpHandler createStreamHandler = authHandlerWrapper.wrap(
+                new CreateStreamHandler(authProvider, streamTaskQueue, streamRepository));
+        HttpHandler deleteStreamHandler = authHandlerWrapper.wrap(
+                new DeleteStreamHandler(authProvider, streamTaskQueue, streamRepository));
+        HttpHandler changeStreamTtlHandler = authHandlerWrapper.wrap(
+                new ChangeStreamTtlHandler(authProvider, streamTaskQueue, streamRepository));
+        HttpHandler increasePartitionsStreamHandler = authHandlerWrapper.wrap(
+                new IncreasePartitionsStreamHandler(authProvider, streamTaskQueue, streamRepository));
+        HttpHandler listStreamHandler = authHandlerWrapper.wrap(
+                new ListStreamHandler(streamRepository));
+        HttpHandler infoStreamHandler = authHandlerWrapper.wrap(
+                new InfoStreamHandler(streamRepository, authProvider));
 
-        CreateTimelineHandler createTimelineHandler = new CreateTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
-        DeleteTimelineHandler deleteTimelineHandler = new DeleteTimelineHandler(authManager, timelineTaskQueue, timelineRepository);
-        ChangeTimelineTtlHandler changeTimelineTtlHandler = new ChangeTimelineTtlHandler(authManager, timelineTaskQueue, timelineRepository);
-        ListTimelineHandler listTimelineHandler = new ListTimelineHandler(timelineRepository);
-        InfoTimelineHandler infoTimelineHandler = new InfoTimelineHandler(timelineRepository, authManager);
+        HttpHandler createTimelineHandler = authHandlerWrapper.wrap(
+                new CreateTimelineHandler(authProvider, timelineTaskQueue, timelineRepository));
+        HttpHandler deleteTimelineHandler = authHandlerWrapper.wrap(
+                new DeleteTimelineHandler(authProvider, timelineTaskQueue, timelineRepository));
+        HttpHandler changeTimelineTtlHandler = authHandlerWrapper.wrap(
+                new ChangeTimelineTtlHandler(authProvider, timelineTaskQueue, timelineRepository));
+        HttpHandler listTimelineHandler = authHandlerWrapper.wrap(
+                new ListTimelineHandler(timelineRepository));
+        HttpHandler infoTimelineHandler = authHandlerWrapper.wrap(
+                new InfoTimelineHandler(timelineRepository, authProvider));
 
-        HttpHandler setRuleHandler = adminAuthManagerWrapper.wrap(new SetRuleHandler(ruleRepository));
-        HttpHandler listRuleHandler = adminAuthManagerWrapper.wrap(new ListRuleHandler(ruleRepository));
+        HttpHandler setRuleHandler = adminAuthHandlerWrapper.wrap(new SetRuleHandler(ruleRepository));
+        HttpHandler listRuleHandler = adminAuthHandlerWrapper.wrap(new ListRuleHandler(ruleRepository));
 
-        HttpHandler addBlacklistHandler = adminAuthManagerWrapper.wrap(new AddBlacklistHandler(blacklistRepository));
-        HttpHandler removeBlacklistHandler = adminAuthManagerWrapper.wrap(new RemoveBlacklistHandler(blacklistRepository));
-        HttpHandler listBlacklistHandler = adminAuthManagerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
+        HttpHandler addBlacklistHandler = adminAuthHandlerWrapper.wrap(new AddBlacklistHandler(blacklistRepository));
+        HttpHandler removeBlacklistHandler = adminAuthHandlerWrapper.wrap(new RemoveBlacklistHandler(blacklistRepository));
+        HttpHandler listBlacklistHandler = adminAuthHandlerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
 
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
                 post("/streams/create", createStreamHandler).

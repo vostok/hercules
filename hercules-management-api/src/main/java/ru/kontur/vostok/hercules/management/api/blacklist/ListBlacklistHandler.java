@@ -22,7 +22,7 @@ public class ListBlacklistHandler extends BlacklistHandler {
     }
 
     @Override
-    public void process(HttpServerRequest request) {
+    public void handle(HttpServerRequest request) {
         List<String> list;
         try {
             list = repository.list().stream()

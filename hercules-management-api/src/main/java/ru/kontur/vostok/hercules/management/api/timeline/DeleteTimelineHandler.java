@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.management.api.timeline;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -12,6 +11,7 @@ import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
 import ru.kontur.vostok.hercules.management.api.QueryParameters;
+import ru.kontur.vostok.hercules.management.api.auth.AuthProvider;
 import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
@@ -28,23 +28,18 @@ import java.util.concurrent.TimeUnit;
 public class DeleteTimelineHandler implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteTimelineHandler.class);
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final TaskQueue<TimelineTask> taskQueue;
     private final TimelineRepository repository;
 
-    public DeleteTimelineHandler(AuthManager authManager, TaskQueue<TimelineTask> taskQueue, TimelineRepository repository) {
-        this.authManager = authManager;
+    public DeleteTimelineHandler(AuthProvider authProvider, TaskQueue<TimelineTask> taskQueue, TimelineRepository repository) {
+        this.authProvider = authProvider;
         this.taskQueue = taskQueue;
         this.repository = repository;
     }
 
     @Override
     public void handle(HttpServerRequest request) {
-        String apiKey = request.getHeader("apiKey");
-        if (apiKey == null) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
         ParameterValue<String> timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
         if (timelineName.isError()) {
             request.complete(
@@ -54,7 +49,7 @@ public class DeleteTimelineHandler implements HttpHandler {
             return;
         }
 
-        AuthResult authResult = authManager.authManage(apiKey, timelineName.get());
+        AuthResult authResult = authProvider.authManage(request, timelineName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
                 request.complete(HttpStatusCodes.UNAUTHORIZED);

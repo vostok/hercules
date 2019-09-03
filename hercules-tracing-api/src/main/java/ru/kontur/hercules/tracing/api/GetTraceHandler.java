@@ -67,7 +67,7 @@ public class GetTraceHandler implements HttpHandler {
                     traceId.get(),
                     parentSpanId.get(),
                     limit.get(),
-                    pagingState.get());
+                    pagingState.orEmpty(null));
 
             request.getResponse().setContentType(MimeTypes.APPLICATION_JSON);
             request.getResponse().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceIdAndParentSpanId));
@@ -75,7 +75,7 @@ public class GetTraceHandler implements HttpHandler {
             final PagedResult<Event> traceSpansByTraceId = tracingReader.getTraceSpansByTraceId(
                     traceId.get(),
                     limit.get(),
-                    pagingState.get());
+                    pagingState.orEmpty(null));
 
             request.getResponse().setContentType(MimeTypes.APPLICATION_JSON);
             request.getResponse().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceId));

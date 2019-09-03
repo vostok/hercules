@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
+import ru.kontur.vostok.hercules.management.api.auth.AuthProvider;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -33,14 +33,14 @@ public class CreateStreamHandler implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateStreamHandler.class);
     private static final Validator<Stream> STREAM_VALIDATOR = StreamValidators.streamValidatorForHandler();
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final TaskQueue<StreamTask> taskQueue;
     private final StreamRepository streamRepository;
 
     private final ObjectReader deserializer;
 
-    public CreateStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
-        this.authManager = authManager;
+    public CreateStreamHandler(AuthProvider authProvider, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
+        this.authProvider = authProvider;
         this.taskQueue = taskQueue;
         this.streamRepository = streamRepository;
 
@@ -50,12 +50,6 @@ public class CreateStreamHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        String apiKey = request.getHeader("apiKey");
-        if (apiKey == null) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
-
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
             request.complete(HttpStatusCodes.LENGTH_REQUIRED);
@@ -76,7 +70,7 @@ public class CreateStreamHandler implements HttpHandler {
                     return;
                 }
 
-                AuthResult authResult = authManager.authManage(apiKey, stream.getName());
+                AuthResult authResult = authProvider.authManage(r, stream.getName());
                 if (!authResult.isSuccess()) {
                     if (authResult.isUnknown()) {
                         r.complete(HttpStatusCodes.UNAUTHORIZED);
@@ -98,7 +92,7 @@ public class CreateStreamHandler implements HttpHandler {
                         return;
                     }
                     for (String sourceStream : streams) {
-                        authResult = authManager.authRead(apiKey, sourceStream);
+                        authResult = authProvider.authRead(r, sourceStream);
                         if (!authResult.isSuccess()) {
                             r.complete(HttpStatusCodes.FORBIDDEN);
                             return;
