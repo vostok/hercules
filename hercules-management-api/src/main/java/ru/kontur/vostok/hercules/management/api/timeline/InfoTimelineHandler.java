@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.management.api.timeline;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -11,6 +10,7 @@ import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.QueryParameters;
+import ru.kontur.vostok.hercules.management.api.auth.AuthProvider;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
@@ -25,22 +25,16 @@ import java.util.Optional;
 public class InfoTimelineHandler implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(InfoTimelineHandler.class);
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final TimelineRepository repository;
 
-    public InfoTimelineHandler(TimelineRepository repository, AuthManager authManager) {
+    public InfoTimelineHandler(TimelineRepository repository, AuthProvider authProvider) {
         this.repository = repository;
-        this.authManager = authManager;
+        this.authProvider = authProvider;
     }
 
     @Override
     public void handle(HttpServerRequest request) {
-        String apiKey = request.getHeader("apiKey");
-        if (apiKey == null) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
-
         ParameterValue<String> timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
         if (timelineName.isError()) {
             request.complete(
@@ -50,7 +44,7 @@ public class InfoTimelineHandler implements HttpHandler {
             return;
         }
 
-        AuthResult authResult = authManager.authManage(apiKey, timelineName.get());
+        AuthResult authResult = authProvider.authManage(request, timelineName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
                 request.complete(HttpStatusCodes.UNAUTHORIZED);

@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.management.api.stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -12,6 +11,7 @@ import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
 import ru.kontur.vostok.hercules.management.api.QueryParameters;
+import ru.kontur.vostok.hercules.management.api.auth.AuthProvider;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -30,24 +30,18 @@ import java.util.concurrent.TimeUnit;
 public class IncreasePartitionsStreamHandler implements HttpHandler {
     private static Logger LOGGER = LoggerFactory.getLogger(IncreasePartitionsStreamHandler.class);
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final TaskQueue<StreamTask> taskQueue;
     private final StreamRepository streamRepository;
 
-    public IncreasePartitionsStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
-        this.authManager = authManager;
+    public IncreasePartitionsStreamHandler(AuthProvider authProvider, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
+        this.authProvider = authProvider;
         this.taskQueue = taskQueue;
         this.streamRepository = streamRepository;
     }
 
     @Override
     public void handle(HttpServerRequest request) {
-        String apiKey = request.getHeader("apiKey");
-        if (apiKey == null) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
-
         ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (streamName.isError()) {
             request.complete(
@@ -57,7 +51,7 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
             return;
         }
 
-        AuthResult authResult = authManager.authManage(apiKey, streamName.get());
+        AuthResult authResult = authProvider.authManage(request, streamName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
                 request.complete(HttpStatusCodes.UNAUTHORIZED);

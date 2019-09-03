@@ -97,11 +97,11 @@ public interface HttpServerRequest {
     /**
      * Complete request processing with specified code and content in response body.
      *
-     * @param code response status code
+     * @param code        response status code
      * @param contentType content type
-     * @param data data to send in response body
+     * @param data        data to send in response body
      */
-    default  void complete(int code, String contentType, String data) {
+    default void complete(int code, String contentType, String data) {
         getResponse().setStatusCode(code);
         getResponse().setContentType(contentType);
         getResponse().send(data);
@@ -123,4 +123,24 @@ public interface HttpServerRequest {
     }
 
     void addRequestCompletionListener(RequestCompletionListener listener);
+
+    /**
+     * Put object to request context.
+     * <p>
+     * Also, it can be used to exchange authentication context between handlers in the handlers chain.
+     *
+     * @param key the key of the object
+     * @param obj the object to put into context
+     * @param <T> type
+     */
+    <T> void putContext(String key, T obj);
+
+    /**
+     * Get object from request context.
+     *
+     * @param key the key of the object
+     * @param <T> type
+     * @return the object from context or {@code null} if absent
+     */
+    <T> T getContext(String key);
 }

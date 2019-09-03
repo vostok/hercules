@@ -21,7 +21,7 @@ public class RemoveBlacklistHandler extends BlacklistHandler {
     }
 
     @Override
-    public void process(HttpServerRequest request) {
+    public void handle(HttpServerRequest request) {
         ParameterValue<String> key = QueryUtil.get(QueryParameters.KEY, request);
         if (key.isError()) {
             request.complete(HttpStatusCodes.BAD_REQUEST);

@@ -17,7 +17,7 @@ public class HttpAsyncApiHelper {
      * <p>
      * Possible status codes:<br>
      * {@link HttpStatusCodes#INTERNAL_SERVER_ERROR} - task is failed<br>
-     * {@link HttpStatusCodes#REQUEST_TIMEOUT} - non async API was called and task did not completed for time quota<br>
+     * {@link HttpStatusCodes#REQUEST_TIMEOUT} - non async API was called and task did not complete for time quota<br>
      * {@link HttpStatusCodes#OK} - async API was called or task successfully completed<br>
      *
      * @param task    the task
