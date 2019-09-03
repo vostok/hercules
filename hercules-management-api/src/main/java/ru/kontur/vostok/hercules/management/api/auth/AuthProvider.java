@@ -46,7 +46,7 @@ public class AuthProvider {
      * @param request the http request
      * @return {@code true} if authenticate successfully, or {@code false} otherwise
      */
-    public boolean authenticateOrdinal(HttpServerRequest request) {
+    public boolean authenticateOrdinary(HttpServerRequest request) {
         String apiKey = request.getHeader("apiKey");
         boolean hasAuthenticated = authManager.hasApiKey(apiKey);
         request.putContext(AUTH_CONTEXT, hasAuthenticated ? AuthContext.ordinary(apiKey) : AuthContext.notAuthenticated());
@@ -66,12 +66,19 @@ public class AuthProvider {
         if (authenticateMaster(request)) {
             return true;
         }
-        if (authenticateOrdinal(request)) {
+        if (authenticateOrdinary(request)) {
             return true;
         }
         return false;
     }
 
+    /**
+     * Authorize manage access using authentication context of the http request.
+     *
+     * @param request the http request
+     * @param name    the resource name
+     * @return authorization result
+     */
     public AuthResult authManage(HttpServerRequest request, String name) {
         AuthContext context = request.getContext(AUTH_CONTEXT);
         if (context == null) {
@@ -87,6 +94,13 @@ public class AuthProvider {
         }
     }
 
+    /**
+     * Authorize read access using authentication context of the http request.
+     *
+     * @param request the http request
+     * @param name    the resource name
+     * @return authorization result
+     */
     public AuthResult authRead(HttpServerRequest request, String name) {
         AuthContext context = request.getContext(AUTH_CONTEXT);
         if (context == null) {
@@ -102,6 +116,13 @@ public class AuthProvider {
         }
     }
 
+    /**
+     * Authorize write access using authentication context of the http request.
+     *
+     * @param request the http request
+     * @param name    the resource name
+     * @return authorization result
+     */
     public AuthResult authWrite(HttpServerRequest request, String name) {
         AuthContext context = request.getContext(AUTH_CONTEXT);
         if (context == null) {
