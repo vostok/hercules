@@ -39,12 +39,6 @@ public class ChangeTimelineTtlHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        String apiKey = request.getHeader("apiKey");
-        if (apiKey == null) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
-
         ParameterValue<String> timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
         if (timelineName.isError()) {
             request.complete(

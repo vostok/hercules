@@ -6,6 +6,8 @@ import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 
 /**
+ * Auth provider is used to authenticate http requests and authorize access to resources (streams or timelines).
+ *
  * @author Gregory Koshelev
  */
 public class AuthProvider {
@@ -19,6 +21,15 @@ public class AuthProvider {
         this.authManager = authManager;
     }
 
+    /**
+     * Authenticate by the master api key.
+     * <p>
+     * Set {@link AuthContext#master(String)} in auth context of {@link HttpServerRequest} if succeeded
+     * or {@link AuthContext#notAuthenticated()} otherwise.
+     *
+     * @param request the http request
+     * @return {@code true} if authenticate successfully, or {@code false} otherwise
+     */
     public boolean authenticateMaster(HttpServerRequest request) {
         String masterApiKey = request.getHeader("masterApiKey");
         AuthResult authResult = adminAuthManager.auth(masterApiKey);
@@ -26,13 +37,31 @@ public class AuthProvider {
         return authResult.isSuccess();
     }
 
+    /**
+     * Authenticate by the ordinary api key.
+     * <p>
+     * Set {@link AuthContext#ordinary(String)} in auth context of {@link HttpServerRequest} if succeeded
+     * or {@link AuthContext#notAuthenticated()} otherwise.
+     *
+     * @param request the http request
+     * @return {@code true} if authenticate successfully, or {@code false} otherwise
+     */
     public boolean authenticateOrdinal(HttpServerRequest request) {
         String apiKey = request.getHeader("apiKey");
         boolean hasAuthenticated = authManager.hasApiKey(apiKey);
-        request.putContext(AUTH_CONTEXT, hasAuthenticated ? AuthContext.ordinal(apiKey) : AuthContext.notAuthenticated());
+        request.putContext(AUTH_CONTEXT, hasAuthenticated ? AuthContext.ordinary(apiKey) : AuthContext.notAuthenticated());
         return hasAuthenticated;
     }
 
+    /**
+     * Authenticate by the master or the ordinary api key.
+     * <p>
+     * Would try to authenticate by the ordinary api key only if do not authenticate successfully by the master api key.
+     *
+     * @param request the http request
+     * @return {@code true} if authenticate successfully by any of choices,
+     * or {@code false} if do not authenticate by neither the master nor the ordinary api keys
+     */
     public boolean authenticate(HttpServerRequest request) {
         if (authenticateMaster(request)) {
             return true;
@@ -51,7 +80,7 @@ public class AuthProvider {
         switch (context.getAuthenticationType()) {
             case MASTER:
                 return AuthResult.ok();
-            case ORDINAL:
+            case ORDINARY:
                 return authManager.authManage(context.getApiKey(), name);
             default:
                 return AuthResult.unknown();
@@ -66,7 +95,7 @@ public class AuthProvider {
         switch (context.getAuthenticationType()) {
             case MASTER:
                 return AuthResult.ok();
-            case ORDINAL:
+            case ORDINARY:
                 return authManager.authRead(context.getApiKey(), name);
             default:
                 return AuthResult.unknown();
@@ -81,7 +110,7 @@ public class AuthProvider {
         switch (context.getAuthenticationType()) {
             case MASTER:
                 return AuthResult.ok();
-            case ORDINAL:
+            case ORDINARY:
                 return authManager.authWrite(context.getApiKey(), name);
             default:
                 return AuthResult.unknown();
