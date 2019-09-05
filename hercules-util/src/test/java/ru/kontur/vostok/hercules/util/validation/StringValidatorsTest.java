@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Petr Demenev
@@ -32,5 +33,14 @@ public class StringValidatorsTest {
                         + "but was 'this_testing_string_contains_forty_nine_symbols__'",
                 validator.validate("this_testing_string_contains_forty_nine_symbols__").error());
 
+    }
+
+    @Test
+    public void shouldAcceptNonNullValuesOnly() {
+        Validator<String> validator = Validators.notNull();
+
+        assertTrue(validator.validate(null).isError());
+        assertTrue(validator.validate("").isOk());
+        assertTrue(validator.validate("string").isOk());
     }
 }

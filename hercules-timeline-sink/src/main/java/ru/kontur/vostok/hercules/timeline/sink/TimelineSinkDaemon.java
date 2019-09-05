@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.cassandra.util.Slicer;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -60,6 +60,8 @@ public class TimelineSinkDaemon {
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
         Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
+        Properties senderProperties = PropertiesUtil.ofScope(sinkProperties, Scopes.SENDER);
+
         ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
 
         //TODO: Validate sinkProperties
@@ -92,7 +94,7 @@ public class TimelineSinkDaemon {
                             ShardingKey.fromKeyPaths(timeline.getShardingKey()),
                             timeline.getSlices());
 
-            sender = new TimelineSender(timeline, slicer, properties, metricsCollector);
+            sender = new TimelineSender(timeline, slicer, senderProperties, metricsCollector);
             sender.start();
 
             int poolSize = Props.POOL_SIZE.extract(sinkProperties);

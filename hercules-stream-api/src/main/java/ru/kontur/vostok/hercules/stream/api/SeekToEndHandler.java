@@ -1,22 +1,25 @@
 package ru.kontur.vostok.hercules.stream.api;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.Headers;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -35,76 +38,86 @@ public class SeekToEndHandler implements HttpHandler {
 
     private static final StreamReadStateWriter CONTENT_WRITER = new StreamReadStateWriter();
 
-    private static final String PARAM_STREAM = "stream";
-    private static final String PARAM_SHARD_INDEX = "shardIndex";
-    private static final String PARAM_SHARD_COUNT = "shardCount";
-
     private final AuthManager authManager;
-    private final StreamRepository repository;
+    private final StreamRepository streamRepository;
     private final ConsumerPool<Void, byte[]> consumerPool;
 
     public SeekToEndHandler(AuthManager authManager, StreamRepository repository, ConsumerPool<Void, byte[]> consumerPool) {
         this.authManager = authManager;
-        this.repository = repository;
+        this.streamRepository = repository;
         this.consumerPool = consumerPool;
     }
 
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) {
-        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!optionalApiKey.isPresent()) {
-            ResponseUtil.unauthorized(exchange);
+    public void handle(HttpServerRequest request) {
+        String apiKey = request.getHeader("apiKey");
+        if (StringUtil.isNullOrEmpty(apiKey)) {
+            request.complete(HttpStatusCodes.UNAUTHORIZED);
             return;
         }
 
-        Optional<String> optionalStreamName = ExchangeUtil.extractQueryParam(exchange, PARAM_STREAM);
-        if (!optionalStreamName.isPresent()) {
-            ResponseUtil.badRequest(exchange, "Missing stream name");
+        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        if (!streamName.isOk()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.STREAM.name() + " error: " + streamName.result().error());
             return;
         }
 
-        String apiKey = optionalApiKey.get();
-        String streamName = optionalStreamName.get();
-
-        AuthResult authResult = authManager.authRead(apiKey, streamName);
+        AuthResult authResult = authManager.authRead(apiKey, streamName.get());
 
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
-                ResponseUtil.unauthorized(exchange);
+                request.complete(HttpStatusCodes.UNAUTHORIZED);
                 return;
             }
-            ResponseUtil.forbidden(exchange);
+            request.complete(HttpStatusCodes.FORBIDDEN);
             return;
         }
 
-        Optional<Integer> optionalShardIndex = ExchangeUtil.extractIntegerQueryParam(exchange, PARAM_SHARD_INDEX);
-        if (!optionalShardIndex.isPresent() || optionalShardIndex.get() < 0) {
-            ResponseUtil.badRequest(exchange, "Missing or invalid " + PARAM_SHARD_INDEX);
+        ParameterValue<Integer> shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
+        if (!shardIndex.isOk()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.SHARD_INDEX.name() + " error: " + shardIndex.result().error());
             return;
         }
 
-        Optional<Integer> optionalShardCount = ExchangeUtil.extractIntegerQueryParam(exchange, PARAM_SHARD_COUNT);
-        if (!optionalShardCount.isPresent() || optionalShardCount.get() < 1) {
-            ResponseUtil.badRequest(exchange, "Missing or invalid " + PARAM_SHARD_COUNT);
+        ParameterValue<Integer> shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
+        if (!shardCount.isOk()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.SHARD_COUNT.name() + " error: " + shardCount.result().error());
             return;
         }
 
-        if (optionalShardCount.get() <= optionalShardIndex.get()) {
-            ResponseUtil.badRequest(exchange, "Invalid parameters: " + PARAM_SHARD_COUNT + " must be > " + PARAM_SHARD_INDEX);
+        if (shardCount.get() <= shardIndex.get()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Invalid parameters: " + QueryParameters.SHARD_COUNT.name() + " must be > " + QueryParameters.SHARD_INDEX.name());
             return;
         }
 
-        Optional<Stream> stream;
+        Stream stream;
         try {
-            stream = repository.read(streamName);
-        } catch (Exception ex) {
-            LOGGER.error("Cannot read stream due to exception", ex);
-            ResponseUtil.internalServerError(exchange);
+            Optional<Stream> optionalStream = streamRepository.read(streamName.get());
+            if (!optionalStream.isPresent()) {
+                request.complete(HttpStatusCodes.NOT_FOUND);
+                return;
+            }
+            stream = optionalStream.get();
+        } catch (CuratorException ex) {
+            LOGGER.error("Curator exception when read Stream", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
-        }
-        if (!stream.isPresent()) {
-            ResponseUtil.notFound(exchange);
+        } catch (DeserializationException ex) {
+            LOGGER.error("Deserialization exception of Stream", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -114,23 +127,23 @@ public class SeekToEndHandler implements HttpHandler {
 
             List<TopicPartition> partitions = Arrays.stream(
                     LogicalPartitioner.getPartitionsForLogicalSharding(
-                            stream.get(),
-                            optionalShardIndex.get(),
-                            optionalShardCount.get())).
-                    mapToObj(partition -> new TopicPartition(streamName, partition)).
+                            stream,
+                            shardIndex.get(),
+                            shardCount.get())).
+                    mapToObj(partition -> new TopicPartition(stream.getName(), partition)).
                     collect(Collectors.toList());
             Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
 
-            exchange.getResponseHeaders().add(Headers.CONTENT_TYPE, MimeTypes.APPLICATION_OCTET_STREAM);
+            request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Encoder encoder = new Encoder(outputStream);
-            CONTENT_WRITER.write(encoder, StreamReadStateUtil.stateFromMap(streamName, endOffsets));
+            CONTENT_WRITER.write(encoder, StreamReadStateUtil.stateFromMap(stream.getName(), endOffsets));
 
-            exchange.getResponseSender().send(ByteBuffer.wrap(outputStream.toByteArray()));
+            request.getResponse().send(ByteBuffer.wrap(outputStream.toByteArray()));
         } catch (Exception ex) {
             LOGGER.error("Error on processing request", ex);
-            ResponseUtil.internalServerError(exchange);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
         } finally {
             if (consumer != null) {
                 consumerPool.release(consumer);

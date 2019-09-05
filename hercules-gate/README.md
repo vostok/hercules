@@ -158,6 +158,8 @@ See Producer's Config from Apache Kafka documentation. Main settings are present
 
 `producer.retry.backoff.ms`
 
+`producer.metric.reporters`
+
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
 
@@ -223,6 +225,7 @@ producer.linger.ms=1
 producer.buffer.memory=335544320
 producer.retries=4
 producer.retry.backoff.ms=250
+producer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000

@@ -11,17 +11,23 @@ import ru.kontur.vostok.hercules.http.ReadBodyCallback;
 import ru.kontur.vostok.hercules.http.RequestCompletionListener;
 import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * @author Gregory Koshelev
  */
 public class UndertowHttpServerRequest implements HttpServerRequest {
     private final HttpServerExchange exchange;
     private final HttpServerResponse response;
+    private final ConcurrentMap<String, Object> context;
+
     private volatile HttpMethod method;
 
     public UndertowHttpServerRequest(HttpServerExchange exchange) {
         this.exchange = exchange;
         this.response = new UndertowHttpServerResponse(exchange);
+        this.context = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -84,5 +90,16 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
                 nextListener.proceed();
             }
         });
+    }
+
+    @Override
+    public <T> void putContext(String key, T obj) {
+        context.put(key, obj);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T getContext(String key) {
+        return (T) context.get(key);
     }
 }

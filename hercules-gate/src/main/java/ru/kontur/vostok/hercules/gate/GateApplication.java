@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -70,7 +70,7 @@ public class GateApplication {
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()));
+            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -164,7 +164,7 @@ public class GateApplication {
         LOGGER.info("Finished Gateway shutdown for {}  millis", System.currentTimeMillis() - start);
     }
 
-    public static HttpServer createHttpServer(Properties httpServerProperies) {
+    private static HttpServer createHttpServer(Properties httpServerProperies) {
         StreamRepository streamRepository = new StreamRepository(curatorClient);
         StreamStorage streamStorage = new StreamStorage(streamRepository, 30_000L /* TODO: for test usages; It should be moved to configuration */);
 
@@ -178,11 +178,11 @@ public class GateApplication {
                 new DefaultThrottledHttpServerRequestProcessor()
         );
 
-        long maxContentLength = HttpServer.Props.MAX_CONTENT_LENGTH.extract(httpServerProperies);
+        long maxContentLength = PropertiesUtil.get(HttpServer.Props.MAX_CONTENT_LENGTH, httpServerProperies).get();
         HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, true, maxContentLength);
         HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, false, maxContentLength);
 
-        RouteHandler handler = new InstrumentedRouteHandlerBuilder(metricsCollector).
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperies, metricsCollector).
                 post("/stream/sendAsync", sendAsyncHandler).
                 post("/stream/send", sendHandler).
                 build();

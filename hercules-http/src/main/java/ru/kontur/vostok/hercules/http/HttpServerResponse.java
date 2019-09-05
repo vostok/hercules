@@ -33,6 +33,15 @@ public interface HttpServerResponse {
     void setHeader(String header, String value);
 
     /**
+     * Set HTTP header {@code Content-Type} to the response.
+     *
+     * @param contentType the content type
+     */
+    default void setContentType(String contentType) {
+        setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+    }
+
+    /**
      * Send the data to the client. The Request is ended when done.
      *
      * @param data    the data to send

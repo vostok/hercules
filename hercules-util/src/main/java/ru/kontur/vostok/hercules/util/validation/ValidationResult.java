@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ValidationResult {
     private static final ValidationResult OK = new ValidationResult();
+    private static final ValidationResult MISSED = new ValidationResult("Value is missing");
 
     private final String errorReason;
 
@@ -48,9 +49,18 @@ public final class ValidationResult {
      * Unsuccessful validation result with error reason
      *
      * @param reason the error reason
-     * @return validation result
+     * @return unsuccessful validation result
      */
     public static ValidationResult error(@NotNull String reason) {
         return new ValidationResult(reason);
+    }
+
+    /**
+     * Unsuccessful validation result of missed value.
+     *
+     * @return unsuccessful validation result
+     */
+    public static ValidationResult missed() {
+        return MISSED;
     }
 }

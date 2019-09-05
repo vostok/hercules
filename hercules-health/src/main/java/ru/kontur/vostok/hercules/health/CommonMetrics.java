@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.health;
 
 import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -34,7 +33,7 @@ public final class CommonMetrics {
         registerThreadsMetrics(metricsCollector);
     }
 
-    public static void registerCommonMetrics(MetricsCollector metricsCollector, String ... patterns) {
+    public static void registerCommonMetrics(MetricsCollector metricsCollector, String... patterns) {
         registerMemoryMetrics(metricsCollector);
         registerSystemMetrics(metricsCollector);
         registerGarbageCollectionMetrics(metricsCollector);
@@ -73,7 +72,7 @@ public final class CommonMetrics {
         }
     }
 
-    public static void registerThreadsMetrics(MetricsCollector metricsCollector, String ... patterns) {
+    public static void registerThreadsMetrics(MetricsCollector metricsCollector, String... patterns) {
         final List<Pattern> compiledPatterns = Arrays.stream(patterns).map(Pattern::compile).collect(Collectors.toList());
 
         final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
@@ -81,15 +80,12 @@ public final class CommonMetrics {
             for (Thread.State state : Thread.State.values()) {
                 metricsCollector.gauge(
                         "threads.states." + state.name() + ".count",
-                        () -> getThreadCount(threadMXBean, state)
-                );
+                        () -> getThreadCount(threadMXBean, state));
 
                 for (Pattern pattern : compiledPatterns) {
-                    final String patternMetricName = GraphiteMetricsUtil.sanitizeMetricName(pattern.pattern());
                     metricsCollector.gauge(
-                            "threads.pattern." + patternMetricName + ".state." + state.name() + ".count",
-                            () -> getThreadCount(threadMXBean, pattern, state)
-                    );
+                            "threads.pattern." + MetricsUtil.sanitizeMetricName(pattern.pattern()) + ".state." + state.name() + ".count",
+                            () -> getThreadCount(threadMXBean, pattern, state));
                 }
             }
         }

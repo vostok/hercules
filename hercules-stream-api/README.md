@@ -158,14 +158,17 @@ ResponseBody    State
 ## Settings
 Application is configured through properties file.
 
-### Kafka Consumer settings
-See Consumer's Config from Apache Kafka documentation. Main settings are presented below.
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
 
-`consumer.bootstrap.servers` - see KafkaConsumer's `bootstrap.servers` property. Required.
+`application.port` - server port, default value: `8080`
 
-`consumer.max.poll.records` - see KafkaConsumer's `max.poll.records` property. Default value: `10000`.
+### Application context settings
+`context.environment` - id of environment
 
-`consumer.poolSize` - consumers pool size. Default value: `4`.
+`context.zone` - id of zone
+
+`context.instance.id` - id of instance
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -182,7 +185,6 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 
 `curator.retryPolicy.maxSleepTime` - default value: `8000`
 
-
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance to which metrics are sent, default value: `localhost`
 
@@ -192,17 +194,26 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
+### Kafka Consumer settings
+See Consumer's Config from Apache Kafka documentation. Main settings are presented below.
+
+`consumer.bootstrap.servers` - see KafkaConsumer's `bootstrap.servers` property. Required.
+
+`consumer.max.poll.records` - see KafkaConsumer's `max.poll.records` property. Default value: `10000`.
+
+`consumer.poolSize` - consumers pool size. Default value: `4`.
+
+`consumer.metric.reporters` - a list of classes to use as metrics reporters
+
 ### Http Server settings
-`http.server.host` - server host, default value: `0.0.0.0`
+`http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
-`http.server.port` - server port, default value: `6307`
+`http.server.workerThreads` - the number of worker threads. Worker threads are used to process long running requests and perform blocking tasks. Default value is implementation specific.
 
-### Application context settings
-`context.instance.id` - id of instance
+`http.server.rootPath` - base url, default value: `/`
 
-`context.environment` - id of environment
-
-`context.zone` - id of zone
+### Stream API settings
+`stream.api.reader.readTimeoutMs` - time to read from Kafka in millis, default value: `1000`.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-stream-api.jar application.properties=file://path/to/file/application.properties`
@@ -218,9 +229,12 @@ Stream Api uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should
 
 ### `application.properties` sample:
 ```properties
-consumer.bootstrap.servers=localhost:9092
-consumer.max.poll.records=10000
-consumer.poolSize=16
+application.host=0.0.0.0
+application.port=6307
+
+context.environment=dev
+context.zone=default
+context.instance.id=1
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000
@@ -229,15 +243,19 @@ curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
 
-http.server.host=0.0.0.0
-http.server.port=6307
-
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-context.instance.id=1
-context.environment=dev
-context.zone=default
+consumer.bootstrap.servers=localhost:9092
+consumer.max.poll.records=10000
+consumer.poolSize=16
+consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
+
+http.server.ioThreads=8
+http.server.workerThreads=32
+http.server.rootPath=/
+
+stream.api.reader.readTimeoutMs=1000
 ```

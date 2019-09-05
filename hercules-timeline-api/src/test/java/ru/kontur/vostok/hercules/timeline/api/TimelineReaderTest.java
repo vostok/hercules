@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
@@ -16,11 +17,11 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,7 +71,7 @@ public class TimelineReaderTest {
 
         when(session.execute(any(SimpleStatement.class))).thenReturn(resultSet);
 
-        timelineReader = new TimelineReader(connector);
+        timelineReader = new TimelineReader(new Properties(), connector, mock(MetricsCollector.class));
     }
 
     @Test
