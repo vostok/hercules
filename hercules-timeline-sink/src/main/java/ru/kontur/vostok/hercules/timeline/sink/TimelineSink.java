@@ -4,6 +4,8 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
+import ru.kontur.vostok.hercules.partitioner.ShardingKey;
+import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.sink.Sink;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 
@@ -42,7 +44,9 @@ public class TimelineSink extends Sink {
         for (Filter filter : filters) {
             tags.add(filter.getHPath().getRootTag());//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
         }
-        tags.addAll(Arrays.asList(timeline.getShardingKey()));
+        Arrays.stream(ShardingKey.fromKeyPaths(timeline.getShardingKey()).getKeys()).
+                map(HPath::getRootTag).
+                forEach(tags::add);//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
 
         return EventDeserializer.parseTags(tags);
     }

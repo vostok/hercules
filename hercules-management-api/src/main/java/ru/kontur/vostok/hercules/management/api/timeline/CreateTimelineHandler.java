@@ -2,20 +2,20 @@ package ru.kontur.vostok.hercules.management.api.timeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
+import ru.kontur.vostok.hercules.management.api.auth.AuthProvider;
 import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskType;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -28,14 +28,14 @@ public class CreateTimelineHandler implements HttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateTimelineHandler.class);
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final TaskQueue<TimelineTask> taskQueue;
     private final TimelineRepository repository;
 
     private final ObjectReader deserializer;
 
-    public CreateTimelineHandler(AuthManager authManager, TaskQueue<TimelineTask> taskQueue, TimelineRepository repository) {
-        this.authManager = authManager;
+    public CreateTimelineHandler(AuthProvider authProvider, TaskQueue<TimelineTask> taskQueue, TimelineRepository repository) {
+        this.authProvider = authProvider;
         this.taskQueue = taskQueue;
         this.repository = repository;
 
@@ -44,48 +44,41 @@ public class CreateTimelineHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) {
-        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!optionalApiKey.isPresent()) {
-            ResponseUtil.unauthorized(exchange);
-            return;
-        }
-
-        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(exchange);
+    public void handle(HttpServerRequest request) {
+        Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
-            ResponseUtil.lengthRequired(exchange);
+            request.complete(HttpStatusCodes.LENGTH_REQUIRED);
             return;
         }
 
-        final String apiKey = optionalApiKey.get();
-        exchange.getRequestReceiver().receiveFullBytes((exch, bytes) -> {
+        request.readBodyAsync((r, bytes) -> {
             try {
                 Timeline timeline = deserializer.readValue(bytes);
 
-                AuthResult authResult = authManager.authManage(apiKey, timeline.getName());
+                AuthResult authResult = authProvider.authManage(r, timeline.getName());
                 if (!authResult.isSuccess()) {
                     if (authResult.isUnknown()) {
-                        ResponseUtil.unauthorized(exch);
+                        r.complete(HttpStatusCodes.UNAUTHORIZED);
                         return;
                     }
-                    ResponseUtil.forbidden(exch);
+                    r.complete(HttpStatusCodes.FORBIDDEN);
                     return;
                 }
 
                 if (repository.exists(timeline.getName())) {
-                    ResponseUtil.conflict(exch);
+                    r.complete(HttpStatusCodes.CONFLICT);
                     return;
                 }
 
                 String[] streams = timeline.getStreams();
                 if (streams == null || streams.length == 0) {
-                    ResponseUtil.badRequest(exch);
+                    r.complete(HttpStatusCodes.BAD_REQUEST);
                     return;
                 }
                 for (String stream : streams) {
-                    authResult = authManager.authRead(apiKey, stream);
+                    authResult = authProvider.authRead(r, stream);
                     if (!authResult.isSuccess()) {
-                        ResponseUtil.forbidden(exch);
+                        r.complete(HttpStatusCodes.FORBIDDEN);
                         return;
                     }
                 }
@@ -96,32 +89,19 @@ public class CreateTimelineHandler implements HttpHandler {
                                 timeline.getName(),
                                 10_000L,//TODO: Move to properties
                                 TimeUnit.MILLISECONDS);
-                if (taskFuture.isFailed()) {
-                    ResponseUtil.internalServerError(exch);
-                    return;
-                }
-
-                if (!ExchangeUtil.extractQueryParam(exch, "async").isPresent()) {
-                    taskFuture.await();
-                    if (taskFuture.isDone()) {
-                        ResponseUtil.ok(exch);
-                        return;
-                    }
-                    ResponseUtil.requestTimeout(exch);
-                    return;
-                }
-                ResponseUtil.ok(exch);
-            } catch (IOException e) {
-                LOGGER.error("Error on performing request", e);
-                ResponseUtil.badRequest(exch);
+                HttpAsyncApiHelper.awaitAndComplete(taskFuture, request);
+            } catch (IOException ex) {
+                LOGGER.warn("Error on processing request", ex);
+                r.complete(HttpStatusCodes.BAD_REQUEST);
                 return;
-            } catch (Exception e) {
-                LOGGER.error("Error on performing request", e);
-                ResponseUtil.internalServerError(exch);
+            } catch (Exception ex) {
+                LOGGER.error("Error on processing request", ex);
+                r.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
                 return;
             }
-        }, (exch, exception) -> {
-            ResponseUtil.badRequest(exch);
+        }, (r, exception) -> {
+            LOGGER.error("Error on processing request", exception);
+            r.complete(HttpStatusCodes.BAD_REQUEST);
             return;
         });
     }

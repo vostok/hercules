@@ -70,7 +70,7 @@ public class GateApplication {
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()));
+            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

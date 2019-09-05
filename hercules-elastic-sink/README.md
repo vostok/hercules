@@ -19,6 +19,8 @@ Application is configured through properties file.
 
 `sink.consumer.max.poll.interval.ms` - time, after which Apache Kafka will exclude the consumer from group if it doesn't poll or commit
 
+`sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
+
 `sink.sender.elastic.hosts` - list of elastic hosts
 
 `sink.sender.elastic.retryTimeoutMs` - backoff timeout to retry send to elastic, default value: `30000`
@@ -101,8 +103,8 @@ sink.pattern=logs_*
 
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.max.partition.fetch.bytes=52428800
-
 sink.consumer.max.poll.interval.ms=370000
+sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 sink.sender.elastic.hosts=localhost:9201
 

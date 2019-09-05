@@ -19,7 +19,7 @@ public class EventBuilder {
     private long timestamp;
     private UUID random;
     private int version;
-    ContainerBuilder containerBuilder = ContainerBuilder.create();
+    private ContainerBuilder containerBuilder = ContainerBuilder.create();
 
     private boolean wasBuild = false;
 
@@ -30,67 +30,42 @@ public class EventBuilder {
     public EventBuilder() {
     }
 
-    /**
-     * @deprecated Use timestamp instead
-     */
-    @Deprecated
-    public EventBuilder setTimestamp(long timestamp) {
-        return timestamp(timestamp);
-    }
-
-    /**
-     * @deprecated Use random instead
-     */
-    @Deprecated
-    public EventBuilder setRandom(UUID random) {
-        return random(random);
-    }
-
-   /**
-     * @deprecated Use version instead
-     */
-    @Deprecated
-    public EventBuilder setVersion(int version) {
-        return version(version);
-    }
-
     public EventBuilder timestamp(long timestamp) {
+        if (wasBuild) {
+            throw new IllegalStateException("Builder already used");
+        }
         this.timestamp = timestamp;
         return this;
     }
 
     public EventBuilder random(UUID random) {
+        if (wasBuild) {
+            throw new IllegalStateException("Builder already used");
+        }
         this.random = random;
         return this;
     }
 
     public EventBuilder version(int version) {
+        if (wasBuild) {
+            throw new IllegalStateException("Builder already used");
+        }
         this.version = version;
         return this;
     }
 
-    /**
-     * @deprecated use tag instead
-     */
-    @Deprecated
-    public EventBuilder setTag(String key, Variant value) {
-        return tag(key, value);
-    }
-
-    /**
-     * @deprecated use tag instead
-     */
-    @Deprecated
-    public <T> EventBuilder setTag(TagDescription<T> tag, Variant value) {
-        return tag(tag, value);
-    }
-
     public EventBuilder tag(String key, Variant value) {
+        if (wasBuild) {
+            throw new IllegalStateException("Builder already used");
+        }
         this.containerBuilder.tag(key, value);
         return this;
     }
 
     public <T> EventBuilder tag(TagDescription<T> tag, Variant value) {
+        if (wasBuild) {
+            throw new IllegalStateException("Builder already used");
+        }
         this.containerBuilder.tag(tag, value);
         return this;
     }

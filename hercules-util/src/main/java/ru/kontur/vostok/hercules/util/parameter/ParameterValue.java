@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.util.parameter;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
 /**
@@ -11,7 +12,7 @@ import ru.kontur.vostok.hercules.util.validation.ValidationResult;
  */
 public class ParameterValue<T> {
     private static final ParameterValue<?> EMPTY = new ParameterValue<>(null, ValidationResult.ok());
-    private static final ParameterValue<?> NULL = new ParameterValue<>(null, ValidationResult.notPresent());
+    private static final ParameterValue<?> MISSED = new ParameterValue<>(null, ValidationResult.missed());
 
     private final T value;
     private final ValidationResult result;
@@ -28,6 +29,7 @@ public class ParameterValue<T> {
      * @throws IllegalStateException if value is empty
      * @throws IllegalStateException if value is invalid
      */
+    @NotNull
     public T get() {
         if (isEmpty()) {
             throw new IllegalStateException("Is empty");
@@ -41,13 +43,14 @@ public class ParameterValue<T> {
     }
 
     /**
-     * Returns value if it exists or {@code other} if {@link ParameterValue#isEmpty()}. Otherwise throws exception.
+     * Returns non null value if it exists or {@code other} if {@link ParameterValue#isEmpty()}. Otherwise throws exception.
      *
      * @param other the other value to return if {@link ParameterValue#isEmpty()}
      * @return the value of type {@link T}
      * @throws IllegalStateException if value is invalid
      */
-    public T orEmpty(T other) {
+    @Nullable
+    public T orEmpty(@Nullable T other) {
         if (isEmpty()) {
             return other;
         }
@@ -80,7 +83,7 @@ public class ParameterValue<T> {
     /**
      * Returns {@code true} if value is invalid.
      *
-     * @return {@code true} if value is invalid.
+     * @return {@code true} if value is invalid
      */
     public boolean isError() {
         return result.isError();
@@ -89,7 +92,7 @@ public class ParameterValue<T> {
     /**
      * Returns {@code true} if value is empty and it is acceptable.
      *
-     * @return {@code true} if value is empty and it is acceptable.
+     * @return {@code true} if value is empty and it is acceptable
      */
     public boolean isEmpty() {
         return this == EMPTY;
@@ -140,13 +143,13 @@ public class ParameterValue<T> {
     }
 
     /**
-     * Returns invalid null parameter's value.
+     * Returns missed parameter's value.
      *
      * @param <T> the value type
      * @return invalid parameter's value
      */
     @SuppressWarnings("unchecked")
-    public static <T> ParameterValue<T> ofNull() {
-        return (ParameterValue<T>) NULL;
+    public static <T> ParameterValue<T> missed() {
+        return (ParameterValue<T>) MISSED;
     }
 }

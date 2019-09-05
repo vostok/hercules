@@ -1,10 +1,13 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.dsn.InvalidDsnException;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
@@ -21,6 +24,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -34,9 +38,14 @@ import static org.mockito.Mockito.when;
 public class SentrySyncProcessorTest {
 
     private SentryClientHolder sentryClientHolderMock = mock(SentryClientHolder.class);
-    private SentrySyncProcessor sentrySyncProcessor = new SentrySyncProcessor(new Properties(), sentryClientHolderMock);
     private SentryClient sentryClientMock = mock(SentryClient.class);
 
+    private static MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
+
+    private SentrySyncProcessor sentrySyncProcessor = new SentrySyncProcessor(
+            new Properties(),
+            sentryClientHolderMock,
+            metricsCollectorMock);
     private static UUID someUuid = UUID.randomUUID();
     private static final String MY_PROJECT = "my-project";
     private static final String MY_ORGANIZATION = "my-organization";
@@ -56,6 +65,8 @@ public class SentrySyncProcessorTest {
         properties.setProperty("environment", MY_ENVIRONMENT);
         properties.setProperty("zone", "1");
         ApplicationContextHolder.init("appName", "appId", properties);
+        when(metricsCollectorMock.meter(anyString())).thenReturn(new Meter());
+        when(metricsCollectorMock.timer(anyString())).thenReturn(new Timer());
     }
 
     @Test
@@ -129,7 +140,7 @@ public class SentrySyncProcessorTest {
     @Test(expected = BackendServiceFailedException.class)
     public void shouldThrowExceptionWhenHappensRetryableErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo(404)));
+                .thenReturn(Result.error(new ErrorInfo("NOT_FOUND", 404)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
@@ -138,7 +149,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldRetryWhenHappensRetryableErrorOfApiClient() {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo(404)));
+                .thenReturn(Result.error(new ErrorInfo("NOT_FOUND", 404)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
@@ -152,7 +163,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldReturnFalseWhenHappensNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo(400)));
+                .thenReturn(Result.error(new ErrorInfo("BAD_REQUEST", 400)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         boolean result = sentrySyncProcessor.process(EVENT);
 
@@ -162,7 +173,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldNotRetryWhenHappensNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo(400)));
+                .thenReturn(Result.error(new ErrorInfo("BAD_REQUEST", 400)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         sentrySyncProcessor.process(EVENT);
 
@@ -172,7 +183,7 @@ public class SentrySyncProcessorTest {
     @Test(expected = BackendServiceFailedException.class)
     public void shouldThrowExceptionWhenHappensOtherErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo(402)));
+                .thenReturn(Result.error(new ErrorInfo("FORBIDDEN", 403)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
@@ -181,7 +192,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldNotRetryWhenHappensOtherErrorOfApiClient() {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo(402)));
+                .thenReturn(Result.error(new ErrorInfo("FORBIDDEN", 403)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {

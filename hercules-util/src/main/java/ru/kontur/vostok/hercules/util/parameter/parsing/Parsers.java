@@ -11,6 +11,8 @@ import java.util.function.Function;
  * @author Gregory Koshelev
  */
 public final class Parsers {
+    private static String ELEMENT_DELIMITER = ",";
+
     /**
      * Boolean parser.
      * <p>
@@ -101,6 +103,20 @@ public final class Parsers {
                 return ParameterValue.empty();
             }
             return ParameterValue.of(s);
+        };
+    }
+
+    /**
+     * String array parser.
+     *
+     * @return string array parser
+     */
+    public static Parser<String[]> forStringArray() {
+        return s -> {
+            if (StringUtil.isNullOrEmpty(s)) {
+                return ParameterValue.empty();
+            }
+            return ParameterValue.of(s.split(ELEMENT_DELIMITER));
         };
     }
 

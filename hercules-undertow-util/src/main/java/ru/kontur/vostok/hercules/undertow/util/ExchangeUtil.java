@@ -10,6 +10,7 @@ import java.util.Optional;
 /**
  * @author Gregory Koshelev
  */
+@Deprecated
 public class ExchangeUtil {
     public static Optional<Integer> extractContentLength(HttpServerExchange exchange) {
         HeaderValues header = exchange.getRequestHeaders().get(HttpHeaders.CONTENT_LENGTH);
