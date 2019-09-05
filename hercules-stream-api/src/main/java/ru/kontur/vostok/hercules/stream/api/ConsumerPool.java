@@ -54,7 +54,7 @@ public class ConsumerPool<K, V> {
         bootstrapServers = PropertiesUtil.get(Props.BOOTSTRAP_SERVERS, properties).get();
         maxPollRecords = PropertiesUtil.get(Props.MAX_POLL_RECORDS, properties).get();
         poolSize = PropertiesUtil.get(Props.POOL_SIZE, properties).get();
-        metricReporterClasses = PropertiesUtil.get(Props.METRIC_REPORTERS, properties).orEmpty(null);
+        metricReporterClasses = PropertiesUtil.get(Props.METRIC_REPORTERS, properties).get();
 
         consumers = new ArrayBlockingQueue<>(poolSize);
     }
@@ -134,6 +134,8 @@ public class ConsumerPool<K, V> {
                         build();
 
         static final Parameter<String> METRIC_REPORTERS =
-                Parameter.stringParameter("metric.reporters").build();
+                Parameter.stringParameter("metric.reporters").
+                        withDefault("").
+                        build();
     }
 }
