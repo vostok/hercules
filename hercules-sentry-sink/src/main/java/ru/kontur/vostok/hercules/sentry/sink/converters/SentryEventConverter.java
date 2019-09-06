@@ -2,25 +2,36 @@ package ru.kontur.vostok.hercules.sentry.sink.converters;
 
 import io.sentry.event.EventBuilder;
 import io.sentry.event.Sdk;
+import io.sentry.event.User;
+import io.sentry.event.UserBuilder;
 import io.sentry.event.interfaces.ExceptionInterface;
 import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.SentryStackTraceElement;
+import io.sentry.event.interfaces.UserInterface;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.tags.SentryTags;
+import ru.kontur.vostok.hercules.tags.UserTags;
 import ru.kontur.vostok.hercules.util.Lazy;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,14 +56,21 @@ public class SentryEventConverter {
             SentryTags.TRACE_ID_TAG,
             SentryTags.FINGERPRINT_TAG,
             SentryTags.PLATFORM_TAG,
-            SentryTags.LOGGER_TAG,
-            SentryTags.USER_TAG,
-            SentryTags.CONTEXTS_TAG,
-            SentryTags.EXTRA_TAG)
+            SentryTags.LOGGER_TAG)
             .map(TagDescription::getName).collect(Collectors.toSet());
+
+    private static final Set<String> STANDARD_CONTEXTS = Stream.of(
+            "os",
+            "browser",
+            "runtime",
+            "device",
+            "app",
+            "gpu")
+            .collect(Collectors.toSet());
 
     private static final String HIDING_SERVER_NAME = " ";
     private static final String DEFAULT_PLATFORM = "";
+    private static final String DELIMITER = ".";
 
     public static io.sentry.event.Event convert(Event logEvent) {
 
@@ -102,16 +120,7 @@ public class SentryEventConverter {
             ContainerUtil.extract(properties, SentryTags.LOGGER_TAG)
                     .ifPresent(eventBuilder::withLogger);
 
-            ContainerUtil.extract(properties, SentryTags.USER_TAG)
-                    .ifPresent(user -> eventBuilder.withSentryInterface(SentryUserConverter.convert(user)));
-
-            ContainerUtil.extract(properties, SentryTags.CONTEXTS_TAG)
-                    .ifPresent(contexts -> eventBuilder.withContexts(SentryContextsConverter.convert(contexts)));
-
-            writeTags(eventBuilder, properties);
-
-            ContainerUtil.extract(properties, SentryTags.EXTRA_TAG)
-                    .ifPresent(extra -> writeExtraData(eventBuilder, extra));
+            writeOtherTags(properties, eventBuilder);
         });
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
@@ -120,22 +129,120 @@ public class SentryEventConverter {
         return sentryEvent;
     }
 
-    private static void writeTags(EventBuilder eventBuilder, final Container properties) {
-        Map<String, Object> map = ContainerUtil.toObjectMap(properties, STANDARD_PROPERTIES);
-        for (Map.Entry<String, Object> pair : map.entrySet()) {
-            if (pair.getValue() != null) {
-                eventBuilder.withTag(pair.getKey(), pair.getValue().toString());
-            } else {
-                eventBuilder.withTag(pair.getKey(), "null");
+    private static void writeOtherTags(final Container properties, EventBuilder eventBuilder) {
+        UserBuilder userBuilder = new UserBuilder();
+        Map<String, Object> otherUserDataMap = new HashMap<>();
+        Map<String, Map<String, Object>> contexts = new HashMap<>();
+
+        for (Map.Entry<String, Variant> tagValuePair : properties) {
+            final String tagName = tagValuePair.getKey();
+            final Variant value = tagValuePair.getValue();
+
+            if (STANDARD_PROPERTIES.contains(tagName)) {
+                continue;
             }
 
+            Optional<String> userFieldOptional = cutOffPrefixIfExists("user", tagName);
+            if (userFieldOptional.isPresent()) {
+                String userField = userFieldOptional.get();
+                if (userField.equals(UserTags.ID_TAG.getName()) && value.getType() == Type.STRING) {
+                    userBuilder.setId(extractString(value));
+                } else if (userField.equals(UserTags.IP_ADDRESS_TAG.getName()) && value.getType() == Type.STRING) {
+                    userBuilder.setIpAddress(extractString(value));
+                } else if (userField.equals(UserTags.USERNAME_TAG.getName()) && value.getType() == Type.STRING) {
+                    userBuilder.setUsername(extractString(value));
+                } else if (userField.equals(UserTags.EMAIL_TAG.getName()) && value.getType() == Type.STRING) {
+                    userBuilder.setEmail(extractString(value));
+                } else {
+                    otherUserDataMap.put(userField, extract(value));
+                }
+                continue;
+            }
+
+            boolean valueIsContext = false;
+            for (String contextName : STANDARD_CONTEXTS) {
+                Optional<String> contextFieldOptional = cutOffPrefixIfExists(contextName, tagName);
+                if (contextFieldOptional.isPresent()) {
+                    String contextField = contextFieldOptional.get();
+                    if (!contexts.containsKey(contextName)) {
+                        contexts.put(contextName, new HashMap<>());
+                    }
+                    contexts.get(contextName).put(contextField, extract(value));
+                    valueIsContext = true;
+                    break;
+                }
+            }
+            if (valueIsContext) {
+                continue;
+            }
+
+            if (value.getType() == Type.STRING) {
+                eventBuilder.withTag(tagName, extractString(value));
+                continue;
+            }
+
+            eventBuilder.withExtra(tagName, extract(value));
+        }
+
+        User user = userBuilder.setData(otherUserDataMap).build();
+        eventBuilder.withSentryInterface(new UserInterface(
+                user.getId(),
+                user.getUsername(),
+                user.getIpAddress(),
+                user.getEmail(),
+                user.getData()));
+        eventBuilder.withContexts(contexts);
+    }
+
+
+    private static Optional<String> cutOffPrefixIfExists(String prefix, String sourceName) {
+        final String prefixWithDelimiter = prefix + DELIMITER;
+        if (sourceName.length() <= prefixWithDelimiter.length()) {
+            return Optional.empty();
+        }
+        if (!sourceName.substring(0, prefixWithDelimiter.length()).equals(prefixWithDelimiter)) {
+            return Optional.empty();
+        }
+        return Optional.of(sourceName.substring(prefixWithDelimiter.length()));
+    }
+
+    private static String extractString(Variant variant) {
+        if (variant.getType() == Type.STRING) {
+            return new String((byte[]) variant.getValue(), StandardCharsets.UTF_8);
+        } else {
+            throw new IllegalArgumentException();
         }
     }
 
-    private static void writeExtraData(EventBuilder eventBuilder, final Container extra) {
-        Map<String, Object> map = ContainerUtil.toObjectMap(extra);
-        for (Map.Entry<String, Object> pair : map.entrySet()) {
-            eventBuilder.withExtra(pair.getKey(), pair.getValue());
+    private static Object extract(Variant variant) {
+        switch (variant.getType()) {
+            case BYTE:
+            case SHORT:
+            case INTEGER:
+            case LONG:
+            case FLAG:
+            case FLOAT:
+            case DOUBLE:
+            case UUID:
+                return variant.getValue();
+            case STRING:
+                return new String((byte[]) variant.getValue(), StandardCharsets.UTF_8);
+            case CONTAINER:
+                Map<String, Object> map = new HashMap<>();
+                for (Map.Entry<String, Variant> entry : (Container) variant.getValue()) {
+                    map.put(entry.getKey(), extract(entry.getValue()));
+                }
+                return map;
+            case VECTOR:
+                Vector vector = (Vector) variant.getValue();
+                Object[] objects = (Object[]) vector.getValue();
+                List<Object> resultList = new ArrayList<>();
+                for (Object object : objects) {
+                    resultList.add(extract(new Variant(vector.getType(), object)));
+                }
+                return resultList;
+            default:
+                return "null";
         }
     }
 

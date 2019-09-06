@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.tags;
 
-import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 
@@ -45,27 +44,6 @@ public class SentryTags {
      * The name of the logger which created the event
      */
     public static TagDescription<Optional<String>> LOGGER_TAG = TagDescriptionBuilder.string("logger")
-            .optional()
-            .build();
-
-    /**
-     * The information about user
-     */
-    public static TagDescription<Optional<Container>> USER_TAG = TagDescriptionBuilder.container("user")
-            .optional()
-            .build();
-
-    /**
-     * Additional context data
-     */
-    public static TagDescription<Optional<Container>> CONTEXTS_TAG = TagDescriptionBuilder.container("contexts")
-            .optional()
-            .build();
-
-    /**
-     * Additional data
-     */
-    public static TagDescription<Optional<Container>> EXTRA_TAG = TagDescriptionBuilder.container("extra")
             .optional()
             .build();
 }

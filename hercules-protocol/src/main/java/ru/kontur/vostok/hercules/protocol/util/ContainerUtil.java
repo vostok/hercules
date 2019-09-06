@@ -32,38 +32,6 @@ public class ContainerUtil {
         }
     }
 
-    /**
-     * Converts Container to Object Map
-     *
-     * @param container Container for converting
-     * @return result Object Map
-     */
-    public static Map<String, Object> toObjectMap(final Container container) {
-        return toObjectMap(container, null);
-    }
-
-    /**
-     * Converts Container to Object Map
-     *
-     * @param container Container for converting
-     * @param exclusionSet Set of string keys which should not be put to result Map
-     * @return result Object Map
-     */
-    public static Map<String, Object> toObjectMap(final Container container, @Nullable Set<String> exclusionSet) {
-        if(exclusionSet == null) {
-            exclusionSet = Collections.emptySet();
-        }
-        Map<String, Object> map = new HashMap<>();
-        for (Map.Entry<String, Variant> entry : container) {
-            String key = entry.getKey();
-            if (!exclusionSet.contains(key)) {
-                Optional<Object> valueOptional = VariantUtil.extract(entry.getValue());
-                map.put(key, valueOptional.orElse(null));
-            }
-        }
-        return map;
-    }
-
     private ContainerUtil() {
         /* static class */
     }

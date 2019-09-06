@@ -170,7 +170,7 @@ public class SentryEventConverterTest {
         Assert.assertEquals(logger, sentryEvent.getLogger());
     }
 
-    @Test
+ /*   @Test
     public void shouldSetUser() {
         final String id = "my_id";
         final String username = "my_username";
@@ -297,7 +297,7 @@ public class SentryEventConverterTest {
 
         Assert.assertEquals(stringValue, sentryEvent.getExtra().get(stringKey));
         Assert.assertEquals(intValue, ((Map) (sentryEvent.getExtra().get(containerKey))).get(intKey));
-    }
+    }*/
 
     @Test
     public void shouldNotSetUnknownPlatform() {
