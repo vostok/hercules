@@ -3,6 +3,9 @@ package ru.kontur.vostok.hercules.elastic.sink;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
+/**
+ * @author a.zhdanov
+ */
 class EventWrapper {
 
     private final Event event;

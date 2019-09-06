@@ -39,7 +39,7 @@ public class ElasticResponseHandler {
         private final int retryableErrorCount;
         private final int nonRetryableErrorCount;
         private final int unknownErrorCount;
-        private final  Map<String, ErrorInfo> errorInfoMap;
+        private final Map<String, ErrorInfo> errorInfoMap;
 
         public Result(
                 int retryableErrorCount,
@@ -69,6 +69,9 @@ public class ElasticResponseHandler {
             return retryableErrorCount + nonRetryableErrorCount + unknownErrorCount;
         }
 
+        /**
+         * @return Map of event-id -> error description
+         */
         public Map<String, ErrorInfo> getErrors() {
             return errorInfoMap;
         }
@@ -318,23 +321,23 @@ public class ElasticResponseHandler {
             //TODO: Build "caused by" trace
 
             errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
-            if (redefinedExceptions.contains(type)){
-                LOGGER.warn("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                return new ErrorInfo(ErrorType.NON_RETRYABLE, id, index, reason);
+            if (redefinedExceptions.contains(type)) {
+                LOGGER.warn("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type, reason);
+                return new ErrorInfo(ErrorType.NON_RETRYABLE, reason);
             } else if (RETRYABLE_ERRORS_CODES.contains(type)) {
-                LOGGER.warn("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                return new ErrorInfo(ErrorType.RETRYABLE, id, index, reason);
+                LOGGER.warn("Retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
+                return new ErrorInfo(ErrorType.RETRYABLE, reason);
             } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                LOGGER.warn("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                return new ErrorInfo(ErrorType.NON_RETRYABLE, id, index, reason);
+                LOGGER.warn("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
+                return new ErrorInfo(ErrorType.NON_RETRYABLE, reason);
             } else {
                 LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.UNKNOWN, id, index, reason);
+                return new ErrorInfo(ErrorType.UNKNOWN, reason);
             }
         } else {
             String errorMessage = "Error node is not object node, cannot parse";
             LOGGER.warn(errorMessage);
-            return new ErrorInfo(ErrorType.NON_RETRYABLE, id, index, errorMessage);
+            return new ErrorInfo(ErrorType.NON_RETRYABLE, errorMessage);
         }
     }
 

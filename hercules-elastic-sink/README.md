@@ -39,27 +39,24 @@ Application is configured through properties file.
 
 `sink.sender.elastic.mergePropertiesTagToRoot` - flag for moving the contents of the properties container to the root of the object, default value: `false`
 
-`sink.sender.nonRetryableResendingMode` - flag for enable resending non-retryable error, default value: `false` 
-
-### Leprosery settings (if nonRetryableResendingMode == true)
-
+`sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`
+ 
+### Leprosery settings
 `sink.sender.leprosery.stream` - stream name for writing non-retryable errors
  
 `sink.sender.leprosery.apiKey` - key for writing non-retryable errors
 
 `sink.sender.leprosery.index`- index name for writing non-retryable errors
 
-### Gate Client settings (if nonRetryableResendingMode == true)
+`sink.sender.leprosery.gate.client.urls` - list of Gate urls
 
-`sink.sender.gate.urls` - list of Gate urls
+`sink.sender.leprosery.gate.client.requestTimeout` - timeout (ms) of response from gate client, default value: 3000
 
-`sink.sender.gate.requestTimeout` - timeout (ms) of response from gate client, default value: 30000
+`sink.sender.leprosery.gate.client.connectionTimeout` - timeout (ms) of try connecting to host, if exceeded expectation then try to another host, default value: 30000
 
-`sink.sender.gate.connectionTimeout` - timeout (ms) of try connecting to host, if exceeded expectation then try to another host, default value: 30000
+`sink.sender.leprosery.gate.client.connectionCount` - count of simultaneous connections, default value: 1000
 
-`sink.sender.gate.connectionCount` - count of simultaneous connections, default value: 1000
-
-`sink.sender.gate.greyListElementsRecoveryTimeMs` - period (ms) in grey list
+`sink.sender.leprosery.gate.client.greyListElementsRecoveryTimeMs` - period (ms) in grey list
 
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
