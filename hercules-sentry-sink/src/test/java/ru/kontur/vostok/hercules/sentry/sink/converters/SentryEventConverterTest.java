@@ -18,7 +18,6 @@ import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.tags.SentryTags;
 import ru.kontur.vostok.hercules.tags.StackFrameTags;
-import ru.kontur.vostok.hercules.tags.UserTags;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.util.List;
