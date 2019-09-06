@@ -95,12 +95,8 @@ public class IndexToElasticJsonWriterTest {
     public void shouldReturnFalseIfNoSuitableTags() throws Exception {
         final Event event = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000") //TODO: fix me!
                 .build();
-
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        boolean result = IndexToElasticJsonWriter.extractIndex(event).isPresent();
-
-        assertEquals("", stream.toString());
-        assertFalse(result);
+        Optional<String> result = IndexToElasticJsonWriter.extractIndex(event);
+        assertFalse(result.isPresent());
     }
 
     private void eventProcess(ByteArrayOutputStream stream, Event event) throws IOException {

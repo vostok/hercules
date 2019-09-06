@@ -113,17 +113,16 @@ sink.sender.pingPeriodMs=60000
 sink.sender.retryOnUnknownErrors=true
 sink.sender.retryLimit=2
 sink.sender.elastic.mergePropertiesTagToRoot=true
-ink.sender.nonRetryableResendingMode=false
+sink.sender.leprosery.enable=false
 
 sink.sender.leprosery.stream=some-dlq-stream-name
 sink.sender.leprosery.apiKey=some-dlq-stream-key
 sink.sender.leprosery.index=some-dlq-index-pattern
-
-sink.sender.gate.urls=http://localhost:6306
-sink.sender.gate.requestTimeout=30000
-sink.sender.gate.connectionTimeout=5000
-sink.sender.gate.connectionCount=1000
-sink.sender.gate.greyListElementsRecoveryTimeMs=6000
+sink.sender.leprosery.gate.client.urls=http://localhost:6306
+sink.sender.leprosery.gate.client.requestTimeout=3000
+sink.sender.leprosery.gate.client.connectionTimeout=5000
+sink.sender.leprosery.gate.client.connectionCount=1000
+sink.sender.leprosery.gate.client.greyListElementsRecoveryTimeMs=6000
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
