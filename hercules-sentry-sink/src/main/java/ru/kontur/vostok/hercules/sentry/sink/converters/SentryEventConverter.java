@@ -13,13 +13,13 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
+import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.tags.SentryTags;
-import ru.kontur.vostok.hercules.tags.UserTags;
 import ru.kontur.vostok.hercules.util.Lazy;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -70,7 +70,9 @@ public class SentryEventConverter {
 
     private static final String HIDING_SERVER_NAME = " ";
     private static final String DEFAULT_PLATFORM = "";
+    private static final String HIDING_IP_ADDRESS = "0.0.0.0";
     private static final String DELIMITER = ".";
+    private static final int MAX_TEG_LENGTH = 200;
 
     public static io.sentry.event.Event convert(Event logEvent) {
 
@@ -120,7 +122,7 @@ public class SentryEventConverter {
             ContainerUtil.extract(properties, SentryTags.LOGGER_TAG)
                     .ifPresent(eventBuilder::withLogger);
 
-            writeOtherTags(properties, eventBuilder);
+            writeOtherData(properties, eventBuilder);
         });
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
@@ -129,7 +131,7 @@ public class SentryEventConverter {
         return sentryEvent;
     }
 
-    private static void writeOtherTags(final Container properties, EventBuilder eventBuilder) {
+    private static void writeOtherData(final Container properties, EventBuilder eventBuilder) {
         UserBuilder userBuilder = new UserBuilder();
         Map<String, Object> otherUserDataMap = new HashMap<>();
         Map<String, Map<String, Object>> contexts = new HashMap<>();
@@ -145,16 +147,16 @@ public class SentryEventConverter {
             Optional<String> userFieldOptional = cutOffPrefixIfExists("user", tagName);
             if (userFieldOptional.isPresent()) {
                 String userField = userFieldOptional.get();
-                if (userField.equals(UserTags.ID_TAG.getName()) && value.getType() == Type.STRING) {
+                if (userField.equals("id") && value.getType() == Type.STRING) {
                     userBuilder.setId(extractString(value));
-                } else if (userField.equals(UserTags.IP_ADDRESS_TAG.getName()) && value.getType() == Type.STRING) {
+                } else if (userField.equals("ipAddress") && value.getType() == Type.STRING) {
                     userBuilder.setIpAddress(extractString(value));
-                } else if (userField.equals(UserTags.USERNAME_TAG.getName()) && value.getType() == Type.STRING) {
+                } else if (userField.equals("username") && value.getType() == Type.STRING) {
                     userBuilder.setUsername(extractString(value));
-                } else if (userField.equals(UserTags.EMAIL_TAG.getName()) && value.getType() == Type.STRING) {
+                } else if (userField.equals("email") && value.getType() == Type.STRING) {
                     userBuilder.setEmail(extractString(value));
                 } else {
-                    otherUserDataMap.put(userField, extract(value));
+                    otherUserDataMap.put(userField, extractObject(value));
                 }
                 continue;
             }
@@ -167,7 +169,7 @@ public class SentryEventConverter {
                     if (!contexts.containsKey(contextName)) {
                         contexts.put(contextName, new HashMap<>());
                     }
-                    contexts.get(contextName).put(contextField, extract(value));
+                    contexts.get(contextName).put(contextField, extractObject(value));
                     valueIsContext = true;
                     break;
                 }
@@ -176,19 +178,23 @@ public class SentryEventConverter {
                 continue;
             }
 
-            if (value.getType() == Type.STRING) {
-                eventBuilder.withTag(tagName, extractString(value));
+            if (VariantUtil.isPrimitive(value)) {
+                String stringValue = extractString(value);
+                if (stringValue.length() > MAX_TEG_LENGTH) {
+                    stringValue = stringValue.substring(0, MAX_TEG_LENGTH);
+                }
+                eventBuilder.withTag(tagName, stringValue);
                 continue;
             }
 
-            eventBuilder.withExtra(tagName, extract(value));
+            eventBuilder.withExtra(tagName, extractObject(value));
         }
 
         User user = userBuilder.setData(otherUserDataMap).build();
         eventBuilder.withSentryInterface(new UserInterface(
                 user.getId(),
                 user.getUsername(),
-                user.getIpAddress(),
+                user.getIpAddress() != null ? user.getIpAddress() : HIDING_IP_ADDRESS,
                 user.getEmail(),
                 user.getData()));
         eventBuilder.withContexts(contexts);
@@ -210,27 +216,18 @@ public class SentryEventConverter {
         if (variant.getType() == Type.STRING) {
             return new String((byte[]) variant.getValue(), StandardCharsets.UTF_8);
         } else {
-            throw new IllegalArgumentException();
+            return String.valueOf(variant.getValue());
         }
     }
 
-    private static Object extract(Variant variant) {
+    private static Object extractObject(Variant variant) {
         switch (variant.getType()) {
-            case BYTE:
-            case SHORT:
-            case INTEGER:
-            case LONG:
-            case FLAG:
-            case FLOAT:
-            case DOUBLE:
-            case UUID:
-                return variant.getValue();
             case STRING:
                 return new String((byte[]) variant.getValue(), StandardCharsets.UTF_8);
             case CONTAINER:
                 Map<String, Object> map = new HashMap<>();
                 for (Map.Entry<String, Variant> entry : (Container) variant.getValue()) {
-                    map.put(entry.getKey(), extract(entry.getValue()));
+                    map.put(entry.getKey(), extractObject(entry.getValue()));
                 }
                 return map;
             case VECTOR:
@@ -238,11 +235,13 @@ public class SentryEventConverter {
                 Object[] objects = (Object[]) vector.getValue();
                 List<Object> resultList = new ArrayList<>();
                 for (Object object : objects) {
-                    resultList.add(extract(new Variant(vector.getType(), object)));
+                    resultList.add(extractObject(new Variant(vector.getType(), object)));
                 }
                 return resultList;
-            default:
+            case NULL:
                 return "null";
+            default:
+                return variant.getValue();
         }
     }
 

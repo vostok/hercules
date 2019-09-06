@@ -21,6 +21,7 @@ import ru.kontur.vostok.hercules.tags.StackFrameTags;
 import ru.kontur.vostok.hercules.tags.UserTags;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -170,135 +171,6 @@ public class SentryEventConverterTest {
         Assert.assertEquals(logger, sentryEvent.getLogger());
     }
 
- /*   @Test
-    public void shouldSetUser() {
-        final String id = "my_id";
-        final String username = "my_username";
-        final String ipAddress = "11.22.33.44";
-        final String email = "test@company.com";
-
-        final String uuid_key = "uuid_key";
-        final UUID uuid_value = UUID.randomUUID();
-        final String null_key = "null_key";
-
-        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-                .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.USER_TAG, Variant.ofContainer(ContainerBuilder.create()
-                                .tag(UserTags.ID_TAG, Variant.ofString(id))
-                                .tag(UserTags.USERNAME_TAG, Variant.ofString(username))
-                                .tag(UserTags.IP_ADDRESS_TAG, Variant.ofString(ipAddress))
-                                .tag(UserTags.EMAIL_TAG, Variant.ofString(email))
-                                .tag(uuid_key, Variant.ofUuid(uuid_value))
-                                .tag(null_key, Variant.ofNull())
-                                .build()
-                        ))
-                        .build()
-                ))
-                .build();
-
-        final Event sentryEvent = SentryEventConverter.convert(event);
-
-        UserInterface userInterface = (UserInterface) sentryEvent.getSentryInterfaces().get("sentry.interfaces.User");
-        Assert.assertEquals(id, userInterface.getId());
-        Assert.assertEquals(username, userInterface.getUsername());
-        Assert.assertEquals(ipAddress, userInterface.getIpAddress());
-        Assert.assertEquals(email, userInterface.getEmail());
-        Assert.assertEquals(uuid_value, userInterface.getData().get(uuid_key));
-        Assert.assertNull(userInterface.getData().get(null_key));
-    }
-
-    @Test
-    public void shouldSetContext() {
-        final String name = "My Browser";
-        final String version = "79.3.150";
-        final String raw_description = ".NET Framework 4.7.3163.0";
-        final boolean rooted = true;
-
-        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-                .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.CONTEXTS_TAG, Variant.ofContainer(ContainerBuilder.create()
-                                .tag("browser", Variant.ofContainer(ContainerBuilder.create()
-                                        .tag("name", Variant.ofString(name))
-                                        .tag("version", Variant.ofString(version))
-                                        .build()
-                                ))
-                                .tag("os", Variant.ofContainer(ContainerBuilder.create()
-                                        .tag("raw_description", Variant.ofString(raw_description))
-                                        .tag("rooted", Variant.ofFlag(rooted))
-                                        .build()
-                                ))
-                                .build()
-                        ))
-                        .build()
-                ))
-                .build();
-
-        final Event sentryEvent = SentryEventConverter.convert(event);
-
-        Map<String, Map<String, Object>> contexts = sentryEvent.getContexts();
-        Assert.assertEquals(name, contexts.get("browser").get("name"));
-        Assert.assertEquals(version, contexts.get("browser").get("version"));
-        Assert.assertEquals(raw_description, contexts.get("os").get("raw_description"));
-        Assert.assertTrue((boolean) contexts.get("os").get("rooted"));
-    }
-
-    @Test
-    public void shouldSetAdditionalTags() {
-        final String stringKey = "my_string_tag";
-        final String stringValue = "My string";
-        final String longKey = "my_long_tag";
-        final long longValue = 100500100500L;
-        final String booleanKey = "my_boolean_tag";
-        final boolean booleanValue = true;
-
-        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-                .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(stringKey, Variant.ofString(stringValue))
-                        .tag(longKey, Variant.ofLong(longValue))
-                        .tag(booleanKey, Variant.ofFlag(booleanValue))
-                        .build()
-                ))
-                .build();
-
-        final Event sentryEvent = SentryEventConverter.convert(event);
-
-        Assert.assertEquals(stringValue, sentryEvent.getTags().get(stringKey));
-        Assert.assertEquals(String.valueOf(longValue), sentryEvent.getTags().get(longKey));
-        Assert.assertEquals(String.valueOf(booleanValue), sentryEvent.getTags().get(booleanKey));
-    }
-
-    @Test
-    public void shouldSetExtra() {
-        final String stringKey = "my_string_tag";
-        final String stringValue = "My string";
-        final String containerKey = "my_container_tag";
-        final String intKey = "my_int_tag";
-        final int intValue = 100500;
-
-        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
-                .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.EXTRA_TAG, Variant.ofContainer(ContainerBuilder.create()
-                                .tag(stringKey, Variant.ofString(stringValue))
-                                .tag(containerKey, Variant.ofContainer(ContainerBuilder.create()
-                                        .tag(intKey, Variant.ofInteger(intValue))
-                                        .build()
-                                ))
-                                .build()
-                        ))
-                        .build()
-                ))
-                .build();
-
-        final Event sentryEvent = SentryEventConverter.convert(event);
-
-        Assert.assertEquals(stringValue, sentryEvent.getExtra().get(stringKey));
-        Assert.assertEquals(intValue, ((Map) (sentryEvent.getExtra().get(containerKey))).get(intKey));
-    }*/
-
     @Test
     public void shouldNotSetUnknownPlatform() {
         final String unknownPlatform = "pascal";
@@ -314,5 +186,150 @@ public class SentryEventConverterTest {
         final Event sentryEvent = SentryEventConverter.convert(event);
 
         Assert.assertEquals(platformFromStacktrace, sentryEvent.getPlatform());
+    }
+
+    @Test
+    public void shouldSetUser() {
+        final String id = "my_id";
+        final String username = "my_username";
+        final String ipAddress = "11.22.33.44";
+        final String email = "test@company.com";
+        final String someString = "my String";
+        final UUID uuid = UUID.randomUUID();
+        final int number = 25;
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag("user.id", Variant.ofString(id))
+                        .tag("user.email", Variant.ofString(email))
+                        .tag("user.username", Variant.ofString(username))
+                        .tag("user.ipAddress", Variant.ofString(ipAddress))
+                        .tag("user.my_field", Variant.ofString(someString))
+                        .tag("user.int", Variant.ofInteger(number))
+                        .tag("user.UUID", Variant.ofUuid(uuid))
+                        .tag("user.null", Variant.ofNull())
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        UserInterface userInterface = (UserInterface) sentryEvent.getSentryInterfaces().get("sentry.interfaces.User");
+        Assert.assertEquals(id, userInterface.getId());
+        Assert.assertEquals(username, userInterface.getUsername());
+        Assert.assertEquals(ipAddress, userInterface.getIpAddress());
+        Assert.assertEquals(email, userInterface.getEmail());
+        Assert.assertEquals(someString, userInterface.getData().get("my_field"));
+        Assert.assertEquals(uuid, userInterface.getData().get("UUID"));
+        Assert.assertEquals("null", userInterface.getData().get("null"));
+    }
+
+    @Test
+    public void shouldSetContext() {
+        final String name = "My Browser";
+        final String version = "79.3.150";
+        final String rawDescription = ".NET Framework 4.7.3163.0";
+        final boolean rooted = true;
+        final String someString = "my String";
+        final UUID uuid = UUID.randomUUID();
+        final int number = 25;
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag("browser.name", Variant.ofString(name))
+                        .tag("browser.version", Variant.ofString(version))
+                        .tag("os.raw_description", Variant.ofString(rawDescription))
+                        .tag("os.rooted", Variant.ofFlag(rooted))
+                        .tag("os.my_field", Variant.ofString(someString))
+                        .tag("os.int", Variant.ofInteger(number))
+                        .tag("os.UUID", Variant.ofUuid(uuid))
+                        .tag("os.null", Variant.ofNull())
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Map<String, Map<String, Object>> contexts = sentryEvent.getContexts();
+        Assert.assertEquals(name, contexts.get("browser").get("name"));
+        Assert.assertEquals(version, contexts.get("browser").get("version"));
+        Assert.assertEquals(rawDescription, contexts.get("os").get("raw_description"));
+        Assert.assertTrue((boolean) contexts.get("os").get("rooted"));
+        Assert.assertEquals(someString, contexts.get("os").get("my_field"));
+        Assert.assertEquals(uuid, contexts.get("os").get("UUID"));
+        Assert.assertEquals("null", contexts.get("os").get("null"));
+    }
+
+    @Test
+    public void shouldSetSentryTags() {
+        final String stringValue = "My string";
+        final long longValue = 100500100500L;
+        final boolean booleanValue = true;
+        final UUID uuid = UUID.randomUUID();
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag("my_string_tag", Variant.ofString(stringValue))
+                        .tag("my_long_tag", Variant.ofLong(longValue))
+                        .tag("my_boolean_tag", Variant.ofFlag(booleanValue))
+                        .tag("my_UUID_tag", Variant.ofUuid(uuid))
+                        .tag("my_null_tag", Variant.ofNull())
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Assert.assertEquals(stringValue, sentryEvent.getTags().get("my_string_tag"));
+        Assert.assertEquals(String.valueOf(longValue), sentryEvent.getTags().get("my_long_tag"));
+        Assert.assertEquals(String.valueOf(booleanValue), sentryEvent.getTags().get("my_boolean_tag"));
+        Assert.assertEquals(String.valueOf(uuid), sentryEvent.getTags().get("my_UUID_tag"));
+        Assert.assertEquals("null", sentryEvent.getTags().get("my_null_tag"));
+    }
+
+    @Test
+    public void shouldSetExtraFromContainer() {
+        final String stringValue = "My string";
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag("my_extra", Variant.ofContainer(ContainerBuilder.create()
+                                .tag("my_string", Variant.ofString(stringValue))
+                                .build()
+                        ))
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Assert.assertEquals(
+                stringValue,
+                ((Map) sentryEvent.getExtra().get("my_extra")).get("my_string")
+        );
+    }
+
+    @Test
+    public void shouldSetExtraFromVector() {
+        final String stringValue1 = "one";
+        final String stringValue2 = "two";
+
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag("my_extra", Variant.ofVector(Vector.ofStrings(stringValue1, stringValue2)))
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("my_extra")).contains(stringValue1));
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("my_extra")).contains(stringValue2));
     }
 }

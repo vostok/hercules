@@ -10,6 +10,24 @@ public final class VariantUtil {
     private VariantUtil() {
     }
 
+    public static boolean isPrimitive(Variant variant) {
+        switch (variant.getType()) {
+            case BYTE:
+            case SHORT:
+            case INTEGER:
+            case LONG:
+            case FLAG:
+            case FLOAT:
+            case DOUBLE:
+            case UUID:
+            case STRING:
+            case NULL:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     public static Optional<String> extractPrimitiveAsString(Variant variant) {
         switch (variant.getType()) {
             case BYTE:
@@ -19,6 +37,7 @@ public final class VariantUtil {
             case FLAG:
             case FLOAT:
             case DOUBLE:
+            case UUID:
                 return Optional.of(String.valueOf(variant.getValue()));
             case STRING:
                 return Optional.of(new String((byte[]) variant.getValue(), StandardCharsets.UTF_8));
