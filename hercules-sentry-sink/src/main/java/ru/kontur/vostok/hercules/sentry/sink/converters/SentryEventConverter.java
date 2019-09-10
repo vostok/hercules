@@ -136,9 +136,9 @@ public class SentryEventConverter {
         Map<String, Object> otherUserDataMap = new HashMap<>();
         Map<String, Map<String, Object>> contexts = new HashMap<>();
 
-        for (Map.Entry<String, Variant> tagValuePair : properties) {
-            final String tagName = tagValuePair.getKey();
-            final Variant value = tagValuePair.getValue();
+        for (Map.Entry<String, Variant> tag : properties) {
+            final String tagName = tag.getKey();
+            final Variant value = tag.getValue();
 
             if (STANDARD_PROPERTIES.contains(tagName)) {
                 continue;
@@ -147,14 +147,23 @@ public class SentryEventConverter {
             Optional<String> userFieldOptional = cutOffPrefixIfExists("user", tagName);
             if (userFieldOptional.isPresent()) {
                 String userField = userFieldOptional.get();
-                if (userField.equals("id") && value.getType() == Type.STRING) {
-                    userBuilder.setId(extractString(value));
-                } else if (userField.equals("ipAddress") && value.getType() == Type.STRING) {
-                    userBuilder.setIpAddress(extractString(value));
-                } else if (userField.equals("username") && value.getType() == Type.STRING) {
-                    userBuilder.setUsername(extractString(value));
-                } else if (userField.equals("email") && value.getType() == Type.STRING) {
-                    userBuilder.setEmail(extractString(value));
+                if (value.getType() == Type.STRING) {
+                    switch (userField) {
+                        case "id":
+                            userBuilder.setId(extractString(value));
+                            break;
+                        case "ipAddress":
+                            userBuilder.setIpAddress(extractString(value));
+                            break;
+                        case "username":
+                            userBuilder.setUsername(extractString(value));
+                            break;
+                        case "email":
+                            userBuilder.setEmail(extractString(value));
+                            break;
+                        default:
+                            otherUserDataMap.put(userField, extractString(value));
+                    }
                 } else {
                     otherUserDataMap.put(userField, extractObject(value));
                 }
