@@ -38,10 +38,10 @@ Application is configured through properties file.
 `sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
 
 `sink.sender.elastic.mergePropertiesTagToRoot` - flag for moving the contents of the properties container to the root of the object, default value: `false`
-
-`sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`
  
 ### Leprosery settings
+`sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`
+
 `sink.sender.leprosery.stream` - stream name for writing non-retryable errors
  
 `sink.sender.leprosery.apiKey` - key for writing non-retryable errors
@@ -113,8 +113,8 @@ sink.sender.pingPeriodMs=60000
 sink.sender.retryOnUnknownErrors=true
 sink.sender.retryLimit=2
 sink.sender.elastic.mergePropertiesTagToRoot=true
-sink.sender.leprosery.enable=false
 
+sink.sender.leprosery.enable=false
 sink.sender.leprosery.stream=some-dlq-stream-name
 sink.sender.leprosery.apiKey=some-dlq-stream-key
 sink.sender.leprosery.index=some-dlq-index-pattern

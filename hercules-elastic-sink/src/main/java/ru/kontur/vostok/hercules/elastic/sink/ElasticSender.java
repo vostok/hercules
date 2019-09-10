@@ -10,6 +10,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
@@ -22,7 +23,6 @@ import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
-import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -66,8 +66,6 @@ public class ElasticSender extends Sender {
     private final Set<String> redefinedExceptions;
     private final boolean leproseryEnable;
 
-    private final EventValidator eventValidator;
-
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
@@ -103,17 +101,13 @@ public class ElasticSender extends Sender {
 
         this.elasticResponseHandler = new ElasticResponseHandler(metricsCollector);
 
-        if (leproseryEnable) {
-            this.leproserySender = new LeproserySender(properties, metricsCollector);
-        } else {
-            this.leproserySender = null;
-        }
+        this.leproserySender = leproseryEnable
+                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector)
+                : null;
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
         this.elasticsearchDroppedNonRetryableErrorsMeter = metricsCollector.meter("elasticsearchDroppedNonRetryableErrors");
-
-        this.eventValidator = new EventValidator();
     }
 
     @Override
@@ -135,17 +129,17 @@ public class ElasticSender extends Sender {
         if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
             events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
-        int droppedCount = 0;
-        Map<EventWrapper, ValidationResult> nonRetrErrorsMap = new HashMap<>(events.size());
+        int droppedCount;
+        Map<EventWrapper, ValidationResult> nonRetryableErrorsMap = new HashMap<>(events.size());
         //event-id -> event-wrapper
         Map<String, EventWrapper> readyToSend = new HashMap<>(events.size());
         for (Event event : events) {
             EventWrapper wrapper = new EventWrapper(event);
-            ValidationResult validationResult = eventValidator.validate(wrapper);
+            ValidationResult validationResult = preValidation(wrapper);
             if (validationResult.isOk()) {
                 readyToSend.put(wrapper.getId(), wrapper);
             } else {
-                nonRetrErrorsMap.put(wrapper, validationResult);
+                nonRetryableErrorsMap.put(wrapper, validationResult);
             }
         }
 
@@ -159,7 +153,7 @@ public class ElasticSender extends Sender {
 
                 if (result.getTotalErrors() != 0) {
                     resultProcess(result).forEach((eventId, validationResult) -> {
-                        nonRetrErrorsMap.put(readyToSend.get(eventId), validationResult);
+                        nonRetryableErrorsMap.put(readyToSend.get(eventId), validationResult);
                         readyToSend.remove(eventId);
                     });
                 } else {
@@ -172,7 +166,7 @@ public class ElasticSender extends Sender {
                 throw new Exception("Have retryable errors in elasticsearch response");
             }
 
-            droppedCount = errorsProcess(nonRetrErrorsMap);
+            droppedCount = errorsProcess(nonRetryableErrorsMap);
         } catch (Exception e) {
             throw new BackendServiceFailedException(e);
         }
@@ -207,15 +201,20 @@ public class ElasticSender extends Sender {
     /**
      * @return count of dropped events
      */
-    private int errorsProcess(Map<EventWrapper, ValidationResult> validationResultMap) {
-        if (validationResultMap.isEmpty()) {
+    private int errorsProcess(Map<EventWrapper, ValidationResult> nonRetryableErrorsInfo) {
+        if (nonRetryableErrorsInfo.isEmpty()) {
             return 0;
         }
         if (leproseryEnable) {
-            leproserySender.send(validationResultMap);
-            return 0;
+            try {
+                leproserySender.convertAndSend(nonRetryableErrorsInfo);
+                return 0;
+            } catch (Exception e) {
+                elasticsearchDroppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
+                return nonRetryableErrorsInfo.size();
+            }
         } else {
-            validationResultMap.forEach((wrapper, validationResult) -> {
+            nonRetryableErrorsInfo.forEach((wrapper, validationResult) -> {
                 LOGGER.warn("Non retryable error info: id = {}, index = {}, reason = {}",
                         wrapper.getId(),
                         wrapper.getIndex(),
@@ -223,9 +222,9 @@ public class ElasticSender extends Sender {
                 Event event = wrapper.getEvent();
                 DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
             });
-            elasticsearchDroppedNonRetryableErrorsMeter.mark(validationResultMap.size());
+            elasticsearchDroppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
+            return nonRetryableErrorsInfo.size();
         }
-        return validationResultMap.size();
     }
 
     private void writeEventToStream(ByteArrayOutputStream stream, EventWrapper wrapper) {
@@ -250,6 +249,18 @@ public class ElasticSender extends Sender {
             throw new RuntimeException("Bad response");
         }
         return elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
+    }
+
+    private ValidationResult preValidation(EventWrapper wrapper) {
+        boolean hasIndex = wrapper.getIndex() != null;
+        boolean withValidSize = wrapper.getEvent().getBytes().length <= EXPECTED_EVENT_SIZE_BYTES;
+        if (hasIndex && withValidSize) {
+            return ValidationResult.ok();
+        } else if (!hasIndex) {
+            return ValidationResult.error("Event has unknown index");
+        } else {
+            return ValidationResult.error("Event has invalid size");
+        }
     }
 
     private static class Props {
@@ -320,23 +331,6 @@ public class ElasticSender extends Sender {
                 .booleanParameter("leprosery.enable")
                 .withDefault(false)
                 .build();
-
-    }
-
-    private static class EventValidator implements Validator<EventWrapper> {
-
-        @Override
-        public ValidationResult validate(EventWrapper value) {
-            boolean hasIndex = value.getIndex() != null;
-            boolean withValidSize = value.getEvent().getBytes().length <= EXPECTED_EVENT_SIZE_BYTES;
-            if (hasIndex && withValidSize) {
-                return ValidationResult.ok();
-            } else if (!hasIndex) {
-                return ValidationResult.error("Event has unknown index");
-            } else {
-                return ValidationResult.error("Event has invalid size");
-            }
-        }
     }
 
 }

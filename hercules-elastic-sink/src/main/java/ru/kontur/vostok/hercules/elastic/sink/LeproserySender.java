@@ -23,7 +23,6 @@ import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -46,37 +45,32 @@ class LeproserySender {
     private final String leproseryIndex;
     private final GateClient gateClient;
     private final String leproseryApiKey;
-    private final String[] urls;
 
     private final MetricsCollector metricsCollector;
 
     LeproserySender(Properties properties, MetricsCollector metricsCollector) {
         this.metricsCollector = metricsCollector;
 
-        Properties leproseryProperties = PropertiesUtil.ofScope(properties, Scopes.LEPROSERY);
-        this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, leproseryProperties).get();
+        this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, properties).get();
         this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, properties).get();
-        this.leproseryApiKey = PropertiesUtil.get(Props.LEPROSERY_API_KEY, leproseryProperties).get();
+        this.leproseryApiKey = PropertiesUtil.get(Props.LEPROSERY_API_KEY, properties).get();
 
-        Properties gateProperties = PropertiesUtil.ofScope(leproseryProperties, Scopes.GATE_CLIENT);
-        this.urls = PropertiesUtil.get(Props.URLS, gateProperties).get();
+        Properties gateProperties = PropertiesUtil.ofScope(properties, Scopes.GATE_CLIENT);
+        final String[] urls = PropertiesUtil.get(Props.URLS, gateProperties).get();
         Topology<String> whiteList = new Topology<>(urls);
         this.gateClient = new GateClient(gateProperties, whiteList);
     }
 
-    public void send(Map<EventWrapper, ValidationResult> validationResultMap) throws RuntimeException {
-        send(
-                validationResultMap.entrySet().stream()
-                        .map(entry -> {
-                            EventWrapper wrapper = entry.getKey();
-                            ValidationResult validationResult = entry.getValue();
-                            return toLeproseryEvent(wrapper.getEvent(), leproseryIndex, wrapper.getIndex(), validationResult.error());
-                        })
-                        .collect(Collectors.toList())
-        );
+    /**
+     * Convert event to leprosery like event and send to Leprosery.
+     * @param eventErrorInfos  - map of event wrapper (contains event, event-index, event-id) -> result of validation with reason
+     * @throws Exception - if any error
+     */
+    public void convertAndSend(Map<EventWrapper, ValidationResult> eventErrorInfos) throws Exception {
+        send(convert(eventErrorInfos));
     }
 
-    public void send(List<Event> events) throws RuntimeException {
+    public void send(List<Event> events) throws Exception {
         int count = events.size();
         byte[] data = EventWriterUtil.toBytes(events.toArray(new Event[events.size()]));
         try {
@@ -84,17 +78,21 @@ class LeproserySender {
 
             LOGGER.info("Send to leprosery {} events", count);
             metricsCollector.meter(COUNT_OF_EVENTS_SENDING_METER_KEY).mark(count);
-        } catch (BadRequestException e) {
-            LOGGER.error("Got exception from Gate", e);
+        } catch (BadRequestException | UnavailableClusterException e) {
+            LOGGER.error("Leprosery sending error", e);
             metricsCollector.meter(COUNT_OF_EVENTS_SENDING_WITH_ERROR_METER_KEY).mark(count);
-
-            throw new IllegalArgumentException("Sending to Leprosery is ERROR. Bad request");
-        } catch (UnavailableClusterException e) {
-            LOGGER.error("No one of addresses is available." + Arrays.toString(this.urls));
-            metricsCollector.meter(COUNT_OF_EVENTS_SENDING_WITH_ERROR_METER_KEY).mark(count);
-
-            throw new IllegalStateException("Sending to Leprosery is ERROR. Unavailable error");
+            throw e;
         }
+    }
+
+    private List<Event> convert(Map<EventWrapper, ValidationResult> eventErrorInfos) {
+        return eventErrorInfos.entrySet().stream()
+                .map(entry -> {
+                    EventWrapper wrapper = entry.getKey();
+                    ValidationResult validationResult = entry.getValue();
+                    return toLeproseryEvent(wrapper.getEvent(), leproseryIndex, wrapper.getIndex(), validationResult.error());
+                })
+                .collect(Collectors.toList());
     }
 
     /**
