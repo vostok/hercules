@@ -71,7 +71,7 @@ public class ElasticSender extends Sender {
 
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
 
-        HttpHost[] hosts = PropertiesUtil.get(Props.HOSTS, properties).get();
+        final HttpHost[] hosts = PropertiesUtil.get(Props.HOSTS, properties).get();
         final int maxConnections = PropertiesUtil.get(Props.MAX_CONNECTIONS, properties).get();
         final int maxConnectionsPerRoute = PropertiesUtil.get(Props.MAX_CONNECTIONS_PER_ROUTE, properties).get();
         final int retryTimeoutMs = PropertiesUtil.get(Props.RETRY_TIMEOUT_MS, properties).get();
@@ -135,7 +135,7 @@ public class ElasticSender extends Sender {
         Map<String, EventWrapper> readyToSend = new HashMap<>(events.size());
         for (Event event : events) {
             EventWrapper wrapper = new EventWrapper(event);
-            ValidationResult validationResult = preValidation(wrapper);
+            ValidationResult validationResult = validate(wrapper);
             if (validationResult.isOk()) {
                 readyToSend.put(wrapper.getId(), wrapper);
             } else {
@@ -251,7 +251,7 @@ public class ElasticSender extends Sender {
         return elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
     }
 
-    private ValidationResult preValidation(EventWrapper wrapper) {
+    private ValidationResult validate(EventWrapper wrapper) {
         boolean hasIndex = wrapper.getIndex() != null;
         boolean withValidSize = wrapper.getEvent().getBytes().length <= EXPECTED_EVENT_SIZE_BYTES;
         if (hasIndex && withValidSize) {

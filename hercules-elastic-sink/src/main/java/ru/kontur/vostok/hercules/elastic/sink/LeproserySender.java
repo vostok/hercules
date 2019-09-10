@@ -123,14 +123,17 @@ class LeproserySender {
     private static class Props {
         static final Parameter<String> LEPROSERY_STREAM = Parameter
                 .stringParameter("stream")
+                .required()
                 .build();
 
         static final Parameter<String> LEPROSERY_API_KEY = Parameter
                 .stringParameter("apiKey")
+                .required()
                 .build();
 
         static final Parameter<String[]> URLS = Parameter
                 .stringArrayParameter("urls")
+                .required()
                 .build();
 
         static final Parameter<String> LEPROSERY_INDEX = Parameter
