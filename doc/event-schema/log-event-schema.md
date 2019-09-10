@@ -31,6 +31,7 @@ Properties:
   traceId?: String # Trace identifier
   fingerprint?: Vector<String> # Labels for grouping in Sentry
   platform?: String # Platform of application
+  logger?: String # Logger which created the event
 ```
 
 Tags `properties/project`, `properties/application`, `properties/service` and `properties/environment` are [common tags](../../hercules-protocol/doc/common-tags.md).
