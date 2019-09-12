@@ -4,7 +4,9 @@ package ru.kontur.vostok.hercules.util.logging;
  * LoggingConstants
  *
  * @author Kirill Sulim
+ * @deprecated all event loggers should be removed
  */
+@Deprecated
 public final class LoggingConstants {
 
     public static final String RECEIVED_EVENT_LOGGER_NAME = "RECEIVED_EVENTS";

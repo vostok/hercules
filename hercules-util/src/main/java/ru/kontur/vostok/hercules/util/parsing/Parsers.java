@@ -16,7 +16,9 @@ import java.util.function.IntFunction;
  * Parsers - collection of common parsers
  *
  * @author Kirill Sulim
+ * @deprecated use {@link ru.kontur.vostok.hercules.util.parameter.parsing.Parsers} instead
  */
+@Deprecated
 public final class Parsers {
 
     private static final String DEFAULT_SEPARATOR = ",";

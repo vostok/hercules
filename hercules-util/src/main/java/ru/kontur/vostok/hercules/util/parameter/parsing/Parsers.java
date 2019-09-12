@@ -121,6 +121,28 @@ public final class Parsers {
     }
 
     /**
+     * Enum parser.
+     * <p>
+     * Parser is case-sensitive as it uses {@link Enum#valueOf(Class, String)}
+     *
+     * @param enumType the enum type class
+     * @param <T> the enum type
+     * @return enum parser
+     */
+    public static <T extends Enum<T>> Parser<T> forEnum(Class<T> enumType) {
+        return s -> {
+            if (StringUtil.isNullOrEmpty(s)) {
+                return ParameterValue.empty();
+            }
+            try {
+                return ParameterValue.of(Enum.valueOf(enumType, s));
+            } catch (IllegalArgumentException ex) {
+                return ParameterValue.invalid(ex.getMessage());
+            }
+        };
+    }
+
+    /**
      * Object parser uses provided function to parse value from string.
      *
      * @param function the parsing function

@@ -5,6 +5,7 @@ package ru.kontur.vostok.hercules.util.properties;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class PropertyException extends RuntimeException {
 
     /**
