@@ -45,25 +45,19 @@ import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
  */
 public class ManagementApiApplication {
-
-    private static class Props {
-        static final PropertyDescription<Set<String>> ADMIN_KEYS = PropertyDescriptions
-                .setOfStringsProperty("keys")
-                .build();
-    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ManagementApiApplication.class);
 
@@ -102,7 +96,7 @@ public class ManagementApiApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            adminAuthManager = new AdminAuthManager(Props.ADMIN_KEYS.extract(properties));
+            adminAuthManager = new AdminAuthManager(new HashSet<>(Arrays.asList(PropertiesUtil.get(Props.ADMIN_KEYS, properties).get())));
 
             streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
             timelineTaskQueue = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
@@ -242,5 +236,12 @@ public class ManagementApiApplication {
                 Application.application().getConfig().getPort(),
                 httpServerProperties,
                 handler);
+    }
+
+    private static class Props {
+        static final Parameter<String[]> ADMIN_KEYS =
+                Parameter.stringArrayParameter("keys").
+                        required().
+                        build();
     }
 }

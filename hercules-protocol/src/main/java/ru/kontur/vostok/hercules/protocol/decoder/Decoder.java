@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.UUID;
 
 /**

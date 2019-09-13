@@ -17,8 +17,8 @@ import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.curator.result.DeletionResult;
 import ru.kontur.vostok.hercules.curator.result.ReadResult;
 import ru.kontur.vostok.hercules.curator.result.UpdateResult;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Arrays;
@@ -208,12 +208,12 @@ public class CuratorClient {
     }
 
     private static CuratorFramework build(Properties properties) {
-        final String connectString = Props.CONNECT_STRING.extract(properties);
-        final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
-        final int sessionTimeout = Props.SESSION_TIMEOUT_MS.extract(properties);
-        final int baseSleepTime = Props.BASE_SLEEP_TIME_MS.extract(properties);
-        final int maxRetries = Props.MAX_RETRIES.extract(properties);
-        final int maxSleepTime = Props.BASE_SLEEP_TIME_MS.extract(properties);
+        final String connectString = PropertiesUtil.get(Props.CONNECT_STRING, properties).get();
+        final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, properties).get();
+        final int sessionTimeout = PropertiesUtil.get(Props.SESSION_TIMEOUT_MS, properties).get();
+        final int baseSleepTime = PropertiesUtil.get(Props.BASE_SLEEP_TIME_MS, properties).get();
+        final int maxRetries = PropertiesUtil.get(Props.MAX_RETRIES, properties).get();
+        final int maxSleepTime = PropertiesUtil.get(Props.BASE_SLEEP_TIME_MS, properties).get();
 
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime);
 
@@ -228,39 +228,39 @@ public class CuratorClient {
     }
 
     private static class Props {
-        static final PropertyDescription<String> CONNECT_STRING = PropertyDescriptions
-                .stringProperty("connectString")
-                .withDefaultValue("localhost:2181")
-                .build();
+        static final Parameter<String> CONNECT_STRING =
+                Parameter.stringParameter("connectString").
+                        withDefault("localhost:2181").
+                        build();
 
-        static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("connectionTimeout")
-                .withDefaultValue(10_000)
-                .withValidator(IntegerValidators.nonNegative())
-                .build();
+        static final Parameter<Integer> CONNECTION_TIMEOUT_MS =
+                Parameter.integerParameter("connectionTimeout").
+                        withDefault(10_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
 
-        static final PropertyDescription<Integer> SESSION_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("sessionTimeout")
-                .withDefaultValue(30_000)
-                .withValidator(IntegerValidators.nonNegative())
-                .build();
+        static final Parameter<Integer> SESSION_TIMEOUT_MS =
+                Parameter.integerParameter("sessionTimeout").
+                        withDefault(30_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
 
-        static final PropertyDescription<Integer> BASE_SLEEP_TIME_MS = PropertyDescriptions
-                .integerProperty("retryPolicy.baseSleepTime")
-                .withDefaultValue(1_000)
-                .withValidator(IntegerValidators.nonNegative())
-                .build();
+        static final Parameter<Integer> BASE_SLEEP_TIME_MS =
+                Parameter.integerParameter("retryPolicy.baseSleepTime").
+                        withDefault(1_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
 
-        static final PropertyDescription<Integer> MAX_RETRIES = PropertyDescriptions
-                .integerProperty("retryPolicy.maxRetries")
-                .withDefaultValue(5)
-                .withValidator(IntegerValidators.nonNegative())
-                .build();
+        static final Parameter<Integer> MAX_RETRIES =
+                Parameter.integerParameter("retryPolicy.maxRetries").
+                        withDefault(5).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
 
-        static final PropertyDescription<Integer> MAX_SLEEP_TIME_MS = PropertyDescriptions
-                .integerProperty("retryPolicy.maxSleepTime")
-                .withDefaultValue(8_000)
-                .withValidator(IntegerValidators.nonNegative())
-                .build();
+        static final Parameter<Integer> MAX_SLEEP_TIME_MS =
+                Parameter.integerParameter("retryPolicy.maxSleepTime").
+                        withDefault(8_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
     }
 }

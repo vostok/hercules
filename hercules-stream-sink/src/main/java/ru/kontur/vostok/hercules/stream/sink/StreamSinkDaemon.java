@@ -5,15 +5,14 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Objects;
@@ -25,12 +24,6 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class StreamSinkDaemon {
-
-    private static class Props {
-        static final PropertyDescription<String> DERIVED = PropertyDescriptions
-                .stringProperty("derived")
-                .build();
-    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamSinkDaemon.class);
 
@@ -54,7 +47,7 @@ public class StreamSinkDaemon {
         ApplicationContextHolder.init("Hercules stream sink", "sink.stream", contextProperties);
 
         //TODO: Validate sinkProperties
-        final String derivedName = Props.DERIVED.extract(sinkProperties);
+        final String derivedName = PropertiesUtil.get(Props.DERIVED, sinkProperties).get();
 
         try {
             applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
@@ -119,5 +112,12 @@ public class StreamSinkDaemon {
         }
 
         LOGGER.info("Finished Stream Sink Daemon shutdown for {} millis", System.currentTimeMillis() - start);
+    }
+
+    private static class Props {
+        static final Parameter<String> DERIVED =
+                Parameter.stringParameter("derived").
+                        required().
+                        build();
     }
 }

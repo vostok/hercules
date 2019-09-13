@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.http.handler;
 
-import ru.kontur.vostok.hercules.http.HttpServerRequest;
-
 /**
  * Wrapper wraps handler with another handler.
  *

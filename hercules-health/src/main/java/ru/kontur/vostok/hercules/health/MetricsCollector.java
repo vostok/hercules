@@ -11,8 +11,8 @@ import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import ru.kontur.vostok.hercules.util.application.ApplicationContext;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.net.InetSocketAddress;
@@ -24,30 +24,6 @@ import java.util.function.Supplier;
  * @author Gregory Koshelev
  */
 public class MetricsCollector {
-
-    private static class Props {
-        static final PropertyDescription<String> GRAPHITE_SERVER = PropertyDescriptions
-                .stringProperty("graphite.server.addr")
-                .withDefaultValue("localhost")
-                .build();
-
-        static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
-                .integerProperty("graphite.server.port")
-                .withDefaultValue(2003)
-                .withValidator(IntegerValidators.portValidator())
-                .build();
-
-        static final PropertyDescription<String> GRAPHITE_PREFIX = PropertyDescriptions
-                .stringProperty("graphite.prefix")
-                .build();
-
-        static final PropertyDescription<Integer> REPORT_PERIOD_SECONDS = PropertyDescriptions
-                .integerProperty("period")
-                .withDefaultValue(60)
-                .withValidator(IntegerValidators.positive())
-                .build();
-    }
-
     private MetricRegistry registry = new MetricRegistry();
 
     private final long period;
@@ -59,19 +35,19 @@ public class MetricsCollector {
      *
      */
     public MetricsCollector(Properties properties) {
-        String graphiteServerAddr = Props.GRAPHITE_SERVER.extract(properties);
-        int graphiteServerPort = Props.GRAPHITE_PORT.extract(properties);
+        String graphiteServerAddr = PropertiesUtil.get(Props.GRAPHITE_SERVER, properties).get();
+        int graphiteServerPort = PropertiesUtil.get(Props.GRAPHITE_PORT, properties).get();
 
         ApplicationContext applicationContext = ApplicationContextHolder.get();
         String prefix = String.join(".",
-                Props.GRAPHITE_PREFIX.extract(properties),
+                PropertiesUtil.get(Props.GRAPHITE_PREFIX, properties).get(),
                 applicationContext.getApplicationId(),
                 applicationContext.getEnvironment(),
                 applicationContext.getZone(),
                 applicationContext.getInstanceId()
         );
 
-        this.period = Props.REPORT_PERIOD_SECONDS.extract(properties);
+        this.period = PropertiesUtil.get(Props.REPORT_PERIOD_SECONDS, properties).get();
 
         graphite = new Graphite(new InetSocketAddress(graphiteServerAddr, graphiteServerPort));
         graphiteReporter = GraphiteReporter.forRegistry(registry)
@@ -156,5 +132,29 @@ public class MetricsCollector {
      */
     public HttpMetrics httpMetrics(String name) {
         return new HttpMetrics(name, this);
+    }
+
+    private static class Props {
+        static final Parameter<String> GRAPHITE_SERVER =
+                Parameter.stringParameter("graphite.server.addr").
+                        withDefault("localhost").
+                        build();
+
+        static final Parameter<Integer> GRAPHITE_PORT =
+                Parameter.integerParameter("graphite.server.port").
+                        withDefault(2003).
+                        withValidator(IntegerValidators.portValidator()).
+                        build();
+
+        static final Parameter<String> GRAPHITE_PREFIX =
+                Parameter.stringParameter("graphite.prefix").
+                        required().
+                        build();
+
+        static final Parameter<Integer> REPORT_PERIOD_SECONDS =
+                Parameter.integerParameter("period").
+                        withDefault(60).
+                        withValidator(IntegerValidators.positive()).
+                        build();
     }
 }

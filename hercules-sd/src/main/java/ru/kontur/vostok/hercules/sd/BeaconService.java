@@ -16,8 +16,8 @@ import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUnitUtil;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
@@ -59,11 +59,11 @@ public class BeaconService {
      * Start beacon's registration
      */
     public void start() {
-        long periodMs = Props.PERIOD_MS.extract(properties);
+        long periodMs = PropertiesUtil.get(Props.PERIOD_MS, properties).get();
 
         sessionId = getCurrentSessionId();
 
-        String address = Props.ADDRESS.extract(properties);
+        String address = PropertiesUtil.get(Props.ADDRESS, properties).get();
         if ("".equals(address)) {
             ApplicationConfig applicationConfig = Application.application().getConfig();
             address = "http://" + applicationConfig.getHost() + ":" + applicationConfig.getPort();
@@ -205,14 +205,17 @@ public class BeaconService {
         /**
          * Address of service to access it via http
          */
-        static final PropertyDescription<String> ADDRESS =
-                PropertyDescriptions.stringProperty("address").withDefaultValue("").build();
+        static final Parameter<String> ADDRESS =
+                Parameter.stringParameter("address").
+                        withDefault("").
+                        build();
         /**
          * Period of beacon registration check in milliseconds
          */
-        static final PropertyDescription<Long> PERIOD_MS =
-                PropertyDescriptions.longProperty("periodMs").
+        static final Parameter<Long> PERIOD_MS =
+                Parameter.longParameter("periodMs").
+                        withDefault(10_000L).
                         withValidator(LongValidators.positive()).
-                        withDefaultValue(10_000L).build();
+                        build();
     }
 }
