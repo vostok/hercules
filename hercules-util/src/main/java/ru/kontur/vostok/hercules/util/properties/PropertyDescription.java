@@ -14,7 +14,9 @@ import java.util.Properties;
  * PropertyDescription - describe rules of how to extract and check property value
  *
  * @author Kirill Sulim
+ * @deprecated use {@link ru.kontur.vostok.hercules.util.parameter.Parameter} instead
  */
+@Deprecated
 public class PropertyDescription<T> {
 
     /**

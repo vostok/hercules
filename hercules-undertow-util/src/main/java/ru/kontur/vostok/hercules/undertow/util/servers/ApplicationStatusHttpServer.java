@@ -15,7 +15,9 @@ import java.util.Properties;
  * ApplicationStatusHttpServer - minimal HTTP server with base information about application
  *
  * @author Kirill Sulim
+ * @deprecated use {@link DaemonHttpServer} instead (be careful: {@link ru.kontur.vostok.hercules.application.Application} should be used too
  */
+@Deprecated
 public class ApplicationStatusHttpServer {
 
     private static class Props {

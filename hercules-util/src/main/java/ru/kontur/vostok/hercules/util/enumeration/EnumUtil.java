@@ -7,6 +7,7 @@ import java.util.Optional;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public final class EnumUtil {
 
     /**
