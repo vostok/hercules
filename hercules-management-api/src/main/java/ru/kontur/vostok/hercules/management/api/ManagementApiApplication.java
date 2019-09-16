@@ -48,11 +48,11 @@ import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Gregory Koshelev
@@ -96,7 +96,7 @@ public class ManagementApiApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            adminAuthManager = new AdminAuthManager(new HashSet<>(Arrays.asList(PropertiesUtil.get(Props.ADMIN_KEYS, properties).get())));
+            adminAuthManager = new AdminAuthManager(Stream.of(PropertiesUtil.get(Props.ADMIN_KEYS, properties).get()).collect(Collectors.toSet()));
 
             streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
             timelineTaskQueue = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
