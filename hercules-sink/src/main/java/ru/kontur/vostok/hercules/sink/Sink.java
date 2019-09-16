@@ -19,8 +19,8 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.UuidDeserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -76,10 +76,10 @@ public class Sink {
         this.batchSize = PropertiesUtil.get(Props.BATCH_SIZE, properties).get();
         this.availabilityTimeoutMs = PropertiesUtil.get(Props.AVAILABILITY_TIMEOUT_MS, properties).get();
 
-        String consumerGroupId = PropertiesUtil.get(Props.GROUP_ID, properties).get();
-        if (StringUtil.isNullOrEmpty(consumerGroupId)) {
-            consumerGroupId = ConsumerUtil.toGroupId(applicationId, patternMatchers);
-        }
+        ParameterValue<String> consumerGroupIdParameter = PropertiesUtil.get(Props.GROUP_ID, properties);
+        String consumerGroupId = consumerGroupIdParameter.isEmpty()
+                ? ConsumerUtil.toGroupId(applicationId, patternMatchers)
+                : consumerGroupIdParameter.get();
 
         this.pattern = PatternMatcher.matcherListToRegexp(patternMatchers);
 
@@ -264,7 +264,7 @@ public class Sink {
 
         static final Parameter<String> GROUP_ID =
                 Parameter.stringParameter("groupId").
-                        withDefault("").
+                        withDefault(null).
                         build();
 
         static final Parameter<Long> AVAILABILITY_TIMEOUT_MS =

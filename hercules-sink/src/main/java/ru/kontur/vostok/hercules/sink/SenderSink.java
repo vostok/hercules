@@ -8,11 +8,10 @@ import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Gregory Koshelev
@@ -31,7 +30,7 @@ public class SenderSink extends Sink {
                 applicationId,
                 properties,
                 sender,
-                new ArrayList<>(Arrays.asList(PropertiesUtil.get(Props.PATTERN, properties).get())).stream().
+                Stream.of(PropertiesUtil.get(Props.PATTERN, properties).get()).
                         map(PatternMatcher::new).
                         collect(Collectors.toList()),
                 EventDeserializer.parseAllTags(),
