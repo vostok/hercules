@@ -55,8 +55,8 @@ public class ApplicationStatusHttpServer {
 
         static final Parameter<Integer> PORT =
                 Parameter.integerParameter("port").
-                        withValidator(IntegerValidators.portValidator()).
                         required().
+                        withValidator(IntegerValidators.portValidator()).
                         build();
     }
 }

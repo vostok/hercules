@@ -78,13 +78,11 @@ public abstract class HttpServer {
         public static final Parameter<Integer> IO_THREADS =
                 Parameter.integerParameter("ioThreads").
                         withValidator(IntegerValidators.positive()).
-                        required().
                         build();
 
         public static final Parameter<Integer> WORKER_THREADS =
                 Parameter.integerParameter("workerThreads").
                         withValidator(IntegerValidators.positive()).
-                        required().
                         build();
 
         public static final Parameter<String> ROOT_PATH =

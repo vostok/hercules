@@ -128,8 +128,8 @@ public class GraphiteEventSender extends Sender {
 
         static final Parameter<Integer> GRAPHITE_PORT =
                 Parameter.integerParameter("graphite.port").
-                        withValidator(IntegerValidators.portValidator()).
                         required().
+                        withValidator(IntegerValidators.portValidator()).
                         build();
 
         static final Parameter<Integer> RETRY_LIMIT =

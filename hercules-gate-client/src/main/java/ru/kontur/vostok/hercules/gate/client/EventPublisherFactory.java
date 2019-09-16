@@ -93,7 +93,7 @@ public class EventPublisherFactory {
                         build();
 
         static final Parameter<String> ENVIRONMENT =
-                Parameter.stringParameter("service").
+                Parameter.stringParameter("environment").
                         required().
                         build();
     }

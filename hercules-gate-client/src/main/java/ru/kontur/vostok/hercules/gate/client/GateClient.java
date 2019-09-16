@@ -378,13 +378,13 @@ public class GateClient implements Closeable {
                         .build();
 
         static final Parameter<Integer> CONNECTION_COUNT =
-                Parameter.integerParameter("requestTimeout")
+                Parameter.integerParameter("connectionCount")
                         .withDefault(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
         static final Parameter<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME_MS =
-                Parameter.integerParameter("requestTimeout")
+                Parameter.integerParameter("greyListElementsRecoveryTimeMs")
                         .withDefault(GateClientDefaults.DEFAULT_RECOVERY_TIME)
                         .withValidator(IntegerValidators.positive())
                         .build();

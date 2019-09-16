@@ -213,7 +213,7 @@ public class CuratorClient {
         final int sessionTimeout = PropertiesUtil.get(Props.SESSION_TIMEOUT_MS, properties).get();
         final int baseSleepTime = PropertiesUtil.get(Props.BASE_SLEEP_TIME_MS, properties).get();
         final int maxRetries = PropertiesUtil.get(Props.MAX_RETRIES, properties).get();
-        final int maxSleepTime = PropertiesUtil.get(Props.BASE_SLEEP_TIME_MS, properties).get();
+        final int maxSleepTime = PropertiesUtil.get(Props.MAX_SLEEP_TIME_MS, properties).get();
 
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime);
 

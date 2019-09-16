@@ -239,8 +239,8 @@ public class EventPublisher {
 
         static final Parameter<String[]> URLS =
                 Parameter.stringArrayParameter("urls").
-                        withValidator(ArrayValidators.notEmpty()).
                         required().
+                        withValidator(ArrayValidators.notEmpty()).
                         build();
 
         static final Parameter<String> API_KEY =
