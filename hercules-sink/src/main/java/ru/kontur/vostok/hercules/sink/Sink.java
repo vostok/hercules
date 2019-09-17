@@ -76,10 +76,9 @@ public class Sink {
         this.batchSize = PropertiesUtil.get(Props.BATCH_SIZE, properties).get();
         this.availabilityTimeoutMs = PropertiesUtil.get(Props.AVAILABILITY_TIMEOUT_MS, properties).get();
 
-        ParameterValue<String> consumerGroupIdParameter = PropertiesUtil.get(Props.GROUP_ID, properties);
-        String consumerGroupId = consumerGroupIdParameter.isEmpty()
-                ? ConsumerUtil.toGroupId(applicationId, patternMatchers)
-                : consumerGroupIdParameter.get();
+        String consumerGroupId =
+                PropertiesUtil.get(Props.GROUP_ID, properties).
+                        orEmpty(ConsumerUtil.toGroupId(applicationId, patternMatchers));
 
         this.pattern = PatternMatcher.matcherListToRegexp(patternMatchers);
 
