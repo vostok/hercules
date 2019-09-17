@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.management.api.auth;
+package ru.kontur.vostok.hercules.auth;
 
 /**
  * The type of authentication.

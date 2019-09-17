@@ -4,22 +4,28 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
+import ru.kontur.vostok.hercules.auth.wrapper.OrdinaryAuthHandlerWrapper;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
+import ru.kontur.vostok.hercules.http.handler.HandlerWrapper;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -140,9 +146,17 @@ public class StreamApiApplication {
     private static HttpServer createHttpServer(Properties httpServerProperties) {
         StreamRepository repository = new StreamRepository(curatorClient);
 
+        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager);
+        HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
+
+        HttpHandler readStreamHandler = authHandlerWrapper.wrap(
+                new ReadStreamHandler(authProvider, repository, streamReader));
+        HttpHandler seekToEndHandler = authHandlerWrapper.wrap(
+                new SeekToEndHandler(authProvider, repository, consumerPool));
+
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
-                post("/stream/read", new ReadStreamHandler(streamReader, authManager, repository)).
-                get("/stream/seekToEnd", new SeekToEndHandler(authManager, repository, consumerPool)).
+                post("/stream/read", readStreamHandler).
+                get("/stream/seekToEnd", seekToEndHandler).
                 build();
 
         return new UndertowHttpServer(

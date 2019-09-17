@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -19,7 +19,6 @@ import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -38,12 +37,12 @@ public class SeekToEndHandler implements HttpHandler {
 
     private static final StreamReadStateWriter CONTENT_WRITER = new StreamReadStateWriter();
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final StreamRepository streamRepository;
     private final ConsumerPool<Void, byte[]> consumerPool;
 
-    public SeekToEndHandler(AuthManager authManager, StreamRepository repository, ConsumerPool<Void, byte[]> consumerPool) {
-        this.authManager = authManager;
+    public SeekToEndHandler(AuthProvider authProvider, StreamRepository repository, ConsumerPool<Void, byte[]> consumerPool) {
+        this.authProvider = authProvider;
         this.streamRepository = repository;
         this.consumerPool = consumerPool;
     }
@@ -51,12 +50,6 @@ public class SeekToEndHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        String apiKey = request.getHeader("apiKey");
-        if (StringUtil.isNullOrEmpty(apiKey)) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
-
         ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (!streamName.isOk()) {
             request.complete(
@@ -66,8 +59,7 @@ public class SeekToEndHandler implements HttpHandler {
             return;
         }
 
-        AuthResult authResult = authManager.authRead(apiKey, streamName.get());
-
+        AuthResult authResult = authProvider.authRead(request, streamName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
                 request.complete(HttpStatusCodes.UNAUTHORIZED);

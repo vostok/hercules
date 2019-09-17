@@ -1,8 +1,5 @@
-package ru.kontur.vostok.hercules.management.api.auth;
+package ru.kontur.vostok.hercules.auth;
 
-import ru.kontur.vostok.hercules.auth.AdminAuthManager;
-import ru.kontur.vostok.hercules.auth.AuthManager;
-import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 
 /**

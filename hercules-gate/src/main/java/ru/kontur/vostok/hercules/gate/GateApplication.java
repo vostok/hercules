@@ -3,16 +3,19 @@ package ru.kontur.vostok.hercules.gate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
+import ru.kontur.vostok.hercules.auth.wrapper.OrdinaryAuthHandlerWrapper;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.handler.HandlerWrapper;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -27,7 +30,9 @@ import ru.kontur.vostok.hercules.undertow.util.DefaultThrottledHttpServerRequest
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -179,8 +184,14 @@ public class GateApplication {
         );
 
         long maxContentLength = PropertiesUtil.get(HttpServer.Props.MAX_CONTENT_LENGTH, httpServerProperies).get();
-        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, true, maxContentLength);
-        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, false, maxContentLength);
+
+        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager);
+        HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
+
+        HttpHandler sendAsyncHandler = authHandlerWrapper.wrap(
+                new GateHandler(metricsCollector, authProvider, throttle, authValidationManager, streamStorage, true, maxContentLength));
+        HttpHandler sendHandler = authHandlerWrapper.wrap(
+                new GateHandler(metricsCollector, authProvider, throttle, authValidationManager, streamStorage, false, maxContentLength));
 
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperies, metricsCollector).
                 post("/stream/sendAsync", sendAsyncHandler).
