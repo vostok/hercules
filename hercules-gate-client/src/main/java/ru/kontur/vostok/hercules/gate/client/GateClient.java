@@ -19,8 +19,8 @@ import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.io.Closeable;
@@ -55,7 +55,7 @@ public class GateClient implements Closeable {
 
     public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList) {
 
-        this.greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
+        this.greyListElementsRecoveryTimeMs = PropertiesUtil.get(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS, properties).get();
         this.client = client;
         this.whiteList = whiteList;
         this.greyList = new ArrayBlockingQueue<>(whiteList.size());
@@ -68,11 +68,11 @@ public class GateClient implements Closeable {
     }
 
     public GateClient(Properties properties, Topology<String> whiteList) {
-        final int requestTimeout = Props.REQUEST_TIMEOUT.extract(properties);
-        final int connectionTimeout = Props.CONNECTION_TIMEOUT.extract(properties);
-        final int connectionCount = Props.CONNECTION_COUNT.extract(properties);
+        final int requestTimeout = PropertiesUtil.get(Props.REQUEST_TIMEOUT, properties).get();
+        final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT, properties).get();
+        final int connectionCount = PropertiesUtil.get(Props.CONNECTION_COUNT, properties).get();
 
-        this.greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
+        this.greyListElementsRecoveryTimeMs = PropertiesUtil.get(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS, properties).get();
         this.whiteList = whiteList;
         this.greyList = new ArrayBlockingQueue<>(whiteList.size());
 
@@ -365,33 +365,28 @@ public class GateClient implements Closeable {
     }
 
     private static class Props {
-        static final PropertyDescription<Integer> REQUEST_TIMEOUT =
-                PropertyDescriptions
-                        .integerProperty("requestTimeout")
-                        .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
+        static final Parameter<Integer> REQUEST_TIMEOUT =
+                Parameter.integerParameter("requestTimeout")
+                        .withDefault(GateClientDefaults.DEFAULT_TIMEOUT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final PropertyDescription<Integer> CONNECTION_TIMEOUT =
-                PropertyDescriptions
-                        .integerProperty("connectionTimeout")
-                        .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
+        static final Parameter<Integer> CONNECTION_TIMEOUT =
+                Parameter.integerParameter("connectionTimeout")
+                        .withDefault(GateClientDefaults.DEFAULT_TIMEOUT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final PropertyDescription<Integer> CONNECTION_COUNT =
-                PropertyDescriptions
-                        .integerProperty("connectionCount")
-                        .withDefaultValue(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
+        static final Parameter<Integer> CONNECTION_COUNT =
+                Parameter.integerParameter("connectionCount")
+                        .withDefault(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final PropertyDescription<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME_MS =
-                PropertyDescriptions
-                        .integerProperty("greyListElementsRecoveryTimeMs")
-                        .withDefaultValue(GateClientDefaults.DEFAULT_RECOVERY_TIME)
+        static final Parameter<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME_MS =
+                Parameter.integerParameter("greyListElementsRecoveryTimeMs")
+                        .withDefault(GateClientDefaults.DEFAULT_RECOVERY_TIME)
                         .withValidator(IntegerValidators.positive())
                         .build();
-
     }
 }

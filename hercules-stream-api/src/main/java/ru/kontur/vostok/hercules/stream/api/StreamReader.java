@@ -12,8 +12,8 @@ import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.util.Maps;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.StopwatchUtil;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
@@ -51,7 +51,7 @@ public class StreamReader {
         this.receivedEventsCountMeter = metricsCollector.meter("receivedEventsCount");
         this.receivedBytesCountMeter = metricsCollector.meter("receivedBytesCount");
 
-        readTimeoutMs = Props.READ_TIMEOUT_MS.extract(properties);
+        readTimeoutMs = PropertiesUtil.get(Props.READ_TIMEOUT_MS, properties).get();
     }
 
     public ByteStreamContent read(Stream stream, StreamReadState state, int shardIndex, int shardCount, int take) {
@@ -174,9 +174,9 @@ public class StreamReader {
     }
 
     static class Props {
-        static final PropertyDescription<Long> READ_TIMEOUT_MS =
-                PropertyDescriptions.longProperty("readTimeoutMs").
-                        withDefaultValue(1_000L).
+        static final Parameter<Long> READ_TIMEOUT_MS =
+                Parameter.longParameter("readTimeoutMs").
+                        withDefault(1_000L).
                         withValidator(LongValidators.positive()).
                         build();
     }

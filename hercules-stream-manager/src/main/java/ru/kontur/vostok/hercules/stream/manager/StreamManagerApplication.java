@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -13,8 +12,8 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Map;
@@ -25,14 +24,6 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class StreamManagerApplication {
-
-    private static class Props {
-        static final PropertyDescription<Integer> REPLICATION_FACTOR = PropertyDescriptions
-                .integerProperty("replicationFactor")
-                .withDefaultValue(1)
-                .withValidator(IntegerValidators.positive())
-                .build();
-    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamManagerApplication.class);
 
@@ -55,7 +46,7 @@ public class StreamManagerApplication {
             Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
-            final int replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
+            final int replicationFactor = PropertiesUtil.get(Props.REPLICATION_FACTOR, properties).get();
 
             ApplicationContextHolder.init("Hercules Stream manager", "stream-manager", contextProperties);
 
@@ -141,5 +132,13 @@ public class StreamManagerApplication {
         }
 
         LOGGER.info("Finished Stream Manager shutdown for {} millis", System.currentTimeMillis() - start);
+    }
+
+    private static class Props {
+        static final Parameter<Integer> REPLICATION_FACTOR =
+                Parameter.integerParameter("replicationFactor").
+                        withDefault(1).
+                        withValidator(IntegerValidators.positive()).
+                        build();
     }
 }

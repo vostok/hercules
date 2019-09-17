@@ -3,15 +3,14 @@ package ru.kontur.vostok.hercules.gate.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.ArrayValidators;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
@@ -50,9 +49,9 @@ public class EventPublisher {
     public EventPublisher(Properties properties,
                           ThreadFactory threadFactory,
                           List<EventQueue> queues) {
-        final int threads = Props.THREAD_COUNT.extract(properties);
-        final String[] urls = Props.URLS.extract(properties);
-        final String apiKey = Props.API_KEY.extract(properties);
+        final int threads = PropertiesUtil.get(Props.THREAD_COUNT, properties).get();
+        final String[] urls = PropertiesUtil.get(Props.URLS, properties).get();
+        final String apiKey = PropertiesUtil.get(Props.API_KEY, properties).get();
         final Properties gateClientProperties = PropertiesUtil.ofScope(properties, Scopes.GATE_CLIENT);
 
         this.urls = urls;
@@ -232,22 +231,21 @@ public class EventPublisher {
     }
 
     private static class Props {
-        static final PropertyDescription<Integer> THREAD_COUNT =
-                PropertyDescriptions
-                        .integerProperty("threads")
-                        .withDefaultValue(3)
-                        .withValidator(IntegerValidators.positive())
-                        .build();
+        static final Parameter<Integer> THREAD_COUNT =
+                Parameter.integerParameter("threads").
+                        withDefault(3).
+                        withValidator(IntegerValidators.positive()).
+                        build();
 
-        static final PropertyDescription<String[]> URLS =
-                PropertyDescriptions
-                        .arrayOfStringsProperty("urls")
-                        .withValidator(ArrayValidators.notEmpty())
-                        .build();
+        static final Parameter<String[]> URLS =
+                Parameter.stringArrayParameter("urls").
+                        required().
+                        withValidator(ArrayValidators.notEmpty()).
+                        build();
 
-        static final PropertyDescription<String> API_KEY =
-                PropertyDescriptions
-                        .stringProperty("apiKey")
-                        .build();
+        static final Parameter<String> API_KEY =
+                Parameter.stringParameter("apiKey").
+                        required().
+                        build();
     }
 }

@@ -5,8 +5,8 @@ import io.undertow.Undertow;
 import io.undertow.server.RoutingHandler;
 import ru.kontur.vostok.hercules.undertow.util.handlers.AboutHandler;
 import ru.kontur.vostok.hercules.undertow.util.handlers.PingHandler;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Properties;
@@ -20,24 +20,12 @@ import java.util.Properties;
 @Deprecated
 public class ApplicationStatusHttpServer {
 
-    private static class Props {
-        static final PropertyDescription<String> HOST = PropertyDescriptions
-                .stringProperty("host")
-                .withDefaultValue("0.0.0.0")
-                .build();
-
-        static final PropertyDescription<Integer> PORT = PropertyDescriptions
-                .integerProperty("port")
-                .withValidator(IntegerValidators.portValidator())
-                .build();
-    }
-
     private final Undertow undertow;
 
     public ApplicationStatusHttpServer(Properties statusServerProperties) {
 
-        final String host = Props.HOST.extract(statusServerProperties);
-        final int port = Props.PORT.extract(statusServerProperties);
+        final String host = PropertiesUtil.get(Props.HOST, statusServerProperties).get();
+        final int port = PropertiesUtil.get(Props.PORT, statusServerProperties).get();
 
         RoutingHandler handler = Handlers.routing()
                 .get("/ping", PingHandler.INSTANCE)
@@ -57,5 +45,18 @@ public class ApplicationStatusHttpServer {
 
     public void stop() {
         undertow.stop();
+    }
+
+    private static class Props {
+        static final Parameter<String> HOST =
+                Parameter.stringParameter("host").
+                        withDefault("0.0.0.0").
+                        build();
+
+        static final Parameter<Integer> PORT =
+                Parameter.integerParameter("port").
+                        required().
+                        withValidator(IntegerValidators.portValidator()).
+                        build();
     }
 }

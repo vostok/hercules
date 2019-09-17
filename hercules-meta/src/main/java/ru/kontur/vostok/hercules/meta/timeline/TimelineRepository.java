@@ -2,8 +2,6 @@ package ru.kontur.vostok.hercules.meta.timeline;
 
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
-import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.curator.result.DeletionResult;
 import ru.kontur.vostok.hercules.curator.result.ReadResult;

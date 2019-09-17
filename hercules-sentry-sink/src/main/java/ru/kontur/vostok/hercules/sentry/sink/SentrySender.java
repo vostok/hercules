@@ -4,10 +4,10 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
-import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.List;
 import java.util.Properties;
@@ -31,8 +31,8 @@ public class SentrySender extends Sender {
     public SentrySender(Properties senderProperties, MetricsCollector metricsCollector) {
         super(senderProperties, metricsCollector);
 
-        final String sentryUrl = Props.SENTRY_URL.extract(senderProperties);
-        final String sentryToken = Props.SENTRY_TOKEN.extract(senderProperties);
+        final String sentryUrl = PropertiesUtil.get(Props.SENTRY_URL, senderProperties).get();
+        final String sentryToken = PropertiesUtil.get(Props.SENTRY_TOKEN, senderProperties).get();
         sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient);
         this.processor = new SentrySyncProcessor(senderProperties, sentryClientHolder, metricsCollector);
@@ -56,12 +56,14 @@ public class SentrySender extends Sender {
     }
 
     private static class Props {
-        static final PropertyDescription<String> SENTRY_URL = PropertyDescriptions
-                .stringProperty("sentry.url")
-                .build();
+        static final Parameter<String> SENTRY_URL =
+                Parameter.stringParameter("sentry.url").
+                        required().
+                        build();
 
-        static final PropertyDescription<String> SENTRY_TOKEN = PropertyDescriptions
-                .stringProperty("sentry.token")
-                .build();
+        static final Parameter<String> SENTRY_TOKEN =
+                Parameter.stringParameter("sentry.token").
+                        required().
+                        build();
     }
 }

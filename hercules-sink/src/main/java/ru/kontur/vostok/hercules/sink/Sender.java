@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.List;
 import java.util.Properties;
@@ -34,7 +34,7 @@ public abstract class Sender extends Processor {
     public Sender(Properties properties, MetricsCollector metricsCollector) {
         this.metricsCollector = metricsCollector;
 
-        this.pingPeriodMs = Props.PING_PERIOD_MS.extract(properties);
+        this.pingPeriodMs = PropertiesUtil.get(Props.PING_PERIOD_MS, properties).get();
         this.executor = Executors.newSingleThreadScheduledExecutor();//TODO: Should provide ThreadFactory
     }
 
@@ -101,7 +101,9 @@ public abstract class Sender extends Processor {
     protected abstract int send(List<Event> events) throws BackendServiceFailedException;
 
     private static class Props {
-        static final PropertyDescription<Long> PING_PERIOD_MS =
-                PropertyDescriptions.longProperty("pingPeriodMs").withDefaultValue(5_000L).build();
+        static final Parameter<Long> PING_PERIOD_MS =
+                Parameter.longParameter("pingPeriodMs").
+                        withDefault(5_000L).
+                        build();
     }
 }

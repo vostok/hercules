@@ -4,7 +4,6 @@ import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 
-import javax.swing.text.html.Option;
 import java.util.Optional;
 
 /**

@@ -5,13 +5,12 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
@@ -57,7 +56,7 @@ public abstract class AbstractSinkDaemon {
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(
                     metricsCollector,
-                    Props.THREAD_GROUP_REGEXP.extract(metricsProperties));
+                    PropertiesUtil.get(Props.THREAD_GROUP_REGEXP, metricsProperties).get());
 
             applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
             applicationStatusHttpServer.start();
@@ -65,7 +64,7 @@ public abstract class AbstractSinkDaemon {
             this.sender = createSender(senderProperties, metricsCollector);
             sender.start();
 
-            int poolSize = Props.POOL_SIZE.extract(sinkProperties);
+            int poolSize = PropertiesUtil.get(Props.POOL_SIZE, sinkProperties).get();
             this.executor = Executors.newFixedThreadPool(poolSize);//TODO: Provide custom ThreadFactory
 
             this.sinkPool =
@@ -154,12 +153,14 @@ public abstract class AbstractSinkDaemon {
     }
 
     private static class Props {
-        static final PropertyDescription<Integer> POOL_SIZE =
-                PropertyDescriptions.integerProperty("poolSize").withDefaultValue(1).build();
+        static final Parameter<Integer> POOL_SIZE =
+                Parameter.integerParameter("poolSize").
+                        withDefault(1).
+                        build();
 
-        static final PropertyDescription<String[]> THREAD_GROUP_REGEXP =
-                PropertyDescriptions.arrayOfStringsProperty("thread.group.regexp").
-                        withDefaultValue(new String[]{}).
+        static final Parameter<String[]> THREAD_GROUP_REGEXP =
+                Parameter.stringArrayParameter("thread.group.regexp").
+                        withDefault(new String[]{}).
                         build();
     }
 }

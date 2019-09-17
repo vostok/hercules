@@ -6,8 +6,8 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.tags.TraceSpanTags;
 import ru.kontur.vostok.hercules.util.ObjectUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
@@ -27,7 +27,7 @@ public class TracingSender extends CassandraSender {
     public TracingSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
-        tableName = Props.TABLE_NAME.extract(properties);
+        tableName = PropertiesUtil.get(Props.TABLE_NAME, properties).get();
     }
 
     @Override
@@ -62,9 +62,9 @@ public class TracingSender extends CassandraSender {
     }
 
     private static class Props {
-        static final PropertyDescription<String> TABLE_NAME =
-                PropertyDescriptions.stringProperty("tableName").
-                        withDefaultValue("tracing_spans").
+        static final Parameter<String> TABLE_NAME =
+                Parameter.stringParameter("tableName").
+                        withDefault("tracing_spans").
                         build();
     }
 }
