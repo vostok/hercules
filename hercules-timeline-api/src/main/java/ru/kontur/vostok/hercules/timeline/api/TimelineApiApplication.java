@@ -3,7 +3,10 @@ package ru.kontur.vostok.hercules.timeline.api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
+import ru.kontur.vostok.hercules.auth.wrapper.OrdinaryAuthHandlerWrapper;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
@@ -12,6 +15,8 @@ import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
+import ru.kontur.vostok.hercules.http.handler.HandlerWrapper;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
@@ -19,6 +24,7 @@ import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandler
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -145,8 +151,14 @@ public class TimelineApiApplication {
     private static HttpServer createHttpServer(Properties httpServerProperties) {
         TimelineRepository repository = new TimelineRepository(curatorClient);
 
+        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager);
+        HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
+
+        HttpHandler readTimelineHandler = authHandlerWrapper.wrap(
+                new ReadTimelineHandler(authProvider, repository, timelineReader));
+
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
-                post("/timeline/read", new ReadTimelineHandler(repository, timelineReader, authManager)).
+                post("/timeline/read", readTimelineHandler).
                 build();
 
         return new UndertowHttpServer(

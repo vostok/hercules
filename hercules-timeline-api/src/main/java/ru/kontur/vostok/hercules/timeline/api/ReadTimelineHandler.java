@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.timeline.api;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -20,7 +20,6 @@ import ru.kontur.vostok.hercules.protocol.decoder.TimelineStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -38,13 +37,13 @@ public class ReadTimelineHandler implements HttpHandler {
 
     private final TimelineRepository timelineRepository;
     private final TimelineReader timelineReader;
-    private final AuthManager authManager;
     private final int timetrapCountLimit;
+    private final AuthProvider authProvider;
 
-    public ReadTimelineHandler(TimelineRepository timelineRepository, TimelineReader timelineReader, AuthManager authManager) {
+    public ReadTimelineHandler(AuthProvider authProvider, TimelineRepository timelineRepository, TimelineReader timelineReader) {
+        this.authProvider = authProvider;
         this.timelineRepository = timelineRepository;
         this.timelineReader = timelineReader;
-        this.authManager = authManager;
         this.timetrapCountLimit = timelineReader.getTimetrapCountLimit();
     }
 
@@ -60,12 +59,6 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        String apiKey = request.getHeader("apiKey");
-        if (StringUtil.isNullOrEmpty(apiKey)) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
-
         ParameterValue<String> timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
         if (!timelineName.isOk()) {
             request.complete(
@@ -75,8 +68,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        AuthResult authResult = authManager.authRead(apiKey, timelineName.get());
-
+        AuthResult authResult = authProvider.authRead(request, timelineName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
                 request.complete(HttpStatusCodes.UNAUTHORIZED);
@@ -190,6 +182,4 @@ public class ReadTimelineHandler implements HttpHandler {
                     }
                 }));
     }
-
-
 }

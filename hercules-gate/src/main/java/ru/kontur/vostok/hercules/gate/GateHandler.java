@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.gate;
 
 import com.codahale.metrics.Meter;
-import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -26,7 +26,7 @@ import java.util.Set;
 public class GateHandler implements HttpHandler {
     private final MetricsCollector metricsCollector;
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final Throttle<HttpServerRequest, SendContext> throttle;
     private final StreamStorage streamStorage;
     private final AuthValidationManager authValidationManager;
@@ -39,7 +39,7 @@ public class GateHandler implements HttpHandler {
 
     public GateHandler(
             MetricsCollector metricsCollector,
-            AuthManager authManager,
+            AuthProvider authProvider,
             Throttle<HttpServerRequest, SendContext> throttle,
             AuthValidationManager authValidationManager,
             StreamStorage streamStorage,
@@ -48,7 +48,7 @@ public class GateHandler implements HttpHandler {
     ) {
         this.metricsCollector = metricsCollector;
 
-        this.authManager = authManager;
+        this.authProvider = authProvider;
         this.throttle = throttle;
         this.authValidationManager = authValidationManager;
         this.streamStorage = streamStorage;
@@ -77,15 +77,17 @@ public class GateHandler implements HttpHandler {
         }
         //TODO: stream name validation
 
-        String apiKey = request.getHeader("apiKey");
-        if (apiKey == null) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return;
-        }
-        if (!auth(request, apiKey, stream)) {
+        AuthResult authResult = authProvider.authWrite(request, stream);
+        if (!authResult.isSuccess()) {
+            if (authResult.isUnknown()) {
+                request.complete(HttpStatusCodes.UNAUTHORIZED);
+                return;
+            }
+            request.complete(HttpStatusCodes.FORBIDDEN);
             return;
         }
 
+        String apiKey = request.getHeader("apiKey");
         // Check content length
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
@@ -126,21 +128,5 @@ public class GateHandler implements HttpHandler {
 
         SendContext context = new SendContext(async, topic, tags, partitions, shardingKey, validator);
         throttle.throttleAsync(request, context);
-    }
-
-    private boolean auth(HttpServerRequest request, String apiKey, String stream) {
-        AuthResult authResult = authManager.authWrite(apiKey, stream);
-
-        if (authResult.isSuccess()) {
-            return true;
-        }
-
-        if (authResult.isUnknown()) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
-            return false;
-        }
-
-        request.complete(HttpStatusCodes.FORBIDDEN);
-        return false;
     }
 }
