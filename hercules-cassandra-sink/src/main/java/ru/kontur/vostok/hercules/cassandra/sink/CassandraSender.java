@@ -12,13 +12,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.Sender;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.StopwatchUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
@@ -70,8 +69,8 @@ public abstract class CassandraSender extends Sender {
         Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
         cassandraConnector = new CassandraConnector(cassandraProperties);
 
-        timeoutMs = Props.SEND_TIMEOUT_MS.extract(properties);
-        batchSize = Props.BATCH_SIZE.extract(properties);
+        timeoutMs = PropertiesUtil.get(Props.SEND_TIMEOUT_MS, properties).get();
+        batchSize = PropertiesUtil.get(Props.BATCH_SIZE, properties).get();
     }
 
     @Override
@@ -193,15 +192,15 @@ public abstract class CassandraSender extends Sender {
     protected abstract Optional<Object[]> convert(Event event);
 
     private static class Props {
-        static final PropertyDescription<Long> SEND_TIMEOUT_MS =
-                PropertyDescriptions.longProperty("sendTimeoutMs").
-                        withDefaultValue(60_000L).
+        static final Parameter<Long> SEND_TIMEOUT_MS =
+                Parameter.longParameter("sendTimeoutMs").
+                        withDefault(60_000L).
                         withValidator(LongValidators.positive()).
                         build();
 
-        static final PropertyDescription<Integer> BATCH_SIZE =
-                PropertyDescriptions.integerProperty("batchSize").
-                        withDefaultValue(10).
+        static final Parameter<Integer> BATCH_SIZE =
+                Parameter.integerParameter("batchSize").
+                        withDefault(10).
                         withValidator(IntegerValidators.positive()).
                         build();
     }

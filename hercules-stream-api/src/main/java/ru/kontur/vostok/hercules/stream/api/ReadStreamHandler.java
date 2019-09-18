@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.stream.api;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -19,7 +19,6 @@ import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -35,14 +34,14 @@ public class ReadStreamHandler implements HttpHandler {
     private static final StreamReadStateReader STATE_READER = new StreamReadStateReader();
     private static final ByteStreamContentWriter CONTENT_WRITER = new ByteStreamContentWriter();
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final StreamReader streamReader;
     private final StreamRepository streamRepository;
 
-    public ReadStreamHandler(StreamReader streamReader, AuthManager authManager, StreamRepository streamRepository) {
-        this.streamReader = streamReader;
-        this.authManager = authManager;
+    public ReadStreamHandler(AuthProvider authProvider, StreamRepository streamRepository, StreamReader streamReader) {
+        this.authProvider = authProvider;
         this.streamRepository = streamRepository;
+        this.streamReader = streamReader;
     }
 
     @Override
@@ -50,12 +49,6 @@ public class ReadStreamHandler implements HttpHandler {
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
             request.complete(HttpStatusCodes.LENGTH_REQUIRED);
-            return;
-        }
-
-        String apiKey = request.getHeader("apiKey");
-        if (StringUtil.isNullOrEmpty(apiKey)) {
-            request.complete(HttpStatusCodes.UNAUTHORIZED);
             return;
         }
 
@@ -68,8 +61,7 @@ public class ReadStreamHandler implements HttpHandler {
             return;
         }
 
-        AuthResult authResult = authManager.authRead(apiKey, streamName.get());
-
+        AuthResult authResult = authProvider.authRead(request, streamName.get());
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
                 request.complete(HttpStatusCodes.UNAUTHORIZED);

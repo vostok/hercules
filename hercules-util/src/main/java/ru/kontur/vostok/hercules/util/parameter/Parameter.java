@@ -131,6 +131,20 @@ public class Parameter<T> {
     }
 
     /**
+     * Enum parameter builder.
+     * <p>
+     * Parameter is case-sensitive.
+     *
+     * @param name     the name of parameter
+     * @param enumType the enum type class
+     * @param <E>      the enum type
+     * @return builder
+     */
+    public static <E extends Enum<E>> EnumParameterBuilder<E> enumParameter(String name, Class<E> enumType) {
+        return new EnumParameterBuilder<>(name, enumType);
+    }
+
+    /**
      * Parameter builder with parser.
      * <p>
      * Should be used for uncommon parameters of various types. In simple cases use appropriate parameter builders instead.
@@ -249,6 +263,12 @@ public class Parameter<T> {
     public static class StringArrayParameterBuilder extends ParameterBuilder<String[]> {
         private StringArrayParameterBuilder(String name) {
             super(name, Parsers.forStringArray());
+        }
+    }
+
+    public static class EnumParameterBuilder<E extends Enum<E>> extends ParameterBuilder<E> {
+        private EnumParameterBuilder(String name, Class<E> enumType) {
+            super(name, Parsers.forEnum(enumType));
         }
     }
 }

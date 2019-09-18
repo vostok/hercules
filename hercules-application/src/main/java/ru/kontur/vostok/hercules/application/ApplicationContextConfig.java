@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.application;
 
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
 
@@ -14,9 +14,9 @@ public class ApplicationContextConfig {
     private final String instanceId;
 
     public ApplicationContextConfig(Properties properties) {
-        environment = Props.ENVIRONMENT.extract(properties);
-        zone = Props.ZONE.extract(properties);
-        instanceId = Props.INSTANCE_ID.extract(properties);
+        environment = PropertiesUtil.get(Props.ENVIRONMENT, properties).get();
+        zone = PropertiesUtil.get(Props.ZONE, properties).get();
+        instanceId = PropertiesUtil.get(Props.INSTANCE_ID, properties).get();
     }
 
     public String getEnvironment() {
@@ -32,16 +32,20 @@ public class ApplicationContextConfig {
     }
 
     private static class Props {
-        static final PropertyDescription<String> ENVIRONMENT = PropertyDescriptions
-                .stringProperty("environment")
-                .build();
+        static final Parameter<String> ENVIRONMENT =
+                Parameter.stringParameter("environment").
+                        required().
+                        build();
 
-        static final PropertyDescription<String> ZONE = PropertyDescriptions
-                .stringProperty("zone")
-                .build();
+        static final Parameter<String> ZONE =
+                Parameter.stringParameter("zone").
+                        required().
+                        build();
 
-        static final PropertyDescription<String> INSTANCE_ID = PropertyDescriptions
-                .stringProperty("instance.id")
-                .build();
+        static final Parameter<String> INSTANCE_ID =
+                Parameter.stringParameter("instance.id").
+                        required().
+                        build();
+
     }
 }

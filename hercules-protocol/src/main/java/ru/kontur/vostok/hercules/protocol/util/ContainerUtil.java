@@ -3,11 +3,7 @@ package ru.kontur.vostok.hercules.protocol.util;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.Vector;
-import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -18,6 +14,7 @@ import java.util.function.Function;
  * @author Kirill Sulim
  */
 public class ContainerUtil {
+
     public static <T> T extract(Container container, TagDescription<T> tag) {
         Variant variant = container.get(tag.getName());
         Type type = Optional.ofNullable(variant).map(Variant::getType).orElse(null);

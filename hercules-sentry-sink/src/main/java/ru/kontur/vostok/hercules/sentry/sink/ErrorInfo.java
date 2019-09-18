@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
-import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 
 import java.util.Arrays;
 import java.util.HashSet;

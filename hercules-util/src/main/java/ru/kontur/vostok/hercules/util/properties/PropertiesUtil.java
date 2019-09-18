@@ -47,6 +47,12 @@ public final class PropertiesUtil {
         return parameter.from(property);
     }
 
+    public static Properties copy(Properties properties) {
+        Properties copy = new Properties();
+        copy.putAll(properties);
+        return copy;
+    }
+
     private PropertiesUtil() {
         /* static class */
     }

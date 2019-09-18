@@ -21,8 +21,8 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.functional.Result;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -50,8 +50,8 @@ public class SentrySyncProcessor {
             SentryClientHolder sentryClientHolder,
             MetricsCollector metricsCollector
     ) {
-        this.requiredLevel = Props.REQUIRED_LEVEL.extract(sinkProperties);
-        this.retryLimit = Props.RETRY_LIMIT.extract(sinkProperties);
+        this.requiredLevel = PropertiesUtil.get(Props.REQUIRED_LEVEL, sinkProperties).get();
+        this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, sinkProperties).get();
         this.sentryClientHolder = sentryClientHolder;
         this.sentryClientHolder.update();
         this.metricsCollector = metricsCollector;
@@ -89,7 +89,10 @@ public class SentrySyncProcessor {
         }
         String organization = sanitizeName(organizationName.get());
 
-        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
+        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.SUBPROJECT_TAG);
+        if (!sentryProjectName.isPresent()) {
+            sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
+        }
         String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
 
         boolean processed = tryToSend(event, organization, sentryProject);
@@ -236,15 +239,14 @@ public class SentrySyncProcessor {
     }
 
     private static class Props {
-        static final PropertyDescription<Level> REQUIRED_LEVEL = PropertyDescriptions
-                .propertyOfType(Level.class, "sentry.level")
-                .withParser(SentryLevelEnumParser::parseAsResult)
-                .withDefaultValue(Level.WARNING)
-                .build();
+        static final Parameter<Level> REQUIRED_LEVEL =
+                Parameter.enumParameter("sentry.level", Level.class).
+                        withDefault(Level.WARNING).
+                        build();
 
-        static final PropertyDescription<Integer> RETRY_LIMIT = PropertyDescriptions
-                .integerProperty("sentry.retryLimit")
-                .withDefaultValue(3)
-                .build();
+        static final Parameter<Integer> RETRY_LIMIT =
+                Parameter.integerParameter("sentry.retryLimit").
+                        withDefault(3).
+                        build();
     }
 }

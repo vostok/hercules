@@ -12,16 +12,15 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidDeserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -73,14 +72,13 @@ public class Sink {
         this.processor = processor;
         this.patternMatchers = patternMatchers;
 
-        this.pollTimeout = Duration.ofMillis(Props.POLL_TIMEOUT_MS.extract(properties));
-        this.batchSize = Props.BATCH_SIZE.extract(properties);
-        this.availabilityTimeoutMs = Props.AVAILABILITY_TIMEOUT_MS.extract(properties);
+        this.pollTimeout = Duration.ofMillis(PropertiesUtil.get(Props.POLL_TIMEOUT_MS, properties).get());
+        this.batchSize = PropertiesUtil.get(Props.BATCH_SIZE, properties).get();
+        this.availabilityTimeoutMs = PropertiesUtil.get(Props.AVAILABILITY_TIMEOUT_MS, properties).get();
 
-        String consumerGroupId = Props.GROUP_ID.extract(properties);
-        if (StringUtil.isNullOrEmpty(consumerGroupId)) {
-            consumerGroupId = ConsumerUtil.toGroupId(applicationId, patternMatchers);
-        }
+        String consumerGroupId =
+                PropertiesUtil.get(Props.GROUP_ID, properties).
+                        orEmpty(ConsumerUtil.toGroupId(applicationId, patternMatchers));
 
         this.pattern = PatternMatcher.matcherListToRegexp(patternMatchers);
 
@@ -253,24 +251,23 @@ public class Sink {
     }
 
     private static class Props {
-        static final PropertyDescription<Long> POLL_TIMEOUT_MS =
-                PropertyDescriptions.longProperty("pollTimeoutMs").
-                        withDefaultValue(6_000L).
+        static final Parameter<Long> POLL_TIMEOUT_MS =
+                Parameter.longParameter("pollTimeoutMs").
+                        withDefault(6_000L).
                         build();
 
-        static final PropertyDescription<Integer> BATCH_SIZE =
-                PropertyDescriptions.integerProperty("batchSize").
-                        withDefaultValue(1000).
+        static final Parameter<Integer> BATCH_SIZE =
+                Parameter.integerParameter("batchSize").
+                        withDefault(1000).
                         build();
 
-        static final PropertyDescription<String> GROUP_ID =
-                PropertyDescriptions.stringProperty("groupId").
-                        withDefaultValue(null).
+        static final Parameter<String> GROUP_ID =
+                Parameter.stringParameter("groupId").
                         build();
 
-        static final PropertyDescription<Long> AVAILABILITY_TIMEOUT_MS =
-                PropertyDescriptions.longProperty("availabilityTimeoutMs").
-                        withDefaultValue(2_000L).
+        static final Parameter<Long> AVAILABILITY_TIMEOUT_MS =
+                Parameter.longParameter("availabilityTimeoutMs").
+                        withDefault(2_000L).
                         build();
     }
 }

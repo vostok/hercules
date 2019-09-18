@@ -1,9 +1,9 @@
 package ru.kontur.vostok.hercules.gate.client;
 
 import ru.kontur.vostok.hercules.util.Lazy;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.ConfigsUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,9 +39,9 @@ public class EventPublisherFactory {
 
             LAZY_INSTANCE = new Lazy<>(() -> createPublisher(properties));
 
-            PROJECT = Props.PROJECT.extract(properties);
-            SERVICE = Props.SERVICE.extract(properties);
-            ENVIRONMENT = Props.ENVIRONMENT.extract(properties);
+            PROJECT = PropertiesUtil.get(Props.PROJECT, properties).get();
+            SERVICE = PropertiesUtil.get(Props.SERVICE, properties).get();
+            ENVIRONMENT = PropertiesUtil.get(Props.ENVIRONMENT, properties).get();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -82,17 +82,19 @@ public class EventPublisherFactory {
     }
 
     private static class Props {
-        static final PropertyDescription<String> PROJECT = PropertyDescriptions
-            .stringProperty("project")
-            .build();
+        static final Parameter<String> PROJECT =
+                Parameter.stringParameter("project").
+                        required().
+                        build();
 
-        static final PropertyDescription<String> SERVICE = PropertyDescriptions
-            .stringProperty("service")
-            .withDefaultValue(null)
-            .build();
+        static final Parameter<String> SERVICE =
+                Parameter.stringParameter("service").
+                        required().
+                        build();
 
-        static final PropertyDescription<String> ENVIRONMENT = PropertyDescriptions
-            .stringProperty("environment")
-            .build();
+        static final Parameter<String> ENVIRONMENT =
+                Parameter.stringParameter("environment").
+                        required().
+                        build();
     }
 }

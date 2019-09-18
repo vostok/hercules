@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 import java.util.Optional;
 
 /**
- * Tags for Sentry attributes
+ * Tags for Sentry attributes and Sentry interfaces
  *
  * @author Petr Demenev
  */
@@ -37,6 +37,13 @@ public class SentryTags {
      * The platform of the application which generated the event
      */
     public static TagDescription<Optional<String>> PLATFORM_TAG = TagDescriptionBuilder.string("platform")
+            .optional()
+            .build();
+
+    /**
+     * The name of the logger which created the event
+     */
+    public static TagDescription<Optional<String>> LOGGER_TAG = TagDescriptionBuilder.string("logger")
             .optional()
             .build();
 }

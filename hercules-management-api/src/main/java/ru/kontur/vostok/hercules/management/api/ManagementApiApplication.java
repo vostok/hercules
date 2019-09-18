@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
+import ru.kontur.vostok.hercules.auth.wrapper.AdminAuthHandlerWrapper;
+import ru.kontur.vostok.hercules.auth.wrapper.AuthHandlerWrapper;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
@@ -14,9 +17,6 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
-import ru.kontur.vostok.hercules.management.api.auth.AdminAuthHandlerWrapper;
-import ru.kontur.vostok.hercules.management.api.auth.AuthHandlerWrapper;
-import ru.kontur.vostok.hercules.management.api.auth.AuthProvider;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
@@ -45,25 +45,19 @@ import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
 
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Gregory Koshelev
  */
 public class ManagementApiApplication {
-
-    private static class Props {
-        static final PropertyDescription<Set<String>> ADMIN_KEYS = PropertyDescriptions
-                .setOfStringsProperty("keys")
-                .build();
-    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ManagementApiApplication.class);
 
@@ -102,7 +96,7 @@ public class ManagementApiApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            adminAuthManager = new AdminAuthManager(Props.ADMIN_KEYS.extract(properties));
+            adminAuthManager = new AdminAuthManager(Stream.of(PropertiesUtil.get(Props.ADMIN_KEYS, properties).get()).collect(Collectors.toSet()));
 
             streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
             timelineTaskQueue = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
@@ -242,5 +236,12 @@ public class ManagementApiApplication {
                 Application.application().getConfig().getPort(),
                 httpServerProperties,
                 handler);
+    }
+
+    private static class Props {
+        static final Parameter<String[]> ADMIN_KEYS =
+                Parameter.stringArrayParameter("keys").
+                        required().
+                        build();
     }
 }

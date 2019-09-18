@@ -23,7 +23,7 @@ public class ParameterValue<T> {
     }
 
     /**
-     * Returns valid value. Otherwise throws exception.
+     * Returns valid non null value. Otherwise throws exception.
      *
      * @return the value of type {@link T}
      * @throws IllegalStateException if value is empty
@@ -67,6 +67,7 @@ public class ParameterValue<T> {
      *
      * @return validation result
      */
+    @NotNull
     public ValidationResult result() {
         return result;
     }
@@ -105,6 +106,7 @@ public class ParameterValue<T> {
      * @param <T>   the value type
      * @return valid parameter's value
      */
+    @NotNull
     public static <T> ParameterValue<T> of(@NotNull T value) {
         return new ParameterValue<>(value, ValidationResult.ok());
     }
@@ -116,7 +118,8 @@ public class ParameterValue<T> {
      * @param <T>    the value type
      * @return invalid parameter's value
      */
-    public static <T> ParameterValue<T> invalid(ValidationResult result) {
+    @NotNull
+    public static <T> ParameterValue<T> invalid(@NotNull ValidationResult result) {
         return new ParameterValue<>(null, result);
     }
 
@@ -127,7 +130,8 @@ public class ParameterValue<T> {
      * @param <T>   the value type
      * @return invalid parameter's value
      */
-    public static <T> ParameterValue<T> invalid(String error) {
+    @NotNull
+    public static <T> ParameterValue<T> invalid(@Nullable String error) {
         return new ParameterValue<>(null, ValidationResult.error(error != null ? error : "unknown"));
     }
 
@@ -138,6 +142,7 @@ public class ParameterValue<T> {
      * @return valid parameter's value
      */
     @SuppressWarnings("unchecked")
+    @NotNull
     public static <T> ParameterValue<T> empty() {
         return (ParameterValue<T>) EMPTY;
     }
@@ -149,6 +154,7 @@ public class ParameterValue<T> {
      * @return invalid parameter's value
      */
     @SuppressWarnings("unchecked")
+    @NotNull
     public static <T> ParameterValue<T> missed() {
         return (ParameterValue<T>) MISSED;
     }

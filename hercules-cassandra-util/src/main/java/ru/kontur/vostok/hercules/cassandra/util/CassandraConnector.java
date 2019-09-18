@@ -19,8 +19,8 @@ import com.datastax.oss.protocol.internal.PrimitiveSizes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.nio.ByteBuffer;
@@ -54,19 +54,19 @@ public class CassandraConnector {
     private volatile int batchSizeBytesMinimum;
 
     public CassandraConnector(Properties properties) {
-        this.dataCenter = Props.DATA_CENTER.extract(properties);
-        this.nodes = Props.NODES.extract(properties);
-        this.keyspace = Props.KEYSPACE.extract(properties);
+        this.dataCenter = PropertiesUtil.get(Props.DATA_CENTER, properties).get();
+        this.nodes = PropertiesUtil.get(Props.NODES, properties).get();
+        this.keyspace = PropertiesUtil.get(Props.KEYSPACE, properties).get();
 
-        this.requestTimeoutMs = Props.REQUEST_TIMEOUT_MS.extract(properties);
+        this.requestTimeoutMs = PropertiesUtil.get(Props.REQUEST_TIMEOUT_MS, properties).get();
 
-        this.connectionsPerHostLocal = Props.CONNECTIONS_PER_HOST_LOCAL.extract(properties);
-        this.connectionsPerHostRemote = Props.CONNECTIONS_PER_HOST_REMOTE.extract(properties);
-        this.maxRequestsPerConnection = Props.MAX_REQUEST_PER_CONNECTION.extract(properties);
+        this.connectionsPerHostLocal = PropertiesUtil.get(Props.CONNECTIONS_PER_HOST_LOCAL, properties).get();
+        this.connectionsPerHostRemote = PropertiesUtil.get(Props.CONNECTIONS_PER_HOST_REMOTE, properties).get();
+        this.maxRequestsPerConnection = PropertiesUtil.get(Props.MAX_REQUEST_PER_CONNECTION, properties).get();
 
-        this.consistencyLevel = Props.CONSISTENCY_LEVEL.extract(properties);
+        this.consistencyLevel = PropertiesUtil.get(Props.CONSISTENCY_LEVEL, properties).get();
 
-        this.batchSizeBytesLimit = Props.BATCH_SIZE_BYTES_LIMIT.extract(properties);
+        this.batchSizeBytesLimit = PropertiesUtil.get(Props.BATCH_SIZE_BYTES_LIMIT, properties).get();
     }
 
     public void connect() {
@@ -169,49 +169,49 @@ public class CassandraConnector {
     }
 
     private static class Props {
-        static final PropertyDescription<String> DATA_CENTER =
-                PropertyDescriptions.stringProperty("dataCenter").
-                        withDefaultValue(CassandraDefaults.DEFAULT_DATA_CENTER).
+        static final Parameter<String> DATA_CENTER =
+                Parameter.stringParameter("dataCenter").
+                        withDefault(CassandraDefaults.DEFAULT_DATA_CENTER).
                         build();
 
-        static final PropertyDescription<String[]> NODES =
-                PropertyDescriptions.arrayOfStringsProperty("nodes").
-                        withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS}).
+        static final Parameter<String[]> NODES =
+                Parameter.stringArrayParameter("nodes").
+                        withDefault(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS}).
                         build();
 
-        static final PropertyDescription<String> KEYSPACE =
-                PropertyDescriptions.stringProperty("keyspace").
-                        withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE).
+        static final Parameter<String> KEYSPACE =
+                Parameter.stringParameter("keyspace").
+                        withDefault(CassandraDefaults.DEFAULT_KEYSPACE).
                         build();
 
-        static final PropertyDescription<Long> REQUEST_TIMEOUT_MS =
-                PropertyDescriptions.longProperty("requestTimeoutMs").
-                        withDefaultValue(CassandraDefaults.DEFAULT_READ_TIMEOUT_MILLIS).
+        static final Parameter<Long> REQUEST_TIMEOUT_MS =
+                Parameter.longParameter("requestTimeoutMs").
+                        withDefault(CassandraDefaults.DEFAULT_READ_TIMEOUT_MILLIS).
                         build();
 
-        static final PropertyDescription<Integer> CONNECTIONS_PER_HOST_LOCAL =
-                PropertyDescriptions.integerProperty("connectionsPerHostLocal").
-                        withDefaultValue(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_LOCAL).
+        static final Parameter<Integer> CONNECTIONS_PER_HOST_LOCAL =
+                Parameter.integerParameter("connectionsPerHostLocal").
+                        withDefault(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_LOCAL).
                         build();
 
-        static final PropertyDescription<Integer> CONNECTIONS_PER_HOST_REMOTE =
-                PropertyDescriptions.integerProperty("connectionsPerHostRemote").
-                        withDefaultValue(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_REMOTE).
+        static final Parameter<Integer> CONNECTIONS_PER_HOST_REMOTE =
+                Parameter.integerParameter("connectionsPerHostRemote").
+                        withDefault(CassandraDefaults.DEFAULT_CONNECTIONS_PER_HOST_REMOTE).
                         build();
 
-        static final PropertyDescription<Integer> MAX_REQUEST_PER_CONNECTION =
-                PropertyDescriptions.integerProperty("maxRequestsPerConnection").
-                        withDefaultValue(CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION).
+        static final Parameter<Integer> MAX_REQUEST_PER_CONNECTION =
+                Parameter.integerParameter("maxRequestsPerConnection").
+                        withDefault(CassandraDefaults.DEFAULT_MAX_REQUEST_PER_CONNECTION).
                         build();
 
-        static final PropertyDescription<String> CONSISTENCY_LEVEL =
-                PropertyDescriptions.stringProperty("consistencyLevel").
-                        withDefaultValue(DefaultConsistencyLevel.QUORUM.name()).
+        static final Parameter<String> CONSISTENCY_LEVEL =
+                Parameter.stringParameter("consistencyLevel").
+                        withDefault(DefaultConsistencyLevel.QUORUM.name()).
                         build();
 
-        static final PropertyDescription<Integer> BATCH_SIZE_BYTES_LIMIT =
-                PropertyDescriptions.integerProperty("batchSizeBytesLimit").
-                        withDefaultValue(CassandraDefaults.DEFAULT_BATCH_SIZE_BYTES_LIMIT).
+        static final Parameter<Integer> BATCH_SIZE_BYTES_LIMIT =
+                Parameter.integerParameter("batchSizeBytesLimit").
+                        withDefault(CassandraDefaults.DEFAULT_BATCH_SIZE_BYTES_LIMIT).
                         withValidator(IntegerValidators.positive()).
                         build();
     }

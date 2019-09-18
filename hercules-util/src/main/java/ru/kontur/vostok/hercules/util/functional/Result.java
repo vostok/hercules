@@ -1,8 +1,6 @@
 package ru.kontur.vostok.hercules.util.functional;
 
-import javax.swing.text.html.Option;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 

@@ -123,10 +123,12 @@ public class GraphiteEventSender extends Sender {
     private static class Props {
         static final Parameter<String> GRAPHITE_HOST =
                 Parameter.stringParameter("graphite.host").
+                        required().
                         build();
 
         static final Parameter<Integer> GRAPHITE_PORT =
                 Parameter.integerParameter("graphite.port").
+                        required().
                         withValidator(IntegerValidators.portValidator()).
                         build();
 

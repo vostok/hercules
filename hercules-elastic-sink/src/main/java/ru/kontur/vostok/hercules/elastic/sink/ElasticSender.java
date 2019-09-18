@@ -10,32 +10,32 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
-import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
-import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
-import ru.kontur.vostok.hercules.util.parsing.Parsers;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
@@ -53,6 +53,7 @@ public class ElasticSender extends Sender {
 
     private final RestClient restClient;
     private final ElasticResponseHandler elasticResponseHandler;
+    private final LeproserySender leproserySender;
 
     private final int retryLimit;
     private final boolean retryOnUnknownErrors;
@@ -60,23 +61,27 @@ public class ElasticSender extends Sender {
 
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
+    private final Meter elasticsearchDroppedNonRetryableErrorsMeter;
 
     private final Set<String> redefinedExceptions;
+    private final boolean leproseryEnable;
 
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
-        this.retryLimit = Props.RETRY_LIMIT.extract(properties);
+        this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
 
-        HttpHost[] hosts = Props.HOSTS.extract(properties);
-        final int maxConnections = Props.MAX_CONNECTIONS.extract(properties);
-        final int maxConnectionsPerRoute = Props.MAX_CONNECTIONS_PER_ROUTE.extract(properties);
-        final int retryTimeoutMs = Props.RETRY_TIMEOUT_MS.extract(properties);
-        final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
-        final int connectionRequestTimeout = Props.CONNECTION_REQUEST_TIMEOUT_MS.extract(properties);
-        final int socketTimeout = Props.SOCKET_TIMEOUT_MS.extract(properties);
+        final HttpHost[] hosts = PropertiesUtil.get(Props.HOSTS, properties).get();
+        final int maxConnections = PropertiesUtil.get(Props.MAX_CONNECTIONS, properties).get();
+        final int maxConnectionsPerRoute = PropertiesUtil.get(Props.MAX_CONNECTIONS_PER_ROUTE, properties).get();
+        final int retryTimeoutMs = PropertiesUtil.get(Props.RETRY_TIMEOUT_MS, properties).get();
+        final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, properties).get();
+        final int connectionRequestTimeout = PropertiesUtil.get(Props.CONNECTION_REQUEST_TIMEOUT_MS, properties).get();
+        final int socketTimeout = PropertiesUtil.get(Props.SOCKET_TIMEOUT_MS, properties).get();
 
-        this.redefinedExceptions = new HashSet<>(Arrays.asList(Props.REDEFINED_EXCEPTIONS.extract(properties)));
+        this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_MODE, properties).get();
+
+        this.redefinedExceptions = new HashSet<>(Arrays.asList(PropertiesUtil.get(Props.REDEFINED_EXCEPTIONS, properties).get()));
 
         this.restClient = RestClient.builder(hosts)
                 .setMaxRetryTimeoutMillis(retryTimeoutMs)
@@ -91,13 +96,18 @@ public class ElasticSender extends Sender {
                 )
                 .build();
 
-        this.retryOnUnknownErrors = Props.RETRY_ON_UNKNOWN_ERRORS.extract(properties);
-        this.mergePropertiesTagToRoot = Props.MERGE_PROPERTIES_TAG_TO_ROOT.extract(properties);
+        this.retryOnUnknownErrors = PropertiesUtil.get(Props.RETRY_ON_UNKNOWN_ERRORS, properties).get();
+        this.mergePropertiesTagToRoot = PropertiesUtil.get(Props.MERGE_PROPERTIES_TAG_TO_ROOT, properties).get();
 
         this.elasticResponseHandler = new ElasticResponseHandler(metricsCollector);
 
+        this.leproserySender = leproseryEnable
+                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector)
+                : null;
+
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
+        this.elasticsearchDroppedNonRetryableErrorsMeter = metricsCollector.meter("elasticsearchDroppedNonRetryableErrors");
     }
 
     @Override
@@ -119,157 +129,208 @@ public class ElasticSender extends Sender {
         if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
             events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
-
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(events.size() * EXPECTED_EVENT_SIZE_BYTES);
-        int droppedCount = writeEventRecords(stream, events);
-        if (stream.size() == 0) {
-            return 0;
+        int droppedCount;
+        Map<EventWrapper, ValidationResult> nonRetryableErrorsMap = new HashMap<>(events.size());
+        //event-id -> event-wrapper
+        Map<String, EventWrapper> readyToSend = new HashMap<>(events.size());
+        for (Event event : events) {
+            EventWrapper wrapper = new EventWrapper(event);
+            ValidationResult validationResult = validate(wrapper);
+            if (validationResult.isOk()) {
+                readyToSend.put(wrapper.getId(), wrapper);
+            } else {
+                nonRetryableErrorsMap.put(wrapper, validationResult);
+            }
         }
 
-        ElasticResponseHandler.Result result;
         try {
-            ByteArrayEntity body = new ByteArrayEntity(stream.toByteArray(), ContentType.APPLICATION_JSON);
-
             int retryCount = retryLimit;
             boolean needToRetry;
             do {
-                Response response;
-                try (AutoMetricStopwatch requestTime = new AutoMetricStopwatch(elasticsearchRequestTimeTimer, TimeUnit.MILLISECONDS)) {
-                    response = restClient.performRequest(
-                            "POST",
-                            "/_bulk",
-                            Collections.emptyMap(),
-                            body
+                ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);
+                readyToSend.values().forEach(wrapper -> writeEventToStream(dataStream, wrapper));
+                ElasticResponseHandler.Result result = trySend(new ByteArrayEntity(dataStream.toByteArray(), ContentType.APPLICATION_JSON));
 
-                    );
-                } catch (IOException ex) {
-                    elasticsearchRequestErrorsMeter.mark();
-                    throw ex;
-                }
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    elasticsearchRequestErrorsMeter.mark();
-                    throw new RuntimeException("Bad response");
-                }
-                result = elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
                 if (result.getTotalErrors() != 0) {
-                    LOGGER.info(
-                            "Error statistics (retryanble/non retyable/unknown/total): {}/{}/{}/{}",
-                            result.getRetryableErrorCount(),
-                            result.getNonRetryableErrorCount(),
-                            result.getUnknownErrorCount(),
-                            result.getTotalErrors()
-                    );
+                    resultProcess(result).forEach((eventId, validationResult) -> {
+                        nonRetryableErrorsMap.put(readyToSend.get(eventId), validationResult);
+                        readyToSend.remove(eventId);
+                    });
+                } else {
+                    readyToSend.clear();
                 }
-                if (result.hasUnknownErrors() && LOGGER.isInfoEnabled()) {
-                    for (Event event : events) {
-                        if (result.getBadIds().contains(EventUtil.extractStringId(event))) {
-                            LOGGER.info("Event caused unknown error: {}", EventFormatter.format(event, false));
-                        }
-                    }
-                }
-                needToRetry = result.hasRetryableErrors() || (result.hasUnknownErrors() && retryOnUnknownErrors);
+                needToRetry = readyToSend.size() > 0;
             } while (0 < retryCount-- && needToRetry);
+
             if (needToRetry) {
                 throw new Exception("Have retryable errors in elasticsearch response");
             }
+
+            droppedCount = errorsProcess(nonRetryableErrorsMap);
         } catch (Exception e) {
             throw new BackendServiceFailedException(e);
         }
 
-        if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
+        if (PROCESSED_EVENT_LOGGER.isTraceEnabled())
             events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
-        }
-
-        droppedCount += result.getTotalErrors();
 
         return events.size() - droppedCount;
-
     }
 
-    private int writeEventRecords(OutputStream stream, Collection<Event> events) {
-        return toUnchecked(() -> {
-            int droppedCount = 0;
-            for (Event event : events) {
-                boolean result = IndexToElasticJsonWriter.tryWriteIndex(stream, event);
-                if (result) {
-                    stream.write('\n');
-                    EventToElasticJsonWriter.writeEvent(stream, event, mergePropertiesTagToRoot);
-                    stream.write('\n');
-                } else {
-                    droppedCount++;
-                    DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
-                }
+    private Map<String, ValidationResult> resultProcess(ElasticResponseHandler.Result result) {
+        LOGGER.info(
+                "Error statistics (retryable/non retryable/unknown/total): {}/{}/{}/{}",
+                result.getRetryableErrorCount(),
+                result.getNonRetryableErrorCount(),
+                result.getUnknownErrorCount(),
+                result.getTotalErrors()
+        );
+
+        Map<String, ValidationResult> errorsMap = new HashMap<>(result.getErrors().size());
+        for (Map.Entry<String, ErrorInfo> entry : result.getErrors().entrySet()) {
+            String eventId = entry.getKey();
+            ErrorInfo errorInfo = entry.getValue();
+            ErrorType type = errorInfo.getType();
+            if (type.equals(ErrorType.NON_RETRYABLE) || (type.equals(ErrorType.UNKNOWN) && !retryOnUnknownErrors)) {
+                errorsMap.put(eventId, ValidationResult.error(errorInfo.getReason()));
             }
-            return droppedCount;
+        }
+        return errorsMap;
+    }
+
+    /**
+     * @return count of dropped events
+     */
+    private int errorsProcess(Map<EventWrapper, ValidationResult> nonRetryableErrorsInfo) {
+        if (nonRetryableErrorsInfo.isEmpty()) {
+            return 0;
+        }
+        if (leproseryEnable) {
+            try {
+                leproserySender.convertAndSend(nonRetryableErrorsInfo);
+                return 0;
+            } catch (Exception e) {
+                elasticsearchDroppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
+                return nonRetryableErrorsInfo.size();
+            }
+        } else {
+            nonRetryableErrorsInfo.forEach((wrapper, validationResult) -> {
+                LOGGER.warn("Non retryable error info: id = {}, index = {}, reason = {}",
+                        wrapper.getId(),
+                        wrapper.getIndex(),
+                        validationResult.error());
+                Event event = wrapper.getEvent();
+                DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
+            });
+            elasticsearchDroppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
+            return nonRetryableErrorsInfo.size();
+        }
+    }
+
+    private void writeEventToStream(ByteArrayOutputStream stream, EventWrapper wrapper) {
+        toUnchecked(() -> {
+            IndexToElasticJsonWriter.writeIndex(stream, wrapper.getIndex(), wrapper.getId());
+            stream.write('\n');
+            EventToElasticJsonWriter.writeEvent(stream, wrapper.getEvent(), mergePropertiesTagToRoot);
+            stream.write('\n');
         });
     }
 
+    private ElasticResponseHandler.Result trySend(ByteArrayEntity body) {
+        Response response;
+        try (AutoMetricStopwatch requestTime = new AutoMetricStopwatch(elasticsearchRequestTimeTimer, TimeUnit.MILLISECONDS)) {
+            response = restClient.performRequest("POST", "/_bulk", Collections.emptyMap(), body);
+        } catch (IOException ex) {
+            elasticsearchRequestErrorsMeter.mark();
+            throw new RuntimeException(ex);
+        }
+        if (response.getStatusLine().getStatusCode() != 200) {
+            elasticsearchRequestErrorsMeter.mark();
+            throw new RuntimeException("Bad response");
+        }
+        return elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
+    }
+
+    private ValidationResult validate(EventWrapper wrapper) {
+        boolean hasIndex = wrapper.getIndex() != null;
+        boolean withValidSize = wrapper.getEvent().getBytes().length <= EXPECTED_EVENT_SIZE_BYTES;
+        if (hasIndex && withValidSize) {
+            return ValidationResult.ok();
+        } else if (!hasIndex) {
+            return ValidationResult.error("Event has unknown index");
+        } else {
+            return ValidationResult.error("Event has invalid size");
+        }
+    }
+
     private static class Props {
-        static final PropertyDescription<Integer> RETRY_LIMIT = PropertyDescriptions
-                .integerProperty("retryLimit")
-                .withDefaultValue(3)
+        static final Parameter<Integer> RETRY_LIMIT = Parameter
+                .integerParameter("retryLimit")
+                .withDefault(3)
+                .withValidator(IntegerValidators.nonNegative())
                 .build();
 
-        static final PropertyDescription<Boolean> RETRY_ON_UNKNOWN_ERRORS = PropertyDescriptions
-                .booleanProperty("retryOnUnknownErrors")
-                .withDefaultValue(Boolean.FALSE)
+        static final Parameter<Boolean> RETRY_ON_UNKNOWN_ERRORS = Parameter
+                .booleanParameter("retryOnUnknownErrors")
+                .withDefault(Boolean.FALSE)
                 .build();
 
-        static final PropertyDescription<HttpHost[]> HOSTS = PropertyDescriptions
-                .propertyOfType(HttpHost[].class, "elastic.hosts")
-                .withParser(Parsers.parseArray(HttpHost.class, s -> {
-                    try {
-                        return Result.ok(HttpHost.create(s));
-                    } catch (IllegalArgumentException e) {
-                        return Result.error(e.getMessage());
-                    }
-                }))
+        static final Parameter<HttpHost[]> HOSTS = Parameter
+                .parameter("elastic.hosts",
+                        Parsers.fromFunction(str ->
+                                Stream.of(str.split(",")).map(HttpHost::create).toArray(HttpHost[]::new)))
                 .build();
 
-        static final PropertyDescription<Integer> MAX_CONNECTIONS = PropertyDescriptions
-                .integerProperty("elastic.maxConnections")
+        static final Parameter<Integer> MAX_CONNECTIONS = Parameter
+                .integerParameter("elastic.maxConnections")
                 .withValidator(IntegerValidators.positive())
-                .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL)
+                .withDefault(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL)
                 .build();
 
-        static final PropertyDescription<Integer> MAX_CONNECTIONS_PER_ROUTE = PropertyDescriptions
-                .integerProperty("elastic.maxConnectionsPerRoute")
+        static final Parameter<Integer> MAX_CONNECTIONS_PER_ROUTE = Parameter
+                .integerParameter("elastic.maxConnectionsPerRoute")
                 .withValidator(IntegerValidators.positive())
-                .withDefaultValue(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE)
+                .withDefault(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE)
                 .build();
 
-        static final PropertyDescription<Integer> RETRY_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("elastic.retryTimeoutMs")
+        static final Parameter<Integer> RETRY_TIMEOUT_MS = Parameter
+                .integerParameter("elastic.retryTimeoutMs")
                 .withValidator(IntegerValidators.nonNegative())
-                .withDefaultValue(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS)
+                .withDefault(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS)
                 .build();
 
-        static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("elastic.connectionTimeoutMs")
+        static final Parameter<Integer> CONNECTION_TIMEOUT_MS = Parameter
+                .integerParameter("elastic.connectionTimeoutMs")
                 .withValidator(IntegerValidators.nonNegative())
-                .withDefaultValue(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS)
+                .withDefault(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS)
                 .build();
 
-        static final PropertyDescription<Integer> CONNECTION_REQUEST_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("elastic.connectionRequestTimeoutMs")
+        static final Parameter<Integer> CONNECTION_REQUEST_TIMEOUT_MS = Parameter
+                .integerParameter("elastic.connectionRequestTimeoutMs")
                 .withValidator(IntegerValidators.nonNegative())
-                .withDefaultValue(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
+                .withDefault(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
                 .build();
 
-        static final PropertyDescription<Integer> SOCKET_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("elastic.socketTimeoutMs")
+        static final Parameter<Integer> SOCKET_TIMEOUT_MS = Parameter
+                .integerParameter("elastic.socketTimeoutMs")
                 .withValidator(IntegerValidators.nonNegative())
-                .withDefaultValue(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
+                .withDefault(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
                 .build();
 
-        static final PropertyDescription<Boolean> MERGE_PROPERTIES_TAG_TO_ROOT = PropertyDescriptions
-                .booleanProperty("elastic.mergePropertiesTagToRoot")
-                .withDefaultValue(Boolean.FALSE)
+        static final Parameter<Boolean> MERGE_PROPERTIES_TAG_TO_ROOT = Parameter
+                .booleanParameter("elastic.mergePropertiesTagToRoot")
+                .withDefault(Boolean.FALSE)
                 .build();
 
-        static final PropertyDescription<String[]> REDEFINED_EXCEPTIONS = PropertyDescriptions
-                .arrayOfStringsProperty("elastic.redefinedExceptions")
-                .withDefaultValue(new String[]{})
+        static final Parameter<String[]> REDEFINED_EXCEPTIONS = Parameter
+                .stringArrayParameter("elastic.redefinedExceptions")
+                .withDefault(new String[]{})
+                .build();
+
+        static final Parameter<Boolean> LEPROSERY_MODE = Parameter
+                .booleanParameter("leprosery.enable")
+                .withDefault(false)
                 .build();
     }
+
 }

@@ -38,6 +38,25 @@ Application is configured through properties file.
 `sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
 
 `sink.sender.elastic.mergePropertiesTagToRoot` - flag for moving the contents of the properties container to the root of the object, default value: `false`
+ 
+### Leprosery settings
+`sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`
+
+`sink.sender.leprosery.stream` - stream name for writing non-retryable errors
+ 
+`sink.sender.leprosery.apiKey` - key for writing non-retryable errors
+
+`sink.sender.leprosery.index`- index name for writing non-retryable errors
+
+`sink.sender.leprosery.gate.client.urls` - list of Gate urls
+
+`sink.sender.leprosery.gate.client.requestTimeout` - timeout (ms) of response from gate client, default value: 3000
+
+`sink.sender.leprosery.gate.client.connectionTimeout` - timeout (ms) of try connecting to host, if exceeded expectation then try to another host, default value: 30000
+
+`sink.sender.leprosery.gate.client.connectionCount` - count of simultaneous connections, default value: 1000
+
+`sink.sender.leprosery.gate.client.greyListElementsRecoveryTimeMs` - period (ms) in grey list
 
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
@@ -94,6 +113,16 @@ sink.sender.pingPeriodMs=60000
 sink.sender.retryOnUnknownErrors=true
 sink.sender.retryLimit=2
 sink.sender.elastic.mergePropertiesTagToRoot=true
+
+sink.sender.leprosery.enable=false
+sink.sender.leprosery.stream=some-dlq-stream-name
+sink.sender.leprosery.apiKey=some-dlq-stream-key
+sink.sender.leprosery.index=some-dlq-index-pattern
+sink.sender.leprosery.gate.client.urls=http://localhost:6306
+sink.sender.leprosery.gate.client.requestTimeout=3000
+sink.sender.leprosery.gate.client.connectionTimeout=5000
+sink.sender.leprosery.gate.client.connectionCount=1000
+sink.sender.leprosery.gate.client.greyListElementsRecoveryTimeMs=6000
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003

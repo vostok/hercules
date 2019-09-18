@@ -6,7 +6,6 @@ import ru.kontur.vostok.hercules.cassandra.util.Slicer;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -19,8 +18,8 @@ import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.sink.SinkPool;
 import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Objects;
@@ -65,7 +64,7 @@ public class TimelineSinkDaemon {
         ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
 
         //TODO: Validate sinkProperties
-        final String timelineName = Props.TIMELINE.extract(sinkProperties);
+        final String timelineName = PropertiesUtil.get(Props.TIMELINE, sinkProperties).get();
 
         try {
             metricsCollector = new MetricsCollector(metricsProperties);
@@ -97,7 +96,7 @@ public class TimelineSinkDaemon {
             sender = new TimelineSender(timeline, slicer, senderProperties, metricsCollector);
             sender.start();
 
-            int poolSize = Props.POOL_SIZE.extract(sinkProperties);
+            int poolSize = PropertiesUtil.get(Props.POOL_SIZE, sinkProperties).get();
             executor = Executors.newFixedThreadPool(poolSize);//TODO: Provide custom ThreadFactory
 
             sinkPool =
@@ -189,13 +188,14 @@ public class TimelineSinkDaemon {
     }
 
     private static class Props {
-        static final PropertyDescription<String> TIMELINE =
-                PropertyDescriptions.stringProperty("timeline").
+        static final Parameter<String> TIMELINE =
+                Parameter.stringParameter("timeline").
+                        required().
                         build();
 
-        static final PropertyDescription<Integer> POOL_SIZE =
-                PropertyDescriptions.integerProperty("poolSize").
-                        withDefaultValue(1).
+        static final Parameter<Integer> POOL_SIZE =
+                Parameter.integerParameter("poolSize").
+                        withDefault(1).
                         build();
     }
 }
