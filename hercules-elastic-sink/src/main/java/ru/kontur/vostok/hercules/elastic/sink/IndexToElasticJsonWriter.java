@@ -48,7 +48,7 @@ public final class IndexToElasticJsonWriter {
                             parts.add(project.get());
                             ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG).ifPresent(parts::add);
                             Optional<String> subproject = ContainerUtil.extract(properties, CommonTags.SUBPROJECT_TAG);
-                            if (!subproject.isPresent()) {
+                            if (!subproject.isPresent()) {//FIXME: backward compatibility
                                 subproject = ContainerUtil.extract(properties, CommonTags.APPLICATION_TAG);
                             }
                             subproject.ifPresent(parts::add);
