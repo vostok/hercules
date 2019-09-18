@@ -263,7 +263,6 @@ public class Sink {
 
         static final Parameter<String> GROUP_ID =
                 Parameter.stringParameter("groupId").
-                        withDefault(null).
                         build();
 
         static final Parameter<Long> AVAILABILITY_TIMEOUT_MS =
