@@ -82,7 +82,7 @@ public class IndexToElasticJsonWriterTest {
         assertEquals(
                 "{" +
                         "\"index\":{" +
-                        "\"_index\":\"awesome-project-app-production-1970.01.01\"," +
+                        "\"_index\":\"awesome-project-production-app-1970.01.01\"," +
                         "\"_type\":\"LogEvent\"," +
                         "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                         "}" +
@@ -91,6 +91,7 @@ public class IndexToElasticJsonWriterTest {
         );
     }
 
+    //FIXME: test must be deleted after release
     @Test
     public void shouldUseSubprojectInsteadOfApplicationForIndexName() throws IOException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
@@ -109,7 +110,7 @@ public class IndexToElasticJsonWriterTest {
         assertEquals(
                 "{" +
                         "\"index\":{" +
-                        "\"_index\":\"awesome-project-subproject-production-1970.01.01\"," +
+                        "\"_index\":\"awesome-project-production-subproject-1970.01.01\"," +
                         "\"_type\":\"LogEvent\"," +
                         "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                         "}" +
