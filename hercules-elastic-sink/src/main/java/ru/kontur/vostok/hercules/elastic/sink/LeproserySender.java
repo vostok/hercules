@@ -23,10 +23,12 @@ import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author a.zhdanov
@@ -40,6 +42,8 @@ class LeproserySender {
 
     private static final String COUNT_OF_EVENTS_SENDING_METER_KEY = "nonRetryableEventsSendingToGate";
     private static final String COUNT_OF_EVENTS_SENDING_WITH_ERROR_METER_KEY = "nonRetryableEventsSendingToGateWithError";
+
+    private static final int EMPTY_LEPROSERY_EVENT_SIZE = 125;
 
     private final String leproseryStream;
     private final String leproseryIndex;
@@ -105,6 +109,15 @@ class LeproserySender {
      * @return Hercules Protocol event which is sent to leprosery
      */
     private Event toLeproseryEvent(Event event, String leproseryIndex, String index, String reason) {
+        int minimalSize = EMPTY_LEPROSERY_EVENT_SIZE + Stream.of(PROJECT_NAME, SERVICE_NAME, reason, index, leproseryIndex)
+                .mapToInt(value -> value.getBytes().length)
+                .sum();
+        String text = EventFormatter.format(event, false);
+        boolean needCrop = (Constants.EXPECTED_EVENT_SIZE_BYTES - (minimalSize + text.getBytes().length)) < 0;
+        if (needCrop) {
+            text = new String(Arrays.copyOfRange(text.getBytes(), 0, Constants.EXPECTED_EVENT_SIZE_BYTES - minimalSize));
+        }
+
         return EventBuilder.create()
                 .version(1)
                 .timestamp(TimeUtil.dateTimeToUnixTicks(ZonedDateTime.now()))
@@ -113,7 +126,7 @@ class LeproserySender {
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
                         .tag(CommonTags.PROJECT_TAG, Variant.ofString(PROJECT_NAME))
                         .tag(CommonTags.SERVICE_TAG, Variant.ofString(SERVICE_NAME))
-                        .tag("text", Variant.ofString(EventFormatter.format(event, true)))
+                        .tag("text", Variant.ofString(text))
                         .tag("original-index", Variant.ofString(index))
                         .tag(ElasticSearchTags.ELK_INDEX_TAG.getName(), Variant.ofString(leproseryIndex))
                         .build()))

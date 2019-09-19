@@ -49,8 +49,6 @@ public class ElasticSender extends Sender {
     private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
     private static final Logger DROPPED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
 
-    private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
-
     private final RestClient restClient;
     private final ElasticResponseHandler elasticResponseHandler;
     private final LeproserySender leproserySender;
@@ -144,26 +142,26 @@ public class ElasticSender extends Sender {
         }
 
         try {
-            int retryCount = retryLimit;
-            boolean needToRetry;
-            do {
-                ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);
-                readyToSend.values().forEach(wrapper -> writeEventToStream(dataStream, wrapper));
-                ElasticResponseHandler.Result result = trySend(new ByteArrayEntity(dataStream.toByteArray(), ContentType.APPLICATION_JSON));
+            if (!readyToSend.isEmpty()) {
+                int retryCount = retryLimit;
+                boolean needToRetry;
+                do {
+                    ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * Constants.EXPECTED_EVENT_SIZE_BYTES);
+                    readyToSend.values().forEach(wrapper -> writeEventToStream(dataStream, wrapper));
+                    ElasticResponseHandler.Result result = trySend(new ByteArrayEntity(dataStream.toByteArray(), ContentType.APPLICATION_JSON));
 
-                if (result.getTotalErrors() != 0) {
-                    resultProcess(result).forEach((eventId, validationResult) -> {
-                        nonRetryableErrorsMap.put(readyToSend.get(eventId), validationResult);
-                        readyToSend.remove(eventId);
-                    });
-                } else {
-                    readyToSend.clear();
+                    if (result.getTotalErrors() != 0) {
+                        resultProcess(result).forEach((eventId, validationResult) -> {
+                            nonRetryableErrorsMap.put(readyToSend.get(eventId), validationResult);
+                            readyToSend.remove(eventId);
+                        });
+                    }
+                    needToRetry = readyToSend.size() > 0 && result.getTotalErrors() != 0;
+                } while (0 < retryCount-- && needToRetry);
+
+                if (needToRetry) {
+                    throw new Exception("Have retryable errors in elasticsearch response");
                 }
-                needToRetry = readyToSend.size() > 0;
-            } while (0 < retryCount-- && needToRetry);
-
-            if (needToRetry) {
-                throw new Exception("Have retryable errors in elasticsearch response");
             }
 
             droppedCount = errorsProcess(nonRetryableErrorsMap);
@@ -253,13 +251,16 @@ public class ElasticSender extends Sender {
 
     private ValidationResult validate(EventWrapper wrapper) {
         boolean hasIndex = wrapper.getIndex() != null;
-        boolean withValidSize = wrapper.getEvent().getBytes().length <= EXPECTED_EVENT_SIZE_BYTES;
+        int eventSize = wrapper.getEvent().getBytes().length;
+        boolean withValidSize = eventSize <= Constants.EXPECTED_EVENT_SIZE_BYTES;
         if (hasIndex && withValidSize) {
             return ValidationResult.ok();
         } else if (!hasIndex) {
             return ValidationResult.error("Event has unknown index");
         } else {
-            return ValidationResult.error("Event has invalid size");
+            return ValidationResult.error(
+                    String.format("Event has invalid size = %d. Maximum size should be %d", eventSize, Constants.EXPECTED_EVENT_SIZE_BYTES)
+            );
         }
     }
 
