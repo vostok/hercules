@@ -22,13 +22,13 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author a.zhdanov
@@ -43,7 +43,8 @@ class LeproserySender {
     private static final String COUNT_OF_EVENTS_SENDING_METER_KEY = "nonRetryableEventsSendingToGate";
     private static final String COUNT_OF_EVENTS_SENDING_WITH_ERROR_METER_KEY = "nonRetryableEventsSendingToGateWithError";
 
-    private static final int EMPTY_LEPROSERY_EVENT_SIZE = 125;
+    private static final int EMPTY_LEPROSERY_EVENT_SIZE_BYTES = 125;
+    private static final int MAX_EVENT_SIZE_BYTES = 500_000;
 
     private final String leproseryStream;
     private final String leproseryIndex;
@@ -109,13 +110,16 @@ class LeproserySender {
      * @return Hercules Protocol event which is sent to leprosery
      */
     private Event toLeproseryEvent(Event event, String leproseryIndex, String index, String reason) {
-        int minimalSize = EMPTY_LEPROSERY_EVENT_SIZE + Stream.of(PROJECT_NAME, SERVICE_NAME, reason, index, leproseryIndex)
-                .mapToInt(value -> value.getBytes().length)
-                .sum();
+        int argsSize = (PROJECT_NAME + SERVICE_NAME + reason + index + leproseryIndex).getBytes(StandardCharsets.UTF_8).length;
+        int minimalSize = EMPTY_LEPROSERY_EVENT_SIZE_BYTES + argsSize;
+        int maxSize = MAX_EVENT_SIZE_BYTES - minimalSize;
+
         String text = EventFormatter.format(event, false);
-        boolean needCrop = (Constants.EXPECTED_EVENT_SIZE_BYTES - (minimalSize + text.getBytes().length)) < 0;
-        if (needCrop) {
-            text = new String(Arrays.copyOfRange(text.getBytes(), 0, Constants.EXPECTED_EVENT_SIZE_BYTES - minimalSize));
+        byte[] textBytes = text.getBytes(StandardCharsets.UTF_8);
+
+        if (textBytes.length > maxSize) {
+            LOGGER.info("Leprosery message has invalid size ({}). The message will be truncated", textBytes.length);
+            text = new String(Arrays.copyOfRange(textBytes, 0, maxSize));
         }
 
         return EventBuilder.create()
