@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.tags;
 
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 
@@ -23,6 +24,7 @@ public class SentryTags {
      * Trace identifier of the event
      */
     public static final TagDescription<Optional<String>> TRACE_ID_TAG = TagDescriptionBuilder.string("traceId")
+            .addScalarExtractor(Type.UUID, Object::toString)
             .optional()
             .build();
 

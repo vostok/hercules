@@ -331,4 +331,21 @@ public class SentryEventConverterTest {
         Assert.assertTrue(((List) sentryEvent.getExtra().get("my_extra")).contains(stringValue1));
         Assert.assertTrue(((List) sentryEvent.getExtra().get("my_extra")).contains(stringValue2));
     }
+
+    @Test
+    public void shouldSetUuidConvertedToString() {
+        final UUID uuid = UUID.randomUUID();
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag(SentryTags.TRACE_ID_TAG, Variant.ofUuid(uuid))
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Assert.assertEquals(uuid.toString(), sentryEvent.getTransaction());
+    }
 }
