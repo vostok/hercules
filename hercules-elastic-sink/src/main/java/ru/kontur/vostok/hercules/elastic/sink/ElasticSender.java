@@ -152,6 +152,8 @@ public class ElasticSender extends Sender {
                     if (result.getTotalErrors() != 0) {
                         resultProcess(result).forEach((eventId, validationResult) ->
                                 nonRetryableErrorsMap.put(readyToSend.remove(eventId), validationResult));
+                    } else {
+                        readyToSend.clear();
                     }
                 } while (!readyToSend.isEmpty() && 0 < retryCount--);
 
