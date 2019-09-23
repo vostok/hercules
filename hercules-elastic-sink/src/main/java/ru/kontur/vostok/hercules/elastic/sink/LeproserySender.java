@@ -22,7 +22,9 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -40,6 +42,9 @@ class LeproserySender {
 
     private static final String COUNT_OF_EVENTS_SENDING_METER_KEY = "nonRetryableEventsSendingToGate";
     private static final String COUNT_OF_EVENTS_SENDING_WITH_ERROR_METER_KEY = "nonRetryableEventsSendingToGateWithError";
+
+    private static final int EMPTY_LEPROSERY_EVENT_SIZE_BYTES = 125;
+    private static final int MAX_EVENT_SIZE_BYTES = 500_000;
 
     private final String leproseryStream;
     private final String leproseryIndex;
@@ -72,7 +77,7 @@ class LeproserySender {
 
     public void send(List<Event> events) throws Exception {
         int count = events.size();
-        byte[] data = EventWriterUtil.toBytes(events.toArray(new Event[events.size()]));
+        byte[] data = EventWriterUtil.toBytes(events.toArray(new Event[0]));
         try {
             gateClient.send(leproseryApiKey, leproseryStream, data);
 
@@ -105,6 +110,18 @@ class LeproserySender {
      * @return Hercules Protocol event which is sent to leprosery
      */
     private Event toLeproseryEvent(Event event, String leproseryIndex, String index, String reason) {
+        int argsSize = (PROJECT_NAME + SERVICE_NAME + reason + index + leproseryIndex).getBytes(StandardCharsets.UTF_8).length;
+        int minimalSize = EMPTY_LEPROSERY_EVENT_SIZE_BYTES + argsSize;
+        int maxSize = MAX_EVENT_SIZE_BYTES - minimalSize;
+
+        String text = EventFormatter.format(event, false);
+        byte[] textBytes = text.getBytes(StandardCharsets.UTF_8);
+
+        if (textBytes.length > maxSize) {
+            LOGGER.info("Leprosery message has invalid size ({}). The message will be truncated", textBytes.length);
+            textBytes = Arrays.copyOfRange(textBytes, 0, maxSize);
+        }
+
         return EventBuilder.create()
                 .version(1)
                 .timestamp(TimeUtil.dateTimeToUnixTicks(ZonedDateTime.now()))
@@ -113,7 +130,7 @@ class LeproserySender {
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
                         .tag(CommonTags.PROJECT_TAG, Variant.ofString(PROJECT_NAME))
                         .tag(CommonTags.SERVICE_TAG, Variant.ofString(SERVICE_NAME))
-                        .tag("text", Variant.ofString(EventFormatter.format(event, true)))
+                        .tag("text", Variant.ofString(textBytes))
                         .tag("original-index", Variant.ofString(index))
                         .tag(ElasticSearchTags.ELK_INDEX_TAG.getName(), Variant.ofString(leproseryIndex))
                         .build()))
