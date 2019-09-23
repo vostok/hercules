@@ -48,7 +48,6 @@ public class ElasticSender extends Sender {
     private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
     private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
     private static final Logger DROPPED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
-
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
 
     private final RestClient restClient;
@@ -135,35 +134,30 @@ public class ElasticSender extends Sender {
         Map<String, EventWrapper> readyToSend = new HashMap<>(events.size());
         for (Event event : events) {
             EventWrapper wrapper = new EventWrapper(event);
-            ValidationResult validationResult = validate(wrapper);
-            if (validationResult.isOk()) {
-                readyToSend.put(wrapper.getId(), wrapper);
+            if (wrapper.getIndex() == null) {
+                nonRetryableErrorsMap.put(wrapper, ValidationResult.error("Event index is null"));
             } else {
-                nonRetryableErrorsMap.put(wrapper, validationResult);
+                readyToSend.put(wrapper.getId(), wrapper);
             }
         }
 
         try {
-            int retryCount = retryLimit;
-            boolean needToRetry;
-            do {
-                ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);
-                readyToSend.values().forEach(wrapper -> writeEventToStream(dataStream, wrapper));
-                ElasticResponseHandler.Result result = trySend(new ByteArrayEntity(dataStream.toByteArray(), ContentType.APPLICATION_JSON));
+            if (!readyToSend.isEmpty()) {
+                int retryCount = retryLimit;
+                do {
+                    ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);
+                    readyToSend.values().forEach(wrapper -> writeEventToStream(dataStream, wrapper));
+                    ElasticResponseHandler.Result result = trySend(new ByteArrayEntity(dataStream.toByteArray(), ContentType.APPLICATION_JSON));
 
-                if (result.getTotalErrors() != 0) {
-                    resultProcess(result).forEach((eventId, validationResult) -> {
-                        nonRetryableErrorsMap.put(readyToSend.get(eventId), validationResult);
-                        readyToSend.remove(eventId);
-                    });
-                } else {
-                    readyToSend.clear();
+                    if (result.getTotalErrors() != 0) {
+                        resultProcess(result).forEach((eventId, validationResult) ->
+                                nonRetryableErrorsMap.put(readyToSend.remove(eventId), validationResult));
+                    }
+                } while (!readyToSend.isEmpty() && 0 < retryCount--);
+
+                if (!readyToSend.isEmpty()) {
+                    throw new Exception("Have retryable errors in elasticsearch response");
                 }
-                needToRetry = readyToSend.size() > 0;
-            } while (0 < retryCount-- && needToRetry);
-
-            if (needToRetry) {
-                throw new Exception("Have retryable errors in elasticsearch response");
             }
 
             droppedCount = errorsProcess(nonRetryableErrorsMap);
@@ -249,18 +243,6 @@ public class ElasticSender extends Sender {
             throw new RuntimeException("Bad response");
         }
         return elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
-    }
-
-    private ValidationResult validate(EventWrapper wrapper) {
-        boolean hasIndex = wrapper.getIndex() != null;
-        boolean withValidSize = wrapper.getEvent().getBytes().length <= EXPECTED_EVENT_SIZE_BYTES;
-        if (hasIndex && withValidSize) {
-            return ValidationResult.ok();
-        } else if (!hasIndex) {
-            return ValidationResult.error("Event has unknown index");
-        } else {
-            return ValidationResult.error("Event has invalid size");
-        }
     }
 
     private static class Props {
