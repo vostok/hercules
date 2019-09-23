@@ -19,11 +19,11 @@ import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Sentry client holder.
@@ -48,7 +48,7 @@ public class SentryClientHolder {
      * The nested Map matching this organization contains the String of project as a key
      * and the {@link SentryClient} as a value.
      */
-    private volatile Map<String, Map<String, SentryClient>> clients = Collections.emptyMap();
+    private volatile ConcurrentMap<String, ConcurrentMap<String, SentryClient>> clients = new ConcurrentHashMap<>();
 
     private final SentryApiClient sentryApiClient;
     private final SentryClientFactory sentryClientFactory = new HerculesClientFactory();
@@ -293,7 +293,7 @@ public class SentryClientHolder {
                 return;
             }
 
-            Map<String, Map<String, SentryClient>> organizationMap = new ConcurrentHashMap<>();
+            ConcurrentMap<String, ConcurrentMap<String, SentryClient>> organizationMap = new ConcurrentHashMap<>();
             for (OrganizationInfo organizationInfo : organizations.get()) {
                 String organization = organizationInfo.getSlug();
 
@@ -303,7 +303,7 @@ public class SentryClientHolder {
                     return;
                 }
 
-                Map<String, SentryClient> projectMap = new ConcurrentHashMap<>();
+                ConcurrentMap<String, SentryClient> projectMap = new ConcurrentHashMap<>();
                 organizationMap.put(organization, projectMap);
 
                 for (ProjectInfo projectInfo : projects.get()) {
