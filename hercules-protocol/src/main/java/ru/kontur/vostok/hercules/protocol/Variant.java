@@ -58,6 +58,18 @@ public class Variant {
         return new Variant(Type.STRING, bytes);
     }
 
+    /**
+     * New variant of type {@link Type#STRING} from UTF-8 bytes.
+     * <p>
+     * Passed byte array is used internally in the created variant.
+     *
+     * @param bytes UTF-8 bytes
+     * @return Variant of type {@link Type#STRING}
+     */
+    public static Variant ofString(final byte[] bytes) {
+        return new Variant(Type.STRING, bytes);
+    }
+
     public static Variant ofUuid(UUID uuid) {
         return new Variant(Type.UUID, uuid);
     }
