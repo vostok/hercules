@@ -77,7 +77,7 @@ class LeproserySender {
 
     public void send(List<Event> events) throws Exception {
         int count = events.size();
-        byte[] data = EventWriterUtil.toBytes(events.toArray(new Event[events.size()]));
+        byte[] data = EventWriterUtil.toBytes(events.toArray(new Event[0]));
         try {
             gateClient.send(leproseryApiKey, leproseryStream, data);
 
@@ -119,7 +119,7 @@ class LeproserySender {
 
         if (textBytes.length > maxSize) {
             LOGGER.info("Leprosery message has invalid size ({}). The message will be truncated", textBytes.length);
-            text = new String(Arrays.copyOfRange(textBytes, 0, maxSize));
+            textBytes = Arrays.copyOfRange(textBytes, 0, maxSize);
         }
 
         return EventBuilder.create()
@@ -130,7 +130,7 @@ class LeproserySender {
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
                         .tag(CommonTags.PROJECT_TAG, Variant.ofString(PROJECT_NAME))
                         .tag(CommonTags.SERVICE_TAG, Variant.ofString(SERVICE_NAME))
-                        .tag("text", Variant.ofString(text))
+                        .tag("text", Variant.ofString(textBytes))
                         .tag("original-index", Variant.ofString(index))
                         .tag(ElasticSearchTags.ELK_INDEX_TAG.getName(), Variant.ofString(leproseryIndex))
                         .build()))

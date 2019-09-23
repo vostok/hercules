@@ -144,22 +144,18 @@ public class ElasticSender extends Sender {
         try {
             if (!readyToSend.isEmpty()) {
                 int retryCount = retryLimit;
-                boolean needToRetry;
                 do {
                     ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);
                     readyToSend.values().forEach(wrapper -> writeEventToStream(dataStream, wrapper));
                     ElasticResponseHandler.Result result = trySend(new ByteArrayEntity(dataStream.toByteArray(), ContentType.APPLICATION_JSON));
 
                     if (result.getTotalErrors() != 0) {
-                        resultProcess(result).forEach((eventId, validationResult) -> {
-                            nonRetryableErrorsMap.put(readyToSend.get(eventId), validationResult);
-                            readyToSend.remove(eventId);
-                        });
+                        resultProcess(result).forEach((eventId, validationResult) ->
+                                nonRetryableErrorsMap.put(readyToSend.remove(eventId), validationResult));
                     }
-                    needToRetry = readyToSend.size() > 0 && result.getTotalErrors() != 0;
-                } while (0 < retryCount-- && needToRetry);
+                } while (!readyToSend.isEmpty() && 0 < retryCount--);
 
-                if (needToRetry) {
+                if (!readyToSend.isEmpty()) {
                     throw new Exception("Have retryable errors in elasticsearch response");
                 }
             }
