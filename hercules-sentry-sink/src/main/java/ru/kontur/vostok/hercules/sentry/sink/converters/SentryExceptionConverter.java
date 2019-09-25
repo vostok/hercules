@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.sentry.sink.converters;
 import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import io.sentry.event.interfaces.StackTraceInterface;
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
@@ -32,7 +33,7 @@ public class SentryExceptionConverter {
         final Optional<ClassPackagePair> classPackagePair = ContainerUtil.extract(container, ExceptionTags.TYPE_TAG)
                 .map(SentryExceptionConverter::extractClassPackagePair);
 
-        final String className = classPackagePair.map(ClassPackagePair::getClassName).orElse(null);
+        final String className = classPackagePair.map(ClassPackagePair::getClassName).orElse("");
         final String packageName = classPackagePair.map(ClassPackagePair::getPackageName).orElse(null);
 
         final StackTraceInterface stacktrace = ContainerUtil.extract(container, ExceptionTags.STACK_FRAMES)
@@ -51,7 +52,7 @@ public class SentryExceptionConverter {
         );
     }
 
-    private static ClassPackagePair extractClassPackagePair(final String typeName) {
+    private static ClassPackagePair extractClassPackagePair(final @NotNull String typeName) {
         final int finalDot = typeName.lastIndexOf('.');
 
         if (finalDot != NOT_FOUND) {
@@ -65,7 +66,7 @@ public class SentryExceptionConverter {
         private final String packageName;
         private final String className;
 
-        public ClassPackagePair(String packageName, String className) {
+        private ClassPackagePair(String packageName, @NotNull String className) {
             this.packageName = packageName;
             this.className = className;
         }
@@ -74,6 +75,7 @@ public class SentryExceptionConverter {
             return packageName;
         }
 
+        @NotNull
         public String getClassName() {
             return className;
         }
