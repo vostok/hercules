@@ -19,6 +19,12 @@ Application is configured through properties file.
 
 `sink.sender.sentry.retryLimit` - the number of attempts to send event with retryable errors, default value: `3`
 
+### Rate Limiting settings 
+
+`sink.sender.rate-limit.limit` - count of events per minute by one project, default 1000 per minute 
+
+`sink.sender.rate-limit.rules` - custom limit by projects with format project1:1000,project2:100 
+
 ### Application context settings
 `context.environment` - id of environment
 
@@ -53,6 +59,9 @@ Stream with log events should be predefined.
 sink.sender.sentry.url=https://sentry.io
 sink.sender.sentry.token=1234567890768132cde645f1ba1bcd4ef67ab78cd9ef89801a45be5747c68f87
 sink.sender.sentry.level=warning
+
+sink.sender.rate-limit.limit=2500
+sink.sender.rate-limit.rules=project1:100,project2:400,project3:1000,project4:3000
 
 sink.consumer.bootstrap.servers=localhost:9092
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter

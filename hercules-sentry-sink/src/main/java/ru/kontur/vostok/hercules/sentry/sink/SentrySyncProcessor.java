@@ -44,6 +44,9 @@ public class SentrySyncProcessor {
     private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Meter> rejectRateLimitMeterMap = new ConcurrentHashMap<>();
+
+    private final RateLimitService rateLimitService;
 
     public SentrySyncProcessor(
             Properties sinkProperties,
@@ -55,6 +58,9 @@ public class SentrySyncProcessor {
         this.sentryClientHolder = sentryClientHolder;
         this.sentryClientHolder.update();
         this.metricsCollector = metricsCollector;
+
+        Properties rateLimitServiceProperties = PropertiesUtil.ofScope(sinkProperties, "rate-limit");
+        this.rateLimitService = new RateLimitService(rateLimitServiceProperties);
     }
 
     /**
@@ -95,10 +101,17 @@ public class SentrySyncProcessor {
         }
         String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
 
-        boolean processed = tryToSend(event, organization, sentryProject);
+        final String prefix = makePrefix(organization, sentryProject);
+        boolean processed;
+        if (rateLimitService.updateAndCheck(sentryProject)) {
+            processed = tryToSend(event, organization, sentryProject);
+        } else {
+            LOGGER.warn("Excess of rate limit. Reject event by project {}.", sentryProject);
+            rejectRateLimitMeterMap.computeIfAbsent(prefix, p -> metricsCollector.meter(p + "rateLimitRejectEventCount"));
+            processed = false;
+        }
 
         final long processingTimeMs = System.currentTimeMillis() - sendingStart;
-        final String prefix = makePrefix(organization, sentryProject);
         eventProcessingTimerMap.computeIfAbsent(prefix, p -> metricsCollector.timer(p + "eventProcessingTimeMs"))
                 .update(processingTimeMs, TimeUnit.MILLISECONDS);
         if (processed) {
