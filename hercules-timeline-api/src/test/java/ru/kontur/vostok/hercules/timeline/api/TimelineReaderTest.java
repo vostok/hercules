@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
@@ -21,6 +23,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -61,9 +64,10 @@ public class TimelineReaderTest {
     private TimelineReader timelineReader;
     private CqlSession session = mock(CqlSession.class);
     private ResultSet resultSet = mock(ResultSet.class);
+    private MetricsCollector metricsCollector = mock(MetricsCollector.class);
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         CassandraConnector connector = mock(CassandraConnector.class);
         when(connector.session()).thenReturn(session);
 
@@ -71,7 +75,10 @@ public class TimelineReaderTest {
 
         when(session.execute(any(SimpleStatement.class))).thenReturn(resultSet);
 
-        timelineReader = new TimelineReader(new Properties(), connector, mock(MetricsCollector.class));
+        when(metricsCollector.meter(anyString())).thenReturn(new Meter());
+        when(metricsCollector.timer(anyString())).thenReturn(new Timer());
+
+        timelineReader = new TimelineReader(new Properties(), connector, metricsCollector);
     }
 
     @Test
