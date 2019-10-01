@@ -14,6 +14,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class RateLimitServiceTest {
 
+    private static final String KEY = "SOME_PROJECT_KEY";
+
     /**
      * maxRate = 1 per minute
      * 1th event -> true
@@ -21,9 +23,21 @@ public class RateLimitServiceTest {
      */
     @Test
     public void shouldBeTrueMaxRate1() {
-        RateLimitService service = createLimiter(1, null, TimeUnit.MINUTES);
-        assertTrue(service.updateAndCheck("someKeyProject"));
-        assertFalse(service.updateAndCheck("someKeyProject"));
+        RateLimitService service = createLimiter(1);
+        assertTrue(service.updateAndCheck(KEY));
+        assertFalse(service.updateAndCheck(KEY));
+    }
+
+    /**
+     * maxRate = 1 per sec
+     * 1th event -> true
+     * 2th event -> false
+     */
+    @Test
+    public void shouldBeTrueMaxRate1Sec() {
+        RateLimitService service = createLimiter(1, 1, TimeUnit.SECONDS);
+        assertTrue(service.updateAndCheck(KEY));
+        assertFalse(service.updateAndCheck(KEY));
     }
 
     /**
@@ -33,28 +47,35 @@ public class RateLimitServiceTest {
      */
     @Test
     public void shouldBeTrueMaxRate3() throws InterruptedException {
-        RateLimitService service = createLimiter(3, null, TimeUnit.MINUTES);
+        RateLimitService service = createLimiter(3);
         int n = 3;
         while (n-- > 0) {
-            assertTrue(service.updateAndCheck("someKeyProject"));
+            assertTrue(service.updateAndCheck(KEY));
             sleep(900);
         }
-        assertFalse(service.updateAndCheck("someKeyProject"));
+        assertFalse(service.updateAndCheck(KEY));
     }
 
     /**
-     * maxRate = 1000 per minute
-     * 1 - 1000th event at the same time -> true
-     * 1001th event -> false
+     * maxRate = 1000 per minute, with some threads
      */
     @Test
-    public void shouldBeTrueMaxRate1000() {
-        RateLimitService service = createLimiter(1000, null, TimeUnit.MINUTES);
-        int n = 1000;
-        while (n-- > 0) {
-            assertTrue(service.updateAndCheck("someKeyProject"));
-        }
-        assertFalse(service.updateAndCheck("someKeyProject"));
+    public void shouldBeTrueWithSomeThreads() throws InterruptedException {
+        RateLimitService service = createLimiter(1000);
+        Runnable runnable = () -> {
+            for (int n = 0; n < 200; n++) {
+                service.updateAndCheck(KEY);
+            }
+        };
+        new Thread(runnable).start();
+        new Thread(runnable).start();
+        new Thread(runnable).start();
+        new Thread(runnable).start();
+        new Thread(runnable).start();
+        sleep(1000);
+        float val = service.getValue(KEY);
+        assertTrue(val > -1 && val < 10);
+        System.out.println("Value: " + service.getValue(KEY));
     }
 
     /**
@@ -62,70 +83,45 @@ public class RateLimitServiceTest {
      * 1 - 4th event -> true
      * 5th event -> false
      * increase should be = 1
+     * with some threads
      */
     @Test
     public void shouldBeTrueMaxRate1PerSecWithIncrease1() throws InterruptedException {
-        RateLimitService service = createLimiter(1, null, TimeUnit.SECONDS);
+        RateLimitService service = createLimiter(1, 1L, TimeUnit.SECONDS);
+        Runnable runnable = () -> assertTrue(service.updateAndCheck(KEY));
         int n = 3;
         while (n-- > 0) {
-            assertTrue(service.updateAndCheck("someKeyProject"));
+            new Thread(runnable).start();
             sleep(1000);
         }
-        assertTrue(service.updateAndCheck("someKeyProject"));
-        assertFalse(service.updateAndCheck("someKeyProject"));
-    }
-
-    /**
-     * Custom rule.
-     * maxRate = 1 per sec
-     * 1 - 4th event -> true
-     * 5th event -> false
-     * increase should be = 1
-     */
-    @Test
-    public void shouldBeBeTrueWithCustomRule() throws InterruptedException {
-        RateLimitService service = createLimiter(100500, "foo:500,someKeyProject:1,bar:5675535", TimeUnit.SECONDS);
-        int n = 3;
-        while (n-- > 0) {
-            assertTrue(service.updateAndCheck("someKeyProject"));
-            sleep(1000);
-        }
-        assertTrue(service.updateAndCheck("someKeyProject"));
-        assertFalse(service.updateAndCheck("someKeyProject"));
+        assertTrue(service.updateAndCheck(KEY));
+        assertFalse(service.updateAndCheck(KEY));
     }
 
     @Test(expected = IllegalStateException.class)
     public void shouldBeExceptionWithIncorrectProperties() {
-        createLimiter(-1, null, TimeUnit.SECONDS);
+        createLimiter(-1);
     }
 
     @Test(expected = IllegalStateException.class)
     public void shouldBeExceptionWithIncorrectProperties2() {
-        createLimiter(0, null, TimeUnit.SECONDS);
+        createLimiter(0, 0, TimeUnit.SECONDS);
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void shouldBeExceptionWithIncorrectProperties3() {
-        createLimiter(1, "some string", TimeUnit.SECONDS);
+    private RateLimitService createLimiter(int maxRate) {
+        return createLimiter(maxRate, 0, null);
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void shouldBeExceptionWithIncorrectProperties4() {
-        createLimiter(1, "somestring1,somestring2", TimeUnit.SECONDS);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void shouldBeExceptionWithIncorrectProperties5() {
-        createLimiter(1, "somestring:1 ,somestring:2", TimeUnit.SECONDS);
-    }
-
-    private RateLimitService createLimiter(int maxRate, String rules, TimeUnit timeUnit) {
+    private RateLimitService createLimiter(int maxRate, long timeWindow, TimeUnit timeUnit) {
         Properties properties = new Properties();
         properties.setProperty("limit", String.valueOf(maxRate));
-        if (rules != null) {
-            properties.setProperty("rules", rules);
+        if (timeWindow != 0) {
+            properties.setProperty("timeWindow", String.valueOf(timeWindow));
         }
-        return new RateLimitService(properties, timeUnit);
+        if (timeUnit != null) {
+            properties.setProperty("timeUnit", timeUnit.name());
+        }
+        return new RateLimitService(properties);
     }
 
 }

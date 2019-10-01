@@ -6,116 +6,101 @@ import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
-import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Artem Zhdanov
  */
-public class RateLimitService {
+class RateLimitService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitService.class);
 
-    private final TimeUnit timeUnit;
+    private final long timeWindowMs;
+    private final int maxRate;
 
-    private final Integer defaultLimit;
+    private final ConcurrentHashMap<String, Bucket> buckets;
 
-    private final Map<String, Bucket> ruleBuckets;
+    RateLimitService(Properties properties) {
+        final TimeUnit timeUnit = PropertiesUtil.get(Props.TIME_UNIT, properties).get();
+        this.timeWindowMs = timeUnit.toMillis(PropertiesUtil.get(Props.TIME_WINDOW, properties).get());
 
-    public RateLimitService(Properties properties) {
-        this.timeUnit = TimeUnit.MINUTES;
-        this.defaultLimit = PropertiesUtil.get(Props.LIMIT, properties).get();
-        this.ruleBuckets = parseRules(PropertiesUtil.get(Props.RULES, properties));
-    }
-
-    public RateLimitService(Properties properties, TimeUnit timeUnit) {
-        this.timeUnit = timeUnit;
-        this.defaultLimit = PropertiesUtil.get(Props.LIMIT, properties).get();
-        this.ruleBuckets = parseRules(PropertiesUtil.get(Props.RULES, properties));
+        this.maxRate = PropertiesUtil.get(Props.LIMIT, properties).get();
+        this.buckets = new ConcurrentHashMap<>();
     }
 
     /**
      * @param key - key of rate limit state
      * @return true - if rate limit is not exceeded, else false
      */
-    public boolean updateAndCheck(String key) {
+    boolean updateAndCheck(String key) {
         if (key == null) {
             return false;
         }
-        Bucket bucket = ruleBuckets.get(key);
-        if (bucket == null) {
-            bucket = new Bucket(defaultLimit);
-            ruleBuckets.put(key, bucket);
-            LOGGER.info("Rate limiting. Create new bucket with key " + key);
-        }
-        return bucket.update(1) >= 0;
+        return buckets.computeIfAbsent(key, s -> new Bucket(maxRate, timeWindowMs)).update() > -1;
     }
 
-    private Map<String, Bucket> parseRules(ParameterValue<String[]> rulesParameterValue) {
-        if (rulesParameterValue.isEmpty()) {
-            return new HashMap<>();
-        } else {
-            Map<String, Bucket> bucketRules = new HashMap<>(rulesParameterValue.get().length);
-            for (String rule : rulesParameterValue.get()) {
-                int dIdx = rule.indexOf(":");
-                String key = rule.substring(0, dIdx);
-                int val = Integer.parseInt(rule.substring(++dIdx));
-                bucketRules.put(key, new Bucket(val));
-            }
-            return bucketRules;
-        }
+    float getValue(String key) {
+        return Optional.ofNullable(buckets.get(key)).map(Bucket::getValue).orElse(0f);
     }
 
-    private class Bucket {
+    private static class Bucket {
 
-        private int maxRate;
-        private int value;
-        private long lastUpdate;
+        private final float maxRate;
+        private final long timeDenominator;
 
-        private long timeDenominator;
+        private AtomicReference<Float> value;
+        private AtomicLong lastUpdate;
 
-        Bucket(int maxRate) {
-            this.maxRate = maxRate;
-            this.value = maxRate;
-            this.lastUpdate = System.currentTimeMillis();
-            this.timeDenominator = timeUnit.toMillis(1);
+
+        Bucket(int maxRate, long timeWindow) {
+            this.maxRate = Integer.valueOf(maxRate).floatValue();
+            this.value = new AtomicReference<>(this.maxRate);
+            this.timeDenominator = timeWindow;
+
+            this.lastUpdate = new AtomicLong(System.currentTimeMillis());
         }
 
-        int update(int n) {
+        int update() {
             long now = System.currentTimeMillis();
-            long delta = now - lastUpdate;
-            int increase = (int) (delta * maxRate / timeDenominator);
-            value = Math.max(-1, Math.min(maxRate, increase + value - n));
-            lastUpdate = now;
+            long delta = now - lastUpdate.getAndUpdate(operand -> now);
+            float increase = delta * maxRate / timeDenominator;
+            float updatedValue = value.updateAndGet(val -> Math.max(-1, Math.min(maxRate, increase + val - 1)));
 
-            LOGGER.trace("Rate Limit Service value = {}, delta = {}, increase = {}", value, delta, increase);
+            LOGGER.trace("Rate Limit Service value = {}, delta = {}, increase = {}", updatedValue, delta, increase);
 
-            return value;
+            return Math.round(updatedValue);
+        }
+
+        float getValue() {
+            return value.get();
         }
     }
 
     private static class Props {
-
-        private static final Pattern RULES_PROP_PATTERN = Pattern.compile("[a-zA-Z\\d]+:\\d+");
-
         static final Parameter<Integer> LIMIT = Parameter
                 .integerParameter("limit")
                 .withDefault(1000)
                 .withValidator(IntegerValidators.positive())
                 .build();
 
-        static final Parameter<String[]> RULES = Parameter
-                .stringArrayParameter("rules")
-                .withValidator(value -> Stream.of(value).allMatch(s -> RULES_PROP_PATTERN.matcher(s).matches())
-                        ? ValidationResult.ok()
-                        : ValidationResult.error("The rule of rate limiting has invalid format."))
+        static final Parameter<Long> TIME_WINDOW = Parameter
+                .longParameter("timeWindow")
+                .withDefault(1L)
                 .build();
+
+        static final Parameter<TimeUnit> TIME_UNIT = Parameter
+                .parameter("timeUnit", val -> Optional.ofNullable(val)
+                        .map(v -> ParameterValue.of(TimeUnit.valueOf(v)))
+                        .orElse(ParameterValue.empty()))
+                .withDefault(TimeUnit.MINUTES)
+                .build();
+
     }
 
 }

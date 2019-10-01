@@ -21,9 +21,11 @@ Application is configured through properties file.
 
 ### Rate Limiting settings 
 
-`sink.sender.rate-limit.limit` - count of events per minute by one project, default 1000 per minute 
+`sink.sender.rateLimit.limit` - ограничение по количеству. Default: 1000.
 
-`sink.sender.rate-limit.rules` - custom limit by projects with format project1:1000,project2:100 
+`sink.sender.rateLimit.timeWindow` - временное окно. Default:  1.
+
+`sink.sender.rateLimit.timeUnit` - величина временной продолжительность для timeWindow. Default: MINUTES.
 
 ### Application context settings
 `context.environment` - id of environment
@@ -63,8 +65,9 @@ sink.sender.sentry.level=warning
 sink.sender.rate-limit.limit=2500
 sink.sender.rate-limit.rules=project1:100,project2:400,project3:1000,project4:3000
 
-sink.consumer.bootstrap.servers=localhost:9092
-sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
+sink.sender.rateLimit.limit=100500
+sink.sender.rateLimit.timeWindow=5
+sink.sender.rateLimit.timeUnit=NANOSECONDS
 
 sink.pattern=mystream
 

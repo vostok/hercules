@@ -59,7 +59,7 @@ public class SentrySyncProcessor {
         this.sentryClientHolder.update();
         this.metricsCollector = metricsCollector;
 
-        Properties rateLimitServiceProperties = PropertiesUtil.ofScope(sinkProperties, "rate-limit");
+        Properties rateLimitServiceProperties = PropertiesUtil.ofScope(sinkProperties, "rateLimit");
         this.rateLimitService = new RateLimitService(rateLimitServiceProperties);
     }
 
@@ -103,10 +103,10 @@ public class SentrySyncProcessor {
 
         final String prefix = makePrefix(organization, sentryProject);
         boolean processed;
-        if (rateLimitService.updateAndCheck(sentryProject)) {
+        if (rateLimitService.updateAndCheck(organization)) {
             processed = tryToSend(event, organization, sentryProject);
         } else {
-            LOGGER.warn("Excess of rate limit. Reject event by project {}.", sentryProject);
+            LOGGER.warn("Excess of rate limit. Reject event by project {}.", organization);
             rejectRateLimitMeterMap.computeIfAbsent(prefix, p -> metricsCollector.meter(p + "rateLimitRejectEventCount"));
             processed = false;
         }
