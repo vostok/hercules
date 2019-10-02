@@ -203,7 +203,7 @@ public class SentryEventConverterTest {
                         .tag("user.id", Variant.ofString(id))
                         .tag("user.email", Variant.ofString(email))
                         .tag("user.username", Variant.ofString(username))
-                        .tag("user.ipAddress", Variant.ofString(ipAddress))
+                        .tag("user.ip_address", Variant.ofString(ipAddress))
                         .tag("user.my_field", Variant.ofString(someString))
                         .tag("user.int", Variant.ofInteger(number))
                         .tag("user.UUID", Variant.ofUuid(uuid))

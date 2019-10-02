@@ -152,7 +152,7 @@ public class SentryEventConverter {
                         case "id":
                             userBuilder.setId(extractString(value));
                             break;
-                        case "ipAddress":
+                        case "ip_address":
                             userBuilder.setIpAddress(extractString(value));
                             break;
                         case "username":
