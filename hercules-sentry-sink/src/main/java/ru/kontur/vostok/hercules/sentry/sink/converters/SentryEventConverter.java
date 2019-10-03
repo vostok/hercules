@@ -83,6 +83,7 @@ public class SentryEventConverter {
         eventBuilder.withServerName(HIDING_SERVER_NAME);
 
         final Container payload = logEvent.getPayload();
+
         ContainerUtil.extract(payload, LogEventTags.MESSAGE_TAG)
                 .ifPresent(eventBuilder::withMessage);
 
@@ -90,17 +91,21 @@ public class SentryEventConverter {
                 .flatMap(SentryLevelEnumParser::parse)
                 .ifPresent(eventBuilder::withLevel);
 
-        ContainerUtil.extract(payload, LogEventTags.EXCEPTION_TAG)
-                .ifPresent(exception -> {
-                    final ExceptionInterface exceptionInterface = convertException(exception);
-                    eventBuilder.withSentryInterface(exceptionInterface);
-                    eventBuilder.withPlatform(SentryEventConverter.extractPlatform(exceptionInterface));
-                });
+        boolean groupingIsDefined = false;
+        Optional<Container> exceptionOptional = ContainerUtil.extract(payload, LogEventTags.EXCEPTION_TAG);
+        if (exceptionOptional.isPresent()) {
+            final ExceptionInterface exceptionInterface = convertException(exceptionOptional.get());
+            eventBuilder.withSentryInterface(exceptionInterface);
+            eventBuilder.withPlatform(SentryEventConverter.extractPlatform(exceptionInterface));
+            groupingIsDefined = true;
+        }
 
         ContainerUtil.extract(payload, LogEventTags.STACK_TRACE_TAG)
                 .ifPresent(stackTrace -> eventBuilder.withExtra("stackTrace", stackTrace));
 
-        ContainerUtil.extract(payload, CommonTags.PROPERTIES_TAG).ifPresent(properties -> {
+        Optional<Container> propertiesOptional = ContainerUtil.extract(payload, CommonTags.PROPERTIES_TAG);
+        if (propertiesOptional.isPresent()) {
+            Container properties = propertiesOptional.get();
 
             ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG)
                     .ifPresent(eventBuilder::withEnvironment);
@@ -111,9 +116,6 @@ public class SentryEventConverter {
             ContainerUtil.extract(properties, SentryTags.TRACE_ID_TAG)
                     .ifPresent(eventBuilder::withTransaction);
 
-            ContainerUtil.extract(properties, SentryTags.FINGERPRINT_TAG)
-                    .ifPresent(eventBuilder::withFingerprint);
-
             ContainerUtil.extract(properties, SentryTags.PLATFORM_TAG)
                     .map(String::toLowerCase)
                     .filter(PLATFORMS::contains)
@@ -122,8 +124,19 @@ public class SentryEventConverter {
             ContainerUtil.extract(properties, SentryTags.LOGGER_TAG)
                     .ifPresent(eventBuilder::withLogger);
 
+            Optional<String[]> fingerprintOptional = ContainerUtil.extract(properties, SentryTags.FINGERPRINT_TAG);
+            if (fingerprintOptional.isPresent()) {
+                eventBuilder.withFingerprint(fingerprintOptional.get());
+                groupingIsDefined = true;
+            }
+
             writeOtherData(properties, eventBuilder);
-        });
+        }
+
+        if (!groupingIsDefined) {
+            ContainerUtil.extract(payload, LogEventTags.MESSAGE_TEMPLATE_TAG)
+                    .ifPresent(eventBuilder::withFingerprint);
+        }
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
         sentryEvent.setSdk(SDK.get());
