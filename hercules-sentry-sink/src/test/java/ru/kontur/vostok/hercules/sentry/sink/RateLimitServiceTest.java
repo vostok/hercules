@@ -6,8 +6,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Artem Zhdanov
@@ -25,20 +24,6 @@ public class RateLimitServiceTest {
     public void shouldBeTrueWithLimit1PerMin() {
         RateLimitService service = createLimiter(1);
         assertTrue(service.updateAndCheck(KEY));
-        assertFalse(service.updateAndCheck(KEY));
-    }
-
-    /**
-     * limit = 1000 per minute
-     * 1 - 1000th event -> true
-     * 1001th event -> false
-     */
-    @Test
-    public void shouldBeTrueWithLimit1000PerMin() {
-        RateLimitService service = createLimiter(1000);
-        for (int i = 0; i < 1000; i++) {
-            assertTrue(service.updateAndCheck(KEY));
-        }
         assertFalse(service.updateAndCheck(KEY));
     }
 
@@ -68,6 +53,40 @@ public class RateLimitServiceTest {
         }
         assertTrue(service.updateAndCheck(KEY));
         assertFalse(service.updateAndCheck(KEY));
+    }
+
+    @Test
+    public void shouldBeDropLargeLoad() {
+        RateLimitService service = createLimiter(10000, 3, TimeUnit.SECONDS);
+        assertEquals(50f, sendAndCalculateDroppedPercent(service, 20000), 2f);
+        assertEquals(100f, sendAndCalculateDroppedPercent(service, 20000), 1f);
+        assertEquals(100f, sendAndCalculateDroppedPercent(service, 20000), 1f);
+    }
+
+    @Test
+    public void shouldBeRecoverWithAverageSize() throws InterruptedException {
+        int limit = 1000;
+        RateLimitService service = createLimiter(1000, 1, TimeUnit.SECONDS);
+        assertEquals(0f, sendAndCalculateDroppedPercent(service, 350), 1f);
+        sleep(limit);
+        assertEquals(95f, sendAndCalculateDroppedPercent(service, 20000), 2f);
+        sleep(limit);
+        assertEquals(0f, sendAndCalculateDroppedPercent(service, 350), 1f);
+        sleep(limit);
+        assertEquals(10f, sendAndCalculateDroppedPercent(service, 1100), 4f);
+        sleep(limit);
+        assertEquals(0f, sendAndCalculateDroppedPercent(service, 350), 1f);
+    }
+
+    private float sendAndCalculateDroppedPercent(RateLimitService rateLimitService, int requestCount) {
+        int droppedCount = 0;
+        for (int i = 0; i < requestCount; i++) {
+            boolean result = rateLimitService.updateAndCheck(KEY);
+            if (!result) {
+                droppedCount++;
+            }
+        }
+        return droppedCount * 100f / requestCount;
     }
 
     @Test(expected = IllegalStateException.class)

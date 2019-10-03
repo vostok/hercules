@@ -14,14 +14,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 class RateLimitService {
 
-    private final long timeWindow;
+    private final long timeWindowMs;
     private final long limit;
 
     private final ConcurrentHashMap<String, Bucket> buckets;
 
     RateLimitService(Properties properties) {
         final TimeUnit timeUnit = PropertiesUtil.get(Props.TIME_UNIT, properties).get();
-        this.timeWindow = timeUnit.toMillis(PropertiesUtil.get(Props.TIME_WINDOW, properties).get());
+        this.timeWindowMs = timeUnit.toMillis(PropertiesUtil.get(Props.TIME_WINDOW, properties).get());
 
         this.limit = PropertiesUtil.get(Props.LIMIT, properties).get();
         this.buckets = new ConcurrentHashMap<>();
@@ -35,7 +35,7 @@ class RateLimitService {
         if (key == null) {
             return false;
         }
-        return buckets.computeIfAbsent(key, s -> new Bucket(limit, timeWindow)).update() >= 0;
+        return buckets.computeIfAbsent(key, s -> new Bucket(limit, timeWindowMs)).update() >= 0;
     }
 
     private static class Bucket {
@@ -57,7 +57,7 @@ class RateLimitService {
             long now = System.currentTimeMillis();
             long delta = now - lastUpdate.getAndUpdate(operand -> now);
             long increase = delta * limit - timeWindow;
-            return value.updateAndGet(val -> Math.max(-1, Math.min(val + increase, limit * timeWindow)));
+            return value.updateAndGet(val -> Math.max(-1L, Math.min(val + increase, limit * timeWindow)));
         }
     }
 
