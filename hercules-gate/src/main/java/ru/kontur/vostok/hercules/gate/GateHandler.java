@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
@@ -14,6 +15,8 @@ import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.util.Maps;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -57,12 +60,11 @@ public class GateHandler implements HttpHandler {
         this.maxContentLength = maxContentLength;
 
         if (async) {
-            this.requestMeter  = metricsCollector.meter("gateHandlerAsyncRequests");
+            this.requestMeter = metricsCollector.meter("gateHandlerAsyncRequests");
             this.requestSizeMeter = metricsCollector.meter("gateHandlerAsyncRequestSizeBytes");
-        }
-        else {
+        } else {
             this.requestMeter = metricsCollector.meter("gateHandlerSyncRequests");
-            this.requestSizeMeter  = metricsCollector.meter("gateHandlerSyncRequestSizeBytes");
+            this.requestSizeMeter = metricsCollector.meter("gateHandlerSyncRequestSizeBytes");
         }
     }
 
@@ -70,12 +72,12 @@ public class GateHandler implements HttpHandler {
     public void handle(HttpServerRequest request) {
         requestMeter.mark(1);
 
-        String stream = request.getParameter("stream");
-        if (stream == null) {
+        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        if (streamName.isError()) {
             request.complete(HttpStatusCodes.BAD_REQUEST);
             return;
         }
-        //TODO: stream name validation
+        String stream = streamName.get();
 
         AuthResult authResult = authProvider.authWrite(request, stream);
         if (!authResult.isSuccess()) {
@@ -128,5 +130,17 @@ public class GateHandler implements HttpHandler {
 
         SendContext context = new SendContext(async, topic, tags, partitions, shardingKey, validator);
         throttle.throttleAsync(request, context);
+    }
+
+    private static class QueryParameters {
+        //TODO: stream name validation
+        public static Parameter<String> STREAM =
+                Parameter.stringParameter("stream").
+                        required().
+                        build();
+
+        private QueryParameters() {
+            /* static class*/
+        }
     }
 }
