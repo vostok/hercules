@@ -20,6 +20,7 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
+import ru.kontur.vostok.hercules.throttling.rate.RateLimiter;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -46,7 +47,7 @@ public class SentrySyncProcessor {
     private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Meter> rejectRateLimitMeterMap = new ConcurrentHashMap<>();
 
-    private final RateLimitService rateLimitService;
+    private final RateLimiter rateLimiter;
 
     public SentrySyncProcessor(
             Properties sinkProperties,
@@ -59,8 +60,8 @@ public class SentrySyncProcessor {
         this.sentryClientHolder.update();
         this.metricsCollector = metricsCollector;
 
-        Properties rateLimitServiceProperties = PropertiesUtil.ofScope(sinkProperties, "rateLimit");
-        this.rateLimitService = new RateLimitService(rateLimitServiceProperties);
+        Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
+        this.rateLimiter = new RateLimiter(rateLimiterProperties);
     }
 
     /**
@@ -103,7 +104,7 @@ public class SentrySyncProcessor {
 
         final String prefix = makePrefix(organization, sentryProject);
         boolean processed;
-        if (rateLimitService.updateAndCheck(organization)) {
+        if (rateLimiter.updateAndCheck(organization)) {
             processed = tryToSend(event, organization, sentryProject);
         } else {
             LOGGER.warn("Excess of rate limit. Reject event by project {}.", organization);

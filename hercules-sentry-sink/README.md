@@ -21,11 +21,9 @@ Application is configured through properties file.
 
 ### Rate Limiting settings 
 
-`sink.sender.rateLimit.limit` - ограничение по количеству. Default: 1000.
+`sink.sender.throttling.rate.limit` - max event count per time window. Default value: `1000`.
 
-`sink.sender.rateLimit.timeWindow` - временное окно. Default:  1.
-
-`sink.sender.rateLimit.timeUnit` - величина временной продолжительность для timeWindow. Default: MINUTES.
+`sink.sender.throttling.rate.timeWindowMs` - time window in millis to apply event limit. Default value:  `60000` ms.
 
 ### Application context settings
 `context.environment` - id of environment
@@ -62,12 +60,8 @@ sink.sender.sentry.url=https://sentry.io
 sink.sender.sentry.token=1234567890768132cde645f1ba1bcd4ef67ab78cd9ef89801a45be5747c68f87
 sink.sender.sentry.level=warning
 
-sink.sender.rate-limit.limit=2500
-sink.sender.rate-limit.rules=project1:100,project2:400,project3:1000,project4:3000
-
-sink.sender.rateLimit.limit=100500
-sink.sender.rateLimit.timeWindow=5
-sink.sender.rateLimit.timeUnit=NANOSECONDS
+sink.sender.throttling.rate.limit=5000
+sink.sender.throttling.rate.timeWindowMs=300000
 
 sink.pattern=mystream
 
