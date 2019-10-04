@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * RateLimiter is used to throttle access to some limited resources by key with fixed rate limit.
+ *
  * @author Artem Zhdanov
  * @author Gregory Koshelev
  */
@@ -25,6 +27,12 @@ public class RateLimiter {
         this.timeWindowMs = PropertiesUtil.get(Props.TIME_WINDOW_MS, properties).get();
     }
 
+    /**
+     * Update rate and check if rate does not exceed limit for specified key.
+     *
+     * @param key the resource key with limited access rate
+     * @return {@code true} if rate does not exceed limit for specified key, otherwise {@code false}
+     */
     public boolean updateAndCheck(@NotNull String key) {
         return buckets.computeIfAbsent(key, k -> new Bucket(limit, timeWindowMs)).updateAndGet() >= 0;
     }
@@ -52,14 +60,14 @@ public class RateLimiter {
         }
     }
 
-    private static class Props {
-        static final Parameter<Long> LIMIT =
+    public static class Props {
+        public static final Parameter<Long> LIMIT =
                 Parameter.longParameter("limit").
                         withDefault(1_000L).
                         withValidator(LongValidators.positive()).
                         build();
 
-        static final Parameter<Long> TIME_WINDOW_MS =
+        public static final Parameter<Long> TIME_WINDOW_MS =
                 Parameter.longParameter("timeWindowMs").
                         withDefault(60_000L).
                         withValidator(LongValidators.positive()).

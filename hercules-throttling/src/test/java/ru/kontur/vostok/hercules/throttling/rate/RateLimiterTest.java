@@ -90,8 +90,8 @@ public class RateLimiterTest {
 
     private RateLimiter createLimiter(long limit, long timeWindowMs) {
         Properties properties = new Properties();
-        properties.setProperty("rateLimit", String.valueOf(limit));
-        properties.setProperty("timeWindowMs", String.valueOf(timeWindowMs));
+        properties.setProperty(RateLimiter.Props.LIMIT.name(), String.valueOf(limit));
+        properties.setProperty(RateLimiter.Props.TIME_WINDOW_MS.name(), String.valueOf(timeWindowMs));
         return new RateLimiter(properties);
     }
 
