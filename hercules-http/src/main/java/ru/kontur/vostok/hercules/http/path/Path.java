@@ -3,6 +3,14 @@ package ru.kontur.vostok.hercules.http.path;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Represents normalized request path.
+ * <p>
+ * Normalization consists of two steps:<br>
+ * 1. Removing of leading and trailing slashes from the path<br>
+ * 2. Splitting path into substrings by slashes
+ * <p>
+ * Normalization performs in lazy-fashion.
+ *
  * @author Gregory Koshelev
  */
 public class Path {

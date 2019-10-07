@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.util.text;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -63,6 +64,52 @@ public final class StringUtil {
         }
         substrings[parts - 1] = source.substring(offset);
         return substrings;
+    }
+
+    /**
+     * Split source string by delimiter char into non empty substrings.
+     *
+     * @param source    the source string
+     * @param delimiter the delimiter char
+     * @return substrings
+     * @see StringUtil#split(String, char, boolean)
+     */
+    public static String[] split(String source, char delimiter) {
+        return split(source, delimiter, true);
+    }
+
+    /**
+     * Split source string by delimiter char into substrings. Empty substrings can be omitted by trim flag.
+     *
+     * @param source    the source string
+     * @param delimiter the delimiter char
+     * @param trim      should omit empty substrings
+     * @return substrings
+     */
+    public static String[] split(String source, char delimiter, boolean trim) {
+        List<String> substrings = new ArrayList<>();
+        int offset = 0;
+        int length = source.length();
+        int position = 0;
+        while (offset < length && (position = source.indexOf(delimiter, offset)) != -1) {
+            if (position == offset) {
+                if (!trim) {
+                    substrings.add("");
+                }
+                offset++;
+            } else {
+                substrings.add(source.substring(offset, position));
+                offset = position + 1;
+            }
+        }
+        if (offset < length) {
+            substrings.add(source.substring(offset));
+        } else {
+            if (!trim) {
+                substrings.add("");
+            }
+        }
+        return substrings.toArray(new String[0]);
     }
 
     /**
