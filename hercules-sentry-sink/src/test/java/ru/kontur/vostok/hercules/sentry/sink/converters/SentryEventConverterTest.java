@@ -171,6 +171,53 @@ public class SentryEventConverterTest {
     }
 
     @Test
+    public void shouldSetFingerprintByMessageTemplate() {
+        final String messageTemplate = "My message template";
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG, Variant.ofString(messageTemplate))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Assert.assertTrue(sentryEvent.getFingerprint().contains(messageTemplate));
+        Assert.assertEquals(1, sentryEvent.getFingerprint().size());
+    }
+
+    @Test
+    public void shouldNotSetFingerprintByMessageTemplateIfExceptionExists() {
+        final String messageTemplate = "My message template";
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG, Variant.ofString(messageTemplate))
+                .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Assert.assertNull(sentryEvent.getFingerprint());
+    }
+
+    @Test
+    public void shouldNotSetFingerprintByMessageTemplateIfItIsSetExplicitly() {
+        final String messageTemplate = "My message template";
+        final String fingerprint = "my_label";
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG, Variant.ofString(messageTemplate))
+                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                        .tag(SentryTags.FINGERPRINT_TAG, Variant.ofVector(Vector.ofStrings(fingerprint)))
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SentryEventConverter.convert(event);
+
+        Assert.assertTrue(sentryEvent.getFingerprint().contains(fingerprint));
+        Assert.assertEquals(1, sentryEvent.getFingerprint().size());
+    }
+
+    @Test
     public void shouldNotSetUnknownPlatform() {
         final String unknownPlatform = "pascal";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
