@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.http;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -36,7 +37,40 @@ public interface HttpServerRequest {
      * @param name of the query parameter
      * @return parameter value or <code>null</code> if it doesn't exist
      */
+    String getQueryParameter(String name);
+
+    /**
+     * Get query parameter value of the request. If parameter is used for multiple times, then return first value.
+     *
+     * @param name of the query parameter
+     * @return parameter value or <code>null</code> if it doesn't exist
+     * @deprecated use {@link #getQueryParameter(String)} instead.
+     * FIXME: Should be removed after release 0.31.x
+     */
+    @Deprecated
     String getParameter(String name);
+
+    /**
+     * Get path parameter value of the request.
+     * <p>
+     * Sample:<br>
+     * If registered path template is {@code "/path/:book/:page"} and
+     * requested url is {@code "/path/thehitchhikersguidetothegalaxy/42"}
+     * then<br>
+     * getPathParameter("book") returns "thehitchhikersguidetothegalaxy" and
+     * getPathParameter("page") returns "42"
+     *
+     * @param name of the path parameter
+     * @return parameter value or <code>null</code> if it doesn't exist
+     */
+    String getPathParameter(String name);
+
+    /**
+     * Set path parameters.
+     *
+     * @param pathParameters path parameters
+     */
+    void setPathParameters(Map<String, String> pathParameters);
 
     /**
      * Get all query parameter values of the request. If parameter doesn't present, then return empty array.

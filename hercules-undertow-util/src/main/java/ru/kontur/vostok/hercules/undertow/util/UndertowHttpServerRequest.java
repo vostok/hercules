@@ -11,6 +11,8 @@ import ru.kontur.vostok.hercules.http.ReadBodyCallback;
 import ru.kontur.vostok.hercules.http.RequestCompletionListener;
 import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -23,6 +25,7 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
     private final ConcurrentMap<String, Object> context;
 
     private volatile HttpMethod method;
+    private volatile Map<String, String> pathParameters = Collections.emptyMap();
 
     public UndertowHttpServerRequest(HttpServerExchange exchange) {
         this.exchange = exchange;
@@ -46,8 +49,23 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
-    public String getParameter(String name) {
+    public String getQueryParameter(String name) {
         return exchange.getQueryParameters().getOrDefault(name, CollectionUtil.emptyDeque()).peek();
+    }
+
+    @Override
+    public String getParameter(String name) {
+        return getQueryParameter(name);
+    }
+
+    @Override
+    public String getPathParameter(String name) {
+        return pathParameters.get(name);
+    }
+
+    @Override
+    public void setPathParameters(Map<String, String> pathParameters) {
+        this.pathParameters = pathParameters;
     }
 
     @Override
