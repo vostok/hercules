@@ -3,9 +3,10 @@ package ru.kontur.vostok.hercules.http.handler;
 import ru.kontur.vostok.hercules.http.HttpMethod;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.UrlUtil;
+import ru.kontur.vostok.hercules.http.path.PathTemplate;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -15,7 +16,7 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class RouteHandlerBuilder {
-    private final Map<String, Map<HttpMethod, HttpHandler>> handlers = new HashMap<>();
+    private final Map<HttpMethod, RouteHandler.HandlerMatchers> handlers = new EnumMap<>(HttpMethod.class);
     private final String rootPath;
 
     public RouteHandlerBuilder(Properties properties) {
@@ -23,8 +24,9 @@ public class RouteHandlerBuilder {
     }
 
     public void addHandler(String path, HttpMethod method, HttpHandler handler) {
-        Map<HttpMethod, HttpHandler> map = handlers.computeIfAbsent(UrlUtil.join(rootPath, path), s -> new HashMap<>());
-        map.putIfAbsent(method, handler);
+        PathTemplate pathTemplate = PathTemplate.of(UrlUtil.join(rootPath, path));
+        RouteHandler.HandlerMatchers handlerMatchers = handlers.computeIfAbsent(method, s -> new RouteHandler.HandlerMatchers());
+        handlerMatchers.addMatching(pathTemplate, handler);
     }
 
     public RouteHandlerBuilder get(String path, HttpHandler handler) {

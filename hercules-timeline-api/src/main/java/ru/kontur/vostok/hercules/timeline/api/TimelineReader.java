@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -167,13 +170,21 @@ public class TimelineReader {
     private final CqlSession session;
     private final int timetrapCountLimit;
 
+    private final MetricsCollector metricsCollector;
+    private final Meter receivedEventsCountMeter;
+    private final Meter receivedBytesCountMeter;
+    private final Timer readingTimer;
+
     public TimelineReader(
             Properties properties,
             CassandraConnector connector,
             MetricsCollector metricsCollector) {
         this.session = connector.session();
-
         this.timetrapCountLimit = PropertiesUtil.get(Props.TIMETRAP_COUNT_LIMIT, properties).get();
+        this.metricsCollector = metricsCollector;
+        this.receivedEventsCountMeter = metricsCollector.meter("receivedEventsCount");
+        this.receivedBytesCountMeter = metricsCollector.meter("receivedBytesCount");
+        this.readingTimer = metricsCollector.timer("readingTimeMs");
     }
 
     /**
@@ -197,6 +208,9 @@ public class TimelineReader {
             long from,
             long to
     ) {
+        TimelineMetricsCollector timelineMetricsCollector = new TimelineMetricsCollector(metricsCollector, timeline.getName());
+        final long start = System.currentTimeMillis();
+
         long toInclusive = to - 1;
         long timetrapSize = timeline.getTimetrapSize();
 
@@ -241,6 +255,18 @@ public class TimelineReader {
                 break;
             }
         }
+
+        int receivedBytesCount = 0;
+        for (byte[] event : result) {
+            receivedBytesCount += event.length;
+        }
+        receivedBytesCountMeter.mark(receivedBytesCount);
+        timelineMetricsCollector.markReceivedBytesCount(receivedBytesCount);
+        receivedEventsCountMeter.mark(result.size());
+        timelineMetricsCollector.markReceivedEventsCount(result.size());
+        final long readingDurationMs = System.currentTimeMillis() - start;
+        readingTimer.update(readingDurationMs, TimeUnit.MILLISECONDS);
+        timelineMetricsCollector.updateReadingTime(readingDurationMs);
 
         return new TimelineByteContent(toState(offsetMap), result.toArray(new byte[0][]));
     }

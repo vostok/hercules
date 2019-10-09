@@ -19,7 +19,7 @@ public final class QueryUtil {
      * @return the value of query parameter
      */
     public static <T> ParameterValue<T> get(Parameter<T> parameter, HttpServerRequest request) {
-        String requestParameter = request.getParameter(parameter.name());
+        String requestParameter = request.getQueryParameter(parameter.name());
         return parameter.from(requestParameter);
     }
 
