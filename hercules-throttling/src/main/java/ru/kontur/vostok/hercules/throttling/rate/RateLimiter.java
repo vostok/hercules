@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.throttling.rate;
 import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.util.Properties;
@@ -17,12 +18,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Gregory Koshelev
  */
 public class RateLimiter {
+    private final TimeSource time;
+
     private final long limit;
     private final long timeWindowMs;
 
     private final ConcurrentMap<String, Bucket> buckets = new ConcurrentHashMap<>(128);
 
     public RateLimiter(Properties properties) {
+        this(TimeSource.SYSTEM, properties);
+    }
+
+    RateLimiter(TimeSource time, Properties properties) {
+        this.time = time;
+
         this.limit = PropertiesUtil.get(Props.LIMIT, properties).get();
         this.timeWindowMs = PropertiesUtil.get(Props.TIME_WINDOW_MS, properties).get();
     }
@@ -34,26 +43,20 @@ public class RateLimiter {
      * @return {@code true} if rate does not exceed limit for specified key, otherwise {@code false}
      */
     public boolean updateAndCheck(@NotNull String key) {
-        return buckets.computeIfAbsent(key, k -> new Bucket(limit, timeWindowMs)).updateAndGet() >= 0;
+        return buckets.computeIfAbsent(key, k -> new Bucket()).updateAndGet() >= 0;
     }
 
-    private static class Bucket {
-        private final long limit;
-        private final long timeWindowMs;
-
+    private class Bucket {
         private final AtomicLong value;
         private final AtomicLong lastUpdatedAt;
 
-        Bucket(long limit, long timeWindowMs) {
-            this.limit = limit;
-            this.timeWindowMs = timeWindowMs;
-
-            this.value = new AtomicLong(this.limit * this.timeWindowMs);
-            this.lastUpdatedAt = new AtomicLong(System.currentTimeMillis());
+        Bucket() {
+            this.value = new AtomicLong(limit * timeWindowMs);
+            this.lastUpdatedAt = new AtomicLong(time.milliseconds());
         }
 
         long updateAndGet() {
-            long now = System.currentTimeMillis();
+            long now = time.milliseconds();
             long delta = now - lastUpdatedAt.getAndUpdate(x -> now);
             long increase = delta * limit - timeWindowMs;
             return value.updateAndGet(val -> Math.max(-1L, Math.min(val + increase, limit * timeWindowMs)));

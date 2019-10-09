@@ -1,10 +1,11 @@
 package ru.kontur.vostok.hercules.throttling.rate;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.util.time.MockTimeSource;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.Properties;
 
-import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertTrue;
  * @author Gregory Koshelev
  */
 public class RateLimiterTest {
+    private static final TimeSource TIME = new MockTimeSource();
     private static final String KEY = "key";
 
     /**
@@ -92,7 +94,10 @@ public class RateLimiterTest {
         Properties properties = new Properties();
         properties.setProperty(RateLimiter.Props.LIMIT.name(), String.valueOf(limit));
         properties.setProperty(RateLimiter.Props.TIME_WINDOW_MS.name(), String.valueOf(timeWindowMs));
-        return new RateLimiter(properties);
+        return new RateLimiter(TIME, properties);
     }
 
+    private void sleep(long millis) {
+        TIME.sleep(millis);
+    }
 }
