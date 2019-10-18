@@ -33,10 +33,10 @@ public class RateLimiterTest {
     /**
      * limit = 1 per sec
      * 1 - 4th events with lower rate -> true
-     * 5th event raised immidiately with empty quota -> false
+     * 5th event raised immediately with empty quota -> false
      */
     @Test
-    public void shouldBeTrueWithLimit1PerSecAndCorrectIncrease() throws InterruptedException {
+    public void shouldBeTrueWithLimit1PerSecAndCorrectIncrease() {
         RateLimiter service = createLimiter(1, 1_000L);
         assertTrue(service.updateAndCheck(KEY));
         sleep(1_000);
@@ -57,7 +57,7 @@ public class RateLimiterTest {
     }
 
     @Test
-    public void shouldBeRecoverWithAverageSize() throws InterruptedException {
+    public void shouldBeRecoverWithAverageSize() {
         RateLimiter service = createLimiter(1_000, 1_000L);
         assertEquals(0f, sendAndCalculateDroppedPercent(service, 350), 1f);
         sleep(1_000);

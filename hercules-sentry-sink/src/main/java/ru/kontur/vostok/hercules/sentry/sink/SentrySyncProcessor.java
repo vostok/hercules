@@ -108,15 +108,19 @@ public class SentrySyncProcessor {
             processed = tryToSend(event, organization, sentryProject);
         } else {
             LOGGER.warn("Excess of rate limit. Reject event by project {}.", organization);
-            rejectRateLimitMeterMap.computeIfAbsent(prefix, p -> metricsCollector.meter(p + "rateLimitRejectEventCount"));
+            rejectRateLimitMeterMap
+                    .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "rateLimitRejectEventCount"))
+                    .mark();
             processed = false;
         }
 
         final long processingTimeMs = System.currentTimeMillis() - sendingStart;
-        eventProcessingTimerMap.computeIfAbsent(prefix, p -> metricsCollector.timer(p + "eventProcessingTimeMs"))
+        eventProcessingTimerMap
+                .computeIfAbsent(prefix, p -> metricsCollector.timer(p + "eventProcessingTimeMs"))
                 .update(processingTimeMs, TimeUnit.MILLISECONDS);
         if (processed) {
-            processedEventsMeterMap.computeIfAbsent(prefix, p -> metricsCollector.meter(p + "processedEventCount"))
+            processedEventsMeterMap
+                    .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "processedEventCount"))
                     .mark();
         }
 
