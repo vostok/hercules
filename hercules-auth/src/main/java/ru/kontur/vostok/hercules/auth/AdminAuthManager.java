@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.auth;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Set;
 
 /**
@@ -12,7 +14,7 @@ public class AdminAuthManager {
         this.adminKeys = adminKeys;
     }
 
-    public AuthResult auth(String apiKey) {
+    public AuthResult auth(@NotNull String apiKey) {
         return adminKeys.contains(apiKey) ? AuthResult.ok() : AuthResult.denied();
     }
 }
