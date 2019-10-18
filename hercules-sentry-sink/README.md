@@ -63,6 +63,9 @@ sink.sender.sentry.level=warning
 sink.sender.throttling.rate.limit=5000
 sink.sender.throttling.rate.timeWindowMs=300000
 
+sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
+sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
+
 sink.pattern=mystream
 
 context.environment=dev
