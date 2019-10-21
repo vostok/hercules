@@ -4,6 +4,11 @@ Timeline Sink is used to move timelines from Kafka to Apache Cassandra.
 ## Settings
 Application is configured through properties file.
 
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
+
+`application.port` - server port, default value: `8080`
+
 ### Apache Cassandra settings 
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
@@ -85,17 +90,17 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
-### HTTP Server settings
-`http.server.host` - server host
-
-`http.server.port` - server port
-
 ### Application context settings
 `context.instance.id` - id of instance
 
 `context.environment` - id of environment
 
 `context.zone` - id of zone
+
+### Http Server settings
+`http.server.ioThreads` - the number of IO threads. Default value: `1`.
+
+`http.server.workerThreads` - the number of worker threads. Default value: `1`.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-timeline-sink.jar application.properties=file://path/to/file/application.properties`
@@ -111,6 +116,9 @@ Timeline Sink uses Timeline's and Stream's metadata from ZooKeeper. Thus, ZK sho
 
 ### `application.properties` sample:
 ```properties
+application.host=0.0.0.0
+application.port=6509
+
 curator.connectString=localhost:2181,localhost:2182,localhost:2183
 curator.connectionTimeout=10000
 curator.sessionTimeout=30000
@@ -142,10 +150,10 @@ metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-http.server.host=0.0.0.0
-http.server.port=6509
-
 context.instance.id=1
 context.environment=dev
 context.zone=default
+
+http.server.ioThreads=1
+http.server.workerThreads=1
 ```

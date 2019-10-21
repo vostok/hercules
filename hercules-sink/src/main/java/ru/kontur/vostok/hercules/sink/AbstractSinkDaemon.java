@@ -2,12 +2,13 @@ package ru.kontur.vostok.hercules.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
+import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -29,7 +30,7 @@ public abstract class AbstractSinkDaemon {
     private Sender sender;
     private SinkPool sinkPool;
     private ExecutorService executor;
-    private ApplicationStatusHttpServer applicationStatusHttpServer;
+    private DaemonHttpServer daemonHttpServer;
 
     protected MetricsCollector metricsCollector;
 
@@ -50,6 +51,8 @@ public abstract class AbstractSinkDaemon {
             Properties senderProperties = PropertiesUtil.ofScope(sinkProperties, Scopes.SENDER);
 
             String daemonId = getDaemonId();
+
+            Application.run(getDaemonName(), getDaemonId(), args);
             ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
 
             metricsCollector = new MetricsCollector(metricsProperties);
@@ -58,8 +61,8 @@ public abstract class AbstractSinkDaemon {
                     metricsCollector,
                     PropertiesUtil.get(Props.THREAD_GROUP_REGEXP, metricsProperties).get());
 
-            applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
-            applicationStatusHttpServer.start();
+            daemonHttpServer = new DaemonHttpServer(httpServerProperties, metricsCollector);
+            daemonHttpServer.start();
 
             this.sender = createSender(senderProperties, metricsCollector);
             sender.start();
@@ -134,8 +137,8 @@ public abstract class AbstractSinkDaemon {
         }
 
         try {
-            if (applicationStatusHttpServer != null) {
-                applicationStatusHttpServer.stop();
+            if (daemonHttpServer != null) {
+                daemonHttpServer.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping http status server", t);

@@ -2,14 +2,17 @@ package ru.kontur.vostok.hercules.stream.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.health.CommonMetrics;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
+import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
 import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -29,11 +32,13 @@ public class StreamSinkDaemon {
 
     private static CuratorClient curatorClient;
     private static StreamSink streamSink;
-    private static ApplicationStatusHttpServer applicationStatusHttpServer;
+    private static DaemonHttpServer daemonHttpServer;
+    private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
 
+        Application.run("Hercules Stream Sink", "sink-stream", args);
         Map<String, String> parameters = ArgsParser.parse(args);
 
         Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
@@ -43,6 +48,7 @@ public class StreamSinkDaemon {
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
         Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
         Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+        Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
         ApplicationContextHolder.init("Hercules stream sink", "sink.stream", contextProperties);
 
@@ -50,8 +56,12 @@ public class StreamSinkDaemon {
         final String derivedName = PropertiesUtil.get(Props.DERIVED, sinkProperties).get();
 
         try {
-            applicationStatusHttpServer = new ApplicationStatusHttpServer(statusServerProperties);
-            applicationStatusHttpServer.start();
+            metricsCollector = new MetricsCollector(metricsProperties);
+            metricsCollector.start();
+            CommonMetrics.registerCommonMetrics(metricsCollector);
+
+            daemonHttpServer = new DaemonHttpServer(statusServerProperties, metricsCollector);
+            daemonHttpServer.start();
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -103,12 +113,20 @@ public class StreamSinkDaemon {
         }
 
         try {
-            if (Objects.nonNull(applicationStatusHttpServer)) {
-                applicationStatusHttpServer.stop();
+            if (Objects.nonNull(daemonHttpServer)) {
+                daemonHttpServer.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping minimal status server", t);
             //TODO: Process error
+        }
+
+        try {
+            if (metricsCollector != null) {
+                metricsCollector.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping metrics collector", t);
         }
 
         LOGGER.info("Finished Stream Sink Daemon shutdown for {} millis", System.currentTimeMillis() - start);
