@@ -56,8 +56,12 @@ public class SentrySyncProcessor {
         this.requiredLevel = PropertiesUtil.get(Props.REQUIRED_LEVEL, sinkProperties).get();
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, sinkProperties).get();
         this.sentryClientHolder = sentryClientHolder;
-        this.sentryClientHolder.update();
         this.metricsCollector = metricsCollector;
+
+        boolean updated = this.sentryClientHolder.update();
+        if (!updated) {
+            System.exit(1);
+        }
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
         this.rateLimiter = new RateLimiter(rateLimiterProperties);
@@ -223,7 +227,7 @@ public class SentrySyncProcessor {
             Integer responseCode = e.getResponseCode();
             String message = e.getMessage();
             if (responseCode != null) {
-                LOGGER.error(String.format("ConnectionException: %d %s", responseCode, message));
+                LOGGER.error(String.format("ConnectionException %d: %s", responseCode, message));
                 processErrorInfo = new ErrorInfo("ConnectionException", responseCode);
             } else {
                 LOGGER.error(String.format("ConnectionException: %s", message));

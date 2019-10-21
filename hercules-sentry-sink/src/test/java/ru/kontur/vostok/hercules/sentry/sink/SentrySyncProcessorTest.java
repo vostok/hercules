@@ -5,6 +5,7 @@ import com.codahale.metrics.Timer;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.dsn.InvalidDsnException;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -39,13 +40,10 @@ public class SentrySyncProcessorTest {
 
     private SentryClientHolder sentryClientHolderMock = mock(SentryClientHolder.class);
     private SentryClient sentryClientMock = mock(SentryClient.class);
+    private MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
 
-    private static MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
+    private SentrySyncProcessor sentrySyncProcessor;
 
-    private SentrySyncProcessor sentrySyncProcessor = new SentrySyncProcessor(
-            new Properties(),
-            sentryClientHolderMock,
-            metricsCollectorMock);
     private static UUID someUuid = UUID.randomUUID();
     private static final String MY_PROJECT = "my-project";
     private static final String MY_ORGANIZATION = "my-organization";
@@ -67,8 +65,14 @@ public class SentrySyncProcessorTest {
         properties.setProperty("environment", MY_ENVIRONMENT);
         properties.setProperty("zone", "1");
         ApplicationContextHolder.init("appName", "appId", properties);
+    }
+
+    @Before
+    public void before() {
         when(metricsCollectorMock.meter(anyString())).thenReturn(new Meter());
         when(metricsCollectorMock.timer(anyString())).thenReturn(new Timer());
+        when(sentryClientHolderMock.update()).thenReturn(true);
+        sentrySyncProcessor = new SentrySyncProcessor(new Properties(), sentryClientHolderMock, metricsCollectorMock);
     }
 
     @Test

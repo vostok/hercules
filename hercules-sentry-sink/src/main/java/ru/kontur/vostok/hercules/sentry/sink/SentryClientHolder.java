@@ -226,13 +226,15 @@ public class SentryClientHolder {
             }
         }
         Result<String, ErrorInfo> dsnResult = getDsnKey(organization, project);
-        if (dsnResult.isOk()){
+        if (!dsnResult.isOk()){
+            LOGGER.error(String.format("Cannot get DSN key for project '%s' in organization '%s': {}", project, organization),
+                    dsnResult.getError());
+            return Result.error(dsnResult.getError());
+        } else {
             SentryClient sentryClient = SentryClientFactory.sentryClient(applySettings(dsnResult.get()), sentryClientFactory);
             clients.get(organization).put(project, sentryClient);
             LOGGER.info(String.format("The client for project '%s' in organization '%s' is uploaded into cache",
                     project, organization));
-        } else {
-            return Result.error(dsnResult.getError());
         }
         return Result.ok();
     }
@@ -283,20 +285,22 @@ public class SentryClientHolder {
     }
 
     /**
-     * Update clients in this class by information about project clients from Sentry.
+     * Update clients in cache in this class by information about project clients from Sentry.
      * <p>
      * This method firstly updates organizations,<p>
      * then updates projects of every organization,<p>
      * then updates dsn-keys of every project,<p>
      * then updates clients by dsn-keys.
+     *
+     * @return true if update was successful
      */
-    public void update() {
+    public boolean update() {
         try {
             LOGGER.info("Updating Sentry clients");
             Result<List<OrganizationInfo>, ErrorInfo> organizations = sentryApiClient.getOrganizations();
             if (!organizations.isOk()) {
                 LOGGER.error("Cannot update organizations info due to: {}", organizations.getError());
-                return;
+                return false;
             }
 
             ConcurrentMap<String, ConcurrentMap<String, SentryClient>> organizationMap = new ConcurrentHashMap<>();
@@ -306,7 +310,7 @@ public class SentryClientHolder {
                 Result<List<ProjectInfo>, ErrorInfo> projects = sentryApiClient.getProjects(organization);
                 if (!projects.isOk()) {
                     LOGGER.error("Cannot update projects info due to: {}", projects.getError());
-                    return;
+                    return false;
                 }
 
                 ConcurrentMap<String, SentryClient> projectMap = new ConcurrentHashMap<>();
@@ -325,9 +329,10 @@ public class SentryClientHolder {
             }
 
             clients = organizationMap;
+            return true;
         } catch (Throwable t) {
             LOGGER.error("Error of updating Sentry clients: {}", t.getMessage());
-            System.exit(1);
+            return false;
         }
     }
 
@@ -345,17 +350,15 @@ public class SentryClientHolder {
                     new URL(dsnString);
                 } catch (MalformedURLException e) {
                     LOGGER.error(String.format("Malformed dsn '%s', there might be an error in sentry configuration", dsnString));
-                    return Result.error(new ErrorInfo("Malformed dsn",false));
+                    return Result.error(new ErrorInfo("MalformedDsn",false));
                 }
                 return Result.ok(dsnString);
             } else {
-                LOGGER.error(String.format("Active dsn is not present for project '%s' in organization '%s'",
+                LOGGER.warn(String.format("Active dsn is not present for project '%s' in organization '%s'",
                         project, organization));
-                return Result.error(new ErrorInfo("No active dsn", false));
+                return Result.error(new ErrorInfo("NoActiveDsn", false));
             }
         } else {
-            LOGGER.error(String.format("Cannot get DSN key for project '%s' in organization '%s'", project, organization),
-                    publicDsn.getError());
             return Result.error(publicDsn.getError());
         }
     }

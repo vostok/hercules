@@ -141,15 +141,12 @@ public class ErrorInfo {
 
     @Override
     public String toString() {
-        String string = "";
-        if (type != null) {
-            string += type;
-        }
+        String string = type == null ? "null" : type;
         if (code > 0) {
             string += " " + code;
         }
         if (message != null) {
-            string += " " + message;
+            string += ": " + message;
         }
         return string;
     }

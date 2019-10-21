@@ -27,6 +27,7 @@ import ru.kontur.vostok.hercules.sentry.api.model.Organization;
 import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.Project;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.ResponseMessage;
 import ru.kontur.vostok.hercules.sentry.api.model.Team;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.sentry.sink.ErrorInfo;
@@ -210,7 +211,9 @@ public class SentryApiClient {
             if (isErrorResponse(response)) {
                 String message = null;
                 if (entity.isPresent()) {
-                    message = objectMapper.writeValueAsString(entity.get().getContent());
+                    ResponseMessage responseMessage = objectMapper
+                            .readValue(entity.get().getContent(), new TypeReference<ResponseMessage>() {});
+                    message = responseMessage.getDetail();
                 }
                 return Result.error(new ErrorInfo(CLIENT_API_ERROR, extractStatusCode(response), message));
             }
@@ -220,7 +223,6 @@ public class SentryApiClient {
             }
             return Result.ok(value);
         } catch (Exception e) {
-            LOGGER.error("Error on request: {}", e.getMessage());
             return Result.error(new ErrorInfo(CLIENT_API_ERROR, e.getMessage()));
         }
     }
@@ -241,7 +243,9 @@ public class SentryApiClient {
                     if (isErrorResponse(response)) {
                         String message = null;
                         if (entity.isPresent()) {
-                            message = objectMapper.writeValueAsString(entity.get().getContent());
+                            ResponseMessage responseMessage = objectMapper
+                                    .readValue(entity.get().getContent(), new TypeReference<ResponseMessage>() {});
+                            message = responseMessage.getDetail();
                         }
                         return Result.error(new ErrorInfo(CLIENT_API_ERROR, extractStatusCode(response), message));
                     }
@@ -253,7 +257,6 @@ public class SentryApiClient {
             } while (nextCursor.isPresent());
             return Result.ok(resultList);
         } catch (Exception e) {
-            LOGGER.error("Error on paged request: {}", e.getMessage());
             return Result.error(new ErrorInfo(CLIENT_API_ERROR, e.getMessage()));
         }
     }
