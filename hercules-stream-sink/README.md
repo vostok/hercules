@@ -4,6 +4,11 @@ Stream Sink is used for create, delete and increase partitions in Apache Kafka t
 ## Settings
 Application is configured through properties file.
 
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
+
+`application.port` - server port, default value: `8080`
+
 ### Apache Kafka settings
 `kafka.bootstrap.servers`
 
@@ -22,17 +27,17 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 
 `curator.retryPolicy.maxSleepTime` - default value: `8000`
 
-### HTTP Server settings
-`http.server.host` - server host, default value: `"0.0.0.0"`
-
-`http.server.port` - server port
-
 ### Application context settings
 `context.instance.id` - id of instance
 
 `context.environment` - id of environment
 
 `context.zone` - id of zone
+
+### Http Server settings
+`http.server.ioThreads` - the number of IO threads. Default value: `1`.
+
+`http.server.workerThreads` - the number of worker threads. Default value: `1`.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-stream-manager.jar application.properties=file://path/to/file/application.properties`
@@ -56,10 +61,15 @@ curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=3
 curator.retryPolicy.maxSleepTime=3000
 
-http.server.host=0.0.0.0
-http.server.port=6506
+metrics.graphite.server.addr=graphite.ru
+metrics.graphite.server.port=2003
+metrics.graphite.prefix=hercules
+metrics.period=60
 
 context.instance.id=1
 context.environment=dev
 context.zone=default
+
+http.server.ioThreads=1
+http.server.workerThreads=1
 ```

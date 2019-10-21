@@ -4,6 +4,11 @@ Elastic Sink is used to move Log Events from Kafka to Elasticsearch.
 ## Settings
 Application is configured through properties file.
 
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
+
+`application.port` - server port, default value: `8080`
+
 ### Sink settings
 `sink.poolSize` - number of threads are reading from Apache Kafka, default value: `1`
 
@@ -67,17 +72,17 @@ Application is configured through properties file.
 
 `metrics.period` - the period to send metrics to graphite, default value: `60`
 
-### HTTP Server settings
-`http.server.host` - server host, default value: `"0.0.0.0"`
-
-`http.server.port` - server port
-
 ### Application context settings
 `context.instance.id` - id of instance
 
 `context.environment` - deployment environment (production, staging and so on)
 
 `context.zone` - id of zone
+
+### Http Server settings
+`http.server.ioThreads` - the number of IO threads. Default value: `1`.
+
+`http.server.workerThreads` - the number of worker threads. Default value: `1`.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-elastic-sink.jar application.properties=file://path/to/file/application.properties`
@@ -93,6 +98,9 @@ Streams with log events should be predefined.
 
 ### `application.properties` sample:
 ```properties
+application.host=0.0.0.0
+application.port=6501
+
 sink.poolSize=3
 sink.pollTimeoutMs=5000
 sink.batchSize=10000
@@ -129,10 +137,10 @@ metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-http.server.host=0.0.0.0
-http.server.port=6501
-
 context.instance.id=1
 context.environment=dev
 context.zone=default
+
+http.server.ioThreads=1
+http.server.workerThreads=1
 ```
