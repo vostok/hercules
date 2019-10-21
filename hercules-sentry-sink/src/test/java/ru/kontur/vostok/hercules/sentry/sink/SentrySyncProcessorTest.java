@@ -53,6 +53,7 @@ public class SentrySyncProcessorTest {
     private static final String MY_ENVIRONMENT = "test";
     private static final int RETRY_COUNT = 3;
     private static final Event EVENT = createEvent();
+    private static final String CLIENT_API_ERROR = "ClientApiError";
 
     /**
      * Init application context.
@@ -176,7 +177,7 @@ public class SentrySyncProcessorTest {
     @Test(expected = BackendServiceFailedException.class)
     public void shouldThrowExceptionWhenHappensRetryableErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo("NOT_FOUND", 404)));
+                .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 404)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
@@ -185,7 +186,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldRetryWhenHappensRetryableErrorOfApiClient() {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo("NOT_FOUND", 404)));
+                .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 404)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
@@ -199,7 +200,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldReturnFalseWhenHappensNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo("BAD_REQUEST", 400)));
+                .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 400)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         boolean result = sentrySyncProcessor.process(EVENT);
 
@@ -209,7 +210,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldNotRetryWhenHappensNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo("BAD_REQUEST", 400)));
+                .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 400)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         sentrySyncProcessor.process(EVENT);
 
@@ -219,7 +220,7 @@ public class SentrySyncProcessorTest {
     @Test(expected = BackendServiceFailedException.class)
     public void shouldThrowExceptionWhenHappensOtherErrorOfApiClient() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo("FORBIDDEN", 403)));
+                .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 403)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
@@ -228,7 +229,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldNotRetryWhenHappensOtherErrorOfApiClient() {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo("FORBIDDEN", 403)));
+                .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 403)));
         doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
@@ -265,7 +266,7 @@ public class SentrySyncProcessorTest {
     public void shouldThrowExceptionWhenHappensConnectionExceptionWithRetryableCode() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
-        doThrow(new ConnectionException("UNAUTHORIZED", new Exception(), null, 401))
+        doThrow(new ConnectionException("ConnectionException", new Exception(), null, 401))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
@@ -276,7 +277,7 @@ public class SentrySyncProcessorTest {
     public void shouldRetryWhenHappensConnectionExceptionWithRetryableCode() {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
-        doThrow(new ConnectionException("UNAUTHORIZED", new Exception(), null, 401))
+        doThrow(new ConnectionException("ConnectionException", new Exception(), null, 401))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
@@ -291,7 +292,7 @@ public class SentrySyncProcessorTest {
     public void shouldReturnFalseWhenHappensConnectionExceptionWithNonRetryableCode() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
-        doThrow(new ConnectionException("BED_REQUEST", new Exception(), null, 400))
+        doThrow(new ConnectionException("ConnectionException", new Exception(), null, 400))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         boolean result = sentrySyncProcessor.process(EVENT);
 
@@ -302,7 +303,7 @@ public class SentrySyncProcessorTest {
     public void shouldNotRetryWhenHappensConnectionExceptionWithNonRetryableCode() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
-        doThrow(new ConnectionException("BED_REQUEST", new Exception(), null, 400))
+        doThrow(new ConnectionException("ConnectionException", new Exception(), null, 400))
                 .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         sentrySyncProcessor.process(EVENT);
 

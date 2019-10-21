@@ -44,7 +44,8 @@ public class SentryClientHolderTest {
     private static final String MY_DSN = "https://1234567813ef4c6ca4fbabc4b8f8cb7d@mysentry.io/1000001";
     private static final String NEW_DSN = "https://0234567813ef4c6ca4fbabc4b8f8cb7d@mysentry.io/1000002";
 
-    private static final ErrorInfo CONFLICT = new ErrorInfo("CONFLICT", 409);
+    private static final String CLIENT_API_ERROR = "ClientApiError";
+    private static final ErrorInfo CONFLICT = new ErrorInfo(CLIENT_API_ERROR, 409);
 
     private Map<String, SentryOrg> sentrySimulator;
     private SentryApiClient sentryApiClientMock;
@@ -284,7 +285,7 @@ public class SentryClientHolderTest {
                             .collect(Collectors.toList())
             );
         } catch (NullPointerException e) {
-            result = Result.error(new ErrorInfo("NOT_FOUND", 404));
+            result = Result.error(new ErrorInfo(CLIENT_API_ERROR, 404));
         }
         when(sentryApiClientMock.getProjects(organization)).thenReturn(result);
     }
@@ -304,7 +305,7 @@ public class SentryClientHolderTest {
         try {
             result = Result.ok(sentrySimulator.get(organization).getProjectMap().get(project));
         } catch (NullPointerException e) {
-            result = Result.error(new ErrorInfo("NOT_FOUND", 404));
+            result = Result.error(new ErrorInfo(CLIENT_API_ERROR, 404));
         }
         when(sentryApiClientMock.getPublicDsn(organization, project)).thenReturn(result);
     }
@@ -322,7 +323,7 @@ public class SentryClientHolderTest {
                             .collect(Collectors.toList())
             );
         } catch (NullPointerException e) {
-            result = Result.error(new ErrorInfo("NOT_FOUND", 404));
+            result = Result.error(new ErrorInfo(CLIENT_API_ERROR, 404));
         }
         when(sentryApiClientMock.getTeams(organization)).thenReturn(result);
     }
