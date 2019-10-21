@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.health;
 
-import com.codahale.metrics.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +11,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public class HttpMetrics {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpMetrics.class);

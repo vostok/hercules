@@ -1,8 +1,8 @@
 package ru.kontur.vostok.hercules.timeline.manager;
 
-import com.codahale.metrics.Meter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.task.TaskExecutor;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
