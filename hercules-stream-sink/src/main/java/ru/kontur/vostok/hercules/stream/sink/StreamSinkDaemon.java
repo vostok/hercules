@@ -13,7 +13,6 @@ import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -38,7 +37,7 @@ public class StreamSinkDaemon {
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
 
-        Application.run("Hercules Stream Sink", "sink-stream", args);
+        Application.run("Hercules Stream Sink", "sink.stream", args);
         Map<String, String> parameters = ArgsParser.parse(args);
 
         Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
@@ -46,11 +45,8 @@ public class StreamSinkDaemon {
         Properties streamsProperties = PropertiesUtil.ofScope(properties, Scopes.STREAMS);
         Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
         Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
-        Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
         Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
         Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-
-        ApplicationContextHolder.init("Hercules stream sink", "sink.stream", contextProperties);
 
         //TODO: Validate sinkProperties
         final String derivedName = PropertiesUtil.get(Props.DERIVED, sinkProperties).get();

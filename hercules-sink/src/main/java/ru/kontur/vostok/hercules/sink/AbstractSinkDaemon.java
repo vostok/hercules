@@ -9,7 +9,6 @@ import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -43,7 +42,6 @@ public abstract class AbstractSinkDaemon {
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
@@ -53,7 +51,6 @@ public abstract class AbstractSinkDaemon {
             String daemonId = getDaemonId();
 
             Application.run(getDaemonName(), getDaemonId(), args);
-            ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();

@@ -12,7 +12,6 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -45,12 +44,9 @@ public class StreamManagerApplication {
             Properties kafkaProperties = PropertiesUtil.ofScope(properties, Scopes.KAFKA);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
             final int replicationFactor = PropertiesUtil.get(Props.REPLICATION_FACTOR, properties).get();
-
-            ApplicationContextHolder.init("Hercules Stream manager", "stream-manager", contextProperties);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
