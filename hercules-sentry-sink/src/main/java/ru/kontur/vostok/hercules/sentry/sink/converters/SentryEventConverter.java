@@ -13,15 +13,13 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
+import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
-import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
-import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.tags.SentryTags;
-import ru.kontur.vostok.hercules.util.Lazy;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -43,13 +41,6 @@ import java.util.stream.Stream;
  * Convert Hercules event to Sentry event builder
  */
 public class SentryEventConverter {
-
-    private static final Lazy<Sdk> SDK = new Lazy<>(() -> new Sdk(
-            "hercules-sentry-sink",
-            ApplicationContextHolder.get().getVersion(),
-            null
-    ));
-
     private static final Set<String> STANDARD_PROPERTIES = Stream.of(
             CommonTags.ENVIRONMENT_TAG,
             SentryTags.RELEASE_TAG,
@@ -74,7 +65,14 @@ public class SentryEventConverter {
     private static final String DELIMITER = ".";
     private static final int MAX_TEG_LENGTH = 200;
 
-    public static io.sentry.event.Event convert(Event logEvent) {
+
+    private final Sdk sdk;
+
+    public SentryEventConverter(String version) {
+        this.sdk = new Sdk("hercules-sentry-sink", version, null);
+    }
+
+    public io.sentry.event.Event convert(Event logEvent) {
 
         EventBuilder eventBuilder = new EventBuilder(logEvent.getUuid());
 
@@ -139,7 +137,7 @@ public class SentryEventConverter {
         }
 
         io.sentry.event.Event sentryEvent = eventBuilder.build();
-        sentryEvent.setSdk(SDK.get());
+        sentryEvent.setSdk(sdk);
 
         return sentryEvent;
     }

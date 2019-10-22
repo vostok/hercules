@@ -7,8 +7,8 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
-import ru.kontur.vostok.hercules.util.application.ApplicationContext;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.application.ApplicationContext;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -36,13 +36,13 @@ public class MetricsCollector {
         String graphiteServerAddr = PropertiesUtil.get(Props.GRAPHITE_SERVER, properties).get();
         int graphiteServerPort = PropertiesUtil.get(Props.GRAPHITE_PORT, properties).get();
 
-        ApplicationContext applicationContext = ApplicationContextHolder.get();
+        ApplicationContext context = Application.context();
         String prefix = String.join(".",
                 PropertiesUtil.get(Props.GRAPHITE_PREFIX, properties).get(),
-                applicationContext.getApplicationId(),
-                applicationContext.getEnvironment(),
-                applicationContext.getZone(),
-                applicationContext.getInstanceId()
+                context.getApplicationId(),
+                context.getEnvironment(),
+                context.getZone(),
+                context.getInstanceId()
         );
 
         this.period = PropertiesUtil.get(Props.REPORT_PERIOD_SECONDS, properties).get();

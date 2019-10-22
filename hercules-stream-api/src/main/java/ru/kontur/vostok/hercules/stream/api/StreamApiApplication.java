@@ -22,7 +22,6 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Collections;
@@ -56,9 +55,6 @@ public class StreamApiApplication {
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
-            ApplicationContextHolder.init("Hercules stream API", "stream-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

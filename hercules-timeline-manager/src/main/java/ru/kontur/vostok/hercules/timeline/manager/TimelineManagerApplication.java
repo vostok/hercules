@@ -13,7 +13,6 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
@@ -44,10 +43,7 @@ public class TimelineManagerApplication {
             Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties statusServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-
-            ApplicationContextHolder.init("Hercules Timeline manager", "timeline-manager", contextProperties);
 
             cassandraConnector = new CassandraConnector(cassandraProperties);
             cassandraConnector.connect();

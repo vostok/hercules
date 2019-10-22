@@ -5,25 +5,23 @@ import io.sentry.connection.ConnectionException;
 import io.sentry.dsn.InvalidDsnException;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -46,6 +44,7 @@ public class SentrySyncProcessorTest {
     private SentrySyncProcessor sentrySyncProcessor = new SentrySyncProcessor(
             new Properties(),
             sentryClientHolderMock,
+            new SentryEventConverter("0.0.0"),
             metricsCollectorMock);
     private static UUID someUuid = UUID.randomUUID();
     private static final String MY_PROJECT = "my-project";
@@ -56,17 +55,10 @@ public class SentrySyncProcessorTest {
     private static final Event EVENT = createEvent();
 
     /**
-     * Init application context.
-     * It is necessary to execute "SentryEventConverter.convert(event)"
-     * in the method "process(UUID key, Event event)" of {@link SentrySyncProcessor}
+     * Mock metrics
      */
     @BeforeClass
     public static void init() {
-        Properties properties = new Properties();
-        properties.setProperty("instance.id", "1");
-        properties.setProperty("environment", MY_ENVIRONMENT);
-        properties.setProperty("zone", "1");
-        ApplicationContextHolder.init("appName", "appId", properties);
         when(metricsCollectorMock.meter(anyString())).thenReturn(n -> {
         });
         when(metricsCollectorMock.timer(anyString())).thenReturn((duration, unit) -> {

@@ -41,6 +41,7 @@ public class SentrySyncProcessor {
     private final Level requiredLevel;
     private final int retryLimit;
     private final SentryClientHolder sentryClientHolder;
+    private final SentryEventConverter eventConverter;
     private final MetricsCollector metricsCollector;
     private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
@@ -52,12 +53,14 @@ public class SentrySyncProcessor {
     public SentrySyncProcessor(
             Properties sinkProperties,
             SentryClientHolder sentryClientHolder,
+            SentryEventConverter eventConverter,
             MetricsCollector metricsCollector
     ) {
         this.requiredLevel = PropertiesUtil.get(Props.REQUIRED_LEVEL, sinkProperties).get();
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, sinkProperties).get();
         this.sentryClientHolder = sentryClientHolder;
         this.sentryClientHolder.update();
+        this.eventConverter = eventConverter;
         this.metricsCollector = metricsCollector;
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
@@ -204,7 +207,7 @@ public class SentrySyncProcessor {
 
         io.sentry.event.Event sentryEvent;
         try {
-            sentryEvent = SentryEventConverter.convert(event);
+            sentryEvent = eventConverter.convert(event);
         } catch (Exception e) {
             LOGGER.error("An exception occurred while converting Hercules-event to Sentry-event.", e);
             return Result.error(new ErrorInfo("Converting error", false));
