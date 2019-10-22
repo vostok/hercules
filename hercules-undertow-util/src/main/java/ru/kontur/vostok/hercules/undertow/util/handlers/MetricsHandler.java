@@ -2,11 +2,11 @@ package ru.kontur.vostok.hercules.undertow.util.handlers;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import ru.kontur.vostok.hercules.health.HttpMetrics;
+import ru.kontur.vostok.hercules.health.HttpMetric;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 
 /**
- * MetricsHandler - Decorator handler with {@link HttpMetrics reporter}
+ * MetricsHandler - Decorator handler with {@link HttpMetric reporter}
  *
  * @author Kirill Sulim
  */
@@ -14,11 +14,11 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 public class MetricsHandler implements HttpHandler {
 
     private final HttpHandler next;
-    private final HttpMetrics httpMetrics;
+    private final HttpMetric httpMetric;
 
     public MetricsHandler(HttpHandler next, String handlerName, MetricsCollector metricsCollector) {
         this.next = next;
-        this.httpMetrics = metricsCollector.httpMetrics(handlerName);
+        this.httpMetric = metricsCollector.http(handlerName);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class MetricsHandler implements HttpHandler {
                 int statusCode = exch.getStatusCode();
                 long duration = System.currentTimeMillis() - start;
 
-                httpMetrics.mark(statusCode, duration);
+                httpMetric.update(statusCode, duration);
 
                 nextListener.proceed();
             });

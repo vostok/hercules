@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.health;
 
-import com.codahale.metrics.Timer;
-
 import java.util.concurrent.TimeUnit;
 
 /**

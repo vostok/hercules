@@ -1,13 +1,13 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.dsn.InvalidDsnException;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
@@ -21,6 +21,7 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,8 +67,10 @@ public class SentrySyncProcessorTest {
         properties.setProperty("environment", MY_ENVIRONMENT);
         properties.setProperty("zone", "1");
         ApplicationContextHolder.init("appName", "appId", properties);
-        when(metricsCollectorMock.meter(anyString())).thenReturn(new Meter());
-        when(metricsCollectorMock.timer(anyString())).thenReturn(new Timer());
+        when(metricsCollectorMock.meter(anyString())).thenReturn(n -> {
+        });
+        when(metricsCollectorMock.timer(anyString())).thenReturn((duration, unit) -> {
+        });
     }
 
     @Test

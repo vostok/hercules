@@ -3,10 +3,8 @@ package ru.kontur.vostok.hercules.health;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import ru.kontur.vostok.hercules.util.application.ApplicationContext;
@@ -74,15 +72,17 @@ public class MetricsCollector {
 
     /**
      * Get throughput meter by the name
+     *
      * @param name is the name of the metric
      * @return requested meter
      */
     public Meter meter(String name) {
-        return registry.meter(name);
+        return new MeterImpl(registry.meter(name));
     }
 
     /**
      * Get counter by the name
+     *
      * @param name is the name of the counter
      * @return requested counter
      */
@@ -92,18 +92,20 @@ public class MetricsCollector {
 
     /**
      * Get timer by the name
+     *
      * @param name is the name of the timer
      * @return requested timer
      */
     public Timer timer(String name) {
-        return registry.timer(name);
+        return new TimerImpl(registry.timer(name));
     }
 
     /**
      * Register metric by the name with custom function
-     * @param name is the name of the metric
+     *
+     * @param name     is the name of the metric
      * @param supplier is the custom function to provide metric's values
-     * @param <T> is the metric's value type (ordinarily Integer or Long)
+     * @param <T>      is the metric's value type (ordinarily Integer or Long)
      */
     public <T> void gauge(String name, Supplier<T> supplier) {
         registry.register(name, (Gauge<T>) supplier::get);
@@ -111,13 +113,17 @@ public class MetricsCollector {
 
     /**
      * Removes the metric with the given name
+     *
      * @param name is the name of the metric
      * @return whether or not the metric was removed
      */
-    public boolean remove(String name) { return registry.remove(name); }
+    public boolean remove(String name) {
+        return registry.remove(name);
+    }
 
     /**
      * Get histogram by the name
+     *
      * @param name is the name of the histogram
      * @return requested histogram
      */
@@ -126,12 +132,13 @@ public class MetricsCollector {
     }
 
     /**
-     * Create HttpMetrics aggregation object
-     * @param name handler name
-     * @return HttpMetrics object
+     * Creates HTTP Metric for the handler.
+     *
+     * @param name the handler name
+     * @return HTTP Metric for the handler
      */
-    public HttpMetrics httpMetrics(String name) {
-        return new HttpMetrics(name, this);
+    public HttpMetric http(String name) {
+        return new HttpMetric(name, this);
     }
 
     private static class Props {
@@ -156,5 +163,42 @@ public class MetricsCollector {
                         withDefault(60).
                         withValidator(IntegerValidators.positive()).
                         build();
+    }
+
+    /**
+     * @author Gregory Koshelev
+     */
+    public static class MeterImpl implements ru.kontur.vostok.hercules.health.Meter {
+        private final com.codahale.metrics.Meter meter;
+
+        MeterImpl(com.codahale.metrics.Meter meter) {
+            this.meter = meter;
+        }
+
+        @Override
+        public void mark(long n) {
+            meter.mark(n);
+        }
+
+        @Override
+        public void mark() {
+            meter.mark();
+        }
+    }
+
+    /**
+     * @author Gregory Koshelev
+     */
+    public static class TimerImpl implements ru.kontur.vostok.hercules.health.Timer {
+        private final com.codahale.metrics.Timer timer;
+
+        public TimerImpl(com.codahale.metrics.Timer timer) {
+            this.timer = timer;
+        }
+
+        @Override
+        public void update(long duration, TimeUnit unit) {
+            timer.update(duration, unit);
+        }
     }
 }

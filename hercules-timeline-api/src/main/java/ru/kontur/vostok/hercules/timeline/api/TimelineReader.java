@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
@@ -9,7 +7,9 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.meta.timeline.TimeTrapUtil;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
