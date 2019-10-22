@@ -1,8 +1,5 @@
 package ru.kontur.vostok.hercules.health;
 
-import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.health.Timer;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
