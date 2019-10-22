@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.auth;
 
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 /**
  * Auth provider is used to authenticate http requests and authorize access to resources (streams or timelines).
@@ -29,9 +30,9 @@ public class AuthProvider {
      */
     public boolean authenticateMaster(HttpServerRequest request) {
         String masterApiKey = request.getHeader("masterApiKey");
-        AuthResult authResult = adminAuthManager.auth(masterApiKey);
-        request.putContext(AUTH_CONTEXT, authResult.isSuccess() ? AuthContext.master(masterApiKey) : AuthContext.notAuthenticated());
-        return authResult.isSuccess();
+        boolean hasAuthenticated = !StringUtil.isNullOrEmpty(masterApiKey) && adminAuthManager.auth(masterApiKey).isSuccess();
+        request.putContext(AUTH_CONTEXT, hasAuthenticated ? AuthContext.master(masterApiKey) : AuthContext.notAuthenticated());
+        return hasAuthenticated;
     }
 
     /**
@@ -45,7 +46,7 @@ public class AuthProvider {
      */
     public boolean authenticateOrdinary(HttpServerRequest request) {
         String apiKey = request.getHeader("apiKey");
-        boolean hasAuthenticated = authManager.hasApiKey(apiKey);
+        boolean hasAuthenticated = !StringUtil.isNullOrEmpty(apiKey) && authManager.hasApiKey(apiKey);
         request.putContext(AUTH_CONTEXT, hasAuthenticated ? AuthContext.ordinary(apiKey) : AuthContext.notAuthenticated());
         return hasAuthenticated;
     }
