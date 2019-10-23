@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.undertow.util.handlers;
 
-import ru.kontur.vostok.hercules.health.HttpMetrics;
+import ru.kontur.vostok.hercules.health.HttpMetric;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.http.HttpMethod;
@@ -33,17 +33,17 @@ public class InstrumentedRouteHandlerBuilder extends RouteHandlerBuilder {
                 method,
                 new MetricsHandler(
                         handler,
-                        metricsCollector.httpMetrics(
+                        metricsCollector.http(
                                 MetricsUtil.toMetricName(method.toString(), path))));
     }
 
     private static class MetricsHandler implements HttpHandler {
         private final HttpHandler handler;
-        private final HttpMetrics httpMetrics;
+        private final HttpMetric httpMetric;
 
-        private MetricsHandler(HttpHandler handler, HttpMetrics httpMetrics) {
+        private MetricsHandler(HttpHandler handler, HttpMetric httpMetric) {
             this.handler = handler;
-            this.httpMetrics = httpMetrics;
+            this.httpMetric = httpMetric;
         }
 
         @Override
@@ -51,7 +51,7 @@ public class InstrumentedRouteHandlerBuilder extends RouteHandlerBuilder {
             final long start = System.currentTimeMillis();
             request.addRequestCompletionListener(r -> {
                 int statusCode = r.getResponse().getStatusCode();
-                httpMetrics.mark(statusCode, System.currentTimeMillis() - start);
+                httpMetric.update(statusCode, System.currentTimeMillis() - start);
             });
             handler.handle(request);
         }

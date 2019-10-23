@@ -15,7 +15,6 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.util.Map;
 import java.util.Properties;
@@ -49,9 +48,6 @@ public class TracingApiApplication {
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
-            ApplicationContextHolder.init("Hercules tracing API", "tracing-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

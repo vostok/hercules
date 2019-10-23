@@ -29,7 +29,6 @@ import ru.kontur.vostok.hercules.undertow.util.DefaultHttpServerRequestWeigher;
 import ru.kontur.vostok.hercules.undertow.util.DefaultThrottledHttpServerRequestProcessor;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Collections;
@@ -66,10 +65,7 @@ public class GateApplication {
             Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
-
-            ApplicationContextHolder.init("Hercules Gate", "gate", contextProperties);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();

@@ -4,8 +4,14 @@ Tracing Sink is used to move traces from Kafka to Apache Cassandra.
 ## Settings
 Application is configured through properties file.
 
-### Sink settings
-#### Base settings
+## Sink settings
+
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
+
+`application.port` - server port, default value: `8080`
+
+### Base settings
 `sink.poolSize` - number of threads are reading from Apache Kafka, default value: `1`
 
 `sink.pollTimeoutMs` - poll duration when read from Apache Kafka, default value: `6000`
@@ -14,7 +20,7 @@ Application is configured through properties file.
 
 `sink.pattern` - pattern of streams are subscribed by consumers 
 
-#### Consumer settings
+### Consumer settings
 `sink.consumer.bootstrap.servers` - list of Apache Kafka hosts
 
 `sink.consumer.max.partition.fetch.bytes` - max batch size for reading from one partition
@@ -23,7 +29,7 @@ Application is configured through properties file.
 
 `sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
 
-#### Cassandra Sender settings
+### Cassandra Sender settings
 `sink.sender.pingPeriodMs` - period to update Cassandra's availability status, default value: `5000`
 
 `sink.sender.sendTimeoutMs` - timeout for sending requests to Cassandra, default value: `60000`
@@ -58,17 +64,17 @@ Application is configured through properties file.
 
 `metrics.period` - the period to send metrics to graphite, default value: `60`
 
-### HTTP Server settings
-`http.server.host` - server host, default value: `"0.0.0.0"`
-
-`http.server.port` - server port
-
 ### Application context settings
 `context.instance.id` - id of instance
 
 `context.environment` - deployment environment (production, staging and so on)
 
 `context.zone` - id of zone
+
+### Http Server settings
+`http.server.ioThreads` - the number of IO threads. Default value: `1`.
+
+`http.server.workerThreads` - the number of worker threads. Default value: `1`.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-tracing-sink.jar application.properties=file://path/to/file/application.properties`
@@ -85,6 +91,9 @@ See [hercules-init](../hercules-init/README.md) for details.
 
 ## `application.properties` sample
 ```properties
+application.host=0.0.0.0
+application.port=6510
+
 sink.poolSize=1
 sink.pollTimeoutMs=5000
 sink.batchSize=10000
@@ -114,10 +123,10 @@ metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-http.server.host=0.0.0.0
-http.server.port=6510
-
 context.instance.id=1
 context.environment=dev
 context.zone=default
+
+http.server.ioThreads=1
+http.server.workerThreads=1
 ```

@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.connection.LockedDownException;
@@ -9,8 +7,10 @@ import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -40,6 +40,7 @@ public class SentrySyncProcessor {
     private final Level requiredLevel;
     private final int retryLimit;
     private final SentryClientHolder sentryClientHolder;
+    private final SentryEventConverter eventConverter;
     private final MetricsCollector metricsCollector;
     private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
@@ -51,11 +52,13 @@ public class SentrySyncProcessor {
     public SentrySyncProcessor(
             Properties sinkProperties,
             SentryClientHolder sentryClientHolder,
+            SentryEventConverter eventConverter,
             MetricsCollector metricsCollector
     ) {
         this.requiredLevel = PropertiesUtil.get(Props.REQUIRED_LEVEL, sinkProperties).get();
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, sinkProperties).get();
         this.sentryClientHolder = sentryClientHolder;
+        this.eventConverter = eventConverter;
         this.metricsCollector = metricsCollector;
 
         this.sentryClientHolder.init();
@@ -205,7 +208,7 @@ public class SentrySyncProcessor {
 
         io.sentry.event.Event sentryEvent;
         try {
-            sentryEvent = SentryEventConverter.convert(event);
+            sentryEvent = eventConverter.convert(event);
         } catch (Exception e) {
             LOGGER.error("An exception occurred while converting Hercules-event to Sentry-event.", e);
             return Result.error(new ErrorInfo("ConvertingError", false));

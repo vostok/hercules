@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.dsn.InvalidDsnException;
@@ -14,16 +12,17 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Properties;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -42,8 +41,13 @@ public class SentrySyncProcessorTest {
     private SentryClient sentryClientMock = mock(SentryClient.class);
     private MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
 
-    private SentrySyncProcessor sentrySyncProcessor;
+    private static MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
 
+    private SentrySyncProcessor sentrySyncProcessor = new SentrySyncProcessor(
+            new Properties(),
+            sentryClientHolderMock,
+            new SentryEventConverter("0.0.0"),
+            metricsCollectorMock);
     private static UUID someUuid = UUID.randomUUID();
     private static final String MY_PROJECT = "my-project";
     private static final String MY_ORGANIZATION = "my-organization";
@@ -54,24 +58,14 @@ public class SentrySyncProcessorTest {
     private static final String CLIENT_API_ERROR = "ClientApiError";
 
     /**
-     * Init application context.
-     * It is necessary to execute "SentryEventConverter.convert(event)"
-     * in the method "process(UUID key, Event event)" of {@link SentrySyncProcessor}
+     * Mock metrics
      */
     @BeforeClass
     public static void init() {
-        Properties properties = new Properties();
-        properties.setProperty("instance.id", "1");
-        properties.setProperty("environment", MY_ENVIRONMENT);
-        properties.setProperty("zone", "1");
-        ApplicationContextHolder.init("appName", "appId", properties);
-    }
-
-    @Before
-    public void before() {
-        when(metricsCollectorMock.meter(anyString())).thenReturn(new Meter());
-        when(metricsCollectorMock.timer(anyString())).thenReturn(new Timer());
-        sentrySyncProcessor = new SentrySyncProcessor(new Properties(), sentryClientHolderMock, metricsCollectorMock);
+        when(metricsCollectorMock.meter(anyString())).thenReturn(n -> {
+        });
+        when(metricsCollectorMock.timer(anyString())).thenReturn((duration, unit) -> {
+        });
     }
 
     @Test

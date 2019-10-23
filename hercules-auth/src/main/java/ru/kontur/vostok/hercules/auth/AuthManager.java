@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.auth;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
@@ -61,7 +62,7 @@ public final class AuthManager {
      * @param apiKey the api key
      * @return {@code true} if the api key exists or {@code false} otherwise
      */
-    public boolean hasApiKey(String apiKey) {
+    public boolean hasApiKey(@NotNull String apiKey) {
         return readRules.get().containsKey(apiKey)
                 || writeRules.get().containsKey(apiKey)
                 || manageRules.get().containsKey(apiKey);
