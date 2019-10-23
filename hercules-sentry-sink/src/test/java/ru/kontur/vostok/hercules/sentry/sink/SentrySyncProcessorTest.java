@@ -39,7 +39,6 @@ public class SentrySyncProcessorTest {
 
     private SentryClientHolder sentryClientHolderMock = mock(SentryClientHolder.class);
     private SentryClient sentryClientMock = mock(SentryClient.class);
-    private MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
 
     private static MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
 

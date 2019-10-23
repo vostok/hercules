@@ -154,8 +154,7 @@ public class SentrySyncProcessor {
             }
             processErrorInfo = result.getError();
 
-            Optional<String> typeOptional = Optional.of(processErrorInfo.getType());
-            String metricName = typeOptional.orElse("null");
+            String metricName = processErrorInfo.getType();
             int code = processErrorInfo.getCode();
             if (code > 0) {
                 metricName += "_" + code;
