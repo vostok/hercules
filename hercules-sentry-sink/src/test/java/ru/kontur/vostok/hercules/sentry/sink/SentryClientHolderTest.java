@@ -44,7 +44,8 @@ public class SentryClientHolderTest {
     private static final String MY_DSN = "https://1234567813ef4c6ca4fbabc4b8f8cb7d@mysentry.io/1000001";
     private static final String NEW_DSN = "https://0234567813ef4c6ca4fbabc4b8f8cb7d@mysentry.io/1000002";
 
-    private static final ErrorInfo CONFLICT = new ErrorInfo("CONFLICT", 409);
+    private static final String CLIENT_API_ERROR = "ClientApiError";
+    private static final ErrorInfo CONFLICT = new ErrorInfo(CLIENT_API_ERROR, 409);
 
     private Map<String, SentryOrg> sentrySimulator;
     private SentryApiClient sentryApiClientMock;
@@ -76,7 +77,7 @@ public class SentryClientHolderTest {
     public void shouldGetClient() {
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getClient(MY_ORGANIZATION, MY_PROJECT);
 
         verify(sentryApiClientMock).getOrganizations();
@@ -90,7 +91,7 @@ public class SentryClientHolderTest {
     public void shouldNotGetClient() {
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getClient(MY_ORGANIZATION, "other-project");
 
         verify(sentryApiClientMock).getOrganizations();
@@ -122,7 +123,7 @@ public class SentryClientHolderTest {
     public void shouldFindExistingOrganization() {
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createOrganizationIfNotExists(MY_ORGANIZATION);
 
         verify(sentryApiClientMock, times(2)).getOrganizations();
@@ -135,7 +136,7 @@ public class SentryClientHolderTest {
         createOrganizationMock(newOrg);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createOrganizationIfNotExists(newOrg);
 
         verify(sentryApiClientMock, times(2)).getOrganizations();
@@ -148,7 +149,7 @@ public class SentryClientHolderTest {
         createOrganizationMock(EXISTING_ORGANIZATION);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createOrganizationIfNotExists(EXISTING_ORGANIZATION);
 
         verify(sentryApiClientMock, times(2)).getOrganizations();
@@ -160,7 +161,7 @@ public class SentryClientHolderTest {
     public void shouldFindExistingProject() {
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createProjectIfNotExists(MY_ORGANIZATION, MY_PROJECT);
 
         verify(sentryApiClientMock, times(2)).getProjects(MY_ORGANIZATION);
@@ -174,7 +175,7 @@ public class SentryClientHolderTest {
         getPublicDsnMock(MY_ORGANIZATION, NEW_PROJECT);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createProjectIfNotExists(MY_ORGANIZATION, NEW_PROJECT);
 
         verify(sentryApiClientMock, times(2)).getProjects(MY_ORGANIZATION);
@@ -188,7 +189,7 @@ public class SentryClientHolderTest {
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
         sentrySimulator.get(MY_ORGANIZATION).getProjectMap().get(MY_PROJECT).get(0).setIsActive(false);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createProjectIfNotExists(MY_ORGANIZATION, MY_PROJECT);
 
         verify(sentryApiClientMock, times(2)).getProjects(MY_ORGANIZATION);
@@ -201,7 +202,7 @@ public class SentryClientHolderTest {
         getTeamsMock(MY_ORGANIZATION);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createProjectIfNotExists(MY_ORGANIZATION, EXISTING_PROJECT);
 
         verify(sentryApiClientMock, times(2)).getProjects(MY_ORGANIZATION);
@@ -215,7 +216,7 @@ public class SentryClientHolderTest {
         getTeamsMock(MY_ORGANIZATION);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createDefaultTeamIfNotExists(MY_ORGANIZATION);
 
         verify(sentryApiClientMock).getTeams(MY_ORGANIZATION);
@@ -229,7 +230,7 @@ public class SentryClientHolderTest {
         createTeamMock(MY_ORGANIZATION, MY_TEAM);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClientMock);
 
-        sentryClientHolder.update();
+        sentryClientHolder.init();
         Result<Void, ErrorInfo> result = sentryClientHolder.createDefaultTeamIfNotExists(MY_ORGANIZATION);
 
         verify(sentryApiClientMock).getTeams(MY_ORGANIZATION);
@@ -284,7 +285,7 @@ public class SentryClientHolderTest {
                             .collect(Collectors.toList())
             );
         } catch (NullPointerException e) {
-            result = Result.error(new ErrorInfo("NOT_FOUND", 404));
+            result = Result.error(new ErrorInfo(CLIENT_API_ERROR, 404));
         }
         when(sentryApiClientMock.getProjects(organization)).thenReturn(result);
     }
@@ -304,7 +305,7 @@ public class SentryClientHolderTest {
         try {
             result = Result.ok(sentrySimulator.get(organization).getProjectMap().get(project));
         } catch (NullPointerException e) {
-            result = Result.error(new ErrorInfo("NOT_FOUND", 404));
+            result = Result.error(new ErrorInfo(CLIENT_API_ERROR, 404));
         }
         when(sentryApiClientMock.getPublicDsn(organization, project)).thenReturn(result);
     }
@@ -322,7 +323,7 @@ public class SentryClientHolderTest {
                             .collect(Collectors.toList())
             );
         } catch (NullPointerException e) {
-            result = Result.error(new ErrorInfo("NOT_FOUND", 404));
+            result = Result.error(new ErrorInfo(CLIENT_API_ERROR, 404));
         }
         when(sentryApiClientMock.getTeams(organization)).thenReturn(result);
     }
