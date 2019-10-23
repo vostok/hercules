@@ -71,7 +71,6 @@ public class SentrySyncProcessorTest {
     public void before() {
         when(metricsCollectorMock.meter(anyString())).thenReturn(new Meter());
         when(metricsCollectorMock.timer(anyString())).thenReturn(new Timer());
-        when(sentryClientHolderMock.update()).thenReturn(true);
         sentrySyncProcessor = new SentrySyncProcessor(new Properties(), sentryClientHolderMock, metricsCollectorMock);
     }
 

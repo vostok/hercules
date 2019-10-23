@@ -58,10 +58,7 @@ public class SentrySyncProcessor {
         this.sentryClientHolder = sentryClientHolder;
         this.metricsCollector = metricsCollector;
 
-        boolean updated = this.sentryClientHolder.update();
-        if (!updated) {
-            System.exit(1);
-        }
+        this.sentryClientHolder.init();
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
         this.rateLimiter = new RateLimiter(rateLimiterProperties);

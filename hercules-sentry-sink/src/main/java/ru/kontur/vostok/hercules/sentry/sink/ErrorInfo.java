@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 
 import java.util.Arrays;
@@ -14,36 +15,38 @@ import java.util.Set;
  */
 public class ErrorInfo {
 
+    @NotNull
     private String type;
     private int code;
     private String message;
     private Boolean isRetryable;
 
-    public ErrorInfo(String type) {
+    public ErrorInfo(@NotNull String type) {
         this.type = type;
     }
 
-    public ErrorInfo(String type, int code) {
+    public ErrorInfo(@NotNull String type, int code) {
         this.type = type;
         this.code = code;
     }
 
-    public ErrorInfo(String type, int code, String message) {
+    public ErrorInfo(@NotNull String type, int code, String message) {
         this.type = type;
         this.code = code;
         this.message = message;
     }
 
-    public ErrorInfo(String type, boolean isRetryable) {
+    public ErrorInfo(@NotNull String type, boolean isRetryable) {
         this.type = type;
         this.isRetryable = isRetryable;
     }
 
-    public ErrorInfo(String type, String message) {
+    public ErrorInfo(@NotNull String type, String message) {
         this.type = type;
         this.message = message;
     }
 
+    @NotNull
     public String getType() {
         return type;
     }
@@ -141,13 +144,15 @@ public class ErrorInfo {
 
     @Override
     public String toString() {
-        String string = type == null ? "null" : type;
+        StringBuilder stringBuilder = new StringBuilder(type);
         if (code > 0) {
-            string += " " + code;
+            stringBuilder.append(" ");
+            stringBuilder.append(code);
         }
         if (message != null) {
-            string += ": " + message;
+            stringBuilder.append(": ");
+            stringBuilder.append(message);
         }
-        return string;
+        return stringBuilder.toString();
     }
 }

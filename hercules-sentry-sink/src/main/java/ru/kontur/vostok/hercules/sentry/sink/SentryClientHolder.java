@@ -291,16 +291,14 @@ public class SentryClientHolder {
      * then updates projects of every organization,<p>
      * then updates dsn-keys of every project,<p>
      * then updates clients by dsn-keys.
-     *
-     * @return true if update was successful
      */
-    public boolean update() {
+    public void init() {
         try {
             LOGGER.info("Updating Sentry clients");
             Result<List<OrganizationInfo>, ErrorInfo> organizations = sentryApiClient.getOrganizations();
             if (!organizations.isOk()) {
                 LOGGER.error("Cannot update organizations info due to: {}", organizations.getError());
-                return false;
+                throw new IllegalArgumentException(organizations.getError().toString());
             }
 
             ConcurrentMap<String, ConcurrentMap<String, SentryClient>> organizationMap = new ConcurrentHashMap<>();
@@ -310,7 +308,7 @@ public class SentryClientHolder {
                 Result<List<ProjectInfo>, ErrorInfo> projects = sentryApiClient.getProjects(organization);
                 if (!projects.isOk()) {
                     LOGGER.error("Cannot update projects info due to: {}", projects.getError());
-                    return false;
+                    throw new IllegalArgumentException(organizations.getError().toString());
                 }
 
                 ConcurrentMap<String, SentryClient> projectMap = new ConcurrentHashMap<>();
@@ -329,10 +327,9 @@ public class SentryClientHolder {
             }
 
             clients = organizationMap;
-            return true;
         } catch (Throwable t) {
             LOGGER.error("Error of updating Sentry clients: {}", t.getMessage());
-            return false;
+            throw t;
         }
     }
 
