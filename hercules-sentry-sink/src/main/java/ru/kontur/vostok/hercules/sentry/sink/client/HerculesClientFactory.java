@@ -2,12 +2,19 @@ package ru.kontur.vostok.hercules.sentry.sink.client;
 
 import io.sentry.DefaultSentryClientFactory;
 import io.sentry.SentryClient;
+import io.sentry.config.Lookup;
 import io.sentry.connection.AsyncConnection;
 import io.sentry.dsn.Dsn;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.marshaller.json.JsonMarshaller;
+import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
+
+import java.util.Properties;
 
 /**
  * HerculesClientFactory
@@ -17,6 +24,15 @@ import org.slf4j.LoggerFactory;
 public class HerculesClientFactory extends DefaultSentryClientFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HerculesClientFactory.class);
+
+    private final int connectionTimeoutDefaultMs;
+    private final int readTimeoutDefaultMs;
+
+    public HerculesClientFactory(Properties senderProperties) {
+        super();
+        connectionTimeoutDefaultMs = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, senderProperties).get();
+        readTimeoutDefaultMs = PropertiesUtil.get(Props.READ_TIMEOUT_MS, senderProperties).get();
+    }
 
     @Override
     protected JsonMarshaller createJsonMarshaller(int maxMessageLength) {
@@ -68,5 +84,43 @@ public class HerculesClientFactory extends DefaultSentryClientFactory {
     @Override
     protected boolean getBufferEnabled(Dsn dsn) {
         return false;
+    }
+
+    /**
+     * Timeout for requests to the Sentry server, in milliseconds.
+     * The overridden method with new value of default connection timeout.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Timeout for requests to the Sentry server, in milliseconds.
+     */
+    @Override
+    protected int getTimeout(Dsn dsn) {
+        return Util.parseInteger(Lookup.lookup(CONNECTION_TIMEOUT_OPTION, dsn), connectionTimeoutDefaultMs);
+    }
+
+    /**
+     * Read timeout for requests to the Sentry server, in milliseconds.
+     * The overridden method with new value of default read timeout.
+     *
+     * @param dsn Sentry server DSN which may contain options.
+     * @return Read timeout for requests to the Sentry server, in milliseconds.
+     */
+    @Override
+    protected int getReadTimeout(Dsn dsn) {
+        return Util.parseInteger(Lookup.lookup(READ_TIMEOUT_OPTION, dsn), readTimeoutDefaultMs);
+    }
+
+    private static class Props {
+        static final Parameter<Integer> CONNECTION_TIMEOUT_MS =
+                Parameter.integerParameter("connectionTimeoutMs").
+                        withDefault(1_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
+
+        static final Parameter<Integer> READ_TIMEOUT_MS =
+                Parameter.integerParameter("readTimeoutMs").
+                        withDefault(5_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
     }
 }

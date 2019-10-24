@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -51,10 +52,11 @@ public class SentryClientHolder {
     private volatile ConcurrentMap<String, ConcurrentMap<String, SentryClient>> clients = new ConcurrentHashMap<>();
 
     private final SentryApiClient sentryApiClient;
-    private final SentryClientFactory sentryClientFactory = new HerculesClientFactory();
+    private final SentryClientFactory sentryClientFactory;
 
-    public SentryClientHolder(SentryApiClient sentryApiClient) {
+    public SentryClientHolder(SentryApiClient sentryApiClient, Properties senderProperties) {
         this.sentryApiClient = sentryApiClient;
+        this.sentryClientFactory = new HerculesClientFactory(senderProperties);
     }
 
     /**

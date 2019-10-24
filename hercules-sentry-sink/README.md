@@ -30,6 +30,11 @@ Application is configured through properties file.
 
 `sink.sender.throttling.rate.timeWindowMs` - time window in millis to apply event limit. Default value:  `60000` ms.
 
+### Timeout settings
+`sink.sender.connectionTimeoutMs` - timeout of connection for sending an event to Sentry. Default value: `1000` ms.
+
+`sink.sender.readTimeoutMs` - timeout of reading when an event is sent to Sentry. Default value: `5000` ms.
+
 ### Application context settings
 `context.environment` - id of environment
 
@@ -70,6 +75,9 @@ sink.sender.sentry.level=warning
 
 sink.sender.throttling.rate.limit=5000
 sink.sender.throttling.rate.timeWindowMs=300000
+
+sink.sender.connectionTimeoutMs=10000
+sink.sender.readTimeoutMs=25000
 
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
