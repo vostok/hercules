@@ -18,7 +18,7 @@ public final class HttpStatusCodes {
      */
     public static final int LENGTH_REQUIRED = 411;
     /**
-     * Request;s header 'Content-Length' value exceeds a limit
+     * Request's header 'Content-Length' value exceeds the limit
      */
     public static final int REQUEST_ENTITY_TOO_LARGE = 413;
     public static final int URI_TOO_LONG = 414;

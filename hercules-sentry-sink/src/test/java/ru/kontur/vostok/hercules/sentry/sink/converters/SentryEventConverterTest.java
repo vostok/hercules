@@ -6,7 +6,6 @@ import io.sentry.event.interfaces.SentryException;
 import io.sentry.event.interfaces.SentryStackTraceElement;
 import io.sentry.event.interfaces.UserInterface;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
@@ -18,11 +17,9 @@ import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.tags.SentryTags;
 import ru.kontur.vostok.hercules.tags.StackFrameTags;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.UUID;
 
 /**
@@ -32,6 +29,8 @@ public class SentryEventConverterTest {
 
     private static final String someUuid = "00000000-0000-1000-994f-8fcf383f0000";
     private static final String platformFromStacktrace = "java";
+
+    private static final SentryEventConverter SENTRY_EVENT_CONVERTER = new SentryEventConverter("0.0.0");
 
     private static Container createException() {
         return ContainerBuilder.create()
@@ -56,15 +55,6 @@ public class SentryEventConverterTest {
                 .build();
     }
 
-    @Before
-    public void setUp() {
-        Properties testProperties = new Properties();
-        testProperties.setProperty("environment", "test");
-        testProperties.setProperty("instance.id", "test");
-        testProperties.setProperty("zone", "test");
-        ApplicationContextHolder.init("test", "test", testProperties);
-    }
-
     @Test
     public void shouldConvertEventWithMessage() {
         final String message = "This is message sample";
@@ -73,7 +63,7 @@ public class SentryEventConverterTest {
                 .tag(LogEventTags.MESSAGE_TAG, Variant.ofString(message))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertEquals(message, sentryEvent.getMessage());
     }
@@ -85,7 +75,7 @@ public class SentryEventConverterTest {
                 .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
                 .build();
 
-        Event sentryEvent = SentryEventConverter.convert(event);
+        Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         ExceptionInterface exceptionInterface = (ExceptionInterface) sentryEvent.getSentryInterfaces().get("sentry.interfaces.Exception");
         SentryException exception = exceptionInterface.getExceptions().getFirst();
@@ -119,7 +109,7 @@ public class SentryEventConverterTest {
                 .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertEquals(platformFromStacktrace, sentryEvent.getPlatform());
     }
@@ -134,7 +124,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertEquals(platformFromStacktrace, sentryEvent.getPlatform());
     }
@@ -159,7 +149,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertEquals(transaction, sentryEvent.getTransaction());
         Assert.assertEquals(release, sentryEvent.getRelease());
@@ -178,7 +168,7 @@ public class SentryEventConverterTest {
                 .tag(LogEventTags.MESSAGE_TEMPLATE_TAG, Variant.ofString(messageTemplate))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertTrue(sentryEvent.getFingerprint().contains(messageTemplate));
         Assert.assertEquals(1, sentryEvent.getFingerprint().size());
@@ -193,7 +183,7 @@ public class SentryEventConverterTest {
                 .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertNull(sentryEvent.getFingerprint());
     }
@@ -211,7 +201,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertTrue(sentryEvent.getFingerprint().contains(fingerprint));
         Assert.assertEquals(1, sentryEvent.getFingerprint().size());
@@ -229,7 +219,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertEquals(platformFromStacktrace, sentryEvent.getPlatform());
     }
@@ -259,7 +249,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         UserInterface userInterface = (UserInterface) sentryEvent.getSentryInterfaces().get("sentry.interfaces.User");
         Assert.assertEquals(id, userInterface.getId());
@@ -296,7 +286,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Map<String, Map<String, Object>> contexts = sentryEvent.getContexts();
         Assert.assertEquals(name, contexts.get("browser").get("name"));
@@ -327,7 +317,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertEquals(stringValue, sentryEvent.getTags().get("my_string_tag"));
         Assert.assertEquals(String.valueOf(longValue), sentryEvent.getTags().get("my_long_tag"));
@@ -351,7 +341,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertEquals(
                 stringValue,
@@ -373,7 +363,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertTrue(((List) sentryEvent.getExtra().get("my_extra")).contains(stringValue1));
         Assert.assertTrue(((List) sentryEvent.getExtra().get("my_extra")).contains(stringValue2));
@@ -391,7 +381,7 @@ public class SentryEventConverterTest {
                 ))
                 .build();
 
-        final Event sentryEvent = SentryEventConverter.convert(event);
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
         Assert.assertEquals(uuid.toString(), sentryEvent.getTransaction());
     }

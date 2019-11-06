@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 
 import java.util.Arrays;
@@ -14,43 +15,44 @@ import java.util.Set;
  */
 public class ErrorInfo {
 
-    private String message;
+    @NotNull
+    private String type;
     private int code;
+    private String message;
     private Boolean isRetryable;
-    private long waitingTimeMs;
 
-    public ErrorInfo(String message) {
-        this.message = message;
+    public ErrorInfo(@NotNull String type) {
+        this.type = type;
     }
 
-    public ErrorInfo(String message, int code) {
-        this.message = message;
+    public ErrorInfo(@NotNull String type, int code) {
+        this.type = type;
         this.code = code;
     }
 
-    public ErrorInfo(String message, boolean isRetryable) {
-        this.message = message;
-        this.isRetryable = isRetryable;
-    }
-
-    public ErrorInfo(String message, boolean isRetryable, long waitingTimeMs) {
-        this.message = message;
-        this.isRetryable = isRetryable;
-        this.waitingTimeMs = waitingTimeMs;
-    }
-
-    public ErrorInfo(String message, int code, long waitingTimeMs) {
-        this.message = message;
+    public ErrorInfo(@NotNull String type, int code, String message) {
+        this.type = type;
         this.code = code;
-        this.waitingTimeMs = waitingTimeMs;
+        this.message = message;
     }
 
-    public long getWaitingTimeMs() {
-        return waitingTimeMs;
+    public ErrorInfo(@NotNull String type, boolean isRetryable) {
+        this.type = type;
+        this.isRetryable = isRetryable;
     }
 
-    public String getMessage() {
-        return message;
+    public ErrorInfo(@NotNull String type, String message) {
+        this.type = type;
+        this.message = message;
+    }
+
+    @NotNull
+    public String getType() {
+        return type;
+    }
+
+    public int getCode() {
+        return code;
     }
 
     public Boolean isRetryable() {
@@ -142,13 +144,15 @@ public class ErrorInfo {
 
     @Override
     public String toString() {
-        String string = "";
-        if (code != 0) {
-            string += code + " ";
+        StringBuilder stringBuilder = new StringBuilder(type);
+        if (code > 0) {
+            stringBuilder.append(" ");
+            stringBuilder.append(code);
         }
         if (message != null) {
-            string += message;
+            stringBuilder.append(": ");
+            stringBuilder.append(message);
         }
-        return string;
+        return stringBuilder.toString();
     }
 }

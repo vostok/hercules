@@ -44,7 +44,6 @@ import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -82,9 +81,6 @@ public class ManagementApiApplication {
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties httpserverProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
-            ApplicationContextHolder.init("Hercules management API", "management-api", contextProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();

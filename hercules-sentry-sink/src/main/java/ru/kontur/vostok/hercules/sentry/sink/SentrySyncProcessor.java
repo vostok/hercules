@@ -1,17 +1,16 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
-import io.sentry.connection.LockdownManager;
 import io.sentry.connection.LockedDownException;
 import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -41,6 +40,7 @@ public class SentrySyncProcessor {
     private final Level requiredLevel;
     private final int retryLimit;
     private final SentryClientHolder sentryClientHolder;
+    private final SentryEventConverter eventConverter;
     private final MetricsCollector metricsCollector;
     private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
@@ -52,13 +52,16 @@ public class SentrySyncProcessor {
     public SentrySyncProcessor(
             Properties sinkProperties,
             SentryClientHolder sentryClientHolder,
+            SentryEventConverter eventConverter,
             MetricsCollector metricsCollector
     ) {
         this.requiredLevel = PropertiesUtil.get(Props.REQUIRED_LEVEL, sinkProperties).get();
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, sinkProperties).get();
         this.sentryClientHolder = sentryClientHolder;
-        this.sentryClientHolder.update();
+        this.eventConverter = eventConverter;
         this.metricsCollector = metricsCollector;
+
+        this.sentryClientHolder.init();
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
         this.rateLimiter = new RateLimiter(rateLimiterProperties);
@@ -97,9 +100,6 @@ public class SentrySyncProcessor {
         String organization = sanitizeName(organizationName.get());
 
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.SUBPROJECT_TAG);
-        if (!sentryProjectName.isPresent()) {
-            sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
-        }
         String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
 
         final String prefix = makePrefix(organization, sentryProject);
@@ -107,16 +107,20 @@ public class SentrySyncProcessor {
         if (rateLimiter.updateAndCheck(organization)) {
             processed = tryToSend(event, organization, sentryProject);
         } else {
-            LOGGER.warn("Excess of rate limit. Reject event by project {}.", organization);
-            rejectRateLimitMeterMap.computeIfAbsent(prefix, p -> metricsCollector.meter(p + "rateLimitRejectEventCount"));
+            LOGGER.warn("Excess of rate limit. Reject event by project '{}'", organization);
+            rejectRateLimitMeterMap
+                    .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "rateLimitRejectEventCount"))
+                    .mark();
             processed = false;
         }
 
         final long processingTimeMs = System.currentTimeMillis() - sendingStart;
-        eventProcessingTimerMap.computeIfAbsent(prefix, p -> metricsCollector.timer(p + "eventProcessingTimeMs"))
+        eventProcessingTimerMap
+                .computeIfAbsent(prefix, p -> metricsCollector.timer(p + "eventProcessingTimeMs"))
                 .update(processingTimeMs, TimeUnit.MILLISECONDS);
         if (processed) {
-            processedEventsMeterMap.computeIfAbsent(prefix, p -> metricsCollector.meter(p + "processedEventCount"))
+            processedEventsMeterMap
+                    .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "processedEventCount"))
                     .mark();
         }
 
@@ -147,11 +151,14 @@ public class SentrySyncProcessor {
             }
             processErrorInfo = result.getError();
 
-            String type = processErrorInfo.getMessage();
-            errorTypesMeterMap.computeIfAbsent(
-                    type == null ? "null" : type,
-                    t -> createMeter(t, organization, sentryProject)
-            ).mark();
+            String metricName = processErrorInfo.getType();
+            int code = processErrorInfo.getCode();
+            if (code > 0) {
+                metricName += "_" + code;
+            }
+            errorTypesMeterMap
+                    .computeIfAbsent(metricName, m -> createMeter(m, organization, sentryProject))
+                    .mark();
 
             if (processErrorInfo.isRetryable() == null) {
                 throw new BackendServiceFailedException();
@@ -164,9 +171,6 @@ public class SentrySyncProcessor {
             }
             if (processErrorInfo.needToRemoveClientFromCache()) {
                 sentryClientHolder.removeClientFromCache(organization, sentryProject);
-            }
-            if (processErrorInfo.getWaitingTimeMs() > 0) {
-                throw new BackendServiceFailedException();
             }
         } while (0 < retryCount--);
         throw new BackendServiceFailedException();
@@ -191,8 +195,8 @@ public class SentrySyncProcessor {
         Result<SentryClient, ErrorInfo> sentryClientResult =
                 sentryClientHolder.getOrCreateClient(organization, sentryProject);
         if (!sentryClientResult.isOk()) {
-            LOGGER.error(String.format("Cannot get client for Sentry organization/project '%s/%s'",
-                    organization, sentryProject));
+            LOGGER.error(String.format("Cannot get client for project '%s' in organization '%s'",
+                    sentryProject, organization));
             processErrorInfo = sentryClientResult.getError();
             processErrorInfo.setIsRetryableForApiClient();
             return Result.error(processErrorInfo);
@@ -200,10 +204,10 @@ public class SentrySyncProcessor {
 
         io.sentry.event.Event sentryEvent;
         try {
-            sentryEvent = SentryEventConverter.convert(event);
+            sentryEvent = eventConverter.convert(event);
         } catch (Exception e) {
             LOGGER.error("An exception occurred while converting Hercules-event to Sentry-event.", e);
-            return Result.error(new ErrorInfo("Converting error", false));
+            return Result.error(new ErrorInfo("ConvertingError", false));
         }
 
         try {
@@ -211,27 +215,23 @@ public class SentrySyncProcessor {
             return Result.ok();
         } catch (InvalidDsnException e) {
             LOGGER.error("InvalidDsnException: " + e.getMessage());
-            processErrorInfo = new ErrorInfo("Invalid DSN", false);
+            processErrorInfo = new ErrorInfo("InvalidDSN", false);
         } catch (LockedDownException e) {
             LOGGER.error("LockedDownException: a temporary lockdown is switched on");
-            processErrorInfo = new ErrorInfo(
-                    "LockedDown", true, LockdownManager.DEFAULT_BASE_LOCKDOWN_TIME);
+            processErrorInfo = new ErrorInfo("LockedDown");
         } catch (ConnectionException e) {
             Integer responseCode = e.getResponseCode();
             String message = e.getMessage();
             if (responseCode != null) {
-                LOGGER.error(String.format("ConnectionException: %d %s", responseCode, message));
-                if (e.getRecommendedLockdownTime() != null) {
-                    processErrorInfo = new ErrorInfo(message, responseCode, e.getRecommendedLockdownTime());
-                } else {
-                    processErrorInfo = new ErrorInfo(message, responseCode);
-                }
+                LOGGER.error(String.format("ConnectionException %d: %s", responseCode, message));
+                processErrorInfo = new ErrorInfo("ConnectionException", responseCode);
             } else {
                 LOGGER.error(String.format("ConnectionException: %s", message));
-                processErrorInfo = new ErrorInfo(message);
+                processErrorInfo = new ErrorInfo("ConnectionException");
             }
         } catch (Exception e) {
-            processErrorInfo = new ErrorInfo(e.getMessage());
+            LOGGER.error(String.format("Other exception of sending to Sentry: %s", e.getMessage()));
+            processErrorInfo = new ErrorInfo("OtherException", e.getMessage());
         }
         processErrorInfo.setIsRetryableForSending();
 

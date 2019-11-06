@@ -1,10 +1,11 @@
 package ru.kontur.vostok.hercules.throttling.rate;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.util.time.MockTimeSource;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.Properties;
 
-import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertTrue;
  * @author Gregory Koshelev
  */
 public class RateLimiterTest {
+    private static final TimeSource TIME = new MockTimeSource();
     private static final String KEY = "key";
 
     /**
@@ -31,10 +33,10 @@ public class RateLimiterTest {
     /**
      * limit = 1 per sec
      * 1 - 4th events with lower rate -> true
-     * 5th event raised immidiately with empty quota -> false
+     * 5th event raised immediately with empty quota -> false
      */
     @Test
-    public void shouldBeTrueWithLimit1PerSecAndCorrectIncrease() throws InterruptedException {
+    public void shouldBeTrueWithLimit1PerSecAndCorrectIncrease() {
         RateLimiter service = createLimiter(1, 1_000L);
         assertTrue(service.updateAndCheck(KEY));
         sleep(1_000);
@@ -55,7 +57,7 @@ public class RateLimiterTest {
     }
 
     @Test
-    public void shouldBeRecoverWithAverageSize() throws InterruptedException {
+    public void shouldBeRecoverWithAverageSize() {
         RateLimiter service = createLimiter(1_000, 1_000L);
         assertEquals(0f, sendAndCalculateDroppedPercent(service, 350), 1f);
         sleep(1_000);
@@ -92,7 +94,10 @@ public class RateLimiterTest {
         Properties properties = new Properties();
         properties.setProperty(RateLimiter.Props.LIMIT.name(), String.valueOf(limit));
         properties.setProperty(RateLimiter.Props.TIME_WINDOW_MS.name(), String.valueOf(timeWindowMs));
-        return new RateLimiter(properties);
+        return new RateLimiter(TIME, properties);
     }
 
+    private void sleep(long millis) {
+        TIME.sleep(millis);
+    }
 }

@@ -1,9 +1,11 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
+import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -34,8 +36,9 @@ public class SentrySender extends Sender {
         final String sentryUrl = PropertiesUtil.get(Props.SENTRY_URL, senderProperties).get();
         final String sentryToken = PropertiesUtil.get(Props.SENTRY_TOKEN, senderProperties).get();
         sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
-        SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient);
-        this.processor = new SentrySyncProcessor(senderProperties, sentryClientHolder, metricsCollector);
+        SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient, senderProperties);
+        SentryEventConverter sentryEventConverter = new SentryEventConverter(Application.context().getVersion());
+        this.processor = new SentrySyncProcessor(senderProperties, sentryClientHolder, sentryEventConverter, metricsCollector);
     }
 
     @Override

@@ -3,7 +3,7 @@
     <parent>
         <artifactId>hercules</artifactId>
         <groupId>ru.kontur.vostok.hercules</groupId>
-        <version>0.31.0-SNAPSHOT</version>
+        <version>0.32.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,6 +13,10 @@
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-application</artifactId>
         </dependency>
 
         <dependency>

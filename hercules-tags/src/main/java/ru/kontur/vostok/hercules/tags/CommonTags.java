@@ -35,20 +35,6 @@ public final class CommonTags {
             .build();
 
     /**
-     * Application tag
-     */
-    public static final TagDescription<Optional<String>> APPLICATION_TAG = TagDescriptionBuilder.string("application")
-            .optional()
-            .build();
-
-    /**
-     * Service tag
-     */
-    public static final TagDescription<Optional<String>> SERVICE_TAG = TagDescriptionBuilder.string("service")
-            .optional()
-            .build();
-
-    /**
      * Environment tag
      */
     public static final TagDescription<Optional<String>> ENVIRONMENT_TAG = TagDescriptionBuilder.string("environment")

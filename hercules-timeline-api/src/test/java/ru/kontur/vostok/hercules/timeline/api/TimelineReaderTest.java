@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
@@ -10,7 +8,9 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -75,8 +76,10 @@ public class TimelineReaderTest {
 
         when(session.execute(any(SimpleStatement.class))).thenReturn(resultSet);
 
-        when(metricsCollector.meter(anyString())).thenReturn(new Meter());
-        when(metricsCollector.timer(anyString())).thenReturn(new Timer());
+        when(metricsCollector.meter(anyString())).thenReturn(n -> {
+        });
+        when(metricsCollector.timer(anyString())).thenReturn((duration, unit) -> {
+        });
 
         timelineReader = new TimelineReader(new Properties(), connector, metricsCollector);
     }
