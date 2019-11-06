@@ -25,8 +25,6 @@ StackFrame:
 Properties:
   project?: String # Project name
   subproject?: String # Subproject name 
-  application?: String # Application name
-  service?: String # Service name
   environment?: String # Environment
   release?: String # Release version of application
   traceId?: String or UUID # Trace identifier
@@ -35,7 +33,7 @@ Properties:
   logger?: String # Logger which created the event
 ```
 
-Tags `properties/project`, `properties/subproject`, `properties/application`, `properties/service` and `properties/environment` are [common tags](../../hercules-protocol/doc/common-tags.md).
+Tags `properties/project`, `properties/subproject` and `properties/environment` are [common tags](../../hercules-protocol/doc/common-tags.md).
 
 ## LogEvent usages
 

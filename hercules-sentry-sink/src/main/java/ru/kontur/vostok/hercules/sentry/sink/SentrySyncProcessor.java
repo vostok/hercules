@@ -100,9 +100,6 @@ public class SentrySyncProcessor {
         String organization = sanitizeName(organizationName.get());
 
         Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.SUBPROJECT_TAG);
-        if (!sentryProjectName.isPresent()) {
-            sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.APPLICATION_TAG);
-        }
         String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
 
         final String prefix = makePrefix(organization, sentryProject);

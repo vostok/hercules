@@ -129,7 +129,7 @@ class LeproserySender {
                 .tag("message", Variant.ofString(reason))
                 .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
                         .tag(CommonTags.PROJECT_TAG, Variant.ofString(PROJECT_NAME))
-                        .tag(CommonTags.SERVICE_TAG, Variant.ofString(SERVICE_NAME))
+                        .tag("service", Variant.ofString(SERVICE_NAME))
                         .tag("text", Variant.ofString(textBytes))
                         .tag("original-index", Variant.ofString(index))
                         .tag(ElasticSearchTags.ELK_INDEX_TAG.getName(), Variant.ofString(leproseryIndex))

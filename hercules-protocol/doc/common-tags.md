@@ -6,8 +6,6 @@ Common tags can be used in different application and store meta information abou
 CommonTags:
   project?: String
   subproject?: String
-  application?: String
-  service?: String
   environment?: String
 ```
 
@@ -20,9 +18,7 @@ group or just the name of your service, in case of monolith project.
 Tag `subproject` represents part of your project, it can be front-end and back-end or some additional service,
 e. g. mail service, background worker etc.
 
-Tag `application` represents stand-alone application.
-
-Tags `application` and `subproject` should be used only with tag project.
+Tags `subproject` should be used only with tag project.
 
 ## Environment
 

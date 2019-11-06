@@ -13,8 +13,7 @@ Thus, the name of index in Elastic is defined as follows:
   where  
     `${project}` is the value of the `properties/project` tag,  
     `${environment}` is the value of the `properties/environment` tag,  
-    `${subproject}` is the value of the `properties/subproject` tag, if absent then used value of the `properties/application` tag,  
+    `${subproject}` is the value of the `properties/subproject` tag,  
     `${date}` is UTC date from timestamp of event in `YYYY.MM.DD` format.  
-    If `subproject` and `application` or `environment` tags are missing theirs value and corresponding hyphen will be skipped.
-    Tag `application` is used only for backward compatibility.
+    If `subproject` or `environment` tags are missing theirs value and corresponding hyphen will be skipped.
 3. If none of above tags exists ignore event.
