@@ -66,38 +66,10 @@ public class IndexToElasticJsonWriterTest {
     }
 
     @Test
-    public void shouldUseElkScopeForIndexName() throws Exception {
+    public void shouldUseSubprojectForIndexName() throws Exception {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
                 .tag("properties", Variant.ofContainer(ContainerBuilder.create()
                         .tag("project", Variant.ofString("awesome-project"))
-                        .tag(CommonTags.APPLICATION_TAG, Variant.ofString("app"))
-                        .tag("environment", Variant.ofString("production"))
-                        .build()
-                ))
-                .build();
-
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        eventProcess(stream, event);
-
-        assertEquals(
-                "{" +
-                        "\"index\":{" +
-                        "\"_index\":\"awesome-project-production-app-1970.01.01\"," +
-                        "\"_type\":\"LogEvent\"," +
-                        "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
-                        "}" +
-                        "}",
-                stream.toString()
-        );
-    }
-
-    //FIXME: test must be deleted after release
-    @Test
-    public void shouldUseSubprojectInsteadOfApplicationForIndexName() throws IOException {
-        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
-                .tag("properties", Variant.ofContainer(ContainerBuilder.create()
-                        .tag("project", Variant.ofString("awesome-project"))
-                        .tag(CommonTags.APPLICATION_TAG, Variant.ofString("app"))
                         .tag(CommonTags.SUBPROJECT_TAG, Variant.ofString("subproject"))
                         .tag("environment", Variant.ofString("production"))
                         .build()
@@ -132,7 +104,6 @@ public class IndexToElasticJsonWriterTest {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
                 .tag("properties", Variant.ofContainer(ContainerBuilder.create()
                         .tag("project", Variant.ofString("awesome project"))
-                        .tag(CommonTags.APPLICATION_TAG, Variant.ofString("app"))
                         .tag(CommonTags.SUBPROJECT_TAG, Variant.ofString("subproject"))
                         .tag("environment", Variant.ofString("production"))
                         .build()

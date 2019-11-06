@@ -29,7 +29,7 @@ public class EventPublisherFactory {
 
     private static final Lazy<EventPublisher> LAZY_INSTANCE;
     private static final String PROJECT;
-    private static final String SERVICE;
+    private static final String SUBPROJECT;
     private static final String ENVIRONMENT;
 
     static {
@@ -40,7 +40,7 @@ public class EventPublisherFactory {
             LAZY_INSTANCE = new Lazy<>(() -> createPublisher(properties));
 
             PROJECT = PropertiesUtil.get(Props.PROJECT, properties).get();
-            SERVICE = PropertiesUtil.get(Props.SERVICE, properties).get();
+            SUBPROJECT = PropertiesUtil.get(Props.SUBPROJECT, properties).get();
             ENVIRONMENT = PropertiesUtil.get(Props.ENVIRONMENT, properties).get();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -59,8 +59,8 @@ public class EventPublisherFactory {
         return PROJECT;
     }
 
-    public static Optional<String> getService() {
-        return Optional.ofNullable(SERVICE);
+    public static Optional<String> getSubproject() {
+        return Optional.ofNullable(SUBPROJECT);
     }
 
     public static String getEnvironment() {
@@ -87,9 +87,8 @@ public class EventPublisherFactory {
                         required().
                         build();
 
-        static final Parameter<String> SERVICE =
-                Parameter.stringParameter("service").
-                        required().
+        static final Parameter<String> SUBPROJECT =
+                Parameter.stringParameter("subproject").
                         build();
 
         static final Parameter<String> ENVIRONMENT =
