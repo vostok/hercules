@@ -17,7 +17,6 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
-import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -45,9 +44,6 @@ import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked
 public class ElasticSender extends Sender {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSender.class);
 
-    private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
-    private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
-    private static final Logger DROPPED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
 
     private final RestClient restClient;
@@ -125,9 +121,6 @@ public class ElasticSender extends Sender {
             return 0;
         }
 
-        if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
-            events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
-        }
         int droppedCount;
         Map<EventWrapper, ValidationResult> nonRetryableErrorsMap = new HashMap<>(events.size());
         //event-id -> event-wrapper
@@ -166,9 +159,6 @@ public class ElasticSender extends Sender {
         } catch (Exception e) {
             throw new BackendServiceFailedException(e);
         }
-
-        if (PROCESSED_EVENT_LOGGER.isTraceEnabled())
-            events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
 
         return events.size() - droppedCount;
     }
@@ -216,7 +206,6 @@ public class ElasticSender extends Sender {
                         wrapper.getIndex(),
                         validationResult.error());
                 Event event = wrapper.getEvent();
-                DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
             });
             elasticsearchDroppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
             return nonRetryableErrorsInfo.size();
