@@ -26,12 +26,13 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractSinkDaemon {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSinkDaemon.class);
 
-    private Sender sender;
-    private SinkPool sinkPool;
-    private ExecutorService executor;
-    private DaemonHttpServer daemonHttpServer;
-
     protected MetricsCollector metricsCollector;
+
+    private Sender sender;
+    private ExecutorService executor;
+    private SinkPool sinkPool;
+
+    private DaemonHttpServer daemonHttpServer;
 
     protected void run(String[] args) {
         long start = System.currentTimeMillis();
@@ -58,9 +59,6 @@ public abstract class AbstractSinkDaemon {
                     metricsCollector,
                     PropertiesUtil.get(Props.THREAD_GROUP_REGEXP, metricsProperties).get());
 
-            daemonHttpServer = new DaemonHttpServer(httpServerProperties, metricsCollector);
-            daemonHttpServer.start();
-
             this.sender = createSender(senderProperties, metricsCollector);
             sender.start();
 
@@ -77,6 +75,9 @@ public abstract class AbstractSinkDaemon {
                                     sender,
                                     metricsCollector));
             sinkPool.start();
+
+            daemonHttpServer = new DaemonHttpServer(httpServerProperties, metricsCollector);
+            daemonHttpServer.start();
         } catch (Throwable throwable) {
             LOGGER.error("Cannot start application due to error", throwable);
             shutdown();
@@ -109,6 +110,14 @@ public abstract class AbstractSinkDaemon {
         LOGGER.info("Start {} shutdown", getDaemonName());
 
         try {
+            if (daemonHttpServer != null) {
+                daemonHttpServer.stop(5_000, TimeUnit.MILLISECONDS);
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping HTTP Server", t);
+        }
+
+        try {
             if (sinkPool != null) {
                 sinkPool.stop();
             }
@@ -131,14 +140,6 @@ public abstract class AbstractSinkDaemon {
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping sender", t);
-        }
-
-        try {
-            if (daemonHttpServer != null) {
-                daemonHttpServer.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping http status server", t);
         }
 
         try {

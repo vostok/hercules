@@ -17,7 +17,6 @@ import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -29,10 +28,12 @@ public class StreamSinkDaemon {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamSinkDaemon.class);
 
+    private static MetricsCollector metricsCollector;
+
     private static CuratorClient curatorClient;
     private static StreamSink streamSink;
+
     private static DaemonHttpServer daemonHttpServer;
-    private static MetricsCollector metricsCollector;
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -56,9 +57,6 @@ public class StreamSinkDaemon {
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            daemonHttpServer = new DaemonHttpServer(statusServerProperties, metricsCollector);
-            daemonHttpServer.start();
-
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
 
@@ -75,6 +73,9 @@ public class StreamSinkDaemon {
 
             streamSink = new StreamSink(streamsProperties, (DerivedStream) derived);
             streamSink.start();
+
+            daemonHttpServer = new DaemonHttpServer(statusServerProperties, metricsCollector);
+            daemonHttpServer.start();
         } catch (Throwable t) {
             LOGGER.error("Error on starting stream sink daemon", t);
             shutdown();
@@ -91,6 +92,15 @@ public class StreamSinkDaemon {
         LOGGER.info("Prepare Stream Sink Daemon to be shutdown");
 
         try {
+            if (daemonHttpServer != null) {
+                daemonHttpServer.stop(5_000, TimeUnit.MILLISECONDS);
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping HTTP server", t);
+            //TODO: Process error
+        }
+
+        try {
             if (streamSink != null) {
                 streamSink.stop(5_000, TimeUnit.MILLISECONDS);
             }
@@ -105,15 +115,6 @@ public class StreamSinkDaemon {
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping curator client", t);
-            //TODO: Process error
-        }
-
-        try {
-            if (Objects.nonNull(daemonHttpServer)) {
-                daemonHttpServer.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping minimal status server", t);
             //TODO: Process error
         }
 
