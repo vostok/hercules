@@ -97,7 +97,9 @@ public class ElasticSender extends Sender {
         this.elasticResponseHandler = new ElasticResponseHandler(metricsCollector);
 
         this.leproserySender = leproseryEnable
-                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector)
+                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY),
+                        metricsCollector,
+                        mergePropertiesTagToRoot)
                 : null;
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
@@ -178,7 +180,7 @@ public class ElasticSender extends Sender {
             ErrorInfo errorInfo = entry.getValue();
             ErrorType type = errorInfo.getType();
             if (type.equals(ErrorType.NON_RETRYABLE) || (type.equals(ErrorType.UNKNOWN) && !retryOnUnknownErrors)) {
-                errorsMap.put(eventId, ValidationResult.error(errorInfo.getReason()));
+                errorsMap.put(eventId, ValidationResult.error(errorInfo.getError()));
             }
         }
         return errorsMap;

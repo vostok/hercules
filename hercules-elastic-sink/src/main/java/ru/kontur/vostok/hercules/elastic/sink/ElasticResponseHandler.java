@@ -323,16 +323,16 @@ public class ElasticResponseHandler {
             errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
             if (redefinedExceptions.contains(type)) {
                 LOGGER.warn("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.NON_RETRYABLE, reason);
+                return new ErrorInfo(ErrorType.NON_RETRYABLE, error.toString());
             } else if (RETRYABLE_ERRORS_CODES.contains(type)) {
                 LOGGER.warn("Retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.RETRYABLE, reason);
+                return new ErrorInfo(ErrorType.RETRYABLE, error.toString());
             } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
                 LOGGER.warn("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.NON_RETRYABLE, reason);
+                return new ErrorInfo(ErrorType.NON_RETRYABLE, error.toString());
             } else {
                 LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.UNKNOWN, reason);
+                return new ErrorInfo(ErrorType.UNKNOWN, error.toString());
             }
         } else {
             String errorMessage = "Error node is not object node, cannot parse";

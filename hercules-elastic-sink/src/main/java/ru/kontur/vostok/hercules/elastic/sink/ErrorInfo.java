@@ -5,19 +5,19 @@ package ru.kontur.vostok.hercules.elastic.sink;
  */
 class ErrorInfo {
     private final ErrorType type;
-    private final String reason;
+    private final String error;
 
-    ErrorInfo(ErrorType type, String reason) {
+    ErrorInfo(ErrorType type, String error) {
         this.type = type;
-        this.reason = reason;
+        this.error = error;
     }
 
     ErrorType getType() {
         return type;
     }
 
-    String getReason() {
-        return reason;
+    String getError() {
+        return error;
     }
 
 }
