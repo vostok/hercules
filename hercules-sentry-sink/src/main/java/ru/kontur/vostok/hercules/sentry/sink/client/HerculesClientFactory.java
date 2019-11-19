@@ -5,16 +5,23 @@ import io.sentry.SentryClient;
 import io.sentry.config.Lookup;
 import io.sentry.connection.AsyncConnection;
 import io.sentry.dsn.Dsn;
+import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.helper.ContextBuilderHelper;
 import io.sentry.marshaller.json.JsonMarshaller;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
+import java.util.Map;
 import java.util.Properties;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * HerculesClientFactory
@@ -27,11 +34,21 @@ public class HerculesClientFactory extends DefaultSentryClientFactory {
 
     private final int connectionTimeoutDefaultMs;
     private final int readTimeoutDefaultMs;
+    private URI rewritingUri;
 
     public HerculesClientFactory(Properties senderProperties) {
         super();
         connectionTimeoutDefaultMs = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, senderProperties).get();
         readTimeoutDefaultMs = PropertiesUtil.get(Props.READ_TIMEOUT_MS, senderProperties).get();
+
+        ParameterValue<String> rewritingUrlParam = PropertiesUtil.get(Props.SENTRY_REWRITING_URL, senderProperties);
+        if (!rewritingUrlParam.isEmpty()) {
+            try {
+                rewritingUri = new URI(rewritingUrlParam.get());
+            } catch (URISyntaxException e) {
+                LOGGER.error("Cannot parse URI from value of parameter rewritingUrl: '{}'", rewritingUrlParam.get());
+            }
+        }
     }
 
     @Override
@@ -50,9 +67,10 @@ public class HerculesClientFactory extends DefaultSentryClientFactory {
     @Override
     public SentryClient createSentryClient(Dsn dsn) {
         try {
-            SentryClient sentryClient = new HerculesSentryClient(createConnection(dsn), getContextManager(dsn));
+            Dsn newDsn = modifyDsn(dsn);
+            SentryClient sentryClient = new HerculesSentryClient(createConnection(newDsn), getContextManager(newDsn));
             sentryClient.addBuilderHelper(new ContextBuilderHelper(sentryClient));
-            return configureSentryClient(sentryClient, dsn);
+            return configureSentryClient(sentryClient, newDsn);
         } catch (Exception e) {
             LOGGER.error("Failed to initialize sentry", e);
             throw e;
@@ -110,6 +128,55 @@ public class HerculesClientFactory extends DefaultSentryClientFactory {
         return Util.parseInteger(Lookup.lookup(READ_TIMEOUT_OPTION, dsn), readTimeoutDefaultMs);
     }
 
+    /**
+     * Allows to modify dsn by rewriting protocol, host and port
+     *
+     * @param dsn original dsn
+     * @return modified dsn
+     */
+    public Dsn modifyDsn(Dsn dsn) {
+        if (rewritingUri == null) {
+            return dsn;
+        }
+        URI newUri;
+        try {
+            newUri = new URI(
+                    rewritingUri.getScheme(),
+                    getUserInfo(dsn),
+                    rewritingUri.getHost(),
+                    rewritingUri.getPort(),
+                    dsn.getPath() + dsn.getProjectId(),
+                    getQuery(dsn),
+                    null);
+        } catch (URISyntaxException e) {
+            throw new InvalidDsnException("Impossible to determine Sentry's URI from the DSN and replacing fields", e);
+        }
+        return new Dsn(newUri);
+    }
+
+    private String getUserInfo(Dsn dsn) {
+        StringBuilder sb = new StringBuilder(dsn.getPublicKey());
+        String secretKey = dsn.getSecretKey();
+        if (!StringUtil.isNullOrEmpty(secretKey)) {
+            sb.append(":").append(secretKey);
+        }
+        return sb.toString();
+    }
+
+    private String getQuery(Dsn dsn) {
+        StringBuilder sb = new StringBuilder();
+        boolean isFirst = true;
+        for (Map.Entry<String, String> entry : dsn.getOptions().entrySet()) {
+            if (isFirst) {
+                isFirst = false;
+            } else {
+                sb.append("&");
+            }
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+        return sb.toString();
+    }
+
     private static class Props {
         static final Parameter<Integer> CONNECTION_TIMEOUT_MS =
                 Parameter.integerParameter("connectionTimeoutMs").
@@ -121,6 +188,10 @@ public class HerculesClientFactory extends DefaultSentryClientFactory {
                 Parameter.integerParameter("readTimeoutMs").
                         withDefault(5_000).
                         withValidator(IntegerValidators.nonNegative()).
+                        build();
+
+        static final Parameter<String> SENTRY_REWRITING_URL =
+                Parameter.stringParameter("sentry.rewritingUrl").
                         build();
     }
 }
