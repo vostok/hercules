@@ -16,13 +16,15 @@ Application is configured through properties file.
 
 `sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
 
-`sink.sender.sentry.url` - URL of Sentry
+`sink.sender.sentry.url` - URL for requests to Sentry web-API
 
 `sink.sender.sentry.token` - token of Sentry user. It is used for authentication on Sentry
 
 `sink.sender.sentry.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `WARNING`
 
 `sink.sender.sentry.retryLimit` - the number of attempts to send event with retryable errors, default value: `3`
+
+`sink.sender.sentry.rewritingUrl` - URL for sending events to Sentry. This URL rewrites protocol, host and port in DSN received from Sentry
 
 ### Rate Limiting settings 
 
