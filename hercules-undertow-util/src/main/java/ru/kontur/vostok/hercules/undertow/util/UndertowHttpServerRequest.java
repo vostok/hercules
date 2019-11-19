@@ -1,16 +1,22 @@
 package ru.kontur.vostok.hercules.undertow.util;
 
+import io.undertow.io.Sender;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
 import ru.kontur.vostok.hercules.http.ErrorCallback;
 import ru.kontur.vostok.hercules.http.HttpMethod;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpServerRequestException;
 import ru.kontur.vostok.hercules.http.HttpServerResponse;
+import ru.kontur.vostok.hercules.http.IoCallback;
 import ru.kontur.vostok.hercules.http.NotSupportedHttpMethodException;
 import ru.kontur.vostok.hercules.http.ReadBodyCallback;
 import ru.kontur.vostok.hercules.http.RequestCompletionListener;
 import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +35,7 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
 
     public UndertowHttpServerRequest(HttpServerExchange exchange) {
         this.exchange = exchange;
-        this.response = new UndertowHttpServerResponse(exchange);
+        this.response = new UndertowHttpServerResponse();
         this.context = new ConcurrentHashMap<>();
     }
 
@@ -54,11 +60,6 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
-    public String getParameter(String name) {
-        return getQueryParameter(name);
-    }
-
-    @Override
     public String getPathParameter(String name) {
         return pathParameters.get(name);
     }
@@ -69,7 +70,7 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
-    public String[] getParameterValues(String name) {
+    public String[] getQueryParameterValues(String name) {
         return exchange.getQueryParameters().getOrDefault(name, CollectionUtil.emptyDeque()).toArray(new String[0]);
     }
 
@@ -119,5 +120,47 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
     @SuppressWarnings("unchecked")
     public <T> T getContext(String key) {
         return (T) context.get(key);
+    }
+
+    public class UndertowHttpServerResponse implements HttpServerResponse {
+        @Override
+        public void setStatusCode(int code) {
+            exchange.setStatusCode(code);
+        }
+
+        @Override
+        public int getStatusCode() {
+            return exchange.getStatusCode();
+        }
+
+        @Override
+        public void setHeader(String header, String value) {
+            exchange.getResponseHeaders().put(HttpString.tryFromString(header), value);
+        }
+
+        @Override
+        public void send(String data, Charset charset) {
+            exchange.getResponseSender().send(data, charset);
+        }
+
+        @Override
+        public void send(ByteBuffer[] buffers) {
+            exchange.getResponseSender().send(buffers);
+        }
+
+        @Override
+        public void send(ByteBuffer[] buffers, IoCallback callback, ErrorCallback errorCallback) {
+            exchange.getResponseSender().send(buffers, new io.undertow.io.IoCallback() {
+                @Override
+                public void onComplete(HttpServerExchange exchange, Sender sender) {
+                    callback.onComplete(UndertowHttpServerRequest.this);
+                }
+
+                @Override
+                public void onException(HttpServerExchange exchange, Sender sender, IOException exception) {
+                    errorCallback.error(UndertowHttpServerRequest.this, new HttpServerRequestException(exception));
+                }
+            });
+        }
     }
 }
