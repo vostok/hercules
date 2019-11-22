@@ -22,12 +22,12 @@ public class TagDescriptionBuilderTest {
                 .build();
 
         TestEnum extractedA = ContainerUtil.extract(
-                ContainerBuilder.create().tag("test", Variant.ofString("A")).build(),
+                Container.of("test", Variant.ofString("A")),
                 description
         );
 
         TestEnum extractedB = ContainerUtil.extract(
-                ContainerBuilder.create().tag("test", Variant.ofString("b")).build(),
+                Container.of("test", Variant.ofString("b")),
                 description
         );
 
@@ -41,7 +41,7 @@ public class TagDescriptionBuilderTest {
                 .build();
 
         ContainerUtil.extract(
-                ContainerBuilder.create().tag("test", Variant.ofString("C")).build(),
+                Container.of("test", Variant.ofString("C")),
                 description
         );
     }
@@ -51,7 +51,7 @@ public class TagDescriptionBuilderTest {
         TagDescription<String> description = TagDescriptionBuilder.string("test").build();
 
         String stringVariantValue = ContainerUtil.extract(
-                ContainerBuilder.create().tag("test", Variant.ofString("abc")).build(),
+                Container.of("test", Variant.ofString("abc")),
                 description
         );
 
@@ -63,9 +63,7 @@ public class TagDescriptionBuilderTest {
         TagDescription<String[]> description = TagDescriptionBuilder.stringVector("test").build();
 
         String[] extractedStringVector = ContainerUtil.extract(
-                ContainerBuilder.create()
-                        .tag("test", Variant.ofVector(Vector.ofStrings("string1", "string2")))
-                        .build(),
+                Container.of("test", Variant.ofVector(Vector.ofStrings("string1", "string2"))),
                 description
         );
 
@@ -77,13 +75,11 @@ public class TagDescriptionBuilderTest {
         TagDescription<Container[]> description = TagDescriptionBuilder.containerVector("test").build();
 
         Container[] expectedContainerVector = new Container[]{
-                ContainerBuilder.create().tag("a", Variant.ofInteger(1)).build()
+                Container.of("a", Variant.ofInteger(1))
         };
 
         Container[] extractedContainerVector = ContainerUtil.extract(
-                ContainerBuilder.create()
-                        .tag("test", Variant.ofVector(Vector.ofContainers(expectedContainerVector)))
-                        .build(),
+                Container.of("test", Variant.ofVector(Vector.ofContainers(expectedContainerVector))),
                 description
         );
 
@@ -95,7 +91,7 @@ public class TagDescriptionBuilderTest {
         TagDescription<String> description = TagDescriptionBuilder.parsable("test", s -> s + s).build();
 
         String extracted = ContainerUtil.extract(
-                ContainerBuilder.create().tag("test", Variant.ofString("value")).build(),
+                Container.of("test", Variant.ofString("value")),
                 description
         );
 
@@ -109,7 +105,7 @@ public class TagDescriptionBuilderTest {
                 .build();
 
         String extracted = ContainerUtil.extract(
-                ContainerBuilder.create().build(),
+                Container.empty(),
                 description
         );
 
@@ -121,7 +117,7 @@ public class TagDescriptionBuilderTest {
         TagDescription<String> description = TagDescriptionBuilder.string("test").build();
 
         ContainerUtil.extract(
-                ContainerBuilder.create().build(),
+                Container.empty(),
                 description
         );
     }

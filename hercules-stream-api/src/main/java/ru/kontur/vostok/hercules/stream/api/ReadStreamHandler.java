@@ -137,10 +137,11 @@ public class ReadStreamHandler implements HttpHandler {
 
                                 request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
-                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                                Encoder encoder = new Encoder(baos);
+                                ByteBuffer buffer = ByteBuffer.allocate(streamContent.sizeOf());
+                                Encoder encoder = new Encoder(buffer);
                                 CONTENT_WRITER.write(encoder, streamContent);
-                                request.getResponse().send(ByteBuffer.wrap(baos.toByteArray()));
+                                buffer.flip();
+                                request.getResponse().send(buffer);
                             } catch (IllegalArgumentException e) {
                                 request.complete(HttpStatusCodes.BAD_REQUEST);
                             } catch (Exception e) {

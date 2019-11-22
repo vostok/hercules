@@ -171,11 +171,11 @@ public class ReadTimelineHandler implements HttpHandler {
                                 from.get(),
                                 to.get());
 
-                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                        Encoder encoder = new Encoder(stream);
+                        ByteBuffer buffer = ByteBuffer.allocate(byteContent.sizeOf());
+                        Encoder encoder = new Encoder(buffer);
                         CONTENT_WRITER.write(encoder, byteContent);
-
-                        request.getResponse().send(ByteBuffer.wrap(stream.toByteArray()));
+                        buffer.flip();
+                        request.getResponse().send(buffer);
                     } catch (Exception e) {
                         LOGGER.error("Error on processing request", e);
                         request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);

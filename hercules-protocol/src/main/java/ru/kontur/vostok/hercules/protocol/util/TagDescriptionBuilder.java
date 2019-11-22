@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Vector;
 
@@ -121,6 +122,6 @@ public class TagDescriptionBuilder<T> {
                 }).apply(v.getValue());
             });
         }
-        return new TagDescription<>(tagName, extractors);
+        return new TagDescription<>(TinyString.of(tagName), extractors);
     }
 }

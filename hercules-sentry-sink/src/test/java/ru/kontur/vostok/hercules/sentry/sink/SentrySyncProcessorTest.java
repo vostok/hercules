@@ -3,15 +3,14 @@ package ru.kontur.vostok.hercules.sentry.sink;
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.dsn.InvalidDsnException;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
@@ -69,9 +68,9 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldReturnFalseWhenProcessEventWithoutLevelTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(CommonTags.PROJECT_TAG, Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.ENVIRONMENT_TAG, Variant.ofString(MY_ENVIRONMENT))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
+                        .tag(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))
                         .build()
                 ))
                 .build();
@@ -82,12 +81,12 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldReturnFalseWhenProcessEventWithLowValueOfLevelTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(CommonTags.PROJECT_TAG, Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.ENVIRONMENT_TAG, Variant.ofString(MY_ENVIRONMENT))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
+                        .tag(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))
                         .build()
                 ))
-                .tag(LogEventTags.LEVEL_TAG, Variant.ofString("debug"))
+                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("debug"))
                 .build();
         assertFalse(sentrySyncProcessor.process(event));
     }
@@ -95,7 +94,7 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldReturnFalseWhenProcessEventWithoutPropertiesTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(LogEventTags.LEVEL_TAG, Variant.ofString("Error"))
+                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
                 .build();
 
         assertFalse(sentrySyncProcessor.process(event));
@@ -104,11 +103,9 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldReturnFalseWhenProcessEventWithoutProjectTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(CommonTags.ENVIRONMENT_TAG, Variant.ofString(MY_ENVIRONMENT))
-                        .build()
-                ))
-                .tag(LogEventTags.LEVEL_TAG, Variant.ofString("Error"))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
+                        Container.of(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))))
+                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
                 .build();
 
         assertFalse(sentrySyncProcessor.process(event));
@@ -117,12 +114,12 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldReturnTrueWhenProcessEventWithoutSubprojectTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(CommonTags.PROJECT_TAG, Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.ENVIRONMENT_TAG, Variant.ofString(MY_ENVIRONMENT))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
+                        .tag(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))
                         .build()
                 ))
-                .tag(LogEventTags.LEVEL_TAG, Variant.ofString("Error"))
+                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
                 .build();
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_ORGANIZATION))
                 .thenReturn(Result.ok(sentryClientMock));
@@ -134,12 +131,12 @@ public class SentrySyncProcessorTest {
     @Test
     public void shouldSetSentryProjectBySubprojectTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(CommonTags.PROJECT_TAG, Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.SUBPROJECT_TAG, Variant.ofString(MY_PROJECT))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
+                        .tag(CommonTags.SUBPROJECT_TAG.getName(), Variant.ofString(MY_PROJECT))
                         .build()
                 ))
-                .tag(LogEventTags.LEVEL_TAG, Variant.ofString("Error"))
+                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
                 .build();
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
@@ -286,13 +283,13 @@ public class SentrySyncProcessorTest {
 
     private static Event createEvent() {
         return EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(CommonTags.PROJECT_TAG, Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.SUBPROJECT_TAG, Variant.ofString(MY_PROJECT))
-                        .tag(CommonTags.ENVIRONMENT_TAG, Variant.ofString(MY_ENVIRONMENT))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
+                        .tag(CommonTags.SUBPROJECT_TAG.getName(), Variant.ofString(MY_PROJECT))
+                        .tag(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))
                         .build()
                 ))
-                .tag(LogEventTags.LEVEL_TAG, Variant.ofString("Error"))
+                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
                 .build();
     }
 }

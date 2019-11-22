@@ -12,10 +12,10 @@ import java.util.Collections;
 public class VectorOfVectorsWriteReadTest {
     @Test
     public void shouldWriteReadContainerWithVectorOfVectors() {
-        Container container = new Container(
-                Collections.singletonMap(
+        Container container =
+                Container.of(
                         "vector",
-                        Variant.ofVector(Vector.ofVectors(Vector.ofIntegers(1, 2), Vector.ofIntegers(3, 4)))));
+                        Variant.ofVector(Vector.ofVectors(Vector.ofIntegers(1, 2), Vector.ofIntegers(3, 4))));
 
         WriteReadPipe<Container> pipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readAllTags());
 

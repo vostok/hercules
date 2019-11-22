@@ -8,10 +8,10 @@ import java.util.Collections;
 
 public class ContainerVectorWriteReadTest {
     @Test
-    public void shouldWriteReadContainerArray() throws Exception {
+    public void shouldWriteReadContainerArray() {
         Container[] containers = new Container[]{
-                new Container(Collections.singletonMap("fist", Variant.ofString("first"))),
-                new Container(Collections.singletonMap("second", Variant.ofString("second")))
+                Container.of("fist", Variant.ofString("first")),
+                Container.of("second", Variant.ofString("second"))
         };
 
         WriteReadPipe<Container[]> pipe = WriteReadPipe.init(new ContainerVectorWriter(), new ContainerVectorReader());

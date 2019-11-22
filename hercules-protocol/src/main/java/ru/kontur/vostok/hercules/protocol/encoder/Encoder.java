@@ -1,68 +1,53 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-
+/**
+ * Low-level protocol encoder.
+ * <p>
+ * Encoder uses {@link ByteBuffer} to encode the data.
+ * Thus, buffer should have enough free space to proceed encoding.
+ * <p>
+ * Encoder avoids memory allocations except for string encoding
+ * where {@link String#getBytes(Charset)} is used to obtain UTF-8 bytes of string.
+ *
+ * @author Gregory Koshelev
+ */
 public class Encoder {
+    private final ByteBuffer buffer;
 
-    private final DataOutputStream stream;
-
-    public Encoder(OutputStream stream) {
-        this.stream = new DataOutputStream(stream);
+    public Encoder(ByteBuffer buffer) {
+        this.buffer = buffer;
     }
 
     public void writeByte(byte b) {
-        try {
-            stream.writeByte(b);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.put(b);
     }
 
     public void writeUnsignedByte(int b) {
-        try {
-            stream.write((byte) b);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.put((byte) b);
     }
 
     public void writeShort(short s) {
-        try {
-            stream.writeShort(s);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.putShort(s);
     }
 
     public void writeUnsignedShort(int s) {
-        try {
-            stream.writeShort(s);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.putShort((short) s);
     }
 
     public void writeInteger(int i) {
-        try {
-            stream.writeInt(i);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.putInt(i);
     }
 
     public void writeLong(long l) {
-        try {
-            stream.writeLong(l);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.putLong(l);
     }
 
     public void writeFlag(boolean flag) {
@@ -70,19 +55,11 @@ public class Encoder {
     }
 
     public void writeFloat(float f) {
-        try {
-            stream.writeFloat(f);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.putFloat(f);
     }
 
     public void writeDouble(double d) {
-        try {
-            stream.writeDouble(d);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.putDouble(d);
     }
 
     public void writeString(String s) {
@@ -91,24 +68,17 @@ public class Encoder {
     }
 
     public void writeBytesAsString(byte[] bytes) {
-        try {
-            writeStringLength(bytes.length);
-            stream.write(bytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeStringLength(bytes.length);
+        writeRawBytes(bytes);
     }
 
     public void writeUuid(UUID uuid) {
-        try {
-            stream.writeLong(uuid.getMostSignificantBits());
-            stream.writeLong(uuid.getLeastSignificantBits());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeLong(uuid.getMostSignificantBits());
+        writeLong(uuid.getLeastSignificantBits());
     }
 
     public void writeNull() {
+        // Write null is no-op
     }
 
     public void writeType(Type type) {
@@ -116,12 +86,8 @@ public class Encoder {
     }
 
     public void writeByteVector(byte[] vector) {
-        try {
-            writeVectorLength(vector.length);
-            stream.write(vector);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeVectorLength(vector.length);
+        writeRawBytes(vector);
     }
 
     public void writeUnsignedByteVector(int[] vector) {
@@ -196,21 +162,23 @@ public class Encoder {
 
     public void writeNullVector(Object[] vector) {
         writeVectorLength(vector.length);
-        for(int i = 0; i < vector.length; i++) {
-            writeNull();
-        }
-    }
-
-    public void writeRawBytes(byte[] bytes) {
-        try {
-            stream.write(bytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        /* // Writing null is no-op
+           for (int i = 0; i < vector.length; i++) {
+               writeNull();
+           }
+        */
     }
 
     /* --- Utility methods --- */
 
+    public void writeRawBytes(byte[] bytes) {
+        buffer.put(bytes);
+    }
+
+    public void writeTinyString(TinyString ts) {
+        writeUnsignedByte(ts.size());
+        buffer.put(ts.getBytes());
+    }
     /**
      * Write tiny string, which has 1-byte length
      *
@@ -222,62 +190,7 @@ public class Encoder {
             throw new IllegalArgumentException("Length of tiny string should be less or equal 255 but got " + bytes.length);
         }
         writeUnsignedByte(bytes.length);
-        try {
-            stream.write(bytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void writeVarLen(int value) {
-        if (value < 0) {
-            throw new IllegalArgumentException("Cannot encode negative value: " + value);
-        }
-
-        try {
-            byte lsb1 = (byte) (value & 0x7F);
-            value = value >> 7;
-            if (value == 0) {
-                stream.write(lsb1);
-                return;
-            }
-
-            byte lsb2 = (byte) (value & 0x7F);
-            value = value >> 7;
-            if (value == 0) {
-                stream.write(lsb2 | 0x80);
-                stream.write(lsb1);
-                return;
-            }
-
-            byte lsb3 = (byte) (value & 0x7F);
-            value = value >> 7;
-            if (value == 0) {
-                stream.write(lsb3 | 0x80);
-                stream.write(lsb2 | 0x80);
-                stream.write(lsb1);
-                return;
-            }
-
-            byte lsb4 = (byte) (value & 0x7F);
-            value = value >> 7;
-            if (value == 0) {
-                stream.write(lsb4 | 0x80);
-                stream.write(lsb3 | 0x80);
-                stream.write(lsb2 | 0x80);
-                stream.write(lsb1);
-                return;
-            }
-
-            byte lsb5 = (byte) (value & 0x7F);
-            stream.write(lsb5 | 0x80);
-            stream.write(lsb4 | 0x80);
-            stream.write(lsb3 | 0x80);
-            stream.write(lsb2 | 0x80);
-            stream.write(lsb1);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        buffer.put(bytes);
     }
 
     public void writeVectorLength(int length) {

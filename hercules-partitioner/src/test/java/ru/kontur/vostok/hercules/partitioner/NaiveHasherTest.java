@@ -2,11 +2,11 @@ package ru.kontur.vostok.hercules.partitioner;
 
 import org.junit.Assert;
 import org.junit.Test;
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.UUID;
@@ -51,12 +51,13 @@ public class NaiveHasherTest {
         Event event = EventBuilder.create(System.currentTimeMillis(), UUID.randomUUID()).
                 tag(
                         "first",
-                        Variant.ofContainer(ContainerBuilder.create().tag(
+                        Variant.ofContainer(Container.of(
                                 "second",
-                                Variant.ofContainer(ContainerBuilder.create().
+                                Variant.ofContainer(Container.builder().
                                         tag("integer", Variant.ofInteger(42)).
                                         tag("string", Variant.ofString("a")).
-                                        build())).build())).build();
+                                        build())))).
+                build();
 
         Hasher hasher = new NaiveHasher();
 
@@ -68,9 +69,9 @@ public class NaiveHasherTest {
     @Test
     public void shouldHashOtherValuesAsZeros() {
         Event event = EventBuilder.create(TimeUtil.millisToTicks(System.currentTimeMillis()), UUID.randomUUID()).
-                tag("container", Variant.ofContainer(ContainerBuilder.create().build())).
+                tag("container", Variant.ofContainer(Container.empty())).
                 tag("null", Variant.ofNull()).
-                tag("vectorOfShorts", Variant.ofVector(Vector.ofShorts((short)1, (short) 2))).
+                tag("vectorOfShorts", Variant.ofVector(Vector.ofShorts((short) 1, (short) 2))).
                 tag("vectorOfIntegers", Variant.ofVector(Vector.ofIntegers(1, 2))).
                 tag("vectorOfLongs", Variant.ofVector(Vector.ofLongs(1, 2))).
                 tag("vectorOfFlags", Variant.ofVector(Vector.ofFlags(true, false))).
@@ -79,7 +80,7 @@ public class NaiveHasherTest {
                 tag("vectorOfStrings", Variant.ofVector(Vector.ofStrings("a", "b"))).
                 tag("vectorOfUuids", Variant.ofVector(Vector.ofUuids(UUID.randomUUID(), UUID.randomUUID()))).
                 tag("vectorOfNulls", Variant.ofVector(Vector.ofNulls(null, null))).
-                tag("vectorOfContainers", Variant.ofVector(Vector.ofContainers(ContainerBuilder.create().build(), ContainerBuilder.create().build()))).
+                tag("vectorOfContainers", Variant.ofVector(Vector.ofContainers(Container.empty(), Container.empty()))).
                 tag("vectorOfVectors", Variant.ofVector(Vector.ofVectors(Vector.ofBytes((byte) 0x01), Vector.ofBytes((byte) 0x02)))).
                 build();
 

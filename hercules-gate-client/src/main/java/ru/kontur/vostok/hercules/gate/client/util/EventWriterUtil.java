@@ -1,11 +1,13 @@
 package ru.kontur.vostok.hercules.gate.client.util;
 
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Sizes;
 import ru.kontur.vostok.hercules.protocol.encoder.ArrayWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * @author Daniil Zhenikhov
@@ -14,25 +16,25 @@ public class EventWriterUtil {
     private static final ArrayWriter<Event> ARRAY_WRITER = new ArrayWriter<>(new EventWriter());
 
     /**
-     * Convert array of events to byte array
+     * Encode event array to bytes
      *
-     * @param size initial capacity for output stream
-     * @param events array of events to convert
-     * @return bytes of events after converting
+     * @param size events size in bytes
+     * @param events events to encode
+     * @return events are encoded to bytes
      */
     public static byte[] toBytes(int size, Event[] events) {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream(size);
-        Encoder encoder = new Encoder(byteStream);
+        ByteBuffer buffer = ByteBuffer.allocate(size + Sizes.SIZE_OF_INTEGER);
+        Encoder encoder = new Encoder(buffer);
         ARRAY_WRITER.write(encoder, events);
 
-        return byteStream.toByteArray();
+        return buffer.array();
     }
 
     /**
-     * Convert array of events to byte array
+     * Encode event array to bytes
      *
-     * @param events array of events to convert
-     * @return bytes of events after converting
+     * @param events events to encode
+     * @return events are encoded to bytes
      */
     public static byte[] toBytes(Event[] events) {
         return toBytes(calculateSize(events), events);

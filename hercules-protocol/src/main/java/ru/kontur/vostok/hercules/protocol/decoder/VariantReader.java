@@ -16,7 +16,6 @@ public class VariantReader implements Reader<Variant> {
     private static final ContainerVectorReader CONTAINER_VECTOR_READER = ContainerVectorReader.INSTANCE;
 
     private static final ObjectReader[] TYPE_DECODERS = new ObjectReader[256];
-    private static final ObjectReader[] VECTOR_OF_TYPE_DECODERS = new ObjectReader[256];
     private static final ObjectSkipper[] TYPE_SKIPPERS = new ObjectSkipper[256];
     private static final ObjectSkipper[] VECTOR_OF_TYPE_SKIPPERS = new ObjectSkipper[256];
 
@@ -37,25 +36,6 @@ public class VariantReader implements Reader<Variant> {
         TYPE_DECODERS[Type.UUID.code] = Decoder::readUuid;
         TYPE_DECODERS[Type.NULL.code] = Decoder::readNull;
         TYPE_DECODERS[Type.VECTOR.code] = VariantReader::readVector;
-    }
-
-    static {
-        Arrays.setAll(VECTOR_OF_TYPE_DECODERS, idx -> decoder -> {
-            throw new IllegalArgumentException("Unknown type with code " + String.valueOf(idx));
-        });
-
-        VECTOR_OF_TYPE_DECODERS[Type.CONTAINER.code] = VariantReader::readContainerVector;
-        VECTOR_OF_TYPE_DECODERS[Type.BYTE.code] = Decoder::readByteVector;
-        VECTOR_OF_TYPE_DECODERS[Type.SHORT.code] = Decoder::readShortVector;
-        VECTOR_OF_TYPE_DECODERS[Type.INTEGER.code] = Decoder::readIntegerVector;
-        VECTOR_OF_TYPE_DECODERS[Type.LONG.code] = Decoder::readLongVector;
-        VECTOR_OF_TYPE_DECODERS[Type.FLAG.code] = Decoder::readFlagVector;
-        VECTOR_OF_TYPE_DECODERS[Type.FLOAT.code] = Decoder::readFloatVector;
-        VECTOR_OF_TYPE_DECODERS[Type.DOUBLE.code] = Decoder::readDoubleVector;
-        VECTOR_OF_TYPE_DECODERS[Type.STRING.code] = Decoder::readStringVectorAsBytes;
-        VECTOR_OF_TYPE_DECODERS[Type.UUID.code] = Decoder::readUuidVector;
-        VECTOR_OF_TYPE_DECODERS[Type.NULL.code] = Decoder::readNullVector;
-        VECTOR_OF_TYPE_DECODERS[Type.VECTOR.code] = VariantReader::readVectorVector;
     }
 
     static {
@@ -96,10 +76,6 @@ public class VariantReader implements Reader<Variant> {
         VECTOR_OF_TYPE_SKIPPERS[Type.VECTOR.code] = VariantReader::skipVectorVector;
     }
 
-    private static Type readType(Decoder decoder) {
-        return Type.valueOf(decoder.readByte());
-    }
-
     private static Object readValue(Decoder decoder, Type type) {
         return TYPE_DECODERS[type.code].apply(decoder);
     }
@@ -109,12 +85,38 @@ public class VariantReader implements Reader<Variant> {
     }
 
     private static Vector readVector(Decoder decoder) {
-        Type type = readType(decoder);
-        return new Vector(type, VECTOR_OF_TYPE_DECODERS[type.code].apply(decoder));
+        Type type = decoder.readType();
+        switch (type) {
+            case CONTAINER:
+                return Vector.ofContainers(VariantReader.readContainerVector(decoder));
+            case BYTE:
+                return Vector.ofBytes(decoder.readByteVector());
+            case SHORT:
+                return Vector.ofShorts(decoder.readShortVector());
+            case INTEGER:
+                return Vector.ofIntegers(decoder.readIntegerVector());
+            case LONG:
+                return Vector.ofLongs(decoder.readLongVector());
+            case FLAG:
+                return Vector.ofFlags(decoder.readFlagVector());
+            case FLOAT:
+                return Vector.ofFloats(decoder.readFloatVector());
+            case DOUBLE:
+                return Vector.ofDoubles(decoder.readDoubleVector());
+            case STRING:
+                return Vector.ofStringsAsBytes(decoder.readStringVectorAsBytes());
+            case UUID:
+                return Vector.ofUuids(decoder.readUuidVector());
+            case NULL:
+                return Vector.ofNulls(decoder.readNullVector());
+            case VECTOR:
+                return Vector.ofVectors(VariantReader.readVectorVector(decoder));
+        }
+        throw new IllegalArgumentException("Unknown type " + type);
     }
 
     private static int skipVector(Decoder decoder) {
-        Type type = readType(decoder);
+        Type type = decoder.readType();
         return SizeOf.TYPE + VECTOR_OF_TYPE_SKIPPERS[type.code].applyAsInt(decoder);
     }
 
@@ -142,7 +144,7 @@ public class VariantReader implements Reader<Variant> {
         return CONTAINER_READER.read(decoder);
     }
 
-    private static Object readContainerVector(Decoder decoder) {
+    private static Container[] readContainerVector(Decoder decoder) {
         return CONTAINER_VECTOR_READER.read(decoder);
     }
 
@@ -156,7 +158,7 @@ public class VariantReader implements Reader<Variant> {
 
     @Override
     public Variant read(Decoder decoder) {
-        Type type = readType(decoder);
+        Type type = decoder.readType();
         Object value = readValue(decoder, type);
         return new Variant(type, value);
     }
@@ -164,7 +166,7 @@ public class VariantReader implements Reader<Variant> {
     @Override
     public int skip(Decoder decoder) {
         int skipped = 0;
-        Type type = readType(decoder);
+        Type type = decoder.readType();
         skipped += SizeOf.BYTE;
         skipped += skipValue(decoder, type);
         return skipped;

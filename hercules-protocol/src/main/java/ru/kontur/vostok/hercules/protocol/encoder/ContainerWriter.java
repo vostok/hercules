@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.encoder;
 
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.Map;
@@ -13,8 +14,8 @@ public class ContainerWriter implements Writer<Container> {
 
     @Override
     public void write(Encoder encoder, Container value) {
-        encoder.writeContainerSize((short) value.size());
-        for (Map.Entry<String, Variant> entry : value) {
+        encoder.writeContainerSize((short) value.count());
+        for (Map.Entry<TinyString, Variant> entry : value.tags().entrySet()) {
             encoder.writeTinyString(entry.getKey());
             VARIANT_WRITER.write(encoder, entry.getValue());
         }

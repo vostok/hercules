@@ -12,7 +12,7 @@ import ru.kontur.vostok.hercules.protocol.TimelineContent;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
 import java.net.URI;
@@ -33,18 +33,19 @@ public class TimelineApiClientTest {
         CloseableHttpResponse responseMock = mock(CloseableHttpResponse.class);
         when(responseMock.getStatusLine()).thenReturn(TestUtil._200_OK);
 
-
-        when(responseMock.getEntity()).thenReturn(new ByteArrayEntity(TestUtil.toBytes(
-                new TimelineContent(
-                        new TimelineState(
-                                new TimelineSliceState[]{
-                                        new TimelineSliceState(0, 123456789, EventUtil.eventIdAsBytes(137_620_098_108_949_610L, UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")))
-                                }),
-                        new Event[]{
-                                EventBuilder.create(0,"05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1").build(),
-                                EventBuilder.create(0, "0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1").build()
+        TimelineContent original = new TimelineContent(
+                new TimelineState(
+                        new TimelineSliceState[]{
+                                new TimelineSliceState(0, 123456789, EventUtil.eventIdAsBytes(137_620_098_108_949_610L, UUID.fromString("05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1")))
                         }),
-                new TimelineContentWriter()
+                new Event[]{
+                        EventBuilder.create(0, "05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1").build(),
+                        EventBuilder.create(0, "0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1").build()
+                });
+        when(responseMock.getEntity()).thenReturn(new ByteArrayEntity(TestUtil.toBytes(
+                original,
+                new TimelineContentWriter(),
+                original.sizeOf()
         )));
 
         CloseableHttpClient clientMock = mock(CloseableHttpClient.class);

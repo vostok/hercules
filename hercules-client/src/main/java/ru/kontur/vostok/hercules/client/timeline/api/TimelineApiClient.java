@@ -30,6 +30,7 @@ import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -134,12 +135,12 @@ public class TimelineApiClient {
                 .addParameter(Parameters.RIGHT_TIME_BOUND, String.valueOf(timeInterval.getTo()))
                 .build());
 
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream(calculateReadStateSize(timelineState.getSliceCount()));
-        STATE_WRITER.write(new Encoder(bytes), timelineState);
+        ByteBuffer buffer = ByteBuffer.allocate(calculateReadStateSize(timelineState.getSliceCount()));
+        STATE_WRITER.write(new Encoder(buffer), timelineState);
 
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setHeader(CommonHeaders.API_KEY, apiKey);
-        httpPost.setEntity(new ByteArrayEntity(bytes.toByteArray()));
+        httpPost.setEntity(new ByteArrayEntity(buffer.array()));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             final Optional<HerculesClientException> exception = HerculesClientExceptionUtil.exceptionFromStatus(

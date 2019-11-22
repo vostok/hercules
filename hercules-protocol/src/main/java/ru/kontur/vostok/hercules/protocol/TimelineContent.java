@@ -17,4 +17,12 @@ public class TimelineContent {
     public Event[] getEvents() {
         return events;
     }
+
+    public int sizeOf() {
+        int size = readState.sizeOf() + Sizes.SIZE_OF_INTEGER;
+        for (Event event : events) {
+            size += event.getBytes().length;
+        }
+        return size;
+    }
 }

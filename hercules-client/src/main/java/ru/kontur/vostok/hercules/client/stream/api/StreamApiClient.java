@@ -29,6 +29,7 @@ import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -128,12 +129,12 @@ public class StreamApiClient {
                 .addParameter(CommonParameters.LOGICAL_SHARD_COUNT, String.valueOf(shardState.getShardCount()))
                 .build());
 
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream(calculateReadStateSize(streamReadState.getShardCount()));
-        STATE_WRITER.write(new Encoder(bytes), streamReadState);
+        ByteBuffer buffer = ByteBuffer.allocate(calculateReadStateSize(streamReadState.getShardCount()));
+        STATE_WRITER.write(new Encoder(buffer), streamReadState);
 
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setHeader(CommonHeaders.API_KEY, apiKey);
-        httpPost.setEntity(new ByteArrayEntity(bytes.toByteArray()));
+        httpPost.setEntity(new ByteArrayEntity(buffer.array()));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             final Optional<HerculesClientException> exception = HerculesClientExceptionUtil.exceptionFromStatus(

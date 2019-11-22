@@ -10,8 +10,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
@@ -33,23 +32,23 @@ public class SentryEventConverterTest {
     private static final SentryEventConverter SENTRY_EVENT_CONVERTER = new SentryEventConverter("0.0.0");
 
     private static Container createException() {
-        return ContainerBuilder.create()
-                .tag(ExceptionTags.TYPE_TAG, Variant.ofString("com.example.test.exceptions.ExceptionClass"))
-                .tag(ExceptionTags.MESSAGE_TAG, Variant.ofString("Some error of ExceptionClass happened"))
-                .tag(ExceptionTags.STACK_FRAMES, Variant.ofVector(Vector.ofContainers(
-                        ContainerBuilder.create()
-                                .tag(StackFrameTags.TYPE_TAG, Variant.ofString("com.example.test.SomeModule"))
-                                .tag(StackFrameTags.FUNCTION_TAG, Variant.ofString("function"))
-                                .tag(StackFrameTags.FILE_TAG, Variant.ofString("SomeModule.java"))
-                                .tag(StackFrameTags.LINE_NUMBER_TAG, Variant.ofInteger(100))
-                                .tag(StackFrameTags.COLUMN_NUMBER_TAG, Variant.ofShort((short) 12))
+        return Container.builder()
+                .tag(ExceptionTags.TYPE_TAG.getName(), Variant.ofString("com.example.test.exceptions.ExceptionClass"))
+                .tag(ExceptionTags.MESSAGE_TAG.getName(), Variant.ofString("Some error of ExceptionClass happened"))
+                .tag(ExceptionTags.STACK_FRAMES.getName(), Variant.ofVector(Vector.ofContainers(
+                        Container.builder()
+                                .tag(StackFrameTags.TYPE_TAG.getName(), Variant.ofString("com.example.test.SomeModule"))
+                                .tag(StackFrameTags.FUNCTION_TAG.getName(), Variant.ofString("function"))
+                                .tag(StackFrameTags.FILE_TAG.getName(), Variant.ofString("SomeModule.java"))
+                                .tag(StackFrameTags.LINE_NUMBER_TAG.getName(), Variant.ofInteger(100))
+                                .tag(StackFrameTags.COLUMN_NUMBER_TAG.getName(), Variant.ofShort((short) 12))
                                 .build(),
-                        ContainerBuilder.create()
-                                .tag(StackFrameTags.TYPE_TAG, Variant.ofString("com.example.test.AnotherModule"))
-                                .tag(StackFrameTags.FUNCTION_TAG, Variant.ofString("function"))
-                                .tag(StackFrameTags.FILE_TAG, Variant.ofString("AnotherModule.java"))
-                                .tag(StackFrameTags.LINE_NUMBER_TAG, Variant.ofInteger(200))
-                                .tag(StackFrameTags.COLUMN_NUMBER_TAG, Variant.ofShort((short) 13))
+                        Container.builder()
+                                .tag(StackFrameTags.TYPE_TAG.getName(), Variant.ofString("com.example.test.AnotherModule"))
+                                .tag(StackFrameTags.FUNCTION_TAG.getName(), Variant.ofString("function"))
+                                .tag(StackFrameTags.FILE_TAG.getName(), Variant.ofString("AnotherModule.java"))
+                                .tag(StackFrameTags.LINE_NUMBER_TAG.getName(), Variant.ofInteger(200))
+                                .tag(StackFrameTags.COLUMN_NUMBER_TAG.getName(), Variant.ofShort((short) 13))
                                 .build()
                 )))
                 .build();
@@ -60,7 +59,7 @@ public class SentryEventConverterTest {
         final String message = "This is message sample";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(LogEventTags.MESSAGE_TAG, Variant.ofString(message))
+                .tag(LogEventTags.MESSAGE_TAG.getName(), Variant.ofString(message))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -72,7 +71,7 @@ public class SentryEventConverterTest {
     public void shouldConvertEventWithExceptions() {
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
+                .tag(LogEventTags.EXCEPTION_TAG.getName(), Variant.ofContainer(createException()))
                 .build();
 
         Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -106,7 +105,7 @@ public class SentryEventConverterTest {
     public void shouldExtractPlatformValue() {
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
+                .tag(LogEventTags.EXCEPTION_TAG.getName(), Variant.ofContainer(createException()))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -118,10 +117,8 @@ public class SentryEventConverterTest {
     public void shouldSetPlatformIfPlatformTagAbsentInPropertiesTag() {
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .build()
-                ))
+                .tag(LogEventTags.EXCEPTION_TAG.getName(), Variant.ofContainer(createException()))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.empty()))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -139,12 +136,12 @@ public class SentryEventConverterTest {
         final String logger = "Log4j";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.TRACE_ID_TAG, Variant.ofString(transaction))
-                        .tag(SentryTags.RELEASE_TAG, Variant.ofString(release))
-                        .tag(SentryTags.FINGERPRINT_TAG, Variant.ofVector(Vector.ofStrings(fingerprintWord1, fingerprintWord2)))
-                        .tag(SentryTags.PLATFORM_TAG, Variant.ofString(platform))
-                        .tag(SentryTags.LOGGER_TAG, Variant.ofString(logger))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag(SentryTags.TRACE_ID_TAG.getName(), Variant.ofString(transaction))
+                        .tag(SentryTags.RELEASE_TAG.getName(), Variant.ofString(release))
+                        .tag(SentryTags.FINGERPRINT_TAG.getName(), Variant.ofVector(Vector.ofStrings(fingerprintWord1, fingerprintWord2)))
+                        .tag(SentryTags.PLATFORM_TAG.getName(), Variant.ofString(platform))
+                        .tag(SentryTags.LOGGER_TAG.getName(), Variant.ofString(logger))
                         .build()
                 ))
                 .build();
@@ -165,7 +162,7 @@ public class SentryEventConverterTest {
         final String messageTemplate = "My message template";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG, Variant.ofString(messageTemplate))
+                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG.getName(), Variant.ofString(messageTemplate))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -179,8 +176,8 @@ public class SentryEventConverterTest {
         final String messageTemplate = "My message template";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG, Variant.ofString(messageTemplate))
-                .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
+                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG.getName(), Variant.ofString(messageTemplate))
+                .tag(LogEventTags.EXCEPTION_TAG.getName(), Variant.ofContainer(createException()))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -194,11 +191,9 @@ public class SentryEventConverterTest {
         final String fingerprint = "my_label";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG, Variant.ofString(messageTemplate))
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.FINGERPRINT_TAG, Variant.ofVector(Vector.ofStrings(fingerprint)))
-                        .build()
-                ))
+                .tag(LogEventTags.MESSAGE_TEMPLATE_TAG.getName(), Variant.ofString(messageTemplate))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
+                        Container.of(SentryTags.FINGERPRINT_TAG.getName(), Variant.ofVector(Vector.ofStrings(fingerprint)))))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -212,11 +207,9 @@ public class SentryEventConverterTest {
         final String unknownPlatform = "pascal";
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(LogEventTags.EXCEPTION_TAG, Variant.ofContainer(createException()))
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.PLATFORM_TAG, Variant.ofString(unknownPlatform))
-                        .build()
-                ))
+                .tag(LogEventTags.EXCEPTION_TAG.getName(), Variant.ofContainer(createException()))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
+                        Container.of(SentryTags.PLATFORM_TAG.getName(), Variant.ofString(unknownPlatform))))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -236,7 +229,7 @@ public class SentryEventConverterTest {
 
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
                         .tag("user.id", Variant.ofString(id))
                         .tag("user.email", Variant.ofString(email))
                         .tag("user.username", Variant.ofString(username))
@@ -273,7 +266,7 @@ public class SentryEventConverterTest {
 
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
                         .tag("browser.name", Variant.ofString(name))
                         .tag("browser.version", Variant.ofString(version))
                         .tag("os.raw_description", Variant.ofString(rawDescription))
@@ -307,7 +300,7 @@ public class SentryEventConverterTest {
 
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
                         .tag("my_string_tag", Variant.ofString(stringValue))
                         .tag("my_long_tag", Variant.ofLong(longValue))
                         .tag("my_boolean_tag", Variant.ofFlag(booleanValue))
@@ -332,13 +325,9 @@ public class SentryEventConverterTest {
 
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag("my_extra", Variant.ofContainer(ContainerBuilder.create()
-                                .tag("my_string", Variant.ofString(stringValue))
-                                .build()
-                        ))
-                        .build()
-                ))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
+                        Container.of("my_extra", Variant.ofContainer(
+                                Container.of("my_string", Variant.ofString(stringValue))))))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -357,10 +346,8 @@ public class SentryEventConverterTest {
 
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag("my_extra", Variant.ofVector(Vector.ofStrings(stringValue1, stringValue2)))
-                        .build()
-                ))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
+                        Container.of("my_extra", Variant.ofVector(Vector.ofStrings(stringValue1, stringValue2)))))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
@@ -375,10 +362,8 @@ public class SentryEventConverterTest {
 
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(SentryTags.TRACE_ID_TAG, Variant.ofUuid(uuid))
-                        .build()
-                ))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
+                        Container.of(SentryTags.TRACE_ID_TAG.getName(), Variant.ofUuid(uuid))))
                 .build();
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);

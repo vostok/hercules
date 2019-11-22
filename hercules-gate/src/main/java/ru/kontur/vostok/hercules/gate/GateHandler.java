@@ -12,6 +12,7 @@ import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.util.Maps;
@@ -116,13 +117,13 @@ public class GateHandler implements HttpHandler {
             return;
         }
 
-        Set<String> tagsToValidate = authValidationManager.getTags(apiKey, stream);
+        Set<TinyString> tagsToValidate = authValidationManager.getTags(apiKey, stream);
 
         ShardingKey shardingKey = ShardingKey.fromKeyPaths(baseStream.getShardingKey());
         int partitions = baseStream.getPartitions();
         String topic = baseStream.getName();
 
-        Set<String> tags = new HashSet<>(Maps.effectiveHashMapCapacity(shardingKey.size() + tagsToValidate.size()));
+        Set<TinyString> tags = new HashSet<>(Maps.effectiveHashMapCapacity(shardingKey.size() + tagsToValidate.size()));
         Arrays.stream(shardingKey.getKeys()).map(HPath::getRootTag).forEach(tags::add);//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
         tags.addAll(tagsToValidate);
 

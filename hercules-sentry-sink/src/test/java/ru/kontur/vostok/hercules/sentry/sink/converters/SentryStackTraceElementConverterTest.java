@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.tags.StackFrameTags;
 
 public class SentryStackTraceElementConverterTest {
@@ -13,12 +12,12 @@ public class SentryStackTraceElementConverterTest {
     @Test
     public void shouldConvert() throws Exception {
 
-        final Container container = ContainerBuilder.create()
-                .tag(StackFrameTags.TYPE_TAG, Variant.ofString("test.module"))
-                .tag(StackFrameTags.FUNCTION_TAG, Variant.ofString("testFunction"))
-                .tag(StackFrameTags.FILE_TAG, Variant.ofString("SomeFile.java"))
-                .tag(StackFrameTags.LINE_NUMBER_TAG, Variant.ofInteger(123))
-                .tag(StackFrameTags.COLUMN_NUMBER_TAG, Variant.ofShort((short) 456))
+        final Container container = Container.builder()
+                .tag(StackFrameTags.TYPE_TAG.getName(), Variant.ofString("test.module"))
+                .tag(StackFrameTags.FUNCTION_TAG.getName(), Variant.ofString("testFunction"))
+                .tag(StackFrameTags.FILE_TAG.getName(), Variant.ofString("SomeFile.java"))
+                .tag(StackFrameTags.LINE_NUMBER_TAG.getName(), Variant.ofInteger(123))
+                .tag(StackFrameTags.COLUMN_NUMBER_TAG.getName(), Variant.ofShort((short) 456))
                 .build();
 
         final SentryStackTraceElement result = SentryStackTraceElementConverter.convert(container);

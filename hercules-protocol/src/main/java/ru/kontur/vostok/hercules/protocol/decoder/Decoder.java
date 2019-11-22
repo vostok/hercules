@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
+import ru.kontur.vostok.hercules.protocol.TinyString;
+import ru.kontur.vostok.hercules.protocol.Type;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -71,9 +74,7 @@ public class Decoder {
 
     public byte[] readStringAsBytes() {
         int length = readStringLength();
-        byte[] bytes = new byte[length];
-        buffer.get(bytes);
-        return bytes;
+        return readBytes(length);
     }
 
     public UUID readUuid() {
@@ -82,6 +83,10 @@ public class Decoder {
 
     public Object readNull() {
         return null;
+    }
+
+    public Type readType() {
+        return Type.valueOf(readByte());
     }
 
     public byte[] readByteVector() {
@@ -382,13 +387,11 @@ public class Decoder {
     /**
      * Read tiny string, which has 1-byte length
      *
-     * @return string
+     * @return tiny string
      */
-    public String readTinyString() {
+    public TinyString readTinyString() {
         int length = readUnsignedByte();
-        byte[] bytes = new byte[length];
-        buffer.get(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
+        return TinyString.of(readBytes(length));
     }
 
     public int skipTinyString() {

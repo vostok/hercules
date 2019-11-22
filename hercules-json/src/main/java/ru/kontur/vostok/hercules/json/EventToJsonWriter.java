@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
@@ -211,10 +212,8 @@ public final class EventToJsonWriter {
 
     public static void writeContainer(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartObject();
-        Iterator<Map.Entry<String, Variant>> iterator = ((Container) value).iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Variant> entry = iterator.next();
-            generator.writeFieldName(entry.getKey());
+        for (Map.Entry<TinyString, Variant> entry : ((Container)value).tags().entrySet()) {
+            generator.writeFieldName(entry.getKey().toString());
             writeVariantValue(generator, entry.getValue());
         }
         generator.writeEndObject();

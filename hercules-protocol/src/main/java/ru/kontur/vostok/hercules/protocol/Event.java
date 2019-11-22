@@ -6,7 +6,6 @@ import java.util.UUID;
  * @author Gregory Koshelev
  */
 public class Event {
-
     private final byte[] bytes;
     private final int version;
     private final long timestamp;

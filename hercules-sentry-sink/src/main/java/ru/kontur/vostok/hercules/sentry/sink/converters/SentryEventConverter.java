@@ -10,6 +10,7 @@ import io.sentry.event.interfaces.SentryStackTraceElement;
 import io.sentry.event.interfaces.UserInterface;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
@@ -41,7 +42,7 @@ import java.util.stream.Stream;
  * Convert Hercules event to Sentry event builder
  */
 public class SentryEventConverter {
-    private static final Set<String> STANDARD_PROPERTIES = Stream.of(
+    private static final Set<TinyString> STANDARD_PROPERTIES = Stream.of(
             CommonTags.ENVIRONMENT_TAG,
             SentryTags.RELEASE_TAG,
             SentryTags.TRACE_ID_TAG,
@@ -147,11 +148,12 @@ public class SentryEventConverter {
         Map<String, Object> otherUserDataMap = new HashMap<>();
         Map<String, Map<String, Object>> contexts = new HashMap<>();
 
-        for (Map.Entry<String, Variant> tag : properties) {
-            final String tagName = tag.getKey();
+        for (Map.Entry<TinyString, Variant> tag : properties.tags().entrySet()) {
+            final TinyString tinyString = tag.getKey();
+            final String tagName = tinyString.toString();
             final Variant value = tag.getValue();
 
-            if (STANDARD_PROPERTIES.contains(tagName)) {
+            if (STANDARD_PROPERTIES.contains(tinyString)) {
                 continue;
             }
 
@@ -246,8 +248,8 @@ public class SentryEventConverter {
                 return new String((byte[]) variant.getValue(), StandardCharsets.UTF_8);
             case CONTAINER:
                 Map<String, Object> map = new HashMap<>();
-                for (Map.Entry<String, Variant> entry : (Container) variant.getValue()) {
-                    map.put(entry.getKey(), extractObject(entry.getValue()));
+                for (Map.Entry<TinyString, Variant> entry : ((Container) variant.getValue()).tags().entrySet()) {
+                    map.put(entry.getKey().toString(), extractObject(entry.getValue()));
                 }
                 return map;
             case VECTOR:
