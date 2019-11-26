@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.protocol;
 
 public class StreamReadState {
-    private static int SIZE_OF_SHARD_STATE_COUNT = Sizes.SIZE_OF_INTEGER;
+    private static int SIZE_OF_SHARD_STATE_COUNT = Type.INTEGER.size;
 
     private final StreamShardReadState[] shardStates;
     private final int size;

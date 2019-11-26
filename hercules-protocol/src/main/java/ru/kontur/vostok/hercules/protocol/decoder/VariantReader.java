@@ -117,7 +117,7 @@ public class VariantReader implements Reader<Variant> {
 
     private static int skipVector(Decoder decoder) {
         Type type = decoder.readType();
-        return SizeOf.TYPE + VECTOR_OF_TYPE_SKIPPERS[type.code].applyAsInt(decoder);
+        return Type.TYPE.size + VECTOR_OF_TYPE_SKIPPERS[type.code].applyAsInt(decoder);
     }
 
     private static Vector[] readVectorVector(Decoder decoder) {
@@ -167,7 +167,7 @@ public class VariantReader implements Reader<Variant> {
     public int skip(Decoder decoder) {
         int skipped = 0;
         Type type = decoder.readType();
-        skipped += SizeOf.BYTE;
+        skipped += Type.BYTE.size;
         skipped += skipValue(decoder, type);
         return skipped;
     }

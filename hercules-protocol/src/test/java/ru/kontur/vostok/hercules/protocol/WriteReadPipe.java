@@ -5,7 +5,6 @@ import ru.kontur.vostok.hercules.protocol.decoder.Reader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.Writer;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
 

@@ -39,4 +39,8 @@ public class Event {
     public Container getPayload() {
         return payload;
     }
+
+    public int sizeOf() {
+        return bytes.length;
+    }
 }

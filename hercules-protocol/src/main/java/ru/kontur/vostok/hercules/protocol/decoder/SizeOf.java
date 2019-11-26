@@ -1,5 +1,9 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
+/**
+ * @deprecated Use {@link ru.kontur.vostok.hercules.protocol.Type#size} instead
+ */
+@Deprecated
 public final class SizeOf {
     public static final int BYTE = 1;
     public static final int SHORT = 2;

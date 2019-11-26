@@ -1,8 +1,8 @@
 package ru.kontur.vostok.hercules.protocol;
 
 public class StreamShardReadState {
-    private static final int SIZE_OF_PARTITION = Sizes.SIZE_OF_INTEGER;
-    private static final int SIZE_OF_OFFSET = Sizes.SIZE_OF_LONG;
+    private static final int SIZE_OF_PARTITION = Type.INTEGER.size;
+    private static final int SIZE_OF_OFFSET = Type.LONG.size;
 
     private final int partition;
     private final long offset;

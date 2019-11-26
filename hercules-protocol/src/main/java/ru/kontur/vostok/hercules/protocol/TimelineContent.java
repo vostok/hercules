@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol;
 
 public class TimelineContent {
+    private static final int SIZE_OF_EVENT_COUNT = Type.INTEGER.size;
 
     private final TimelineState readState;
     private final Event[] events;
@@ -19,7 +20,7 @@ public class TimelineContent {
     }
 
     public int sizeOf() {
-        int size = readState.sizeOf() + Sizes.SIZE_OF_INTEGER;
+        int size = readState.sizeOf() + SIZE_OF_EVENT_COUNT;
         for (Event event : events) {
             size += event.getBytes().length;
         }

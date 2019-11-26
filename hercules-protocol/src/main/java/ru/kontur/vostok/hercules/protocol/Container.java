@@ -12,6 +12,8 @@ import java.util.Map;
  * @author Gregory Koshelev
  */
 public class Container {
+    private static int SIZE_OF_TAG_COUNT = Type.BYTE.size * 2;
+
     private final Map<TinyString, Variant> tags;
     private final int size;
 
@@ -57,7 +59,7 @@ public class Container {
     public static Container of(TinyString tag, Variant value) {
         return new Container(
                 Collections.singletonMap(tag, value),
-                Sizes.sizeOfTagCount() + Sizes.sizeOfTinyString(tag) + Sizes.sizeOfVariant(value));
+                SIZE_OF_TAG_COUNT + tag.sizeOf() + value.sizeOf());
     }
 
     public static Container of(String tag, Variant value) {
@@ -65,16 +67,16 @@ public class Container {
     }
 
     public static Container of(Map<TinyString, Variant> tags) {
-        int size = Sizes.sizeOfTagCount();
+        int size = SIZE_OF_TAG_COUNT;
         for (Map.Entry<TinyString, Variant> tag : tags.entrySet()) {
-            size += Sizes.sizeOfTinyString(tag.getKey());
-            size += Sizes.sizeOfVariant(tag.getValue());
+            size += tag.getKey().sizeOf();
+            size += tag.getValue().sizeOf();
         }
         return new Container(tags, size);
     }
 
     public static Container empty() {
-        return new Container(Collections.emptyMap(), Sizes.sizeOfTagCount());
+        return new Container(Collections.emptyMap(), SIZE_OF_TAG_COUNT);
     }
 
     public static ContainerBuilder builder() {
@@ -83,7 +85,7 @@ public class Container {
 
     public static class ContainerBuilder {
         private final Map<TinyString, Variant> tags = new LinkedHashMap<>();
-        private int size = Sizes.sizeOfTagCount();
+        private int size = SIZE_OF_TAG_COUNT;
 
         private ContainerBuilder() {
 
@@ -95,8 +97,8 @@ public class Container {
 
         public ContainerBuilder tag(TinyString key, Variant value) {
             tags.put(key, value);
-            size += Sizes.sizeOfTinyString(key);
-            size += Sizes.sizeOfVariant(value);
+            size += key.sizeOf();
+            size += value.sizeOf();
 
             return this;
         }

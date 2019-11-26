@@ -8,12 +8,13 @@ import java.util.UUID;
 
 /**
  * Event builder.
+ * TODO: Should be moved to Event
  *
  * @author Gregory Koshelev
  */
 public class EventBuilder {
-    private static final int SIZE_OF_VERSION = 1;
-    private static final int SIZE_OF_TIMESTAMP = 8;
+    private static final int SIZE_OF_VERSION = Type.BYTE.size;
+    private static final int SIZE_OF_TIMESTAMP = Type.LONG.size;
 
     private static final ContainerWriter CONTAINER_WRITER = new ContainerWriter();
 
@@ -53,7 +54,7 @@ public class EventBuilder {
     public Event build() {
         Container container = containerBuilder.build();
 
-        ByteBuffer buffer = ByteBuffer.allocate(Sizes.sizeOfVersion() + Sizes.sizeOfTimestamp() + Sizes.SIZE_OF_UUID + container.sizeOf());
+        ByteBuffer buffer = ByteBuffer.allocate(computeEventSize(container));
         Encoder encoder = new Encoder(buffer);
 
         encoder.writeUnsignedByte(version);
@@ -79,5 +80,15 @@ public class EventBuilder {
         return new EventBuilder()
                 .timestamp(timestamp)
                 .uuid(UUID.fromString(uuidString));
+    }
+
+    /**
+     * Compute event size with a payload.
+     *
+     * @param payload a payload
+     * @return event size in bytes
+     */
+    private static int computeEventSize(Container payload) {
+        return SIZE_OF_VERSION + SIZE_OF_TIMESTAMP + Type.UUID.size + payload.sizeOf();
     }
 }

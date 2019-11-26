@@ -230,38 +230,31 @@ public class Decoder {
     /* Skip methods */
 
     public int skipByte() {
-        skip(SizeOf.BYTE);
-        return SizeOf.BYTE;
+        return skip(Type.BYTE.size);
     }
 
     public int skipShort() {
-        skip(SizeOf.SHORT);
-        return SizeOf.SHORT;
+        return skip(Type.SHORT.size);
     }
 
     public int skipInteger() {
-        skip(SizeOf.INTEGER);
-        return SizeOf.INTEGER;
+        return skip(Type.INTEGER.size);
     }
 
     public int skipLong() {
-        skip(SizeOf.LONG);
-        return SizeOf.LONG;
+        return skip(Type.LONG.size);
     }
 
     public int skipFlag() {
-        skip(SizeOf.FLAG);
-        return SizeOf.FLAG;
+        return skip(Type.FLAG.size);
     }
 
     public int skipFloat() {
-        skip(SizeOf.FLOAT);
-        return SizeOf.FLOAT;
+        return skip(Type.FLOAT.size);
     }
 
     public int skipDouble() {
-        skip(SizeOf.DOUBLE);
-        return SizeOf.DOUBLE;
+        return skip(Type.DOUBLE.size);
     }
 
     public int skipString() {
@@ -274,19 +267,18 @@ public class Decoder {
     }
 
     public int skipUuid() {
-        skip(SizeOf.UUID);
-        return SizeOf.UUID;
+        return skip(Type.UUID.size);
     }
 
     public int skipNull() {
-        return 0;
+        return Type.NULL.size;
     }
 
     public int skipByteVector() {
         int position = position();
 
         int length = readVectorLength();
-        int bytesToSkip = length * SizeOf.BYTE;
+        int bytesToSkip = length * Type.BYTE.size;
         skip(bytesToSkip);
 
         return position() - position;
@@ -296,7 +288,7 @@ public class Decoder {
         int position = position();
 
         int length = readVectorLength();
-        int bytesToSkip = length * SizeOf.SHORT;
+        int bytesToSkip = length * Type.SHORT.size;
         skip(bytesToSkip);
 
         return position() - position;
@@ -306,7 +298,7 @@ public class Decoder {
         int position = position();
 
         int length = readVectorLength();
-        int bytesToSkip = length * SizeOf.INTEGER;
+        int bytesToSkip = length * Type.INTEGER.size;
         skip(bytesToSkip);
 
         return position() - position;
@@ -316,7 +308,7 @@ public class Decoder {
         int position = position();
 
         int length = readVectorLength();
-        int bytesToSkip = length * SizeOf.LONG;
+        int bytesToSkip = length * Type.LONG.size;
         skip(bytesToSkip);
 
         return position() - position;
@@ -326,7 +318,7 @@ public class Decoder {
         int position = position();
 
         int length = readVectorLength();
-        int bytesToSkip = length * SizeOf.FLAG;
+        int bytesToSkip = length * Type.FLAG.size;
         skip(bytesToSkip);
 
         return position() - position;
@@ -336,7 +328,7 @@ public class Decoder {
         int position = position();
 
         int length = readVectorLength();
-        int bytesToSkip = length * SizeOf.FLOAT;
+        int bytesToSkip = length * Type.FLOAT.size;
         skip(bytesToSkip);
 
         return position() - position;
@@ -346,7 +338,7 @@ public class Decoder {
         int position = position();
 
         int length = readVectorLength();
-        int bytesToSkip = length * SizeOf.DOUBLE;
+        int bytesToSkip = length * Type.DOUBLE.size;
         skip(bytesToSkip);
 
         return position() - position;
@@ -397,7 +389,7 @@ public class Decoder {
     public int skipTinyString() {
         int length = readUnsignedByte();
         skip(length);
-        return length + SizeOf.BYTE;
+        return length + Type.BYTE.size;
     }
 
     public int readVectorLength() {
@@ -416,8 +408,9 @@ public class Decoder {
         return buffer.position();
     }
 
-    public void skip(int bytesToSkip) {
+    public int skip(int bytesToSkip) {
         buffer.position(buffer.position() + bytesToSkip);
+        return bytesToSkip;
     }
 
     /**

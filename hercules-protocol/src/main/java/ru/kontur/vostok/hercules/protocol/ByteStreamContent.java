@@ -4,7 +4,7 @@ package ru.kontur.vostok.hercules.protocol;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 
 public class ByteStreamContent {
-    private static final int SIZE_OF_EVENT_COUNT = Sizes.SIZE_OF_INTEGER;
+    private static final int SIZE_OF_EVENT_COUNT = Type.INTEGER.size;
 
     private final StreamReadState state;
     private final int eventCount;

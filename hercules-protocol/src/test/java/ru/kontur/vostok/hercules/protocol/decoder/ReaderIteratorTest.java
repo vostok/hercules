@@ -5,7 +5,6 @@ import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataExceptio
 import ru.kontur.vostok.hercules.protocol.encoder.ArrayWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;

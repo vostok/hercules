@@ -176,7 +176,7 @@ public class Encoder {
     }
 
     public void writeTinyString(TinyString ts) {
-        writeUnsignedByte(ts.size());
+        writeUnsignedByte(ts.length());
         buffer.put(ts.getBytes());
     }
     /**

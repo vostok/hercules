@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.decoder;
 
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.Type;
 
 /**
  * Hercules Protocol Reader for reading array of containers
@@ -45,6 +46,6 @@ public class ContainerArrayReader implements Reader<Container[]> {
             skipped += CONTAINER_READER.skip(decoder);
         }
 
-        return skipped + SizeOf.INTEGER;
+        return skipped + Type.INTEGER.size;
     }
 }

@@ -9,7 +9,6 @@ import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineContentWriter;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 

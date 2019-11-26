@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
  * @author Gregory Koshelev
  */
 public class TinyString {
+    private static final int SIZE_OF_TINY_STRING_LENGTH = Type.BYTE.size;
+
     private static final TinyString EMPTY = new TinyString(new byte[0]);
 
     private final byte[] bytes;
@@ -15,12 +17,16 @@ public class TinyString {
         this.bytes = bytes;
     }
 
-    public int size() {
+    public int length() {
         return bytes.length;
     }
 
     public byte[] getBytes() {
         return bytes;
+    }
+
+    public int sizeOf() {
+        return SIZE_OF_TINY_STRING_LENGTH + length();
     }
 
     @Override
