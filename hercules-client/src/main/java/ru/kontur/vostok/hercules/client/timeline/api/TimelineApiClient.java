@@ -19,9 +19,9 @@ import ru.kontur.vostok.hercules.client.exceptions.NotFoundException;
 import ru.kontur.vostok.hercules.client.exceptions.UnauthorizedException;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
-import ru.kontur.vostok.hercules.protocol.decoder.SizeOf;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineStateWriter;
@@ -204,7 +204,7 @@ public class TimelineApiClient {
      * @return read state size in bytes
      */
     private static int calculateReadStateSize(int shardCount) {
-        return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG + (SizeOf.LONG + SizeOf.UUID));
+        return Type.INTEGER.size + shardCount * (Type.INTEGER.size + Type.LONG.size + (Type.LONG.size + Type.UUID.size));//FIXME: Should be unified (sizeOf)
     }
 
     private static class Resources {

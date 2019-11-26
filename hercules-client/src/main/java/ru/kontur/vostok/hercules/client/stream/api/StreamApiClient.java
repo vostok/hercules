@@ -19,9 +19,9 @@ import ru.kontur.vostok.hercules.client.exceptions.NotFoundException;
 import ru.kontur.vostok.hercules.client.exceptions.UnauthorizedException;
 import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventStreamContentReader;
-import ru.kontur.vostok.hercules.protocol.decoder.SizeOf;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
@@ -191,7 +191,7 @@ public class StreamApiClient {
      * @return read state size in bytes
      */
     private static int calculateReadStateSize(int shardCount) {
-        return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG);
+        return Type.INTEGER.size + shardCount * (Type.INTEGER.size + Type.LONG.size);//FIXME: Should be unified (sizeOf)
     }
 
     private static class Resources {
