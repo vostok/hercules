@@ -5,10 +5,10 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -57,11 +57,11 @@ public class LeproserySenderTest {
         return EventBuilder.create()
                 .version(1)
                 .timestamp(TimeUtil.dateTimeToUnixTicks(ZonedDateTime.parse("2019-10-25T08:55:21.839000000Z")))
-                .random(UuidGenerator.getClientInstance().next())
-                .tag(LogEventTags.MESSAGE_TAG, Variant.ofString("Test event"))
-                .tag(LogEventTags.LEVEL_TAG, Variant.ofString("info"))
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(CommonTags.PROJECT_TAG, Variant.ofString("my-project"))
+                .uuid(UuidGenerator.getClientInstance().next())
+                .tag(LogEventTags.MESSAGE_TAG.getName(), Variant.ofString("Test event"))
+                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("info"))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString("my-project"))
                         .tag("my_tag", Variant.ofString("My value"))
                         .build()))
                 .build();
@@ -70,6 +70,6 @@ public class LeproserySenderTest {
     private String getValueFromProperties(Event event, String tag) {
         final Optional<Container> propertiesContainer = ContainerUtil.
                 extract(event.getPayload(), CommonTags.PROPERTIES_TAG);
-        return new String((byte[]) propertiesContainer.get().get(tag).getValue());
+        return new String((byte[]) propertiesContainer.get().get(TinyString.of(tag)).getValue());//FIXME: Refactoring is needed
     }
 }

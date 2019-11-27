@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.hpath;
 
 import org.junit.Assert;
 import org.junit.Test;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 
 /**
  * @author Gregory Koshelev
@@ -11,7 +12,7 @@ public class HPathTest {
     public void builderTest() {
         HPath hPath = HPath.fromPath("root/next/last");
 
-        Assert.assertEquals("root", hPath.getRootTag());
+        Assert.assertEquals(TinyString.of("root"), hPath.getRootTag());
 
         Assert.assertEquals("root/next/last", HPath.fromTags("root", "next", "last").getPath());
     }
@@ -22,11 +23,11 @@ public class HPathTest {
         HPath.TagIterator iterator = hPath.it();
 
         Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("root", iterator.next());
+        Assert.assertEquals(TinyString.of("root"), iterator.next());
         Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("next", iterator.next());
+        Assert.assertEquals(TinyString.of("next"), iterator.next());
         Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("last", iterator.next());
+        Assert.assertEquals(TinyString.of("last"), iterator.next());
         Assert.assertFalse(iterator.hasNext());
     }
 }

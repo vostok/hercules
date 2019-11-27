@@ -1,10 +1,10 @@
 package ru.kontur.vostok.hercules.elastic.sink;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -21,10 +21,7 @@ public class IndexToElasticJsonWriterTest {
     @Test
     public void shouldWriteIndexIfEventHasIndexTag() throws Exception {
         final Event event = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000") //TODO: fix me!
-                .tag("properties", Variant.ofContainer(ContainerBuilder.create()
-                        .tag("elk-index", Variant.ofString("just-some-index-value"))
-                        .build()
-                )).build();
+                .tag("properties", Variant.ofContainer(Container.of("elk-index", Variant.ofString("just-some-index-value")))).build();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         eventProcess(stream, event);
@@ -43,7 +40,7 @@ public class IndexToElasticJsonWriterTest {
     @Test
     public void shouldWriteIndexIfEventHasProjectAndEnvTags() throws Exception {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
-                .tag("properties", Variant.ofContainer(ContainerBuilder.create()
+                .tag("properties", Variant.ofContainer(Container.builder()
                         .tag("project", Variant.ofString("awesome-project"))
                         .tag("environment", Variant.ofString("production"))
                         .build()
@@ -68,9 +65,9 @@ public class IndexToElasticJsonWriterTest {
     @Test
     public void shouldUseSubprojectForIndexName() throws Exception {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
-                .tag("properties", Variant.ofContainer(ContainerBuilder.create()
+                .tag("properties", Variant.ofContainer(Container.builder()
                         .tag("project", Variant.ofString("awesome-project"))
-                        .tag(CommonTags.SUBPROJECT_TAG, Variant.ofString("subproject"))
+                        .tag(CommonTags.SUBPROJECT_TAG.getName(), Variant.ofString("subproject"))
                         .tag("environment", Variant.ofString("production"))
                         .build()
                 ))
@@ -102,9 +99,9 @@ public class IndexToElasticJsonWriterTest {
     @Test
     public void shouldReplaceSpaceWithUnderscoreInProjectForIndexName() throws IOException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, "00000000-0000-1000-994f-8fcf383f0000")
-                .tag("properties", Variant.ofContainer(ContainerBuilder.create()
+                .tag("properties", Variant.ofContainer(Container.builder()
                         .tag("project", Variant.ofString("awesome project"))
-                        .tag(CommonTags.SUBPROJECT_TAG, Variant.ofString("subproject"))
+                        .tag(CommonTags.SUBPROJECT_TAG.getName(), Variant.ofString("subproject"))
                         .tag("environment", Variant.ofString("production"))
                         .build()
                 ))

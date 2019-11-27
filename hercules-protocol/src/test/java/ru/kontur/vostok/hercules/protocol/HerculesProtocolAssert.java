@@ -127,7 +127,7 @@ public class HerculesProtocolAssert {
             Assert.assertEquals(expected.getUuid(), actual.getUuid());
         }
 
-        assertTagsEquals(expected.getPayload(), actual.getPayload());
+        assertEquals(expected.getPayload(), actual.getPayload());
         if (checkBytes) {
             Assert.assertArrayEquals(expected.getBytes(), actual.getBytes());
         }
@@ -139,7 +139,7 @@ public class HerculesProtocolAssert {
     }
 
     public static void assertEquals(Container expected, Container actual) {
-        assertTagsEquals(expected, actual);
+        assertMapsEquals(expected.tags(), actual.tags());
     }
 
     public static void assertVectorEquals(Vector expected, Vector actual) {
@@ -152,26 +152,19 @@ public class HerculesProtocolAssert {
 
     }
 
-    private static void assertTagsEquals
-            (Iterable<Map.Entry<String, Variant>> expected, Iterable<Map.Entry<String, Variant>> actual) {
-        Map<String, Variant> expectedMap = StreamSupport.stream(expected.spliterator(), false)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        Map<String, Variant> actualMap = StreamSupport.stream(actual.spliterator(), false)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        Set<String> checked = new HashSet<>();
-        for (Map.Entry<String, Variant> entry : expectedMap.entrySet()) {
-            String tagName = entry.getKey();
-            Variant value = actualMap.get(entry.getKey());
+    private static void assertMapsEquals(Map<TinyString, Variant> expected, Map<TinyString, Variant> actual) {
+        Set<TinyString> checked = new HashSet<>();
+        for (Map.Entry<TinyString, Variant> entry : expected.entrySet()) {
+            TinyString tagName = entry.getKey();
+            Variant value = actual.get(entry.getKey());
             if (Objects.isNull(value)) {
                 Assert.fail("Missing tag " + tagName);
             }
             assertEquals(entry.getValue(), value);
             checked.add(tagName);
         }
-        for (Map.Entry<String, Variant> entry : actual) {
-            String tagName = entry.getKey();
+        for (Map.Entry<TinyString, Variant> entry : actual.entrySet()) {
+            TinyString tagName = entry.getKey();
             if (!checked.contains(tagName)) {
                 Assert.fail("Extra tag " + tagName);
             }

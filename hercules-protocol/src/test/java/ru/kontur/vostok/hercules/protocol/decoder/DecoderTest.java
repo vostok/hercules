@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
@@ -33,7 +34,7 @@ public class DecoderTest {
         URL resource = getClass().getClassLoader().getResource("v1.event.1.txt");
         Path path = Paths.get(resource.toURI());
         byte[] data = Files.readAllBytes(path);
-        Set<String> tags = new HashSet<>(Arrays.asList("host", "timestamp"));
+        Set<TinyString> tags = new HashSet<>(Arrays.asList(TinyString.of("host"), TinyString.of("timestamp")));
 
         ReaderIterator<Event> reader = new ReaderIterator<>(new Decoder(data), EventReader.readTags(tags));
         assertEquals(1, reader.getTotal());
@@ -47,11 +48,11 @@ public class DecoderTest {
         assertEquals(15_276_799_200_000_000L, event.getTimestamp());
         assertEquals(UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000"), event.getUuid());
 
-        assertEquals(2, event.getPayload().size());
-        assertNotNull(event.getPayload().get("host"));
-        assertNotNull(event.getPayload().get("timestamp"));
+        assertEquals(2, event.getPayload().count());
+        assertNotNull(event.getPayload().get(TinyString.of("host")));
+        assertNotNull(event.getPayload().get(TinyString.of("timestamp")));
 
-        Variant hostTagValue = event.getPayload().get("host");
+        Variant hostTagValue = event.getPayload().get(TinyString.of("host"));
         assertNotNull(hostTagValue);
         assertEquals(Type.STRING, hostTagValue.getType());
         Object host = hostTagValue.getValue();
@@ -61,7 +62,7 @@ public class DecoderTest {
         assertEquals(9, hostAsBytes.length);
         assertArrayEquals("localhost".getBytes(StandardCharsets.UTF_8), hostAsBytes);
 
-        Variant timestampTagValue = event.getPayload().get("timestamp");
+        Variant timestampTagValue = event.getPayload().get(TinyString.of("timestamp"));
         assertNotNull(timestampTagValue);
         assertEquals(Type.LONG, timestampTagValue.getType());
         Object timestamp = timestampTagValue.getValue();

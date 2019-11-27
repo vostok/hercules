@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.hpath;
 
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
@@ -13,9 +14,9 @@ import java.util.NoSuchElementException;
 public class HPath {
     private final String path;
 
-    private final String[] tags;
+    private final TinyString[] tags;
 
-    private HPath(String path, String[] tags) {
+    private HPath(String path, TinyString[] tags) {
         this.path = path;
         this.tags = tags;
     }
@@ -29,7 +30,7 @@ public class HPath {
         Container current = container;
 
         for (int i = 0; i < size - 1; i++) {
-            String tag = tags[i];
+            TinyString tag = tags[i];
             Variant tagValue = current.get(tag);
             if (tagValue == null || tagValue.getType() != Type.CONTAINER) {
                 return null;
@@ -40,7 +41,7 @@ public class HPath {
         return current.get(tags[size - 1]);
     }
 
-    public String getRootTag() {
+    public TinyString getRootTag() {
         return (tags.length > 0) ? tags[0] : null;
     }
 
@@ -63,8 +64,12 @@ public class HPath {
         return new TagIterator();
     }
 
-    private static String[] pathToTags(String path) {
-        return (path != null) ? path.split("/") : new String[0];
+    private static TinyString[] pathToTags(String path) {
+        if (path == null) {
+            return new TinyString[0];
+        }
+
+        return TinyString.toTinyStrings(path.split("/"));
     }
 
     private static String tagsToPath(String... tags) {
@@ -72,11 +77,11 @@ public class HPath {
     }
 
     public static HPath fromTag(String tag) {
-        return new HPath(tag, new String[]{tag});
+        return new HPath(tag, new TinyString[]{TinyString.of(tag)});
     }
 
     public static HPath fromTags(String... tags) {
-        return new HPath(tagsToPath(tags), tags);
+        return new HPath(tagsToPath(tags), TinyString.toTinyStrings(tags));
     }
 
     public static HPath fromPath(String path) {
@@ -88,7 +93,7 @@ public class HPath {
      * <p>
      * It is not thread-safe.
      */
-    public class TagIterator implements Iterator<String> {
+    public class TagIterator implements Iterator<TinyString> {
         private int cursor = 0;
 
         @Override
@@ -97,7 +102,7 @@ public class HPath {
         }
 
         @Override
-        public String next() {
+        public TinyString next() {
             int i = cursor;
             if (i >= tags.length) {
                 throw new NoSuchElementException();

@@ -1,11 +1,12 @@
 package ru.kontur.vostok.hercules.protocol;
 
 
+import org.junit.Before;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
-import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -16,110 +17,117 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class EncoderDecoderTest {
+    private ByteBuffer buffer = ByteBuffer.allocate(1024);
+
+    @Before
+    public void before() {
+        buffer.clear();
+    }
 
     @Test
     public void shouldEncodeDecodeByte() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeByte((byte) 0xDE);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals((byte) 0xDE, decoder.readByte());
     }
 
     @Test
     public void shouldEncodeUnsignedByte() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeUnsignedByte(0xDF);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals(0xDF, decoder.readUnsignedByte());
     }
 
     @Test
     public void shouldEncodeDecodeShort() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeShort((short) 10_000);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals((short) 10_000, decoder.readShort());
     }
 
     @Test
     public void shouldEncodeDecodeInt() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeInteger(0xDEADBEEF);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals(0xDEADBEEF, decoder.readInteger());
     }
 
     @Test
     public void shouldEncodeDecodeLong() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeLong(0xDEADDEADBEEFBEEFL);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals(0xDEADDEADBEEFBEEFL, decoder.readLong());
     }
 
     @Test
     public void shouldEncodeDecodeFloat() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeFloat(123.456f);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals(123.456f, decoder.readFloat(), 0);
     }
 
     @Test
     public void shouldEncodeDecodeDouble() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeDouble(0.123456789);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals(0.123456789, decoder.readDouble(), 0);
     }
 
     @Test
     public void shouldEncodeDecodeFlag() {
-        ByteArrayOutputStream trueStream = new ByteArrayOutputStream();
-        Encoder trueEncoder = new Encoder(trueStream);
+        Encoder trueEncoder = new Encoder(buffer);
         trueEncoder.writeFlag(true);
 
-        ByteArrayOutputStream falseStream = new ByteArrayOutputStream();
-        Encoder falseEncore = new Encoder(falseStream);
-        falseEncore.writeFlag(false);
-
-        Decoder trueDecoder = new Decoder(trueStream.toByteArray());
-        Decoder falseDecoder = new Decoder(falseStream.toByteArray());
-
+        buffer.flip();
+        Decoder trueDecoder = new Decoder(buffer);
         assertTrue(trueDecoder.readFlag());
+
+        buffer.clear();//TODO: Better split the test into two tests
+        Encoder falseEncoder = new Encoder(buffer);
+        falseEncoder.writeFlag(false);
+
+        buffer.flip();
+        Decoder falseDecoder = new Decoder(buffer);
         assertFalse(falseDecoder.readFlag());
     }
 
     @Test
     public void shouldEncodeDecodeString() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeString(
                 "A sample string with UTF: АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧЩЪЫЬЭЮЯабвгдеёжхийклмнопрстуфхцчшщъыьэюя"
         );
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals(
                 "A sample string with UTF: АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧЩЪЫЬЭЮЯабвгдеёжхийклмнопрстуфхцчшщъыьэюя",
@@ -131,123 +139,124 @@ public class EncoderDecoderTest {
     public void shouldEncodeDecodeUuid() {
         UUID uuid = UUID.fromString("11203800-63FD-11E8-83E2-3A587D902000");
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeUuid(uuid);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertEquals(uuid.toString(), decoder.readUuid().toString());
     }
 
     @Test
     public void shouldEncodeDecodeNull() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeNull();
 
-        assertEquals(0, stream.size());
+        assertEquals(0, buffer.position());
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertNull(decoder.readNull());
+        assertEquals(0, buffer.position());
     }
 
     @Test
     public void shouldEncodeDecodeByteVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeByteVector(new byte[]{(byte) 1, (byte) 2, (byte) 3});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(new byte[]{(byte) 1, (byte) 2, (byte) 3}, decoder.readByteVector());
     }
 
     @Test
     public void shouldEncodeDecodeUnsignedByteVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeUnsignedByteVector(new int[]{0, 100, 200});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(new int[]{0, 100, 200}, decoder.readUnsignedByteVector());
     }
 
     @Test
     public void shouldEncodeDecodeShortVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeShortVector(new short[]{100, 10_000, 20_000});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(new short[]{100, 10_000, 20_000}, decoder.readShortVector());
     }
 
     @Test
     public void shouldEncodeDecodeIntegerVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeIntegerVector(new int[]{1_000, 10_000, 100_000});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(new int[]{1_000, 10_000, 100_000}, decoder.readIntegerVector());
     }
 
     @Test
     public void shouldEncodeDecodeLongVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeLongVector(new long[]{1_000, 10_000, 100_000});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(new long[]{1_000, 10_000, 100_000}, decoder.readLongVector());
     }
 
     @Test
     public void shouldEncodeDecodeFlagVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeFlagVector(new boolean[]{true, true, false});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(new boolean[]{true, true, false}, decoder.readFlagVector());
     }
 
     @Test
     public void shouldEncodeDecodeFloatVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeFloatVector(new float[]{1.23f, 4.56f, 7.89f});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(new float[]{1.23f, 4.56f, 7.89f}, decoder.readFloatVector(), 0);
     }
 
     @Test
     public void shouldEncodeDecodeDoubleVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeDoubleVector(new double[]{1.23, 4.56, 7.89});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(new double[]{1.23, 4.56, 7.89}, decoder.readDoubleVector(), 0);
     }
 
     @Test
     public void shouldEncodeDecodeStringVector() {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeStringVector(new String[]{"a", "b", "c"});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(
                 Arrays.stream(new String[]{"a", "b", "c"}).map(String::getBytes).toArray(),
@@ -259,11 +268,11 @@ public class EncoderDecoderTest {
     public void shouldEncodeDecodeUuidVector() {
         UUID[] uuids = new UUID[]{UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()};
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeUuidVector(uuids);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(uuids, decoder.readUuidVector()
         );
@@ -273,11 +282,11 @@ public class EncoderDecoderTest {
     public void shouldEncodeDecodeNullVector() {
         Object[] nulls = new Object[] {null, null, null};
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        Encoder encoder = new Encoder(buffer);
         encoder.writeNullVector(nulls);
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
 
         assertArrayEquals(nulls, decoder.readNullVector());
     }

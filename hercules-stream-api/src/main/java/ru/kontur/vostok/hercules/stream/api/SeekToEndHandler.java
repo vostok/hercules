@@ -16,11 +16,11 @@ import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
+import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -126,13 +126,15 @@ public class SeekToEndHandler implements HttpHandler {
                     collect(Collectors.toList());
             Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
 
+            StreamReadState streamReadState = StreamReadStateUtil.stateFromMap(stream.getName(), endOffsets);
+
             request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            Encoder encoder = new Encoder(outputStream);
-            CONTENT_WRITER.write(encoder, StreamReadStateUtil.stateFromMap(stream.getName(), endOffsets));
-
-            request.getResponse().send(ByteBuffer.wrap(outputStream.toByteArray()));
+            ByteBuffer buffer = ByteBuffer.allocate(streamReadState.sizeOf());
+            Encoder encoder = new Encoder(buffer);
+            CONTENT_WRITER.write(encoder, streamReadState);
+            buffer.flip();
+            request.getResponse().send(buffer);
         } catch (Exception ex) {
             LOGGER.error("Error on processing request", ex);
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);

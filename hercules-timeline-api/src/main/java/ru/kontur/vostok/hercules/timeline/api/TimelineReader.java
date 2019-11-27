@@ -256,12 +256,12 @@ public class TimelineReader {
             }
         }
 
-        int receivedBytesCount = 0;
+        int sizeOfEvents = 0;
         for (byte[] event : result) {
-            receivedBytesCount += event.length;
+            sizeOfEvents += event.length;
         }
-        receivedBytesCountMeter.mark(receivedBytesCount);
-        timelineMetricsCollector.markReceivedBytesCount(receivedBytesCount);
+        receivedBytesCountMeter.mark(sizeOfEvents);
+        timelineMetricsCollector.markReceivedBytesCount(sizeOfEvents);
         receivedEventsCountMeter.mark(result.size());
         timelineMetricsCollector.markReceivedEventsCount(result.size());
         final long readingDurationMs = System.currentTimeMillis() - start;

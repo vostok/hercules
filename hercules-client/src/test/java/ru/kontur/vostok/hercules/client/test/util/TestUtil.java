@@ -7,7 +7,7 @@ import org.apache.http.message.BasicStatusLine;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.Writer;
 
-import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * TestUtil
@@ -18,11 +18,11 @@ public final class TestUtil {
 
     public static final StatusLine _200_OK = new BasicStatusLine(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, "");
 
-    public static <T> byte[] toBytes(T value, Writer<T> writer) {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+    public static <T> byte[] toBytes(T value, Writer<T> writer, int size) {
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        Encoder encoder = new Encoder(buffer);
         writer.write(encoder, value);
-        return stream.toByteArray();
+        return buffer.array();
     }
 
     private TestUtil() {

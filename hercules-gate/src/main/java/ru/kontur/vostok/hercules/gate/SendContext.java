@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.gate;
 
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 
 import java.util.Set;
 
@@ -10,7 +11,7 @@ import java.util.Set;
 public class SendContext {
     private final boolean async;
     private final String topic;
-    private final Set<String> tags;
+    private final Set<TinyString> tags;
     private final int partitions;
     private final ShardingKey shardingKey;
     private final ContentValidator validator;
@@ -18,7 +19,7 @@ public class SendContext {
     public SendContext(
             boolean async,
             String topic,
-            Set<String> tags,
+            Set<TinyString> tags,
             int partitions,
             ShardingKey shardingKey,
             ContentValidator validator
@@ -39,7 +40,7 @@ public class SendContext {
         return topic;
     }
 
-    public Set<String> getTags() {
+    public Set<TinyString> getTags() {
         return tags;
     }
 

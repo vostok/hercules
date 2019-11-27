@@ -9,10 +9,11 @@ import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterExcepti
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
@@ -38,11 +39,14 @@ import java.util.stream.Collectors;
  * @author a.zhdanov
  */
 class LeproserySender {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(LeproserySender.class);
 
     private static final String PROJECT_NAME = "hercules";
     private static final String SERVICE_NAME = "hercules-elastic-sink";
+
+    private static final TinyString SERVICE = TinyString.of("service");
+    private static final TinyString TEXT = TinyString.of("text");
+    private static final TinyString ORIGINAL_INDEX = TinyString.of("original-index");
 
     private static final int EMPTY_LEPROSERY_EVENT_SIZE_BYTES = 125;
     private static final int MAX_EVENT_SIZE_BYTES = 500_000;
@@ -135,13 +139,13 @@ class LeproserySender {
         return Optional.of(EventBuilder.create()
                 .version(1)
                 .timestamp(TimeUtil.dateTimeToUnixTicks(ZonedDateTime.now()))
-                .random(UuidGenerator.getClientInstance().next())
-                .tag(LogEventTags.MESSAGE_TAG, Variant.ofString(error))
-                .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                        .tag(CommonTags.PROJECT_TAG, Variant.ofString(PROJECT_NAME))
-                        .tag("service", Variant.ofString(SERVICE_NAME))
-                        .tag("text", Variant.ofString(textBytes))
-                        .tag("original-index", Variant.ofString(index))
+                .uuid(UuidGenerator.getClientInstance().next())
+                .tag(LogEventTags.MESSAGE_TAG.getName(), Variant.ofString(error))
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(PROJECT_NAME))
+                        .tag(SERVICE, Variant.ofString(SERVICE_NAME))
+                        .tag(TEXT, Variant.ofString(textBytes))
+                        .tag(ORIGINAL_INDEX, Variant.ofString(index))
                         .tag(ElasticSearchTags.ELK_INDEX_TAG.getName(), Variant.ofString(leproseryIndex))
                         .build()))
                 .build());

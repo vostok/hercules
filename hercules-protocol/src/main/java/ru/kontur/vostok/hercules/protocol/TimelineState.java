@@ -7,6 +7,7 @@ package ru.kontur.vostok.hercules.protocol;
  * @author Gregory Koshelev
  */
 public class TimelineState {
+    private static final int SIZE_OF_SLICE_COUNT = 4;
     /**
      * State for each slice
      */
@@ -27,5 +28,9 @@ public class TimelineState {
 
     public TimelineSliceState[] getSliceStates() {
         return sliceStates;
+    }
+
+    public int sizeOf() {
+        return SIZE_OF_SLICE_COUNT + TimelineSliceState.fixedSizeOf() * getSliceCount();
     }
 }

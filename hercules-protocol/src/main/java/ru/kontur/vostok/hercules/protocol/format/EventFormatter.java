@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.format;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
@@ -68,8 +69,8 @@ public final class EventFormatter {
         final String endIndentString = pretty ? indentString(indent) : "";
 
         sb.append("{").append(line);
-        for (Map.Entry<String, Variant> variantEntry : container) {
-            final String tagName = variantEntry.getKey();
+        for (Map.Entry<TinyString, Variant> variantEntry : container.tags().entrySet()) {
+            final TinyString tagName = variantEntry.getKey();
             final Type type = variantEntry.getValue().getType();
             final Object value = variantEntry.getValue().getValue();
 
