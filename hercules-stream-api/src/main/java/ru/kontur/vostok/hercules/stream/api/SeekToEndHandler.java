@@ -7,8 +7,11 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ErrorCallback;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpServerRequestException;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.IoCallback;
 import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
@@ -19,6 +22,7 @@ import ru.kontur.vostok.hercules.partitioner.LogicalPartitioner;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
+import ru.kontur.vostok.hercules.util.ByteBufferPool;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 import java.nio.ByteBuffer;
@@ -130,11 +134,22 @@ public class SeekToEndHandler implements HttpHandler {
 
             request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
-            ByteBuffer buffer = ByteBuffer.allocate(streamReadState.sizeOf());
+            ByteBuffer buffer = ByteBufferPool.acquire(streamReadState.sizeOf());
             Encoder encoder = new Encoder(buffer);
             CONTENT_WRITER.write(encoder, streamReadState);
             buffer.flip();
-            request.getResponse().send(buffer);
+            request.getResponse().setContentLength(buffer.remaining());
+            request.getResponse().send(
+                    buffer,
+                    req -> {
+                        request.complete();
+                        ByteBufferPool.release(buffer);
+                    },
+                    (req, exception) -> {
+                        LOGGER.error("Error when send response", exception);
+                        request.complete();
+                        ByteBufferPool.release(buffer);
+                    });
         } catch (Exception ex) {
             LOGGER.error("Error on processing request", ex);
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);

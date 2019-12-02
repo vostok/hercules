@@ -41,6 +41,10 @@ public interface HttpServerResponse {
         setHeader(HttpHeaders.CONTENT_TYPE, contentType);
     }
 
+    default void setContentLength(int length) {
+        setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(length));
+    }
+
     /**
      * Send the data to the client using async IO. The Request is ended when done.
      * <p>
