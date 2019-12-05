@@ -34,33 +34,6 @@ public final class IndexToElasticJsonWriter {
         stream.write(END_BYTES);
     }
 
-    public static Optional<String> extractIndex(final Event event) {
-        return ContainerUtil.extract(event.getPayload(), CommonTags.PROPERTIES_TAG)
-                .flatMap(properties -> {
-                    final List<String> parts = new ArrayList<>(4);
-
-                    final Optional<String> index = ContainerUtil.extract(properties, ElasticSearchTags.ELK_INDEX_TAG);
-                    if (index.isPresent()) {
-                        parts.add(index.get());
-                    } else {
-                        final Optional<String> project = ContainerUtil.extract(properties, CommonTags.PROJECT_TAG);
-                        if (project.isPresent()) {
-                            parts.add(project.get().replace(' ', '_'));
-                            ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG).ifPresent(parts::add);
-                            Optional<String> subproject = ContainerUtil.extract(properties, CommonTags.SUBPROJECT_TAG);
-                            subproject.ifPresent(parts::add);
-                        }
-                    }
-
-                    if (parts.size() != 0) {
-                        parts.add(DATE_FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp())));
-                        return Optional.of(String.join("-", parts).toLowerCase());
-                    }  else {
-                        return Optional.empty();
-                    }
-                });
-    }
-
     private IndexToElasticJsonWriter() {
         /* static class */
     }

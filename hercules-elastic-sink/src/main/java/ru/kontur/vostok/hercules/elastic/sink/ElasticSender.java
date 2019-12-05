@@ -9,6 +9,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -31,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -54,12 +56,17 @@ public class ElasticSender extends Sender {
     private final boolean retryOnUnknownErrors;
     private final boolean mergePropertiesTagToRoot;
 
+    private final Set<String> redefinedExceptions;
+
+    private final IndexPolicy indexPolicy;
+    private final IndexResolver indexResolver;
+    private final boolean indexCreationEnable;
+
+    private final boolean leproseryEnable;
+
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
     private final Meter elasticsearchDroppedNonRetryableErrorsMeter;
-
-    private final Set<String> redefinedExceptions;
-    private final boolean leproseryEnable;
 
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
@@ -74,7 +81,7 @@ public class ElasticSender extends Sender {
         final int connectionRequestTimeout = PropertiesUtil.get(Props.CONNECTION_REQUEST_TIMEOUT_MS, properties).get();
         final int socketTimeout = PropertiesUtil.get(Props.SOCKET_TIMEOUT_MS, properties).get();
 
-        this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_MODE, properties).get();
+        this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_ENABLE, properties).get();
 
         this.redefinedExceptions = new HashSet<>(Arrays.asList(PropertiesUtil.get(Props.REDEFINED_EXCEPTIONS, properties).get()));
 
@@ -96,10 +103,14 @@ public class ElasticSender extends Sender {
 
         this.elasticResponseHandler = new ElasticResponseHandler(metricsCollector);
 
+        this.indexPolicy = PropertiesUtil.get(Props.INDEX_POLICY, properties).get();
+        this.indexResolver = IndexResolver.forPolicy(indexPolicy);
+        this.indexCreationEnable = PropertiesUtil.get(Props.INDEX_CREATION_ENABLE, properties).get();
+
         this.leproserySender = leproseryEnable
                 ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY),
-                        metricsCollector,
-                        mergePropertiesTagToRoot)
+                metricsCollector,
+                mergePropertiesTagToRoot)
                 : null;
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
@@ -128,11 +139,12 @@ public class ElasticSender extends Sender {
         //event-id -> event-wrapper
         Map<String, EventWrapper> readyToSend = new HashMap<>(events.size());
         for (Event event : events) {
-            EventWrapper wrapper = new EventWrapper(event);
-            if (wrapper.getIndex() == null) {
-                nonRetryableErrorsMap.put(wrapper, ValidationResult.error("Event index is null"));
-            } else {
+            Optional<String> index = indexResolver.resolve(event);
+            EventWrapper wrapper = new EventWrapper(event, index.orElse(null));
+            if (index.isPresent()) {
                 readyToSend.put(wrapper.getId(), wrapper);
+            } else {
+                nonRetryableErrorsMap.put(wrapper, ValidationResult.error("Event index is null"));
             }
         }
 
@@ -302,7 +314,17 @@ public class ElasticSender extends Sender {
                 .withDefault(new String[]{})
                 .build();
 
-        static final Parameter<Boolean> LEPROSERY_MODE = Parameter
+        static final Parameter<IndexPolicy> INDEX_POLICY =
+                Parameter.enumParameter("elastic.index.policy", IndexPolicy.class).
+                        withDefault(IndexPolicy.DAILY).
+                        build();
+
+        static final Parameter<Boolean> INDEX_CREATION_ENABLE =
+                Parameter.booleanParameter("index.creation.enable").
+                        withDefault(false).
+                        build();
+
+        static final Parameter<Boolean> LEPROSERY_ENABLE = Parameter
                 .booleanParameter("leprosery.enable")
                 .withDefault(false)
                 .build();

@@ -10,6 +10,7 @@ Application is configured through properties file.
 `application.port` - server port, default value: `8080`
 
 ### Sink settings
+#### Common settings
 `sink.poolSize` - number of threads are reading from Apache Kafka, default value: `1`
 
 `sink.pollTimeoutMs` - poll duration when read from Apache Kafka, default value: `6000`
@@ -26,6 +27,7 @@ Application is configured through properties file.
 
 `sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
 
+#### Sender settings
 `sink.sender.elastic.hosts` - list of elastic hosts
 
 `sink.sender.elastic.retryTimeoutMs` - backoff timeout to retry send to elastic, default value: `30000`
@@ -43,8 +45,12 @@ Application is configured through properties file.
 `sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
 
 `sink.sender.elastic.mergePropertiesTagToRoot` - flag for moving the contents of the properties container to the root of the object, default value: `false`
- 
-### Leprosery settings
+
+`sink.sender.elastic.index.policy` - index policy: use index per day or index lifecycle management. Should be one of `DAILY` or `ILM`, default value: `DAILY`
+
+`sink.sender.elastic.index.creation.enable` - should create index in case of `index_not_found_exception`, default value: `false`
+  
+##### Leprosery settings
 `sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`
 
 `sink.sender.leprosery.stream` - stream name for writing non-retryable errors
@@ -121,6 +127,8 @@ sink.sender.pingPeriodMs=60000
 sink.sender.retryOnUnknownErrors=true
 sink.sender.retryLimit=2
 sink.sender.elastic.mergePropertiesTagToRoot=true
+sink.sender.elastic.index.policy=DAILY
+sink.sender.elastic.index.creation.enable=false
 
 sink.sender.leprosery.enable=false
 sink.sender.leprosery.stream=some-dlq-stream-name
