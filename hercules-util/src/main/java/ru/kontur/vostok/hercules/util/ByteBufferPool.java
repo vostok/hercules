@@ -53,13 +53,13 @@ public class ByteBufferPool {
     public static void release(ByteBuffer buffer) {
         buffer.clear();
         int capacity = buffer.capacity();
-        if (totalCapacity() + capacity > totalCapacityHardLimit) {
-            return;
-        }
-        if (totalCapacity.addAndGet(buffer.capacity()) >= totalCapacityHardLimit) {
-            totalCapacity.addAndGet(-buffer.capacity());
-            return;
-        }
+        long currentTotalCapacity;
+        do {
+            currentTotalCapacity = totalCapacity();
+            if (totalCapacity() + capacity > totalCapacityHardLimit) {
+                return;
+            }
+        } while (!totalCapacity.compareAndSet(currentTotalCapacity, currentTotalCapacity + capacity));
         buffers.add(ByteBufferWrapper.wrap(buffer));
     }
 
@@ -97,7 +97,7 @@ public class ByteBufferPool {
             }
 
             freedCapacity += buffer.capacity;
-        } while (freedCapacity >= capacity);
+        } while (freedCapacity < capacity);
         return null;
     }
 
