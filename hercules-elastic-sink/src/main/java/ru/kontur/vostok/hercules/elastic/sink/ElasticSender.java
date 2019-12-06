@@ -1,42 +1,27 @@
 package ru.kontur.vostok.hercules.elastic.sink;
 
-import org.apache.http.HttpHost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
-import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
@@ -48,84 +33,47 @@ public class ElasticSender extends Sender {
 
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
 
-    private final RestClient restClient;
-    private final ElasticResponseHandler elasticResponseHandler;
-    private final LeproserySender leproserySender;
-
-    private final int retryLimit;
-    private final boolean retryOnUnknownErrors;
     private final boolean mergePropertiesTagToRoot;
-
-    private final Set<String> redefinedExceptions;
 
     private final IndexPolicy indexPolicy;
     private final IndexResolver indexResolver;
-    private final boolean indexCreationEnable;
+
+    private final ElasticClient client;
+
+    private final int retryLimit;
+    private final boolean retryOnUnknownErrors;
 
     private final boolean leproseryEnable;
+    private final LeproserySender leproserySender;
 
-    private final Timer elasticsearchRequestTimeTimer;
-    private final Meter elasticsearchRequestErrorsMeter;
     private final Meter elasticsearchDroppedNonRetryableErrorsMeter;
 
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
-        this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
-
-        final HttpHost[] hosts = PropertiesUtil.get(Props.HOSTS, properties).get();
-        final int maxConnections = PropertiesUtil.get(Props.MAX_CONNECTIONS, properties).get();
-        final int maxConnectionsPerRoute = PropertiesUtil.get(Props.MAX_CONNECTIONS_PER_ROUTE, properties).get();
-        final int retryTimeoutMs = PropertiesUtil.get(Props.RETRY_TIMEOUT_MS, properties).get();
-        final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, properties).get();
-        final int connectionRequestTimeout = PropertiesUtil.get(Props.CONNECTION_REQUEST_TIMEOUT_MS, properties).get();
-        final int socketTimeout = PropertiesUtil.get(Props.SOCKET_TIMEOUT_MS, properties).get();
-
-        this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_ENABLE, properties).get();
-
-        this.redefinedExceptions = new HashSet<>(Arrays.asList(PropertiesUtil.get(Props.REDEFINED_EXCEPTIONS, properties).get()));
-
-        this.restClient = RestClient.builder(hosts)
-                .setMaxRetryTimeoutMillis(retryTimeoutMs)
-                .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder
-                        .setMaxConnTotal(maxConnections)
-                        .setMaxConnPerRoute(maxConnectionsPerRoute)
-                )
-                .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
-                        .setConnectTimeout(connectionTimeout)
-                        .setConnectionRequestTimeout(connectionRequestTimeout)
-                        .setSocketTimeout(socketTimeout)
-                )
-                .build();
-
-        this.retryOnUnknownErrors = PropertiesUtil.get(Props.RETRY_ON_UNKNOWN_ERRORS, properties).get();
         this.mergePropertiesTagToRoot = PropertiesUtil.get(Props.MERGE_PROPERTIES_TAG_TO_ROOT, properties).get();
-
-        this.elasticResponseHandler = new ElasticResponseHandler(metricsCollector);
 
         this.indexPolicy = PropertiesUtil.get(Props.INDEX_POLICY, properties).get();
         this.indexResolver = IndexResolver.forPolicy(indexPolicy);
-        this.indexCreationEnable = PropertiesUtil.get(Props.INDEX_CREATION_ENABLE, properties).get();
 
+        this.client = new ElasticClient(PropertiesUtil.ofScope(properties, "elastic.client"), indexPolicy, metricsCollector);
+
+        this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
+        this.retryOnUnknownErrors = PropertiesUtil.get(Props.RETRY_ON_UNKNOWN_ERRORS, properties).get();
+
+        this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_ENABLE, properties).get();
         this.leproserySender = leproseryEnable
                 ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY),
                 metricsCollector,
                 mergePropertiesTagToRoot)
                 : null;
 
-        this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
-        this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
         this.elasticsearchDroppedNonRetryableErrorsMeter = metricsCollector.meter("elasticsearchDroppedNonRetryableErrors");
     }
 
     @Override
     public ProcessorStatus ping() {
-        try {
-            Response response = restClient.performRequest("HEAD", "/", Collections.emptyMap());
-            return (200 == response.getStatusLine().getStatusCode()) ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
-        } catch (Exception e) {
-            return ProcessorStatus.UNAVAILABLE;
-        }
+        return client.ping() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
     }
 
     @Override
@@ -152,9 +100,9 @@ public class ElasticSender extends Sender {
             if (!readyToSend.isEmpty()) {
                 int retryCount = retryLimit;
                 do {
-                    ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);
+                    ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);//TODO: Replace EXPECTED_EVENT_SIZE_BYTES with heuristic is depending on Hercules event size
                     readyToSend.values().forEach(wrapper -> writeEventToStream(dataStream, wrapper));
-                    ElasticResponseHandler.Result result = trySend(new ByteArrayEntity(dataStream.toByteArray(), ContentType.APPLICATION_JSON));
+                    ElasticResponseHandler.Result result = client.index(dataStream.toByteArray());
 
                     if (result.getTotalErrors() != 0) {
                         resultProcess(result).forEach((eventId, validationResult) ->
@@ -235,22 +183,17 @@ public class ElasticSender extends Sender {
         });
     }
 
-    private ElasticResponseHandler.Result trySend(ByteArrayEntity body) {
-        Response response;
-        try (AutoMetricStopwatch requestTime = new AutoMetricStopwatch(elasticsearchRequestTimeTimer, TimeUnit.MILLISECONDS)) {
-            response = restClient.performRequest("POST", "/_bulk", Collections.emptyMap(), body);
-        } catch (IOException ex) {
-            elasticsearchRequestErrorsMeter.mark();
-            throw new RuntimeException(ex);
-        }
-        if (response.getStatusLine().getStatusCode() != 200) {
-            elasticsearchRequestErrorsMeter.mark();
-            throw new RuntimeException("Bad response");
-        }
-        return elasticResponseHandler.process(response.getEntity(), redefinedExceptions);
-    }
-
     private static class Props {
+        static final Parameter<Boolean> MERGE_PROPERTIES_TAG_TO_ROOT = Parameter
+                .booleanParameter("elastic.mergePropertiesTagToRoot")
+                .withDefault(Boolean.FALSE)
+                .build();
+
+        static final Parameter<IndexPolicy> INDEX_POLICY =
+                Parameter.enumParameter("elastic.index.policy", IndexPolicy.class).
+                        withDefault(IndexPolicy.DAILY).
+                        build();
+
         static final Parameter<Integer> RETRY_LIMIT = Parameter
                 .integerParameter("retryLimit")
                 .withDefault(3)
@@ -261,68 +204,6 @@ public class ElasticSender extends Sender {
                 .booleanParameter("retryOnUnknownErrors")
                 .withDefault(Boolean.FALSE)
                 .build();
-
-        static final Parameter<HttpHost[]> HOSTS = Parameter
-                .parameter("elastic.hosts",
-                        Parsers.fromFunction(str ->
-                                Stream.of(str.split(",")).map(HttpHost::create).toArray(HttpHost[]::new)))
-                .build();
-
-        static final Parameter<Integer> MAX_CONNECTIONS = Parameter
-                .integerParameter("elastic.maxConnections")
-                .withValidator(IntegerValidators.positive())
-                .withDefault(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL)
-                .build();
-
-        static final Parameter<Integer> MAX_CONNECTIONS_PER_ROUTE = Parameter
-                .integerParameter("elastic.maxConnectionsPerRoute")
-                .withValidator(IntegerValidators.positive())
-                .withDefault(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE)
-                .build();
-
-        static final Parameter<Integer> RETRY_TIMEOUT_MS = Parameter
-                .integerParameter("elastic.retryTimeoutMs")
-                .withValidator(IntegerValidators.nonNegative())
-                .withDefault(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS)
-                .build();
-
-        static final Parameter<Integer> CONNECTION_TIMEOUT_MS = Parameter
-                .integerParameter("elastic.connectionTimeoutMs")
-                .withValidator(IntegerValidators.nonNegative())
-                .withDefault(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS)
-                .build();
-
-        static final Parameter<Integer> CONNECTION_REQUEST_TIMEOUT_MS = Parameter
-                .integerParameter("elastic.connectionRequestTimeoutMs")
-                .withValidator(IntegerValidators.nonNegative())
-                .withDefault(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
-                .build();
-
-        static final Parameter<Integer> SOCKET_TIMEOUT_MS = Parameter
-                .integerParameter("elastic.socketTimeoutMs")
-                .withValidator(IntegerValidators.nonNegative())
-                .withDefault(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
-                .build();
-
-        static final Parameter<Boolean> MERGE_PROPERTIES_TAG_TO_ROOT = Parameter
-                .booleanParameter("elastic.mergePropertiesTagToRoot")
-                .withDefault(Boolean.FALSE)
-                .build();
-
-        static final Parameter<String[]> REDEFINED_EXCEPTIONS = Parameter
-                .stringArrayParameter("elastic.redefinedExceptions")
-                .withDefault(new String[]{})
-                .build();
-
-        static final Parameter<IndexPolicy> INDEX_POLICY =
-                Parameter.enumParameter("elastic.index.policy", IndexPolicy.class).
-                        withDefault(IndexPolicy.DAILY).
-                        build();
-
-        static final Parameter<Boolean> INDEX_CREATION_ENABLE =
-                Parameter.booleanParameter("index.creation.enable").
-                        withDefault(false).
-                        build();
 
         static final Parameter<Boolean> LEPROSERY_ENABLE = Parameter
                 .booleanParameter("leprosery.enable")

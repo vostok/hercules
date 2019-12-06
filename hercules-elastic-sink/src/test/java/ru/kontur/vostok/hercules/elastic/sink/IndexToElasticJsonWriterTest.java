@@ -1,11 +1,12 @@
 package ru.kontur.vostok.hercules.elastic.sink;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -15,7 +16,6 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 public class IndexToElasticJsonWriterTest {//FIXME: Rewrite and move index resolving tests to IndexResolverTest.
 

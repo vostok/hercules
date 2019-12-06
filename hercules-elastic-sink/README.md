@@ -28,27 +28,34 @@ Application is configured through properties file.
 `sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
 
 #### Sender settings
-`sink.sender.elastic.hosts` - list of elastic hosts
-
-`sink.sender.elastic.retryTimeoutMs` - backoff timeout to retry send to elastic, default value: `30000`
-
-`sink.sender.elastic.connectionTimeoutMs` - connection timeout of elastic client, default value: `1000`
-
-`sink.sender.elastic.connectionRequestTimeoutMs` - timeout for request connection of elastic client, default value: `500`
-
-`sink.sender.elastic.socketTimeoutMs` - timeout for response from elastic, default value: `30000`
-
 `sink.sender.pingPeriodMs` - elastic server ping period, default value: `5000`
-
-`sink.sender.retryOnUnknownErrors` - should retry request to elastic in case of unknown errors, default value: `false`
-
-`sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
 
 `sink.sender.elastic.mergePropertiesTagToRoot` - flag for moving the contents of the properties container to the root of the object, default value: `false`
 
 `sink.sender.elastic.index.policy` - index policy: use index per day or index lifecycle management. Should be one of `DAILY` or `ILM`, default value: `DAILY`
 
-`sink.sender.elastic.index.creation.enable` - should create index in case of `index_not_found_exception`, default value: `false`
+`sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
+
+`sink.sender.retryOnUnknownErrors` - should retry request to elastic in case of unknown errors, default value: `false`
+
+##### Elastic Client settings
+`sink.sender.elastic.client.hosts` - list of elastic hosts
+
+`sink.sender.elastic.client.maxConnections` - maximum connections for underlying http client, default value: `30`
+
+`sink.sender.elastic.client.maxConnectionsPerRoute` - maximum connections per route for underlying http client, default value: `10`
+
+`sink.sender.elastic.client.retryTimeoutMs` - backoff timeout to retry send to elastic, default value: `30000`
+
+`sink.sender.elastic.client.connectionTimeoutMs` - connection timeout of elastic client, default value: `1000`
+
+`sink.sender.elastic.client.connectionRequestTimeoutMs` - timeout for request connection of elastic client, default value: `500`
+
+`sink.sender.elastic.client.socketTimeoutMs` - timeout for response from elastic, default value: `30000`
+
+`sink.sender.elastic.client.redefinedExceptions` - list of errors, which are retryable, but temporarily are treated as non-retryable, list is empty by default
+
+`sink.sender.elastic.client.index.creation.enable` - should create index in case of `index_not_found_exception`, default value: `false`
   
 ##### Leprosery settings
 `sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`
@@ -112,23 +119,25 @@ sink.pollTimeoutMs=5000
 sink.batchSize=10000
 sink.pattern=logs_*
 
-sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
+sink.consumer.bootstrap.servers=localhost:9092
 sink.consumer.max.partition.fetch.bytes=52428800
 sink.consumer.max.poll.interval.ms=370000
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
-sink.sender.elastic.hosts=localhost:9201
+sink.sender.pingPeriodMs=60000
+sink.sender.elastic.mergePropertiesTagToRoot=true
+sink.sender.elastic.index.policy=DAILY
+sink.sender.retryLimit=2
+sink.sender.retryOnUnknownErrors=true
 
+sink.sender.elastic.hosts=localhost:9201
+sink.sender.elastic.maxConnections=30
+sink.sender.elastic.maxConnectionsPerRoute=10
 sink.sender.elastic.retryTimeoutMs=120000
 sink.sender.elastic.connectionTimeoutMs=1000
 sink.sender.elastic.connectionRequestTimeoutMs=500
 sink.sender.elastic.socketTimeoutMs=120000
-sink.sender.pingPeriodMs=60000
-sink.sender.retryOnUnknownErrors=true
-sink.sender.retryLimit=2
-sink.sender.elastic.mergePropertiesTagToRoot=true
-sink.sender.elastic.index.policy=DAILY
-sink.sender.elastic.index.creation.enable=false
+sink.sender.elastic.client.index.creation.enable=false
 
 sink.sender.leprosery.enable=false
 sink.sender.leprosery.stream=some-dlq-stream-name

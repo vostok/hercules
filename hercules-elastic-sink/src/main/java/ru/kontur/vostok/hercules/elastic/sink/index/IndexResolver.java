@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.elastic.sink.index;
 
-import ru.kontur.vostok.hercules.elastic.sink.IndexPolicy;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
@@ -29,14 +28,14 @@ public class IndexResolver {
         return function.apply(event);
     }
 
-    public static IndexResolver forPolicy(IndexPolicy indexPolicy) {
-        switch (indexPolicy) {
+    public static IndexResolver forPolicy(IndexPolicy policy) {
+        switch (policy) {
             case DAILY:
                 return new IndexResolver(IndexResolver::resolveDailyIndex);
             case ILM:
                 return new IndexResolver(IndexResolver::resolveIlmIndex);
             default:
-                throw new IllegalArgumentException("Unknown index policy " + indexPolicy);
+                throw new IllegalArgumentException("Unknown index policy " + policy);
         }
     }
 

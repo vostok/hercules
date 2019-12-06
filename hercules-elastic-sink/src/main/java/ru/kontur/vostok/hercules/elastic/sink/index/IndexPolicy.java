@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.elastic.sink;
+package ru.kontur.vostok.hercules.elastic.sink.index;
 
 /**
  * @author Gregory Koshelev
