@@ -73,11 +73,44 @@ public class IndexResolver {
                 map(String::toLowerCase).
                 map(part -> part.replace(' ', '_')).
                 collect(Collectors.joining("-"));
+        if (!validate(prefix)) {
+            return Optional.empty();
+        }
         return Optional.of(prefix);
     }
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd").withZone(ZoneId.of("UTC"));
     private static String getFormattedDate(Event event) {
         return DATE_FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp()));
+    }
+
+    private static boolean validate(String prefix) {
+        for (int i = 0; i < prefix.length(); i++) {
+            char c = prefix.charAt(i);
+            if (!isLowerCaseLatin(c) && !isDigit(c) && !isUnderscore(c) && !isDot(c) && !isMinusSign(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isLowerCaseLatin(char c) {
+        return c >= 'a' && c <= 'z';
+    }
+
+    private static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private static boolean isUnderscore(char c) {
+        return c == '_';
+    }
+
+    private static boolean isDot(char c) {
+        return c == '.';
+    }
+
+    private static boolean isMinusSign(char c) {
+        return c == '-';
     }
 }
