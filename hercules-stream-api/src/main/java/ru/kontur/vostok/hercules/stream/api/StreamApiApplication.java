@@ -45,7 +45,7 @@ public class StreamApiApplication {
         long start = System.currentTimeMillis();
 
         try {
-            Application.run("Hercules Stream API", "stream-api",args);
+            Application.run("Hercules Stream API", "stream-api", args);
 
             Map<String, String> parameters = ArgsParser.parse(args);
 

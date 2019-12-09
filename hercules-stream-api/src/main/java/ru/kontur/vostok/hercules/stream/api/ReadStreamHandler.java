@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
+import ru.kontur.vostok.hercules.util.ByteBufferPool;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 import java.nio.ByteBuffer;
@@ -136,11 +137,22 @@ public class ReadStreamHandler implements HttpHandler {
 
                                 request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
-                                ByteBuffer buffer = ByteBuffer.allocate(streamContent.sizeOf());
+                                ByteBuffer buffer = ByteBufferPool.acquire(streamContent.sizeOf());
                                 Encoder encoder = new Encoder(buffer);
                                 CONTENT_WRITER.write(encoder, streamContent);
                                 buffer.flip();
-                                request.getResponse().send(buffer);
+                                request.getResponse().setContentLength(buffer.remaining());
+                                request.getResponse().send(
+                                        buffer,
+                                        req -> {
+                                            request.complete();
+                                            ByteBufferPool.release(buffer);
+                                        },
+                                        (req, exception) -> {
+                                            LOGGER.error("Error when send response", exception);
+                                            request.complete();
+                                            ByteBufferPool.release(buffer);
+                                        });
                             } catch (IllegalArgumentException e) {
                                 request.complete(HttpStatusCodes.BAD_REQUEST);
                             } catch (Exception e) {
