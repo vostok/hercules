@@ -17,6 +17,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Resolves index name from event data.
+ * <p>
+ * See Elasticsearch docs for details about index name restrictions:
+ * https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-create-index.html
+ *
  * @author Gregory Koshelev
  */
 public class IndexResolver {
@@ -58,11 +63,13 @@ public class IndexResolver {
 
         Optional<String> index = ContainerUtil.extract(properties.get(), ElasticSearchTags.ELK_INDEX_TAG);
         if (index.isPresent()) {
-            return CharUtil.isAlphaNumeric(index.get().charAt(0)) ? index.map(IndexResolver::sanitize) : Optional.empty();
+            return validate(index.get())
+                    ? index.map(IndexResolver::sanitize)
+                    : Optional.empty();
         }
 
         Optional<String> project = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
-        if (!project.isPresent() || !CharUtil.isAlphaNumeric(project.get().charAt(0))) {
+        if (!project.isPresent() || !validate(project.get())) {
             return Optional.empty();
         }
 
@@ -78,13 +85,19 @@ public class IndexResolver {
     }
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd").withZone(ZoneId.of("UTC"));
+
     private static String getFormattedDate(Event event) {
         return DATE_FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp()));
     }
 
     private static final Pattern ILLEGAL_CHARS = Pattern.compile("[^-a-zA-Z0-9_]");
+
     private static String sanitize(String s) {
         return ILLEGAL_CHARS.matcher(s).replaceAll("_").
                 toLowerCase();
+    }
+
+    private static boolean validate(String s) {
+        return !s.isEmpty() && CharUtil.isAlphaNumeric(s.charAt(0));
     }
 }

@@ -27,10 +27,7 @@ public class EventFilterTest {
         Assert.assertEquals(SwitcherEventFilter.class, filters.get(0).getClass());
         Assert.assertEquals(SwitcherEventFilter.class, filters.get(1).getClass());
 
-        Event event = EventBuilder.create(
-                TimeUtil.millisToTicks(System.currentTimeMillis()),
-                "00000000-0000-0000-0000-000000000000").
-                build();
+        Event event = getEventBuilder().build();
 
         SwitcherEventFilter switcher = (SwitcherEventFilter) filters.get(0);
         /* Switcher '0' is off as property 'on' is false */

@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.util.text;
 /**
  * @author Gregory Koshelev
  */
-public class CharUtil {
+public final class CharUtil {
     public static boolean isAlphaNumeric(char c) {
         return isLatin(c) || isDigit(c);
     }
@@ -37,5 +37,9 @@ public class CharUtil {
 
     public static boolean isPlusSign(char c) {
         return c == '+';
+    }
+
+    private CharUtil() {
+        /* static class */
     }
 }

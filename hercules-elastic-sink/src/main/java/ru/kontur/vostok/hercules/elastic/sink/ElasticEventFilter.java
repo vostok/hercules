@@ -50,20 +50,20 @@ public class ElasticEventFilter extends EventFilter {
         }
 
         Optional<String> environment = ContainerUtil.extract(properties.get(), CommonTags.ENVIRONMENT_TAG);
-        if (environment.isPresent()) {
-            return test(environment.get());
+        if (environment.isPresent() && !test(environment.get())) {
+            return false;
         }
 
         Optional<String> subproject = ContainerUtil.extract(properties.get(), CommonTags.SUBPROJECT_TAG);
-        if (subproject.isPresent()) {
-            return test(subproject.get());
+        if (subproject.isPresent() && !test(subproject.get())) {
+            return false;
         }
 
         return true;
     }
 
     private boolean test(String s) {
-        return CharUtil.isAlphaNumeric(s.charAt(0));
+        return !s.isEmpty() && CharUtil.isAlphaNumeric(s.charAt(0));
 
     }
 }
