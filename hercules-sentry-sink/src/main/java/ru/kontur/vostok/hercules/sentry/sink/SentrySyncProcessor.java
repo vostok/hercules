@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.sentry.sink;
 
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
-import io.sentry.connection.LockedDownException;
 import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
@@ -214,23 +213,20 @@ public class SentrySyncProcessor {
             sentryClientResult.get().sendEvent(sentryEvent);
             return Result.ok();
         } catch (InvalidDsnException e) {
-            LOGGER.error("InvalidDsnException: " + e.getMessage());
+            LOGGER.error("InvalidDsnException: " + e.getMessage(), e);
             processErrorInfo = new ErrorInfo("InvalidDSN", false);
-        } catch (LockedDownException e) {
-            LOGGER.error("LockedDownException: a temporary lockdown is switched on");
-            processErrorInfo = new ErrorInfo("LockedDown");
         } catch (ConnectionException e) {
             Integer responseCode = e.getResponseCode();
             String message = e.getMessage();
             if (responseCode != null) {
-                LOGGER.error(String.format("ConnectionException %d: %s", responseCode, message));
+                LOGGER.error(String.format("ConnectionException %d: %s", responseCode, message), e);
                 processErrorInfo = new ErrorInfo("ConnectionException", responseCode);
             } else {
-                LOGGER.error(String.format("ConnectionException: %s", message));
+                LOGGER.error(String.format("ConnectionException: %s", message), e);
                 processErrorInfo = new ErrorInfo("ConnectionException");
             }
         } catch (Exception e) {
-            LOGGER.error(String.format("Other exception of sending to Sentry: %s", e.getMessage()));
+            LOGGER.error(String.format("Other exception of sending to Sentry: %s", e.getMessage()), e);
             processErrorInfo = new ErrorInfo("OtherException", e.getMessage());
         }
         processErrorInfo.setIsRetryableForSending();

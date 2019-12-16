@@ -124,8 +124,7 @@ public class ErrorInfo {
             HttpStatusCodes.UNAUTHORIZED,
             HttpStatusCodes.FORBIDDEN,
             HttpStatusCodes.NOT_FOUND,
-            HttpStatusCodes.REQUEST_TIMEOUT,
-            HttpStatusCodes.TOO_MANY_REQUESTS
+            HttpStatusCodes.REQUEST_TIMEOUT
     ));
 
     private static final Set<Integer> NON_RETRYABLE_ERROR_CODES_FOR_SENDING = new HashSet<>(Arrays.asList(
@@ -133,7 +132,8 @@ public class ErrorInfo {
             HttpStatusCodes.METHOD_NOT_ALLOWED,
             HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE,
             HttpStatusCodes.URI_TOO_LONG,
-            HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE
+            HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE,
+            HttpStatusCodes.TOO_MANY_REQUESTS
     ));
 
     private static final Set<Integer> ERROR_CODES_NEED_TO_REMOVE_CLIENT_FROM_CACHE = new HashSet<>(Arrays.asList(
