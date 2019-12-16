@@ -64,4 +64,42 @@ public class IndexResolverTest {
         Assert.assertTrue(index.isPresent());
         Assert.assertEquals("proj-dev-subproj", index.get());
     }
+
+    @Test
+    public void shouldIgnoreBadIndexName() {
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY);
+        final Event event = EventBuilder.create(
+                TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
+                "00000000-0000-0000-0000-000000000000").
+                tag("properties", Variant.ofContainer(
+                        Container.builder().
+                                tag("project", Variant.ofString("{#project}")).
+                                tag("environment", Variant.ofString("dev")).
+                                tag("subproject", Variant.ofString("subproj")).
+                                build())).
+                build();
+
+        Optional<String> index = indexResolver.resolve(event);
+        Assert.assertFalse(index.isPresent());
+    }
+
+
+    @Test
+    public void shouldSanitizeIndexName() {
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY);
+        final Event event = EventBuilder.create(
+                TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
+                "00000000-0000-0000-0000-000000000000").
+                tag("properties", Variant.ofContainer(
+                        Container.builder().
+                                tag("project", Variant.ofString("Project<To,Test>")).
+                                tag("environment", Variant.ofString("DEV")).
+                                tag("subproject", Variant.ofString(">Ю")).
+                                build())).
+                build();
+
+        Optional<String> index = indexResolver.resolve(event);
+        Assert.assertTrue(index.isPresent());
+        Assert.assertEquals("project_to_test_-dev-__-2019.12.01", index.get());
+    }
 }

@@ -5,16 +5,23 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
+import ru.kontur.vostok.hercules.util.text.CharUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Resolves index name from event data.
+ * <p>
+ * See Elasticsearch docs for details about index name restrictions:
+ * https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-create-index.html
+ *
  * @author Gregory Koshelev
  */
 public class IndexResolver {
@@ -56,11 +63,13 @@ public class IndexResolver {
 
         Optional<String> index = ContainerUtil.extract(properties.get(), ElasticSearchTags.ELK_INDEX_TAG);
         if (index.isPresent()) {
-            return index;
+            return validate(index.get())
+                    ? index.map(IndexResolver::sanitize)
+                    : Optional.empty();
         }
 
         Optional<String> project = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
-        if (!project.isPresent()) {
+        if (!project.isPresent() || !validate(project.get())) {
             return Optional.empty();
         }
 
@@ -70,47 +79,25 @@ public class IndexResolver {
         String prefix = Stream.of(project, environment, subproject).
                 filter(Optional::isPresent).
                 map(Optional::get).
-                map(String::toLowerCase).
-                map(part -> part.replace(' ', '_')).
+                map(IndexResolver::sanitize).
                 collect(Collectors.joining("-"));
-        if (!validate(prefix)) {
-            return Optional.empty();
-        }
         return Optional.of(prefix);
     }
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd").withZone(ZoneId.of("UTC"));
+
     private static String getFormattedDate(Event event) {
         return DATE_FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp()));
     }
 
-    private static boolean validate(String prefix) {
-        for (int i = 0; i < prefix.length(); i++) {
-            char c = prefix.charAt(i);
-            if (!isLowerCaseLatin(c) && !isDigit(c) && !isUnderscore(c) && !isDot(c) && !isMinusSign(c)) {
-                return false;
-            }
-        }
-        return true;
+    private static final Pattern ILLEGAL_CHARS = Pattern.compile("[^-a-zA-Z0-9_]");
+
+    private static String sanitize(String s) {
+        return ILLEGAL_CHARS.matcher(s).replaceAll("_").
+                toLowerCase();
     }
 
-    private static boolean isLowerCaseLatin(char c) {
-        return c >= 'a' && c <= 'z';
-    }
-
-    private static boolean isDigit(char c) {
-        return c >= '0' && c <= '9';
-    }
-
-    private static boolean isUnderscore(char c) {
-        return c == '_';
-    }
-
-    private static boolean isDot(char c) {
-        return c == '.';
-    }
-
-    private static boolean isMinusSign(char c) {
-        return c == '-';
+    private static boolean validate(String s) {
+        return !s.isEmpty() && CharUtil.isAlphaNumeric(s.charAt(0));
     }
 }
