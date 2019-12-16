@@ -37,7 +37,7 @@ Application is configured through properties file.
 `sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
 
 `sink.sender.retryOnUnknownErrors` - should retry request to elastic in case of unknown errors, default value: `false`
-
+ 
 ##### Elastic Client settings
 `sink.sender.elastic.client.hosts` - list of elastic hosts
 
@@ -57,6 +57,8 @@ Application is configured through properties file.
 
 `sink.sender.elastic.client.index.creation.enable` - should create index in case of `index_not_found_exception`, default value: `false`
   
+`sink.sender.elastic.client.compression.gzip.enable` - flag for enable gzip compression when sending to Elastic, default value: `false`
+ 
 ##### Leprosery settings
 `sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`
 
@@ -138,6 +140,8 @@ sink.sender.elastic.client.connectionTimeoutMs=1000
 sink.sender.elastic.client.connectionRequestTimeoutMs=500
 sink.sender.elastic.client.socketTimeoutMs=120000
 sink.sender.elastic.client.index.creation.enable=false
+sink.sender.elastic.client.compression.gzip.enable=false
+
 
 sink.sender.leprosery.enable=false
 sink.sender.leprosery.stream=some-dlq-stream-name

@@ -1,9 +1,11 @@
 package ru.kontur.vostok.hercules.elastic.sink;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
+import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -13,12 +15,14 @@ import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
+import ru.kontur.vostok.hercules.http.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,6 +31,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * @author Gregory Koshelev
@@ -34,11 +39,12 @@ import java.util.stream.Stream;
 class ElasticClient {
     private final RestClient restClient;
 
-
     private final ElasticResponseHandler elasticResponseHandler;
 
     private final Timer elasticsearchRequestTimeTimer;
     private final Meter elasticsearchRequestErrorsMeter;
+
+    private final boolean compressionGzipEnable;
 
     ElasticClient(Properties properties, IndexPolicy policy, MetricsCollector metricsCollector) {
         final HttpHost[] hosts = PropertiesUtil.get(Props.HOSTS, properties).get();
@@ -68,6 +74,8 @@ class ElasticClient {
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");
+
+        this.compressionGzipEnable = PropertiesUtil.get(Props.COMPRESSION_GZIP_ENABLE, properties).get();
     }
 
     boolean ping() {
@@ -80,11 +88,31 @@ class ElasticClient {
     }
 
     ElasticResponseHandler.Result index(byte[] dataToIndex) {
-        HttpEntity body = new ByteArrayEntity(dataToIndex, ContentType.APPLICATION_JSON);
 
         Response response;
         try (AutoMetricStopwatch requestTime = new AutoMetricStopwatch(elasticsearchRequestTimeTimer, TimeUnit.MILLISECONDS)) {
-            response = restClient.performRequest("POST", "/_bulk", Collections.emptyMap(), body);
+            HttpEntity body;
+            if (compressionGzipEnable) {
+                ByteArrayOutputStream compressedDataToIndex = new ByteArrayOutputStream(dataToIndex.length);
+                try (GZIPOutputStream gzipos = new GZIPOutputStream(compressedDataToIndex)) {
+                    gzipos.write(dataToIndex);
+                }
+                body = new ByteArrayEntity(compressedDataToIndex.toByteArray(), ContentType.APPLICATION_JSON);
+            } else {
+                body = new ByteArrayEntity(dataToIndex, ContentType.APPLICATION_JSON);
+            }
+
+            Header[] headers = compressionGzipEnable
+                    ? new BasicHeader[]{new BasicHeader(HttpHeaders.CONTENT_ENCODING, "gzip")}
+                    : new BasicHeader[]{};
+
+            response = restClient.performRequest(
+                    "POST",
+                    "/_bulk",
+                    Collections.emptyMap(),
+                    body,
+                    headers);
+
         } catch (IOException ex) {
             elasticsearchRequestErrorsMeter.mark();
             throw new RuntimeException(ex);
@@ -148,5 +176,10 @@ class ElasticClient {
                 Parameter.booleanParameter("index.creation.enable").
                         withDefault(false).
                         build();
+
+        static final Parameter<Boolean> COMPRESSION_GZIP_ENABLE = Parameter
+                .booleanParameter("compression.gzip.enable")
+                .withDefault(false)
+                .build();
     }
 }
