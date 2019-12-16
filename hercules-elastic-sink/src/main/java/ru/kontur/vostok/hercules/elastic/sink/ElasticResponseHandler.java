@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.elastic.sink.index.IndexCreator;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
@@ -221,6 +222,10 @@ public class ElasticResponseHandler {
     private static final JsonFactory FACTORY = new JsonFactory();
     private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
 
+    private final Set<String> redefinedExceptions;
+    private final boolean shouldCreateIndexIfAbsent;
+    private final IndexCreator indexCreator;
+
     private final MetricsCollector metricsCollector;
 
     private final ConcurrentHashMap<String, Meter> errorTypesMeter = new ConcurrentHashMap<>();
@@ -230,7 +235,10 @@ public class ElasticResponseHandler {
     private final Meter unknownErrorsMeter;
 
 
-    public ElasticResponseHandler(final MetricsCollector metricsCollector) {
+    public ElasticResponseHandler(Set<String> redefinedExceptions, boolean shouldCreateIndexIfAbsent, IndexCreator indexCreator, final MetricsCollector metricsCollector) {
+        this.redefinedExceptions = redefinedExceptions;
+        this.shouldCreateIndexIfAbsent = shouldCreateIndexIfAbsent;
+        this.indexCreator = indexCreator;
         this.metricsCollector = metricsCollector;
 
         this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".retryableErrors");
@@ -239,7 +247,7 @@ public class ElasticResponseHandler {
     }
 
     // TODO: Replace with a good parser
-    public Result process(HttpEntity httpEntity, Set<String> redefinedExceptions) {
+    public Result process(HttpEntity httpEntity) {
         return toUnchecked(() -> {
             int retryableErrorCount = 0;
             int nonRetryableErrorCount = 0;
@@ -269,7 +277,7 @@ public class ElasticResponseHandler {
                 }
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
-                    final ErrorInfo error = processError(MAPPER.readTree(parser), currentId, currentIndex, redefinedExceptions);
+                    final ErrorInfo error = processError(MAPPER.readTree(parser), currentId, currentIndex);
                     errorInfos.put(currentId, error);
                     switch (error.getType()) {
                         case RETRYABLE:
@@ -301,10 +309,9 @@ public class ElasticResponseHandler {
      * @param errorNode           JSON node with error data
      * @param id                  event id
      * @param index               index
-     * @param redefinedExceptions exceptions for overriding
      * @return error type, which determines retryability of the error
      */
-    private ErrorInfo processError(TreeNode errorNode, String id, String index, Set<String> redefinedExceptions) {
+    private ErrorInfo processError(TreeNode errorNode, String id, String index) {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
             LOGGER.warn("Original error: {}", error);
@@ -321,18 +328,27 @@ public class ElasticResponseHandler {
             //TODO: Build "caused by" trace
 
             errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
+            if (shouldCreateIndexIfAbsent && "index_not_found_exception".equals(type)) {
+                LOGGER.info("Index " + index + " not found, will create");
+                if (indexCreator.create(index)) {
+                    LOGGER.info("Index " + index + " has been created, will retry indexing");
+                } else {
+                    LOGGER.warn("Cannot create index " + index + ", will retry anyway");
+                }
+                return new ErrorInfo(ErrorType.RETRYABLE, error.toString());
+            }
             if (redefinedExceptions.contains(type)) {
                 LOGGER.warn("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.NON_RETRYABLE, reason);
+                return new ErrorInfo(ErrorType.NON_RETRYABLE, error.toString());
             } else if (RETRYABLE_ERRORS_CODES.contains(type)) {
                 LOGGER.warn("Retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.RETRYABLE, reason);
+                return new ErrorInfo(ErrorType.RETRYABLE, error.toString());
             } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
                 LOGGER.warn("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.NON_RETRYABLE, reason);
+                return new ErrorInfo(ErrorType.NON_RETRYABLE, error.toString());
             } else {
                 LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return new ErrorInfo(ErrorType.UNKNOWN, reason);
+                return new ErrorInfo(ErrorType.UNKNOWN, error.toString());
             }
         } else {
             String errorMessage = "Error node is not object node, cannot parse";

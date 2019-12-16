@@ -4,8 +4,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
@@ -37,7 +36,7 @@ public class EventToElasticJsonWriterTest {
         event.tag("Flag sample false", Variant.ofFlag(false));
         event.tag("String sample", Variant.ofString("Test string with json inside {\"a\": {\"b\": [123, true, \"str\"]}}"));
         event.tag("Text sample", Variant.ofString("Test string with json inside {\"a\": {\"b\": [123, true, \"str\"]}}"));
-        event.tag("Array sample", Variant.ofVector(Vector.ofIntegers(new int[]{1, 2, 3})));
+        event.tag("Array sample", Variant.ofVector(Vector.ofIntegers(1, 2, 3)));
 
         assertEquals(
                 "{" +
@@ -169,49 +168,36 @@ public class EventToElasticJsonWriterTest {
     public void shouldConvertEventWithVectorOfVectorsVariant() throws Exception {
         assertVariantConverted(
                 "[[1,2],[3,4]]",
-                Variant.ofVector(Vector.ofVectors(new Vector[]{
-                        Vector.ofIntegers(new int[]{1, 2}),
-                        Vector.ofIntegers(new int[]{3, 4})})));
+                Variant.ofVector(Vector.ofVectors(
+                        Vector.ofIntegers(1, 2),
+                        Vector.ofIntegers(3, 4))));
     }
 
     @Test
     public void shouldWriteContainer() throws Exception {
-        ContainerBuilder containerBuilder = ContainerBuilder.create();
-        containerBuilder.tag("a", Variant.ofInteger(123));
-
         assertVariantConverted(
                 "{\"a\":123}",
-                Variant.ofContainer(containerBuilder.build())
+                Variant.ofContainer(Container.of("a", Variant.ofInteger(123)))
         );
     }
 
     @Test
     public void shouldWriteNestedContainer() throws Exception {
-        ContainerBuilder nested = ContainerBuilder.create();
-        nested.tag("a", Variant.ofInteger(123));
-
-        ContainerBuilder wrapper = ContainerBuilder.create();
-        wrapper.tag("nested", Variant.ofContainer(nested.build()));
-
-
         assertVariantConverted(
                 "{\"nested\":{\"a\":123}}",
-                Variant.ofContainer(wrapper.build())
+                Variant.ofContainer(
+                        Container.of("nested", Variant.ofContainer(Container.of("a", Variant.ofInteger(123)))))
         );
     }
 
     @Test
     public void shouldWriteVectorOfContainers() throws Exception {
-        ContainerBuilder first = ContainerBuilder.create();
-        first.tag("a", Variant.ofInteger(123));
-
-        ContainerBuilder second = ContainerBuilder.create();
-        second.tag("b", Variant.ofInteger(456));
-
         assertVariantConverted(
                 "[{\"a\":123},{\"b\":456}]",
-                Variant.ofVector(Vector.ofContainers(new Container[]{first.build(), second.build()}))
-        );
+                Variant.ofVector(
+                        Vector.ofContainers(
+                                Container.of("a", Variant.ofInteger(123)),
+                                Container.of("b", Variant.ofInteger(456)))));
     }
 
     @Test
@@ -221,10 +207,7 @@ public class EventToElasticJsonWriterTest {
                 0,
                 "11203800-63fd-11e8-83e2-3a587d902000"
             )
-            .tag(CommonTags.PROPERTIES_TAG, Variant.ofContainer(ContainerBuilder.create()
-                .tag("someKey", Variant.ofString("some value"))
-                .build()
-            ));
+            .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.of("someKey", Variant.ofString("some value"))));
 
         assertEquals(
             "{\"@timestamp\":\"1970-01-01T00:00:00.000000000Z\",\"someKey\":\"some value\"}",

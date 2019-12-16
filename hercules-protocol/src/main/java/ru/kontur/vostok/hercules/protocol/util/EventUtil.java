@@ -17,11 +17,11 @@ public class EventUtil {
 
     private static final int ID_SIZE_IN_BYTES = 24;
 
-    public static ByteBuffer eventIdAsByteBuffer(long timestamp, UUID random) {
+    public static ByteBuffer eventIdAsByteBuffer(long timestamp, UUID uuid) {
         ByteBuffer eventId = ByteBuffer.allocate(ID_SIZE_IN_BYTES);
         eventId.putLong(timestamp);
-        eventId.putLong(random.getMostSignificantBits());
-        eventId.putLong(random.getLeastSignificantBits());
+        eventId.putLong(uuid.getMostSignificantBits());
+        eventId.putLong(uuid.getLeastSignificantBits());
         eventId.position(0);
         return eventId;
     }

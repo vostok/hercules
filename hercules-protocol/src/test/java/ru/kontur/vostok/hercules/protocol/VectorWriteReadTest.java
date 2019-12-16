@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.protocol;
 
 import org.junit.Test;
-import ru.kontur.vostok.hercules.protocol.util.ContainerBuilder;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
@@ -11,10 +10,8 @@ import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
  */
 public class VectorWriteReadTest {
     @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowException() throws Exception {
-        Container container = ContainerBuilder.create()
-                .tag("abc", Variant.ofVector(Vector.ofStrings(new String[]{"def"})))
-                .build();
+    public void shouldThrowException() {
+        Container container = Container.of("abc", Variant.ofVector(Vector.ofStrings("def")));
 
         TagDescription<String> tag = TagDescriptionBuilder.string("abc").build();
 

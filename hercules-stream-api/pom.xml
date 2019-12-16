@@ -3,7 +3,7 @@
     <parent>
         <artifactId>hercules</artifactId>
         <groupId>ru.kontur.vostok.hercules</groupId>
-        <version>0.32.0-SNAPSHOT</version>
+        <version>0.33.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -51,12 +51,6 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-streams</artifactId>
-        </dependency>
-
-        <!-- Undertow -->
-        <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
         </dependency>
     </dependencies>
 

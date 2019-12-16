@@ -112,6 +112,14 @@ public class ByteUtil {
         return fromRawHexString(string, 2);
     }
 
+    public static int overallLength(byte[][] bytes) {
+        int size = 0;
+        for (byte[] bb : bytes) {
+            size += bb.length;
+        }
+        return size;
+    }
+
     private static byte[] fromRawHexString(String string, int offset) {
         byte[] bytes = new byte[(string.length() - offset) / 2];
 

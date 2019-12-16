@@ -21,6 +21,34 @@ public class Variant {
         return value;
     }
 
+    public int sizeOf() {
+        return Type.TYPE.size + sizeOfValue();
+    }
+
+    private int sizeOfValue() {
+        switch (type) {
+            case BYTE:
+            case SHORT:
+            case INTEGER:
+            case LONG:
+            case FLAG:
+            case FLOAT:
+            case DOUBLE:
+            case UUID:
+            case NULL:
+                return type.size;
+            case CONTAINER:
+                return ((Container) value).sizeOf();
+            case STRING:
+                return Sizes.sizeOfString((byte[]) value);
+            case VECTOR:
+                return ((Vector) value).sizeOf();
+            default:
+                return 0;
+        }
+
+    }
+
     public static Variant ofContainer(Container container) {
         return new Variant(Type.CONTAINER, container);
     }

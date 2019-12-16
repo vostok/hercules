@@ -58,10 +58,11 @@ public class HerculesSentryClient extends SentryClient {
         }
 
         try {
-            connection.send(event);
-        } catch (Exception e) {
-            LOGGER.error("An exception occurred while sending the event to Sentry.", e);
-            throw e;
+            if (connection instanceof HerculesHttpConnection) {
+                ((HerculesHttpConnection) connection).sendWithoutLocking(event);
+            } else {
+                connection.send(event);
+            }
         } finally {
             getContext().setLastEventId(event.getId());
         }

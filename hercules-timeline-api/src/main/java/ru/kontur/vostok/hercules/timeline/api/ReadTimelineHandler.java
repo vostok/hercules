@@ -22,7 +22,6 @@ import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
@@ -171,11 +170,11 @@ public class ReadTimelineHandler implements HttpHandler {
                                 from.get(),
                                 to.get());
 
-                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                        Encoder encoder = new Encoder(stream);
+                        ByteBuffer buffer = ByteBuffer.allocate(byteContent.sizeOf());
+                        Encoder encoder = new Encoder(buffer);
                         CONTENT_WRITER.write(encoder, byteContent);
-
-                        request.getResponse().send(ByteBuffer.wrap(stream.toByteArray()));
+                        buffer.flip();
+                        request.getResponse().send(buffer);
                     } catch (Exception e) {
                         LOGGER.error("Error on processing request", e);
                         request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);

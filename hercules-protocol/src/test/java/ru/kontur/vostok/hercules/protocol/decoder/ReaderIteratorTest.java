@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataExceptio
 import ru.kontur.vostok.hercules.protocol.encoder.ArrayWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 
-import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,11 +17,12 @@ public class ReaderIteratorTest {
     public void shouldReadWriteIntegerArray() throws InvalidDataException {
         ArrayWriter<Integer> writer = new ArrayWriter<>(Encoder::writeInteger);
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Encoder encoder = new Encoder(stream);
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        Encoder encoder = new Encoder(buffer);
         writer.write(encoder, new Integer[]{1, 2, 3});
 
-        Decoder decoder = new Decoder(stream.toByteArray());
+        buffer.flip();
+        Decoder decoder = new Decoder(buffer);
         ReaderIterator<Integer> reader = new ReaderIterator<>(decoder, Decoder::readInteger);
 
         List<Integer> result = new ArrayList<>();

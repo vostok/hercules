@@ -40,17 +40,6 @@ public interface HttpServerRequest {
     String getQueryParameter(String name);
 
     /**
-     * Get query parameter value of the request. If parameter is used for multiple times, then return first value.
-     *
-     * @param name of the query parameter
-     * @return parameter value or <code>null</code> if it doesn't exist
-     * @deprecated use {@link #getQueryParameter(String)} instead.
-     * FIXME: Should be removed after release 0.31.x
-     */
-    @Deprecated
-    String getParameter(String name);
-
-    /**
      * Get path parameter value of the request.
      * <p>
      * Sample:<br>
@@ -78,7 +67,7 @@ public interface HttpServerRequest {
      * @param name of the query parameter
      * @return parameter values
      */
-    String[] getParameterValues(String name);
+    String[] getQueryParameterValues(String name);
 
     /**
      * Asynchronously dispatch HTTP request.
@@ -87,6 +76,8 @@ public interface HttpServerRequest {
 
     /**
      * Asynchronously read request's body to byte array.
+     * <p>
+     * Can be called only once.
      *
      * @param callback      the callback is called to process request's body
      * @param errorCallback the callback is called in case of errors
@@ -95,6 +86,8 @@ public interface HttpServerRequest {
 
     /**
      * Asynchronously read request's body to byte array.
+     * <p>
+     * Can be called only once.
      *
      * @param callback the callback is called to process request's body
      */
@@ -114,7 +107,9 @@ public interface HttpServerRequest {
     HttpServerResponse getResponse();
 
     /**
-     * Complete request processing. Can be called once.
+     * Complete the request processing.
+     * <p>
+     * This method is no-op if the request is already completed.
      */
     void complete();
 
@@ -130,6 +125,8 @@ public interface HttpServerRequest {
 
     /**
      * Complete request processing with specified code and content in response body.
+     * <p>
+     * Completion may perform asynchronously.
      *
      * @param code        response status code
      * @param contentType content type
@@ -141,6 +138,11 @@ public interface HttpServerRequest {
         getResponse().send(data);
     }
 
+    /**
+     * Return {@link HttpHeaders#CONTENT_LENGTH Content-Length} value if present.
+     *
+     * @return content length if present, otherwise {@link Optional#empty()}
+     */
     default Optional<Integer> getContentLength() {
         String headerValue = getHeader(HttpHeaders.CONTENT_LENGTH);
 
@@ -156,10 +158,17 @@ public interface HttpServerRequest {
 
     }
 
+    /**
+     * Add the request completion listener to perform request post processing.
+     *
+     * @param listener the listener
+     */
     void addRequestCompletionListener(RequestCompletionListener listener);
 
     /**
      * Put object to request context.
+     * <p>
+     * Context is thread-safe.
      * <p>
      * Also, it can be used to exchange authentication context between handlers in the handlers chain.
      *
@@ -171,6 +180,8 @@ public interface HttpServerRequest {
 
     /**
      * Get object from request context.
+     * <p>
+     * Context is thread-safe.
      *
      * @param key the key of the object
      * @param <T> type

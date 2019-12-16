@@ -12,10 +12,10 @@ class EventWrapper {
     private final String id;
     private final String index;
 
-    EventWrapper(Event event) {
+    EventWrapper(Event event, String index) {
         this.event = event;
         this.id = EventUtil.extractStringId(event);
-        this.index = IndexToElasticJsonWriter.extractIndex(event).orElse(null);
+        this.index = index;
     }
 
     Event getEvent() {

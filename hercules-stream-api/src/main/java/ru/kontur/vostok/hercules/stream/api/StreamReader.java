@@ -107,19 +107,20 @@ public class StreamReader {
 
             List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, remainingTimeMs);
 
-            int receivedBytesCount = 0;
+            int sizeOfEvents = 0;
             for (byte[] event : events) {
-                receivedBytesCount += event.length;
+                sizeOfEvents += event.length;
             }
 
-            receivedBytesCountMeter.mark(receivedBytesCount);
-            streamMetricsCollector.markReceivedBytesCount(receivedBytesCount);
+            receivedBytesCountMeter.mark(sizeOfEvents);
+            streamMetricsCollector.markReceivedBytesCount(sizeOfEvents);
             receivedEventsCountMeter.mark(events.size());
             streamMetricsCollector.markReceivedEventsCount(events.size());
 
             return new ByteStreamContent(
                     StreamReadStateUtil.stateFromMap(stream.getName(), nextOffsets),
-                    events.toArray(new byte[0][]));
+                    events.toArray(new byte[0][])
+            );
         } catch (InterruptedException | TimeoutException ex) {
             throw new RuntimeException(ex);
         } finally {

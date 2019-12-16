@@ -17,9 +17,9 @@ import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidDeserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.sink.filter.EventFilter;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.time.Duration;
@@ -41,10 +41,9 @@ public class Sink {
     private volatile boolean running = false;
 
     private final ExecutorService executor;
-    private final String applicationId;
-    private final Properties properties;
     private final Processor processor;
-    private final List<PatternMatcher> patternMatchers;
+
+    private final List<EventFilter> filters;
 
     private final Duration pollTimeout;
     private final int batchSize;
@@ -54,6 +53,7 @@ public class Sink {
     private final KafkaConsumer<UUID, Event> consumer;
 
     private final Meter droppedEventsMeter;
+    private final Meter filteredEventsMeter;
     private final Meter processedEventsMeter;
     private final Meter rejectedEventsMeter;
     private final Meter totalEventsMeter;
@@ -67,10 +67,9 @@ public class Sink {
             EventDeserializer deserializer,
             MetricsCollector metricsCollector) {
         this.executor = executor;
-        this.applicationId = applicationId;
-        this.properties = properties;
         this.processor = processor;
-        this.patternMatchers = patternMatchers;
+
+        this.filters = EventFilter.from(PropertiesUtil.ofScope(properties, "filter"));
 
         this.pollTimeout = Duration.ofMillis(PropertiesUtil.get(Props.POLL_TIMEOUT_MS, properties).get());
         this.batchSize = PropertiesUtil.get(Props.BATCH_SIZE, properties).get();
@@ -94,6 +93,7 @@ public class Sink {
         this.consumer = new KafkaConsumer<>(consumerProperties, keyDeserializer, valueDeserializer);
 
         droppedEventsMeter = metricsCollector.meter("droppedEvents");
+        filteredEventsMeter = metricsCollector.meter("filteredEvents");
         processedEventsMeter = metricsCollector.meter("processedEvents");
         rejectedEventsMeter = metricsCollector.meter("rejectedEvents");
         totalEventsMeter = metricsCollector.meter("totalEvents");
@@ -168,6 +168,7 @@ public class Sink {
                         List<Event> events = new ArrayList<>(eventCount);
 
                         int droppedEvents = 0;
+                        int filteredEvents = 0;
 
                         for (TopicPartition partition : partitions) {
                             List<ConsumerRecord<UUID, Event>> records = pollResult.records(partition);
@@ -175,6 +176,10 @@ public class Sink {
                                 Event event = record.value();
                                 if (event == null) {// Received non-deserializable data, should be ignored
                                     droppedEvents++;
+                                    continue;
+                                }
+                                if (!filter(event)) {
+                                    filteredEvents++;
                                     continue;
                                 }
                                 events.add(event);
@@ -186,6 +191,7 @@ public class Sink {
                             try {
                                 commit();
                                 droppedEventsMeter.mark(droppedEvents);
+                                filteredEventsMeter.mark(filteredEvents);
                                 processedEventsMeter.mark(result.getProcessedEvents());
                                 rejectedEventsMeter.mark(result.getRejectedEvents());
                                 totalEventsMeter.mark(events.size());
@@ -248,6 +254,15 @@ public class Sink {
 
     protected final void commit(Map<TopicPartition, OffsetAndMetadata> offsets) {
         consumer.commitSync(offsets);
+    }
+
+    private boolean filter(Event event) {
+        for (EventFilter filter : filters) {
+            if (!filter.test(event)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static class Props {

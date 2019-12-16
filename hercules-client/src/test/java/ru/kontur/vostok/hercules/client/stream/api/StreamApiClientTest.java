@@ -12,7 +12,7 @@ import ru.kontur.vostok.hercules.protocol.EventStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.protocol.StreamShardReadState;
 import ru.kontur.vostok.hercules.protocol.encoder.EventStreamContentWriter;
-import ru.kontur.vostok.hercules.protocol.util.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 
 import java.net.URI;
 import java.util.UUID;
@@ -48,18 +48,19 @@ public class StreamApiClientTest {
         CloseableHttpResponse responseMock = mock(CloseableHttpResponse.class);
         when(responseMock.getStatusLine()).thenReturn(TestUtil._200_OK);
 
-
-        when(responseMock.getEntity()).thenReturn(new ByteArrayEntity(TestUtil.toBytes(
-                new EventStreamContent(
-                        new StreamReadState(
-                                new StreamShardReadState[]{
-                                        new StreamShardReadState(0, 2)
-                                }),
-                        new Event[]{
-                                EventBuilder.create(0, "05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1").build(),
-                                EventBuilder.create(0, "0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1").build()
+        EventStreamContent original = new EventStreamContent(
+                new StreamReadState(
+                        new StreamShardReadState[]{
+                                new StreamShardReadState(0, 2)
                         }),
-                new EventStreamContentWriter()
+                new Event[]{
+                        EventBuilder.create(0, "05bd046a-ecc0-11e8-8eb2-f2801f1b9fd1").build(),
+                        EventBuilder.create(0, "0b9e32b4-ecc0-11e8-8eb2-f2801f1b9fd1").build()
+                });
+        when(responseMock.getEntity()).thenReturn(new ByteArrayEntity(TestUtil.toBytes(
+                original,
+                new EventStreamContentWriter(),
+                original.sizeOf()
         )));
 
         CloseableHttpClient clientMock = mock(CloseableHttpClient.class);

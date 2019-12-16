@@ -10,7 +10,6 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
-import ru.kontur.vostok.hercules.util.logging.LoggingConstants;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -25,9 +24,6 @@ import java.util.stream.Collectors;
 
 public class GraphiteEventSender extends Sender {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteEventSender.class);
-    private static final Logger RECEIVED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.RECEIVED_EVENT_LOGGER_NAME);
-    private static final Logger PROCESSED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.PROCESSED_EVENT_LOGGER_NAME);
-    private static final Logger DROPPED_EVENT_LOGGER = LoggerFactory.getLogger(LoggingConstants.DROPPED_EVENT_LOGGER_NAME);
 
     private final GraphitePinger graphitePinger;
     private final GraphiteClient graphiteClient;
@@ -65,10 +61,6 @@ public class GraphiteEventSender extends Sender {
             return 0;
         }
 
-        if (RECEIVED_EVENT_LOGGER.isTraceEnabled()) {
-            events.forEach(event -> RECEIVED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
-        }
-
         List<GraphiteMetricData> metricsToSend = events.stream()
                 .filter(this::validate)
                 .map(MetricEventConverter::convert)
@@ -82,10 +74,6 @@ public class GraphiteEventSender extends Sender {
             graphiteClient.send(metricsToSend);
         } catch (Exception exception) {
             throw new BackendServiceFailedException(exception);
-        }
-
-        if (PROCESSED_EVENT_LOGGER.isTraceEnabled()) {
-            events.forEach(event -> PROCESSED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid()));
         }
 
         sentMetricsCounter.addAndGet(metricsToSend.size());
@@ -108,8 +96,6 @@ public class GraphiteEventSender extends Sender {
         }
 
         if (event != null) {
-            DROPPED_EVENT_LOGGER.trace("{},{}", event.getTimestamp(), event.getUuid());
-
             LOGGER.warn("Invalid metric event: {}", EventFormatter.format(event, true));
         }
 
