@@ -208,5 +208,4 @@ public class ElasticSender extends Sender {
                 .withDefault(false)
                 .build();
     }
-
 }
