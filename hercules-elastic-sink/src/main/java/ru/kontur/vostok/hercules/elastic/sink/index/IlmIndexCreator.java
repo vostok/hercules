@@ -35,6 +35,7 @@ public class IlmIndexCreator implements IndexCreator {
      * <pre>{@code PUT _template/${index}
      * {
      *   "index_patterns": ["${index}-*"],
+     *   "order": ${index.length()},
      *   "settings":  {
      *     "index.lifecycle.rollover_alias":  "${index}"
      *   }
@@ -47,6 +48,7 @@ public class IlmIndexCreator implements IndexCreator {
         String stringBody =
                 "{" +
                         "  \"index_patterns\": [\"" + index + "-*\"]," +
+                        "  \"order\": " + index.length() + "," +
                         "  \"settings\": {" +
                         "    \"index.lifecycle.rollover_alias\": \"" + index + "\"" +
                         "  }" +
