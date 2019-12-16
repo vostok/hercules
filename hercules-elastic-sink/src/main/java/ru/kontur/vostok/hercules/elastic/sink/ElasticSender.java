@@ -162,13 +162,11 @@ public class ElasticSender extends Sender {
                 return nonRetryableErrorsInfo.size();
             }
         } else {
-            nonRetryableErrorsInfo.forEach((wrapper, validationResult) -> {
-                LOGGER.warn("Non retryable error info: id = {}, index = {}, reason = {}",
-                        wrapper.getId(),
-                        wrapper.getIndex(),
-                        validationResult.error());
-                Event event = wrapper.getEvent();
-            });
+            nonRetryableErrorsInfo.forEach((wrapper, validationResult) ->
+                    LOGGER.warn("Non retryable error info: id = {}, index = {}, reason = {}",
+                            wrapper.getId(),
+                            wrapper.getIndex(),
+                            validationResult.error()));
             elasticsearchDroppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
             return nonRetryableErrorsInfo.size();
         }
