@@ -4,9 +4,15 @@ import io.sentry.DefaultSentryClientFactory;
 import io.sentry.SentryClient;
 import io.sentry.config.Lookup;
 import io.sentry.connection.AsyncConnection;
+import io.sentry.connection.Connection;
+import io.sentry.connection.EventSampler;
+import io.sentry.connection.HttpConnection;
+import io.sentry.connection.ProxyAuthenticator;
+import io.sentry.connection.RandomEventSampler;
 import io.sentry.dsn.Dsn;
 import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.helper.ContextBuilderHelper;
+import io.sentry.marshaller.Marshaller;
 import io.sentry.marshaller.json.JsonMarshaller;
 import io.sentry.util.Util;
 import org.slf4j.Logger;
@@ -17,6 +23,10 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 
@@ -126,6 +136,56 @@ public class HerculesClientFactory extends DefaultSentryClientFactory {
     @Override
     protected int getReadTimeout(Dsn dsn) {
         return Util.parseInteger(Lookup.lookup(READ_TIMEOUT_OPTION, dsn), readTimeoutDefaultMs);
+    }
+
+    /**
+     * Creates an HTTP connection to the Sentry server.
+     * Overrides {@link DefaultSentryClientFactory#createHttpConnection(Dsn)}
+     * with creating object of {@link HerculesHttpConnection} insteadof {@link HttpConnection}
+     *
+     * @param dsn Data Source Name of the Sentry server.
+     * @return an {@link HttpConnection} to the server.
+     */
+    @Override
+    protected Connection createHttpConnection(Dsn dsn) {
+        URL sentryApiUrl = HttpConnection.getSentryApiUrl(dsn.getUri(), dsn.getProjectId());
+
+        String proxyHost = getProxyHost(dsn);
+        String proxyUser = getProxyUser(dsn);
+        String proxyPass = getProxyPass(dsn);
+        int proxyPort = getProxyPort(dsn);
+
+        Proxy proxy = null;
+        if (proxyHost != null) {
+            InetSocketAddress proxyAddr = new InetSocketAddress(proxyHost, proxyPort);
+            proxy = new Proxy(Proxy.Type.HTTP, proxyAddr);
+            if (proxyUser != null && proxyPass != null) {
+                Authenticator.setDefault(new ProxyAuthenticator(proxyUser, proxyPass));
+            }
+        }
+
+        Double sampleRate = getSampleRate(dsn);
+        EventSampler eventSampler = null;
+        if (sampleRate != null) {
+            eventSampler = new RandomEventSampler(sampleRate);
+        }
+
+        HttpConnection httpConnection = new HerculesHttpConnection(sentryApiUrl, dsn.getPublicKey(),
+                dsn.getSecretKey(), proxy, eventSampler);
+
+        Marshaller marshaller = createMarshaller(dsn);
+        httpConnection.setMarshaller(marshaller);
+
+        int timeout = getTimeout(dsn);
+        httpConnection.setConnectionTimeout(timeout);
+
+        int readTimeout = getReadTimeout(dsn);
+        httpConnection.setReadTimeout(readTimeout);
+
+        boolean bypassSecurityEnabled = getBypassSecurityEnabled(dsn);
+        httpConnection.setBypassSecurity(bypassSecurityEnabled);
+
+        return httpConnection;
     }
 
     /**
