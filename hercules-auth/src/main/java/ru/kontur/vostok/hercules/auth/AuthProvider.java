@@ -135,4 +135,43 @@ public class AuthProvider {
                 return AuthResult.unknown();
         }
     }
+
+    /**
+     * Authorize any access from {@code rights} using authentication context of the http request.
+     * If at least one of right from {@code rights} is authorize success, then return {@link AuthResult#ok()}.
+     *
+     * @param request the http request
+     * @param name    the resource name
+     * @param rights  access rights
+     * @return authorization result
+     */
+    public AuthResult authAny(HttpServerRequest request, String name, Right... rights) {
+        if (rights.length == 0) {
+            return AuthResult.unknown();
+        }
+        AuthResult result;
+        for (Right right : rights) {
+            if (right == Right.READ) {
+                result = authRead(request, name);
+                if (result.isSuccess()) {
+                    return result;
+                }
+                continue;
+            }
+            if (right == Right.WRITE) {
+                result = authWrite(request, name);
+                if (result.isSuccess()) {
+                    return result;
+                }
+                continue;
+            }
+            if (right == Right.MANAGE) {
+                result = authManage(request, name);
+                if (result.isSuccess()) {
+                    return result;
+                }
+            }
+        }
+        return AuthResult.unknown();
+    }
 }
