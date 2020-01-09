@@ -93,13 +93,13 @@ public class IndexResolverTest {
                 tag("properties", Variant.ofContainer(
                         Container.builder().
                                 tag("project", Variant.ofString("Project<To,Test>")).
-                                tag("environment", Variant.ofString("DEV")).
+                                tag("environment", Variant.ofString("D.E.V")).
                                 tag("subproject", Variant.ofString(">Ю")).
                                 build())).
                 build();
 
         Optional<String> index = indexResolver.resolve(event);
         Assert.assertTrue(index.isPresent());
-        Assert.assertEquals("project_to_test_-dev-__-2019.12.01", index.get());
+        Assert.assertEquals("project_to_test_-d.e.v-__-2019.12.01", index.get());
     }
 }

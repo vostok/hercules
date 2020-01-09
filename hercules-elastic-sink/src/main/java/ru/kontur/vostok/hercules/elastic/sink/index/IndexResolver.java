@@ -90,8 +90,16 @@ public class IndexResolver {
         return DATE_FORMATTER.format(TimeUtil.unixTicksToInstant(event.getTimestamp()));
     }
 
-    private static final Pattern ILLEGAL_CHARS = Pattern.compile("[^-a-zA-Z0-9_]");
+    private static final Pattern ILLEGAL_CHARS = Pattern.compile("[^-a-zA-Z0-9_.]");
 
+    /**
+     * Replace illegal characters with underscore {@code _}.
+     * <p>
+     * Illegal character is any character which is not alphanumeric, minus sign {@code -}, underscore {@code _} or dot {@code .}.
+     *
+     * @param s the string
+     * @return the sanitized string
+     */
     private static String sanitize(String s) {
         return ILLEGAL_CHARS.matcher(s).replaceAll("_").
                 toLowerCase();
