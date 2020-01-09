@@ -7,6 +7,7 @@ public final class CharUtil {
     public static boolean isAlphaNumeric(char c) {
         return isLatin(c) || isDigit(c);
     }
+
     public static boolean isLatin(char c) {
         return isUpperCaseLatin(c) || isLowerCaseLatin(c);
     }
