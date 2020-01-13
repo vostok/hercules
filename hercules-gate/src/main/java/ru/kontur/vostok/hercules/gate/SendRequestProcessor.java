@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.gate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -42,13 +43,14 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
             request.readBodyAsync(
                     (r, bytes) -> request.dispatchAsync(
                             () -> {
+                                initMDC(request, context);
                                 ReaderIterator<Event> reader;
                                 try {
                                     reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.getTags()));
-                                } catch (RuntimeException | InvalidDataException exception) {
+                                } catch (RuntimeException | InvalidDataException ex) {
                                     request.complete(HttpStatusCodes.BAD_REQUEST);
                                     callback.call();
-                                    LOGGER.error("Cannot create ReaderIterator", exception);
+                                    LOGGER.error("Cannot create ReaderIterator", ex);
                                     return;
                                 }
                                 if (reader.getTotal() == 0) {
@@ -71,10 +73,12 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
             callback.call();
             LOGGER.error("Error on request body read full bytes", throwable);
             throw throwable;
+        } finally {
+            cleanMDC();
         }
     }
 
-    public void send(HttpServerRequest request, ReaderIterator<Event> reader, SendContext context, ThrottleCallback callback) {
+    private void send(HttpServerRequest request, ReaderIterator<Event> reader, SendContext context, ThrottleCallback callback) {
         AtomicInteger pendingEvents = new AtomicInteger(reader.getTotal());
         AtomicBoolean processed = new AtomicBoolean(false);
         while (reader.hasNext()) {
@@ -90,8 +94,8 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                     }
                     return;
                 }
-            } catch (Exception e) {
-                LOGGER.error("Exception on validation event", e);
+            } catch (Exception ex) {
+                LOGGER.error("Exception on validation event", ex);
                 //TODO: Metrics are coming!
                 if (processed.compareAndSet(false, true)) {
                     request.complete(HttpStatusCodes.BAD_REQUEST);
@@ -138,5 +142,20 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
         if (context.isAsync()) {
             request.complete(HttpStatusCodes.OK);
         }
+    }
+
+    private void initMDC(HttpServerRequest request, SendContext context) {
+        MDC.put("topic",context.getTopic());
+        MDC.put("apiKey", getProtectedApiKey(request));
+    }
+
+    private void cleanMDC() {
+        MDC.remove("topic");
+        MDC.remove("apiKey");
+    }
+
+    private String getProtectedApiKey(HttpServerRequest request) {
+        String apiKey = request.getHeader("apiKey");
+        return apiKey.substring(0, apiKey.lastIndexOf('_')) + "_*";
     }
 }
