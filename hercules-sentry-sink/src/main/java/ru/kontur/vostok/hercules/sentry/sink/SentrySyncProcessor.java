@@ -36,7 +36,7 @@ public class SentrySyncProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
 
-    private final Level requiredLevel;
+    private final Level defaultLevel = Level.WARNING;
     private final int retryLimit;
     private final SentryClientHolder sentryClientHolder;
     private final SentryEventConverter eventConverter;
@@ -54,7 +54,6 @@ public class SentrySyncProcessor {
             SentryEventConverter eventConverter,
             MetricsCollector metricsCollector
     ) {
-        this.requiredLevel = PropertiesUtil.get(Props.REQUIRED_LEVEL, sinkProperties).get();
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, sinkProperties).get();
         this.sentryClientHolder = sentryClientHolder;
         this.eventConverter = eventConverter;
@@ -81,10 +80,9 @@ public class SentrySyncProcessor {
 
         final Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
                 .flatMap(SentryLevelEnumParser::parse);
-        if (!level.isPresent() || requiredLevel.compareTo(level.get()) < 0) {
+        if (!level.isPresent() || defaultLevel.compareTo(level.get()) < 0) {
             return false;
         }
-
         final Optional<Container> properties = ContainerUtil.extract(event.getPayload(), CommonTags.PROPERTIES_TAG);
         if (!properties.isPresent()) {
             LOGGER.warn("Missing required tag '{}'", CommonTags.PROPERTIES_TAG.getName());
@@ -249,11 +247,6 @@ public class SentrySyncProcessor {
     }
 
     private static class Props {
-        static final Parameter<Level> REQUIRED_LEVEL =
-                Parameter.enumParameter("sentry.level", Level.class).
-                        withDefault(Level.WARNING).
-                        build();
-
         static final Parameter<Integer> RETRY_LIMIT =
                 Parameter.integerParameter("sentry.retryLimit").
                         withDefault(3).

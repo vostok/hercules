@@ -66,32 +66,6 @@ public class SentrySyncProcessorTest {
     }
 
     @Test
-    public void shouldReturnFalseWhenProcessEventWithoutLevelTag() throws BackendServiceFailedException {
-        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
-                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))
-                        .build()
-                ))
-                .build();
-
-        assertFalse(sentrySyncProcessor.process(event));
-    }
-
-    @Test
-    public void shouldReturnFalseWhenProcessEventWithLowValueOfLevelTag() throws BackendServiceFailedException {
-        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
-                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))
-                        .build()
-                ))
-                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("debug"))
-                .build();
-        assertFalse(sentrySyncProcessor.process(event));
-    }
-
-    @Test
     public void shouldReturnFalseWhenProcessEventWithoutPropertiesTag() throws BackendServiceFailedException {
         final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
                 .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
