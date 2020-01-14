@@ -15,6 +15,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.ReaderIterator;
 import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
 import ru.kontur.vostok.hercules.throttling.RequestProcessor;
 import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,23 +44,27 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
             request.readBodyAsync(
                     (r, bytes) -> request.dispatchAsync(
                             () -> {
-                                initMDC(request, context);
-                                ReaderIterator<Event> reader;
                                 try {
-                                    reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.getTags()));
-                                } catch (RuntimeException | InvalidDataException ex) {
-                                    request.complete(HttpStatusCodes.BAD_REQUEST);
-                                    callback.call();
-                                    LOGGER.error("Cannot create ReaderIterator", ex);
-                                    return;
-                                }
-                                if (reader.getTotal() == 0) {
-                                    request.complete(HttpStatusCodes.OK);
-                                    callback.call();
-                                    return;
-                                }
+                                    initMDC(request, context);
+                                    ReaderIterator<Event> reader;
+                                    try {
+                                        reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.getTags()));
+                                    } catch (RuntimeException | InvalidDataException ex) {
+                                        request.complete(HttpStatusCodes.BAD_REQUEST);
+                                        callback.call();
+                                        LOGGER.error("Cannot create ReaderIterator", ex);
+                                        return;
+                                    }
+                                    if (reader.getTotal() == 0) {
+                                        request.complete(HttpStatusCodes.OK);
+                                        callback.call();
+                                        return;
+                                    }
 
-                                send(request, reader, context, callback);
+                                    send(request, reader, context, callback);
+                                } finally {
+                                    cleanMDC();
+                                }
                             }),
                     (r, e) -> {
                         try {
@@ -70,11 +75,10 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                         }
                     });
         } catch (Throwable throwable) {
+            // Should never happened
             callback.call();
             LOGGER.error("Error on request body read full bytes", throwable);
             throw throwable;
-        } finally {
-            cleanMDC();
         }
     }
 
@@ -156,6 +160,10 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
 
     private String getProtectedApiKey(HttpServerRequest request) {
         String apiKey = request.getHeader("apiKey");
-        return apiKey.substring(0, apiKey.lastIndexOf('_')) + "_*";
+        int pos = apiKey.lastIndexOf('_') + 1;
+        if (pos > 0) {
+            return StringUtil.mask(apiKey, '*', pos);
+        }
+        return StringUtil.mask(apiKey, '*', apiKey.length() / 2);
     }
 }

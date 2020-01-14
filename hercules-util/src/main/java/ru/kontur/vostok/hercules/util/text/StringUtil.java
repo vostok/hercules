@@ -158,4 +158,21 @@ public final class StringUtil {
         }
         return value;
     }
+
+    /**
+     * Partially mask the source string by the mask symbol.
+     *
+     * @param src        the source string
+     * @param maskSymbol the mask symbol
+     * @param beginIndex the beginning index, inclusive
+     * @return the masked string
+     * @throws StringIndexOutOfBoundsException if {@code beginIndex} is negative or larger than the length of the source string
+     */
+    public static String mask(String src, char maskSymbol, int beginIndex) {
+        int length = src.length();
+        if (beginIndex < 0 || length <= beginIndex) {
+            throw new StringIndexOutOfBoundsException(beginIndex);
+        }
+        return src.substring(0, beginIndex) + maskSymbol;
+    }
 }
