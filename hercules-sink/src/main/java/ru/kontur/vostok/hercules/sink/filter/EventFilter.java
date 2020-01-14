@@ -83,7 +83,7 @@ public abstract class EventFilter {
             try {
                 constructor = filterClass.getConstructor(Properties.class);
             } catch (NoSuchMethodException ex) {
-                throw new IllegalArgumentException("Filter should ", ex);
+                throw new IllegalArgumentException("Cannot get constructor for filter " + filterClassName, ex);
             }
 
             Object filter;
