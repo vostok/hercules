@@ -11,7 +11,6 @@ import org.apache.kafka.streams.kstream.Produced;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
-import ru.kontur.vostok.hercules.kafka.util.serialization.EventStreamPartitioner;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;

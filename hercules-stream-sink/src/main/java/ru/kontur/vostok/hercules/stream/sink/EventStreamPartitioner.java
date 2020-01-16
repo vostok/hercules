@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.kafka.util.serialization;
+package ru.kontur.vostok.hercules.stream.sink;
 
 import org.apache.kafka.streams.processor.StreamPartitioner;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;

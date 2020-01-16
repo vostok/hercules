@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.gate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -14,6 +15,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.ReaderIterator;
 import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
 import ru.kontur.vostok.hercules.throttling.RequestProcessor;
 import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,22 +44,27 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
             request.readBodyAsync(
                     (r, bytes) -> request.dispatchAsync(
                             () -> {
-                                ReaderIterator<Event> reader;
                                 try {
-                                    reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.getTags()));
-                                } catch (RuntimeException | InvalidDataException exception) {
-                                    request.complete(HttpStatusCodes.BAD_REQUEST);
-                                    callback.call();
-                                    LOGGER.error("Cannot create ReaderIterator", exception);
-                                    return;
-                                }
-                                if (reader.getTotal() == 0) {
-                                    request.complete(HttpStatusCodes.OK);
-                                    callback.call();
-                                    return;
-                                }
+                                    initMDC(request, context);
+                                    ReaderIterator<Event> reader;
+                                    try {
+                                        reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.getTags()));
+                                    } catch (RuntimeException | InvalidDataException ex) {
+                                        request.complete(HttpStatusCodes.BAD_REQUEST);
+                                        callback.call();
+                                        LOGGER.error("Cannot create ReaderIterator", ex);
+                                        return;
+                                    }
+                                    if (reader.getTotal() == 0) {
+                                        request.complete(HttpStatusCodes.OK);
+                                        callback.call();
+                                        return;
+                                    }
 
-                                send(request, reader, context, callback);
+                                    send(request, reader, context, callback);
+                                } finally {
+                                    cleanMDC();
+                                }
                             }),
                     (r, e) -> {
                         try {
@@ -68,13 +75,14 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                         }
                     });
         } catch (Throwable throwable) {
+            // Should never happened
             callback.call();
             LOGGER.error("Error on request body read full bytes", throwable);
             throw throwable;
         }
     }
 
-    public void send(HttpServerRequest request, ReaderIterator<Event> reader, SendContext context, ThrottleCallback callback) {
+    private void send(HttpServerRequest request, ReaderIterator<Event> reader, SendContext context, ThrottleCallback callback) {
         AtomicInteger pendingEvents = new AtomicInteger(reader.getTotal());
         AtomicBoolean processed = new AtomicBoolean(false);
         while (reader.hasNext()) {
@@ -90,8 +98,8 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                     }
                     return;
                 }
-            } catch (Exception e) {
-                LOGGER.error("Exception on validation event", e);
+            } catch (Exception ex) {
+                LOGGER.error("Exception on validation event", ex);
                 //TODO: Metrics are coming!
                 if (processed.compareAndSet(false, true)) {
                     request.complete(HttpStatusCodes.BAD_REQUEST);
@@ -138,5 +146,24 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
         if (context.isAsync()) {
             request.complete(HttpStatusCodes.OK);
         }
+    }
+
+    private void initMDC(HttpServerRequest request, SendContext context) {
+        MDC.put("topic",context.getTopic());
+        MDC.put("apiKey", getProtectedApiKey(request));
+    }
+
+    private void cleanMDC() {
+        MDC.remove("topic");
+        MDC.remove("apiKey");
+    }
+
+    private String getProtectedApiKey(HttpServerRequest request) {
+        String apiKey = request.getHeader("apiKey");
+        int pos = apiKey.lastIndexOf('_') + 1;
+        if (pos > 0) {
+            return StringUtil.mask(apiKey, '*', pos);
+        }
+        return StringUtil.mask(apiKey, '*', apiKey.length() / 2);
     }
 }

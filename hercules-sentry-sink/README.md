@@ -20,11 +20,20 @@ Application is configured through properties file.
 
 `sink.sender.sentry.token` - token of Sentry user. It is used for authentication on Sentry
 
-`sink.sender.sentry.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `WARNING`
-
 `sink.sender.sentry.retryLimit` - the number of attempts to send event with retryable errors, default value: `3`
 
 `sink.sender.sentry.rewritingUrl` - URL for sending events to Sentry. This URL rewrites protocol, host and port in DSN received from Sentry
+
+### Filters settings
+Settings filling in is described in [EventFilter javadoc](../hercules-sink/src/main/java/ru/kontur/vostok/hercules/sink/filter/EventFilter.java).
+
+`sink.filter.list` - list of filter classes. Set value: `ru.kontur.vostok.hercules.sentry.sink.LevelEventFilter,ru.kontur.vostok.hercules.sink.filter.WhitelistEventFilter`
+
+`sink.filter.0.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `ERROR` 
+
+`sink.filter.1.paths` - event tags for which should apply WhitelistEventFilter. Set value: `properties/project`
+
+`sink.filter.1.patterns` - pattern of project tag value (values). Current tag value is compared with this pattern in filter
 
 ### Rate Limiting settings 
 
@@ -73,7 +82,6 @@ application.port=6511
 
 sink.sender.sentry.url=https://sentry.io
 sink.sender.sentry.token=1234567890768132cde645f1ba1bcd4ef67ab78cd9ef89801a45be5747c68f87
-sink.sender.sentry.level=warning
 
 sink.sender.throttling.rate.limit=5000
 sink.sender.throttling.rate.timeWindowMs=300000
@@ -84,7 +92,12 @@ sink.sender.readTimeoutMs=25000
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
-sink.pattern=mystream
+sink.filter.list=ru.kontur.vostok.hercules.sentry.sink.LevelEventFilter,ru.kontur.vostok.hercules.sink.filter.WhitelistEventFilter
+sink.filter.0.level=ERROR
+sink.filter.1.paths=properties/project
+sink.filter.1.patterns=project1,project2
+
+sink.pattern=logs_*
 
 context.environment=dev
 context.zone=default

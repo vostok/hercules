@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ContentEncodings;
+import ru.kontur.vostok.hercules.http.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
@@ -19,6 +21,9 @@ import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.util.ByteBufferPool;
+import ru.kontur.vostok.hercules.util.collection.ArrayUtil;
+import ru.kontur.vostok.hercules.util.compression.Compressor;
+import ru.kontur.vostok.hercules.util.compression.Lz4Compressor;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 import java.nio.ByteBuffer;
@@ -33,6 +38,8 @@ public class ReadStreamHandler implements HttpHandler {
 
     private static final StreamReadStateReader STATE_READER = new StreamReadStateReader();
     private static final ByteStreamContentWriter CONTENT_WRITER = new ByteStreamContentWriter();
+
+    private final Compressor compressor = new Lz4Compressor();
 
     private final AuthProvider authProvider;
     private final StreamReader streamReader;
@@ -141,18 +148,20 @@ public class ReadStreamHandler implements HttpHandler {
                                 Encoder encoder = new Encoder(buffer);
                                 CONTENT_WRITER.write(encoder, streamContent);
                                 buffer.flip();
-                                request.getResponse().setContentLength(buffer.remaining());
-                                request.getResponse().send(
-                                        buffer,
-                                        req -> {
-                                            request.complete();
-                                            ByteBufferPool.release(buffer);
-                                        },
-                                        (req, exception) -> {
-                                            LOGGER.error("Error when send response", exception);
-                                            request.complete();
-                                            ByteBufferPool.release(buffer);
-                                        });
+
+                                // FIXME: Should be replaced with generic solution to support multiple compression algorithms
+                                if (ArrayUtil.contains(request.getHeaders(HttpHeaders.ACCEPT_ENCODING), ContentEncodings.LZ4)) {
+                                    int requiredCapacity = compressor.maxCompressedLength(buffer.remaining());
+                                    ByteBuffer compressed = ByteBufferPool.acquire(requiredCapacity);
+                                    compressor.compress(buffer, compressed);
+                                    ByteBufferPool.release(buffer);
+                                    buffer = compressed;
+
+                                    request.getResponse().setHeader(HttpHeaders.CONTENT_ENCODING, ContentEncodings.LZ4);
+                                    request.getResponse().setHeader(HttpHeaders.ORIGINAL_CONTENT_LENGTH, String.valueOf(streamContent.sizeOf()));
+                                }
+
+                                send(request, buffer);
                             } catch (IllegalArgumentException e) {
                                 request.complete(HttpStatusCodes.BAD_REQUEST);
                             } catch (Exception e) {
@@ -160,5 +169,28 @@ public class ReadStreamHandler implements HttpHandler {
                                 request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
                             }
                         }));
+    }
+
+    /**
+     * Send data to the client.
+     * <p>
+     * Note, {@link ByteBuffer buffer} will be released to {@link ByteBufferPool} after request completion.
+     *
+     * @param request the request
+     * @param buffer  the data buffer
+     */
+    private void send(HttpServerRequest request, ByteBuffer buffer) {
+        request.getResponse().setContentLength(buffer.remaining());
+        request.getResponse().send(
+                buffer,
+                req -> {
+                    request.complete();
+                    ByteBufferPool.release(buffer);
+                },
+                (req, exception) -> {
+                    LOGGER.error("Error when send response", exception);
+                    request.complete();
+                    ByteBufferPool.release(buffer);
+                });
     }
 }

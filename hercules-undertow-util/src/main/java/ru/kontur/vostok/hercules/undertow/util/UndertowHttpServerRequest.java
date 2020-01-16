@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.undertow.util;
 
 import io.undertow.io.Sender;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
 import ru.kontur.vostok.hercules.http.ErrorCallback;
 import ru.kontur.vostok.hercules.http.HttpMethod;
@@ -52,6 +53,20 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
     @Override
     public String getHeader(String name) {
         return exchange.getRequestHeaders().getFirst(name);
+    }
+
+    /**
+     * No strings attached.
+     */
+    private static final String[] NO_STRINGS = new String[0];
+
+    @Override
+    public String[] getHeaders(String name) {
+        HeaderValues values = exchange.getRequestHeaders().get(name);
+        if (values == null) {
+            return NO_STRINGS;
+        }
+        return values.toArray();
     }
 
     @Override

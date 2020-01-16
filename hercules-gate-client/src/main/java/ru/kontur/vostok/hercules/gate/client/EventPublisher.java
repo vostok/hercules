@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.gate.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
@@ -52,7 +51,7 @@ public class EventPublisher {
         final int threads = PropertiesUtil.get(Props.THREAD_COUNT, properties).get();
         final String[] urls = PropertiesUtil.get(Props.URLS, properties).get();
         final String apiKey = PropertiesUtil.get(Props.API_KEY, properties).get();
-        final Properties gateClientProperties = PropertiesUtil.ofScope(properties, Scopes.GATE_CLIENT);
+        final Properties gateClientProperties = PropertiesUtil.ofScope(properties, "gate.client");
 
         this.urls = urls;
         this.apiKey = apiKey;

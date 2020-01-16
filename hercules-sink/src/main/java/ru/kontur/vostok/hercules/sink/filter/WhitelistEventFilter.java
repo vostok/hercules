@@ -15,7 +15,7 @@ public class WhitelistEventFilter extends EventFilter {
      *
      * @param properties properties for the filter initialization
      */
-    protected WhitelistEventFilter(Properties properties) {
+    public WhitelistEventFilter(Properties properties) {
         super(properties);
         blacklistEventFilter = new BlacklistEventFilter(properties);
     }
