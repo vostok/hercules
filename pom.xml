@@ -31,6 +31,7 @@
         <logback.version>1.2.3</logback.version>
         <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
         <sentry.version>1.7.27</sentry.version>
+        <lz4.version>1.7.0</lz4.version>
     </properties>
 
     <modules>
@@ -235,6 +236,13 @@
                 <groupId>io.sentry</groupId>
                 <artifactId>sentry</artifactId>
                 <version>${sentry.version}</version>
+            </dependency>
+
+            <!-- LZ4 -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4.version}</version>
             </dependency>
 
             <dependency>

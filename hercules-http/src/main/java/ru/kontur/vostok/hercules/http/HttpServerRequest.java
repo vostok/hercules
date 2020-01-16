@@ -26,15 +26,23 @@ public interface HttpServerRequest {
     /**
      * Get header value of the request. If header is used for multiple times, then return first value.
      *
-     * @param name of the header
+     * @param name header name
      * @return header value or <code>null</code> if it doesn't exist
      */
     String getHeader(String name);
 
     /**
+     * Get header values of the request. If there are no header values in the request, then return empty array.
+     *
+     * @param name header name
+     * @return header values
+     */
+    String[] getHeaders(String name);
+
+    /**
      * Get query parameter value of the request. If parameter is used for multiple times, then return first value.
      *
-     * @param name of the query parameter
+     * @param name query parameter name
      * @return parameter value or <code>null</code> if it doesn't exist
      */
     String getQueryParameter(String name);
@@ -49,7 +57,7 @@ public interface HttpServerRequest {
      * getPathParameter("book") returns "thehitchhikersguidetothegalaxy" and
      * getPathParameter("page") returns "42"
      *
-     * @param name of the path parameter
+     * @param name path parameter name
      * @return parameter value or <code>null</code> if it doesn't exist
      */
     String getPathParameter(String name);
@@ -64,7 +72,7 @@ public interface HttpServerRequest {
     /**
      * Get all query parameter values of the request. If parameter doesn't present, then return empty array.
      *
-     * @param name of the query parameter
+     * @param name query parameter name
      * @return parameter values
      */
     String[] getQueryParameterValues(String name);
@@ -116,7 +124,7 @@ public interface HttpServerRequest {
     /**
      * Complete request processing with specified status code.
      *
-     * @param code of response
+     * @param code response status code
      */
     default void complete(int code) {
         getResponse().setStatusCode(code);
