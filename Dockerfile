@@ -1,5 +1,7 @@
 FROM openjdk:8-jre-alpine
 
+RUN apk add --no-cache jattach --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/
+
 ARG SERVICENAME="unknown"
 ARG VERSION="unknown"
 ARG WORKDIR="/usr/lib/hercules/${SERVICENAME}"
