@@ -5,7 +5,6 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
-import ru.kontur.vostok.hercules.util.text.CharUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.time.ZoneId;
@@ -63,13 +62,14 @@ public class IndexResolver {
 
         Optional<String> index = ContainerUtil.extract(properties.get(), ElasticSearchTags.ELK_INDEX_TAG);
         if (index.isPresent()) {
-            return validate(index.get())
-                    ? index.map(IndexResolver::sanitize)
-                    : Optional.empty();
+            if (!IndexValidator.isValidIndexName(index.get()) || !IndexValidator.isValidLength(index.get())) {
+                return Optional.empty();
+            }
+            return index.map(IndexResolver::sanitize);
         }
 
         Optional<String> project = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
-        if (!project.isPresent() || !validate(project.get())) {
+        if (!project.isPresent() || !IndexValidator.isValidIndexName(project.get())) {
             return Optional.empty();
         }
 
@@ -81,6 +81,11 @@ public class IndexResolver {
                 map(Optional::get).
                 map(IndexResolver::sanitize).
                 collect(Collectors.joining("-"));
+
+        if (!IndexValidator.isValidLength(prefix)) {
+            return Optional.empty();
+        }
+
         return Optional.of(prefix);
     }
 
@@ -103,9 +108,5 @@ public class IndexResolver {
     private static String sanitize(String s) {
         return ILLEGAL_CHARS.matcher(s).replaceAll("_").
                 toLowerCase();
-    }
-
-    private static boolean validate(String s) {
-        return !s.isEmpty() && CharUtil.isAlphaNumeric(s.charAt(0));
     }
 }

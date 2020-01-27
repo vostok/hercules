@@ -46,7 +46,8 @@ public class ElasticSender extends Sender {
     private final boolean leproseryEnable;
     private final LeproserySender leproserySender;
 
-    private final Meter elasticsearchDroppedNonRetryableErrorsMeter;
+    private final Meter droppedNonRetryableErrorsMeter;
+    private final Meter indexValidationErrorsMeter;
 
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
@@ -68,7 +69,8 @@ public class ElasticSender extends Sender {
                 mergePropertiesTagToRoot)
                 : null;
 
-        this.elasticsearchDroppedNonRetryableErrorsMeter = metricsCollector.meter("elasticsearchDroppedNonRetryableErrors");
+        this.droppedNonRetryableErrorsMeter = metricsCollector.meter("droppedNonRetryableErrors");
+        this.indexValidationErrorsMeter = metricsCollector.meter("indexValidationErrors");
     }
 
     @Override
@@ -92,6 +94,7 @@ public class ElasticSender extends Sender {
             if (index.isPresent()) {
                 readyToSend.put(wrapper.getId(), wrapper);
             } else {
+                indexValidationErrorsMeter.mark();
                 nonRetryableErrorsMap.put(wrapper, ValidationResult.error("Event index is null"));
             }
         }
@@ -158,7 +161,7 @@ public class ElasticSender extends Sender {
                 leproserySender.convertAndSend(nonRetryableErrorsInfo);
                 return 0;
             } catch (Exception e) {
-                elasticsearchDroppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
+                droppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
                 return nonRetryableErrorsInfo.size();
             }
         } else {
@@ -167,7 +170,7 @@ public class ElasticSender extends Sender {
                             wrapper.getId(),
                             wrapper.getIndex(),
                             validationResult.error()));
-            elasticsearchDroppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
+            droppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
             return nonRetryableErrorsInfo.size();
         }
     }
