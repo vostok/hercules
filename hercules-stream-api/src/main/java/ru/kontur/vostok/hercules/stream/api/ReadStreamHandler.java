@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.ContentEncodings;
-import ru.kontur.vostok.hercules.http.HttpHeaders;
+import ru.kontur.vostok.hercules.http.header.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;

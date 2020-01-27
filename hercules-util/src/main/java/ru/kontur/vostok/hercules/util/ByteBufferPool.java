@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Pool of reusable ByteBuffers.
  * <p>
- * Class is thread-safe.
+ * Pool serves for direct buffers only. Class is thread-safe.
  *
  * @author Gregory Koshelev
  */
@@ -25,6 +25,8 @@ public class ByteBufferPool {
      * Acquire {@link ByteBuffer} with capacity is at least {@code size}.
      * <p>
      * If no appropriate buffer in the pool, then create new one.
+     * <p>
+     * Acquired buffer is ready for using. So, there is no reason to call {@link ByteBuffer#clear()} on it.
      *
      * @param capacity a minimum buffer capacity
      * @return the byte buffer
@@ -46,11 +48,16 @@ public class ByteBufferPool {
     /**
      * Release {@link ByteBuffer} into the pool.
      * <p>
-     * Released {@link ByteBuffer} is ready for using as {@link ByteBuffer#clear()} has been called.
+     * Method accepts only reusable direct buffers, otherwise it will be no-op.
+     * Also, if the pool exceeds memory limit then the buffer will be throw away.
      *
      * @param buffer the byte buffer
      */
     public static void release(ByteBuffer buffer) {
+        if (!buffer.isDirect() || buffer.isReadOnly()) {
+            return;
+        }
+
         buffer.clear();
         int capacity = buffer.capacity();
         long currentTotalCapacity;
