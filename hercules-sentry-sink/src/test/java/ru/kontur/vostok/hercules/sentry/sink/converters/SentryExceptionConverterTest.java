@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.sentry.sink.converters;
 
 import io.sentry.event.interfaces.SentryException;
+import io.sentry.event.interfaces.SentryStackTraceElement;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
@@ -46,5 +47,22 @@ public class SentryExceptionConverterTest {
         Assert.assertEquals("SomeExceptionClass", exception.getExceptionClassName());
         Assert.assertEquals("test.module", exception.getExceptionPackageName());
         Assert.assertEquals(2, exception.getStackTraceInterface().getStackTrace().length);
+    }
+
+    @Test
+    public void shouldConvertIfStacktraceIsEmpty() {
+        Container container = Container.builder()
+                .tag(ExceptionTags.TYPE_TAG.getName(), Variant.ofString("test.module.SomeExceptionClass"))
+                .tag(ExceptionTags.MESSAGE_TAG.getName(), Variant.ofString("Exception message"))
+                .tag(ExceptionTags.STACK_FRAMES.getName(), Variant.ofVector(Vector.ofContainers(createStacktrace(0))))
+                .build();
+
+        SentryException exception = SentryExceptionConverter.convert(container);
+
+        SentryStackTraceElement[] elements = exception.getStackTraceInterface().getStackTrace();
+        Assert.assertEquals(1, elements.length);
+        SentryStackTraceElement emptyElement =
+                new SentryStackTraceElement("", "", "", 0, null, "", null);
+        Assert.assertEquals(emptyElement, elements[0]);
     }
 }
