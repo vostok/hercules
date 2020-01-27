@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
+import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.nio.charset.StandardCharsets;
@@ -44,5 +46,12 @@ public final class VariantUtil {
             default:
                 return Optional.empty();
         }
+    }
+
+    public static Optional<Container> extractContainer(Variant variant) {
+        if (variant.getType() == Type.CONTAINER) {
+            return Optional.of((Container) variant.getValue());
+        }
+        return Optional.empty();
     }
 }
