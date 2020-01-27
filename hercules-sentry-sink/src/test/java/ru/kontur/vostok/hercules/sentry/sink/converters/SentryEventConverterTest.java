@@ -320,6 +320,48 @@ public class SentryEventConverterTest {
     }
 
     @Test
+    public void shouldSanitizeSentryTagValue() {
+        final String stringValue = "  The source string is longer than 200 characters\n" +
+                "and contains line feed characters and whitespaces at the beginning and end.\n" +
+                "123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_ ";
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag("my_string_tag", Variant.ofString(stringValue))
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
+
+        final String expectedStringValue = "The source string is longer than 200 characters " +
+                "and contains line feed characters and whitespaces at the beginning and end. " +
+                "123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456";
+        Assert.assertEquals(expectedStringValue, sentryEvent.getTags().get("my_string_tag"));
+        Assert.assertEquals(200, sentryEvent.getTags().get("my_string_tag").length());
+    }
+
+    @Test
+    public void shouldSanitizeEmptySentryTagValue() {
+        final String emptyString = "";
+        final String whitespaces = "   ";
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag("my_string_tag_1", Variant.ofString(emptyString))
+                        .tag("my_string_tag_2", Variant.ofString(whitespaces))
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
+        Assert.assertEquals("[empty]", sentryEvent.getTags().get("my_string_tag_1"));
+        Assert.assertEquals("[empty]", sentryEvent.getTags().get("my_string_tag_2"));
+    }
+
+    @Test
     public void shouldSetExtraFromContainer() {
         final String stringValue = "My string";
 
@@ -343,7 +385,6 @@ public class SentryEventConverterTest {
         final String stringValue1 = "one";
         final String stringValue2 = "two";
 
-
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
                 .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
@@ -354,6 +395,41 @@ public class SentryEventConverterTest {
 
         Assert.assertTrue(((List) sentryEvent.getExtra().get("my_extra")).contains(stringValue1));
         Assert.assertTrue(((List) sentryEvent.getExtra().get("my_extra")).contains(stringValue2));
+    }
+
+    @Test
+    public void shouldSetExtraFromVectorWithPrimitives() {
+        final byte byteValue = 0;
+        final short shortValue = 1;
+        final int intValue = 2;
+        final long longValue = 3L;
+        final boolean flagValue = true;
+        final float floatValue = 5.0F;
+        final double doubleValue = 6.0;
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
+                        .tag("byte_vector", Variant.ofVector(Vector.ofBytes(byteValue)))
+                        .tag("short_vector", Variant.ofVector(Vector.ofShorts(shortValue)))
+                        .tag("int_vector", Variant.ofVector(Vector.ofIntegers(intValue)))
+                        .tag("long_vector", Variant.ofVector(Vector.ofLongs(longValue)))
+                        .tag("flag_vector", Variant.ofVector(Vector.ofFlags(flagValue)))
+                        .tag("float_vector", Variant.ofVector(Vector.ofFloats(floatValue)))
+                        .tag("double_vector", Variant.ofVector(Vector.ofDoubles(doubleValue)))
+                        .build()
+                ))
+                .build();
+
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
+
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("byte_vector")).contains(byteValue));
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("short_vector")).contains(shortValue));
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("int_vector")).contains(intValue));
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("long_vector")).contains(longValue));
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("flag_vector")).contains(flagValue));
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("float_vector")).contains(floatValue));
+        Assert.assertTrue(((List) sentryEvent.getExtra().get("double_vector")).contains(doubleValue));
     }
 
     @Test
