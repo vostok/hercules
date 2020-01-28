@@ -9,7 +9,7 @@ import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
  *
  * @author Gregory Koshelev
  */
-public class HeaderUtil {
+public final class HeaderUtil {
     /**
      * Extracts the request header value.
      *
@@ -21,5 +21,9 @@ public class HeaderUtil {
     public static <T> ParameterValue<T> get(Parameter<T> parameter, HttpServerRequest request) {
         String requestHeader = request.getHeader(parameter.name());
         return parameter.from(requestHeader);
+    }
+
+    private HeaderUtil() {
+        /* static class */
     }
 }

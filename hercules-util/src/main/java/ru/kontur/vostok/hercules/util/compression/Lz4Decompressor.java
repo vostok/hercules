@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.util.compression;
 
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
-import net.jpountz.lz4.LZ4SafeDecompressor;
 
 import java.nio.ByteBuffer;
 

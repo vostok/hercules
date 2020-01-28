@@ -4,8 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
+import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.http.ContentEncodings;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
@@ -23,9 +25,11 @@ import ru.kontur.vostok.hercules.util.compression.Lz4Decompressor;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -42,25 +46,37 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                     build();
 
     private final EventSender eventSender;
-
-    private final Meter sentEventsMeter;
+    private final TimeSource time;
 
     private final EventValidator eventValidator = new EventValidator();
-
     private final Lz4Decompressor lz4Decompressor = new Lz4Decompressor();
 
-    public SendRequestProcessor(MetricsCollector metricsCollector, EventSender eventSender) {
-        this.eventSender = eventSender;
+    private final Timer readEventsDurationMsTimer;
+    private final Meter sentEventsMeter;
+    private final Timer decompressionTimeMsTimer;
 
+    public SendRequestProcessor(EventSender eventSender, MetricsCollector metricsCollector) {
+        this(eventSender, metricsCollector, TimeSource.SYSTEM);
+    }
+
+    SendRequestProcessor(EventSender eventSender, MetricsCollector metricsCollector, TimeSource time) {
+        this.eventSender = eventSender;
+        this.time = time;
+
+        this.readEventsDurationMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".readEventsDurationMs");
         this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sentEvents");
+        this.decompressionTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".decompressionTimeMs");
     }
 
     @Override
     public void processAsync(HttpServerRequest request, SendContext context, ThrottleCallback callback) {
         try {
+            final long readEventsStartedAt = time.milliseconds();
             request.readBodyAsync(
                     (r, bytes) -> request.dispatchAsync(
                             () -> {
+                                readEventsDurationMsTimer.update(time.milliseconds() - readEventsStartedAt);
+
                                 ByteBuffer buffer = null;
                                 try {
                                     initMDC(request, context);
@@ -78,7 +94,9 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                             return;
                                         }
                                         buffer = ByteBufferPool.acquire(originalContentLength.get());
-                                        lz4Decompressor.decompress(bytes, buffer);
+                                        try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(decompressionTimeMsTimer, TimeUnit.MILLISECONDS, time)) {
+                                            lz4Decompressor.decompress(bytes, buffer);
+                                        }
                                     } else {
                                         request.complete(HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE);
                                         callback.call();
@@ -106,8 +124,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                             callback.call();
                         }
                     });
-        } catch (
-                Throwable throwable) {
+        } catch (Throwable throwable) {
             // Should never happened
             callback.call();
             LOGGER.error("Error on request body read full bytes", throwable);
