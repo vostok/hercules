@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.http;
 
+import ru.kontur.vostok.hercules.http.header.HttpHeaders;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

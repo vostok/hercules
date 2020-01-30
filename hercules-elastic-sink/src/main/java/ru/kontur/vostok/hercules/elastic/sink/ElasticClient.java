@@ -15,7 +15,7 @@ import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
-import ru.kontur.vostok.hercules.http.HttpHeaders;
+import ru.kontur.vostok.hercules.http.header.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;

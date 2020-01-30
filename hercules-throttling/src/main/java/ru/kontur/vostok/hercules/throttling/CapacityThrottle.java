@@ -95,4 +95,12 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
                         withValidator(LongValidators.positive()).
                         build();
     }
+
+    public long totalCapacity() {
+        return capacity;
+    }
+
+    public long availableCapacity() {
+        return semaphore.availablePermits();
+    }
 }

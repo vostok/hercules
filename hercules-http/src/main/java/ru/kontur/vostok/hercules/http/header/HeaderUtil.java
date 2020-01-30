@@ -1,29 +1,29 @@
-package ru.kontur.vostok.hercules.http.query;
+package ru.kontur.vostok.hercules.http.header;
 
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 /**
- * Http request query util
+ * Http request header util
  *
  * @author Gregory Koshelev
  */
-public final class QueryUtil {
+public final class HeaderUtil {
     /**
-     * Extracts the value of query parameter.
+     * Extracts the request header value.
      *
      * @param parameter the parameter
      * @param request   the http request
-     * @param <T>       the value type of parameter
-     * @return the value of query parameter
+     * @param <T>       the value type
+     * @return the request header value
      */
     public static <T> ParameterValue<T> get(Parameter<T> parameter, HttpServerRequest request) {
-        String requestParameter = request.getQueryParameter(parameter.name());
-        return parameter.from(requestParameter);
+        String requestHeader = request.getHeader(parameter.name());
+        return parameter.from(requestHeader);
     }
 
-    private QueryUtil() {
+    private HeaderUtil() {
         /* static class */
     }
 }

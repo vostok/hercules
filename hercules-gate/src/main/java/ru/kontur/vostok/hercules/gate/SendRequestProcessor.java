@@ -4,10 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
+import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.Timer;
+import ru.kontur.vostok.hercules.http.ContentEncodings;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.header.HeaderUtil;
+import ru.kontur.vostok.hercules.http.header.HttpHeaders;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
@@ -15,8 +20,16 @@ import ru.kontur.vostok.hercules.protocol.decoder.ReaderIterator;
 import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataException;
 import ru.kontur.vostok.hercules.throttling.RequestProcessor;
 import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
+import ru.kontur.vostok.hercules.util.ByteBufferPool;
+import ru.kontur.vostok.hercules.util.compression.Lz4Decompressor;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,43 +39,80 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SendRequestProcessor implements RequestProcessor<HttpServerRequest, SendContext> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SendRequestProcessor.class);
 
-    private final EventSender eventSender;
+    private static final Parameter<Integer> ORIGINAL_CONTENT_LENGTH =
+            Parameter.integerParameter(HttpHeaders.ORIGINAL_CONTENT_LENGTH).
+                    required().
+                    withValidator(IntegerValidators.range(0, 100 * 1024 * 1024)).
+                    build();
 
-    private final Meter sentEventsMeter;
+    private final EventSender eventSender;
+    private final TimeSource time;
 
     private final EventValidator eventValidator = new EventValidator();
+    private final Lz4Decompressor lz4Decompressor = new Lz4Decompressor();
 
-    public SendRequestProcessor(MetricsCollector metricsCollector, EventSender eventSender) {
+    private final Timer readEventsDurationMsTimer;
+    private final Meter sentEventsMeter;
+    private final Timer decompressionTimeMsTimer;
+
+    public SendRequestProcessor(EventSender eventSender, MetricsCollector metricsCollector) {
+        this(eventSender, metricsCollector, TimeSource.SYSTEM);
+    }
+
+    SendRequestProcessor(EventSender eventSender, MetricsCollector metricsCollector, TimeSource time) {
         this.eventSender = eventSender;
+        this.time = time;
 
+        this.readEventsDurationMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".readEventsDurationMs");
         this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sentEvents");
+        this.decompressionTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".decompressionTimeMs");
     }
 
     @Override
     public void processAsync(HttpServerRequest request, SendContext context, ThrottleCallback callback) {
         try {
+            final long readEventsStartedAt = time.milliseconds();
             request.readBodyAsync(
                     (r, bytes) -> request.dispatchAsync(
                             () -> {
+                                readEventsDurationMsTimer.update(time.milliseconds() - readEventsStartedAt);
+
+                                ByteBuffer buffer = null;
                                 try {
                                     initMDC(request, context);
-                                    ReaderIterator<Event> reader;
-                                    try {
-                                        reader = new ReaderIterator<>(new Decoder(bytes), EventReader.readTags(context.getTags()));
-                                    } catch (RuntimeException | InvalidDataException ex) {
-                                        request.complete(HttpStatusCodes.BAD_REQUEST);
-                                        callback.call();
-                                        LOGGER.error("Cannot create ReaderIterator", ex);
-                                        return;
-                                    }
-                                    if (reader.getTotal() == 0) {
-                                        request.complete(HttpStatusCodes.OK);
+
+                                    String contentEncoding = request.getHeader(HttpHeaders.CONTENT_ENCODING);
+                                    if (contentEncoding == null) {
+                                        buffer = ByteBuffer.wrap(bytes);
+                                    } else if (ContentEncodings.LZ4.equals(contentEncoding)) {
+                                        ParameterValue<Integer> originalContentLength =
+                                                HeaderUtil.get(ORIGINAL_CONTENT_LENGTH, request);
+                                        if (originalContentLength.isError()) {
+                                            LOGGER.warn("Request has header Content-Encoding, but there is no valid Original-Content-Length");
+                                            request.complete(HttpStatusCodes.BAD_REQUEST);
+                                            callback.call();
+                                            return;
+                                        }
+                                        buffer = ByteBufferPool.acquire(originalContentLength.get());
+                                        try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(decompressionTimeMsTimer, TimeUnit.MILLISECONDS, time)) {
+                                            lz4Decompressor.decompress(bytes, buffer);
+                                        }
+                                    } else {
+                                        request.complete(HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE);
                                         callback.call();
                                         return;
                                     }
 
-                                    send(request, reader, context, callback);
+                                    process(request, buffer, context, callback);
+                                } catch (RuntimeException ex) {
+                                    request.complete(HttpStatusCodes.BAD_REQUEST);
+                                    LOGGER.error("Cannot process request due to exception", ex);
+                                    callback.call();
                                 } finally {
+                                    if (buffer != null) {
+                                        ByteBufferPool.release(buffer);
+                                    }
+
                                     cleanMDC();
                                 }
                             }),
@@ -80,6 +130,25 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
             LOGGER.error("Error on request body read full bytes", throwable);
             throw throwable;
         }
+
+    }
+
+    private void process(HttpServerRequest request, ByteBuffer buffer, SendContext context, ThrottleCallback callback) {
+        ReaderIterator<Event> reader;
+        try {
+            reader = new ReaderIterator<>(new Decoder(buffer), EventReader.readTags(context.getTags()));
+        } catch (InvalidDataException ex) {
+            request.complete(HttpStatusCodes.BAD_REQUEST);
+            callback.call();
+            LOGGER.error("Request is malformed", ex);
+            return;
+        }
+        if (reader.getTotal() == 0) {
+            request.complete(HttpStatusCodes.OK);
+            callback.call();
+            return;
+        }
+        send(request, reader, context, callback);
     }
 
     private void send(HttpServerRequest request, ReaderIterator<Event> reader, SendContext context, ThrottleCallback callback) {
@@ -149,7 +218,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
     }
 
     private void initMDC(HttpServerRequest request, SendContext context) {
-        MDC.put("topic",context.getTopic());
+        MDC.put("topic", context.getTopic());
         MDC.put("apiKey", getProtectedApiKey(request));
     }
 
