@@ -32,6 +32,7 @@
         <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
         <sentry.version>1.7.27</sentry.version>
         <lz4.version>1.7.0</lz4.version>
+        <clickhouse.version>0.2.3</clickhouse.version>
     </properties>
 
     <modules>
@@ -71,6 +72,9 @@
         <module>hercules-curator</module>
         <module>hercules-sd</module>
         <module>hercules-application</module>
+        <module>hercules-clickhouse-util</module>
+        <module>hercules-clickhouse-sink</module>
+        <module>hercules-tracing-sink-clickhouse</module>
     </modules>
 
     <dependencyManagement>
@@ -245,6 +249,13 @@
                 <version>${lz4.version}</version>
             </dependency>
 
+            <!-- ClickHouse -->
+            <dependency>
+                <groupId>ru.yandex.clickhouse</groupId>
+                <artifactId>clickhouse-jdbc</artifactId>
+                <version>${clickhouse.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-util</artifactId>
@@ -360,6 +371,16 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-sd</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-clickhouse-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-clickhouse-sink</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 
