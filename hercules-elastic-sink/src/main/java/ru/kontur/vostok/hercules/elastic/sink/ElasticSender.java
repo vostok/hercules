@@ -90,7 +90,7 @@ public class ElasticSender extends Sender {
         Map<String, EventWrapper> readyToSend = new HashMap<>(events.size());
         for (Event event : events) {
             Optional<String> index = indexResolver.resolve(event);
-            EventWrapper wrapper = new EventWrapper(event, index.orElse(null));
+            EventWrapper wrapper = new EventWrapper(event, index.orElse("null"));
             if (index.isPresent()) {
                 readyToSend.put(wrapper.getId(), wrapper);
             } else {
