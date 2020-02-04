@@ -19,6 +19,10 @@ public final class MetricsTags {
             .optional()
             .build();
 
+    public static final TagDescription<Optional<String>> TAG_KEY_TAG = TagDescriptionBuilder.string("key")
+            .optional()
+            .build();
+
     public static final TagDescription<Optional<String>> TAG_VALUE_TAG = TagDescriptionBuilder.string("value")
             .optional()
             .build();
