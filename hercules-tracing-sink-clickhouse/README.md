@@ -37,10 +37,14 @@ default value: `5000`
 `sink.sender.tableName` - table name for tracing spans in ClickHouse,
 default value: `tracing_spans`
 
-`sink.sender.clickhouse.url` - JDBC url of ClickHouse DB,
-default value: `jdbc:clickhouse://localhost:8123/default`
+`sink.sender.clickhouse.nodes` - ClickHouse `node:port` comma-separated list,
+default value: `localhost:8123`
 
-`sink.sender.clickhouse.properties` - base scope for ClickHouse data source properties, see JDBC driver docs for details
+`sink.sender.clickhouse.db` - database name in ClickHouse, default value: `default`
+
+`sink.sender.clickhouse.validationIntervalMs` - interval in millis to validate open connections and re-create failed ones, default value: `10000`
+
+`sink.sender.clickhouse.properties` - base scope for ClickHouse connection properties, see JDBC driver docs for details
 
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
@@ -81,18 +85,20 @@ application.port=6513
 
 sink.poolSize=1
 sink.pollTimeoutMs=5000
-sink.batchSize=500000
+sink.batchSize=100000
 sink.pattern=traces_*
 
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.max.partition.fetch.bytes=52428800
 sink.consumer.max.poll.interval.ms=240000
+sink.consumer.max.poll.records=10000
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 sink.sender.pingPeriodMs=60000
 sink.sender.tableName=tracing_spans
-
-sink.sender.clickhouse.url=jdbc:clickhouse://localhost:8123/default
+sink.sender.clickhouse.nodes=localhost:8123
+sink.sender.clickhouse.db=default
+sink.sender.clickhouse.validationIntervalMs=10000
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003

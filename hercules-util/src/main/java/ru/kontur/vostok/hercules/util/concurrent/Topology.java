@@ -2,7 +2,9 @@ package ru.kontur.vostok.hercules.util.concurrent;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -113,6 +115,11 @@ public class Topology<T> implements Iterable<T> {
     @Override
     public Iterator<T> iterator() {
         return iterator;
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<T> asList() {
+        return (List<T>) Arrays.asList(state.array);
     }
 
     private final class TopologyIterator implements Iterator<T> {

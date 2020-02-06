@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.sink.Sender;
 import java.util.Properties;
 
 /**
- * Sink Daemon insert tracing spans from traces stream into tracing spans table in ClickHouse.
+ * Sink Daemon inserts tracing spans from traces stream into tracing spans table in ClickHouse.
  *
  * @author Gregory Koshelev
  * @see ClickHouseTracingSender
@@ -25,7 +25,7 @@ public class ClickHouseTracingSinkDaemon extends AbstractSinkDaemon {
 
     @Override
     protected String getDaemonId() {
-        return "sink.tracing.clickhouse";
+        return "sink.tracing-clickhouse";
     }
 
     @Override

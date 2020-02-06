@@ -7,9 +7,9 @@ import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.tags.TraceSpanTags;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.yandex.clickhouse.util.ClickHouseRowBinaryStream;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
@@ -18,7 +18,7 @@ import java.util.UUID;
  * @author Gregory Koshelev
  */
 public class ClickHouseTracingSender extends ClickHouseSender {
-    private static final String DEFAULT_UUID = new UUID(0,0).toString();
+    private static final UUID DEFAULT_UUID = new UUID(0,0);
 
     private final String query;
 
@@ -26,7 +26,7 @@ public class ClickHouseTracingSender extends ClickHouseSender {
         super(properties, metricsCollector);
 
         String tableName = PropertiesUtil.get(Props.TABLE_NAME, properties).get();
-        this.query = "INSERT INTO " + tableName + " (trace_id, parent_span_id, span_id, payload) VALUES (?, ?, ?, ?)";
+        this.query = "INSERT INTO " + tableName + " (trace_id, parent_span_id, span_id, payload)";
     }
 
     @Override
@@ -35,7 +35,7 @@ public class ClickHouseTracingSender extends ClickHouseSender {
     }
 
     @Override
-    protected boolean bind(PreparedStatement preparedStatement, Event event) throws SQLException {
+    protected boolean write(ClickHouseRowBinaryStream stream, Event event) throws IOException {
         final Optional<UUID> traceId = ContainerUtil.extract(event.getPayload(), TraceSpanTags.TRACE_ID_TAG);
         final Optional<UUID> spanId = ContainerUtil.extract(event.getPayload(), TraceSpanTags.SPAN_ID_TAG);
 
@@ -45,10 +45,11 @@ public class ClickHouseTracingSender extends ClickHouseSender {
 
         final Optional<UUID> parentSpanId = ContainerUtil.extract(event.getPayload(), TraceSpanTags.PARENT_SPAN_ID_TAG);
 
-        preparedStatement.setString(1, traceId.get().toString());
-        preparedStatement.setString(2, parentSpanId.map(UUID::toString).orElse(DEFAULT_UUID));
-        preparedStatement.setString(3, spanId.get().toString());
-        preparedStatement.setBytes(4, event.getBytes());
+        stream.writeUUID(traceId.get());
+        stream.writeUUID(parentSpanId.orElse(DEFAULT_UUID));
+        stream.writeUUID(spanId.get());
+        stream.writeUnsignedLeb128(event.getBytes().length);
+        stream.writeBytes(event.getBytes());
 
         return true;
     }

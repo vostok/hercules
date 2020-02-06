@@ -21,6 +21,7 @@ import ru.kontur.vostok.hercules.sink.filter.EventFilter;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ public class Sink {
 
     private final List<EventFilter> filters;
 
-    private final Duration pollTimeout;
+    private final long pollTimeoutMs;
     private final int batchSize;
     private final long availabilityTimeoutMs;
 
@@ -71,7 +72,7 @@ public class Sink {
 
         this.filters = EventFilter.from(PropertiesUtil.ofScope(properties, "filter"));
 
-        this.pollTimeout = Duration.ofMillis(PropertiesUtil.get(Props.POLL_TIMEOUT_MS, properties).get());
+        this.pollTimeoutMs = PropertiesUtil.get(Props.POLL_TIMEOUT_MS, properties).get();
         this.batchSize = PropertiesUtil.get(Props.BATCH_SIZE, properties).get();
         this.availabilityTimeoutMs = PropertiesUtil.get(Props.AVAILABILITY_TIMEOUT_MS, properties).get();
 
@@ -84,13 +85,12 @@ public class Sink {
         Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, batchSize);
+        consumerProperties.putIfAbsent(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, batchSize);
         consumerProperties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
 
         UuidDeserializer keyDeserializer = new UuidDeserializer();
-        EventDeserializer valueDeserializer = deserializer;
 
-        this.consumer = new KafkaConsumer<>(consumerProperties, keyDeserializer, valueDeserializer);
+        this.consumer = new KafkaConsumer<>(consumerProperties, keyDeserializer, deserializer);
 
         droppedEventsMeter = metricsCollector.meter("droppedEvents");
         filteredEventsMeter = metricsCollector.meter("filteredEvents");
@@ -151,40 +151,43 @@ public class Sink {
                     subscribe();
 
                     while (processor.isAvailable()) {
-                        ConsumerRecords<UUID, Event> pollResult;
-                        try {
-                            pollResult = poll();
-                        } catch (WakeupException ex) {
-                            /*
-                             * WakeupException is used to terminate polling
-                             */
-                            return;
-                        }
-
-                        Set<TopicPartition> partitions = pollResult.partitions();
-
-                        // ConsumerRecords::count works for O(n), where n is partition count
-                        int eventCount = pollResult.count();
-                        List<Event> events = new ArrayList<>(eventCount);
+                        List<Event> events = new ArrayList<>(batchSize * 2);
 
                         int droppedEvents = 0;
                         int filteredEvents = 0;
 
-                        for (TopicPartition partition : partitions) {
-                            List<ConsumerRecord<UUID, Event>> records = pollResult.records(partition);
-                            for (ConsumerRecord<UUID, Event> record : records) {
-                                Event event = record.value();
-                                if (event == null) {// Received non-deserializable data, should be ignored
-                                    droppedEvents++;
-                                    continue;
-                                }
-                                if (!filter(event)) {
-                                    filteredEvents++;
-                                    continue;
-                                }
-                                events.add(event);
+                        long timeoutMs = pollTimeoutMs;
+                        long startedAt = TimeSource.SYSTEM.milliseconds();
+
+                        do {
+                            ConsumerRecords<UUID, Event> pollResult;
+                            try {
+                                pollResult = poll(Duration.ofMillis(timeoutMs));
+                            } catch (WakeupException ex) {
+                                /*
+                                 * WakeupException is used to terminate polling
+                                 */
+                                return;
                             }
-                        }
+
+                            Set<TopicPartition> partitions = pollResult.partitions();
+
+                            for (TopicPartition partition : partitions) {
+                                List<ConsumerRecord<UUID, Event>> records = pollResult.records(partition);
+                                for (ConsumerRecord<UUID, Event> record : records) {
+                                    Event event = record.value();
+                                    if (event == null) {// Received non-deserializable data, should be ignored
+                                        droppedEvents++;
+                                        continue;
+                                    }
+                                    if (!filter(event)) {
+                                        filteredEvents++;
+                                        continue;
+                                    }
+                                    events.add(event);
+                                }
+                            }
+                        } while (events.size() < batchSize && (timeoutMs = pollTimeoutMs - (TimeSource.SYSTEM.milliseconds() - startedAt)) > 0);
 
                         ProcessorResult result = processor.process(events);
                         if (result.isSuccess()) {
@@ -244,8 +247,8 @@ public class Sink {
      * @return polled Events
      * @throws WakeupException if poll terminated due to shutdown
      */
-    protected final ConsumerRecords<UUID, Event> poll() throws WakeupException {
-        return consumer.poll(pollTimeout);
+    protected final ConsumerRecords<UUID, Event> poll(Duration timeout) throws WakeupException {
+        return consumer.poll(timeout);
     }
 
     protected final void commit() {
