@@ -4,7 +4,6 @@ import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -27,34 +26,11 @@ public final class CommonMetrics {
     }
 
     public static void registerCommonMetrics(MetricsCollector metricsCollector) {
-        registerMemoryMetrics(metricsCollector);
+        MemoryMetrics.register(metricsCollector);
+
         registerSystemMetrics(metricsCollector);
         registerGarbageCollectionMetrics(metricsCollector);
         registerThreadsMetrics(metricsCollector);
-    }
-
-    public static void registerCommonMetrics(MetricsCollector metricsCollector, String... patterns) {
-        registerMemoryMetrics(metricsCollector);
-        registerSystemMetrics(metricsCollector);
-        registerGarbageCollectionMetrics(metricsCollector);
-        registerThreadsMetrics(metricsCollector, patterns);
-    }
-
-    public static void registerMemoryMetrics(MetricsCollector metricsCollector) {
-        final Runtime runtime = Runtime.getRuntime();
-        metricsCollector.gauge("memory.totalMemoryBytes", runtime::totalMemory);
-        metricsCollector.gauge("memory.freeMemoryBytes", runtime::freeMemory);
-        metricsCollector.gauge("memory.usedMemoryBytes", () -> runtime.totalMemory() - runtime.freeMemory());
-        metricsCollector.gauge("memory.maxMemoryBytes", runtime::maxMemory);
-        metricsCollector.gauge("memory.totalFreeMemoryBytes", () -> runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory());
-
-        final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
-        if (Objects.nonNull(memoryMXBean)) {
-            metricsCollector.gauge("memory.heapMaxBytes", () -> memoryMXBean.getHeapMemoryUsage().getMax());
-            metricsCollector.gauge("memory.heapUsedBytes", () -> memoryMXBean.getHeapMemoryUsage().getUsed());
-            metricsCollector.gauge("memory.nonHeapMaxBytes", () -> memoryMXBean.getNonHeapMemoryUsage().getMax());
-            metricsCollector.gauge("memory.nonHeapUsedBytes", () -> memoryMXBean.getNonHeapMemoryUsage().getUsed());
-        }
     }
 
     public static void registerSystemMetrics(MetricsCollector metricsCollector) {
