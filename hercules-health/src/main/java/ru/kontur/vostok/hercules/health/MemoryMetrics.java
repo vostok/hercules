@@ -66,7 +66,8 @@ public final class MemoryMetrics {
         String metricPrefix = MetricsUtil.toMetricPath("memory", "non-heap", "internal");
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
-        /* Also, it is possible to get this value as sum of MemoryPoolMXBean.getUsage().getUsed() over list ManagementFactory.getMemoryPoolMXBeans() */
+        // Also, it is possible to get this value as sum of MemoryPoolMXBean.getUsage().getUsed() over list ManagementFactory.getMemoryPoolMXBeans()
+        // Non-heap memory pools are determined by MemoryType of MemoryUsage (see MemoryMetrics.memoryTypes)
         collector.gauge(MetricsUtil.toMetricPathWithPrefix(metricPrefix, "used-bytes"), () -> memoryBean.getNonHeapMemoryUsage().getUsed());
         collector.gauge(MetricsUtil.toMetricPathWithPrefix(metricPrefix, "max-bytes"), () -> memoryBean.getNonHeapMemoryUsage().getMax());
     }
