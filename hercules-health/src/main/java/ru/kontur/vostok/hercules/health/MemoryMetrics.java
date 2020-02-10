@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.health;
 
+import ru.kontur.vostok.hercules.util.ByteBufferPool;
 import ru.kontur.vostok.hercules.util.VmUtil;
 
 import java.lang.management.BufferPoolMXBean;
@@ -29,6 +30,7 @@ public final class MemoryMetrics {
         registerNonHeapMemoryMetrics(collector);
         registerInternalNonHeapMemoryMetrics(collector);
         registerBufferNonHeapMemoryMetrics(collector);
+        registerByteBufferPoolMetrics(collector);
     }
 
     /**
@@ -82,6 +84,18 @@ public final class MemoryMetrics {
             collector.gauge(MetricsUtil.toMetricPathWithPrefix(metricPrefix, bean.getName(), "used-bytes"), bean::getMemoryUsed);
             collector.gauge(MetricsUtil.toMetricPathWithPrefix(metricPrefix, bean.getName(), "capacity-bytes"), bean::getTotalCapacity);
         }
+    }
+
+    /**
+     * Register metrics of {@link ByteBufferPool}.
+     *
+     * @param collector metrics collector
+     */
+    private static void registerByteBufferPoolMetrics(MetricsCollector collector) {
+        String metricPrefix = MetricsUtil.toMetricPath("memory", "non-heap", "ByteBufferPool");
+
+        collector.gauge(MetricsUtil.toMetricPathWithPrefix(metricPrefix, "count"), ByteBufferPool::count);
+        collector.gauge(MetricsUtil.toMetricPathWithPrefix(metricPrefix, "capacity-bytes"), ByteBufferPool::totalCapacity);
     }
 
     private MemoryMetrics() {
