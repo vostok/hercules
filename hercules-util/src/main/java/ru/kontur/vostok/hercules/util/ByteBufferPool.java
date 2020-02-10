@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.ByteBuffer;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -14,9 +15,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Gregory Koshelev
  */
-public class ByteBufferPool {
+public final class ByteBufferPool {
     private static final NavigableSet<ByteBufferWrapper> buffers = new ConcurrentSkipListSet<>();
 
+    private static final AtomicInteger count = new AtomicInteger(0);
     private static final AtomicLong totalCapacity = new AtomicLong(0);
     private static final long totalCapacitySoftLimit = VmUtil.maxDirectMemory() / 2;// 50%
     private static final long totalCapacityHardLimit = VmUtil.maxDirectMemory() * 3 / 4;// 75%
@@ -35,6 +37,7 @@ public class ByteBufferPool {
         ByteBufferWrapper buffer = buffers.tailSet(ByteBufferWrapper.stub(capacity), true).pollFirst();
         if (buffer != null) {
             totalCapacity.addAndGet(-buffer.capacity);
+            count.decrementAndGet();
             return buffer.buffer;
         } else {
             ByteBuffer bb;
@@ -67,6 +70,7 @@ public class ByteBufferPool {
                 return;
             }
         } while (!totalCapacity.compareAndSet(currentTotalCapacity, currentTotalCapacity + capacity));
+        count.incrementAndGet();
         buffers.add(ByteBufferWrapper.wrap(buffer));
     }
 
@@ -77,6 +81,15 @@ public class ByteBufferPool {
      */
     public static long totalCapacity() {
         return totalCapacity.get();
+    }
+
+    /**
+     * Return count of buffers inside the pool.
+     *
+     * @return count
+     */
+    public static int count() {
+        return count.get();
     }
 
     private static ByteBuffer allocateNew(int capacity) {
@@ -99,6 +112,7 @@ public class ByteBufferPool {
                 return null;
             }
             totalCapacity.addAndGet(-buffer.capacity);
+            count.decrementAndGet();
             if (buffer.capacity >= capacity) {
                 return buffer.buffer;
             }
@@ -106,6 +120,10 @@ public class ByteBufferPool {
             freedCapacity += buffer.capacity;
         } while (freedCapacity < capacity);
         return null;
+    }
+
+    private ByteBufferPool() {
+        /* static class */
     }
 
     /**
