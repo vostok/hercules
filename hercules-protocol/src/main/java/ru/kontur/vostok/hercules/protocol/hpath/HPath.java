@@ -12,6 +12,8 @@ import java.util.NoSuchElementException;
  * @author Gregory Koshelev
  */
 public class HPath {
+    private static final HPath EMPTY = new HPath("", new TinyString[0]);
+
     private final String path;
 
     private final TinyString[] tags;
@@ -45,15 +47,24 @@ public class HPath {
         return (tags.length > 0) ? tags[0] : null;
     }
 
-    public HPath getSubHPath() {
-        if (tags.length == 0) {
-            return this;
+    /**
+     * Return sub path is starting with the next tag after the root.
+     * <p>
+     * Return empty sub path (i.e. {@link #empty()} if path is empty itself or it has only root tag.
+     *
+     * @return sub path
+     */
+    public HPath subpath() {
+        if (tags.length == 0 || tags.length == 1) {
+            return EMPTY;
         }
 
-        String[] subTags = new String[tags.length - 1];
+        TinyString[] subTags = new TinyString[tags.length - 1];
         System.arraycopy(tags, 1, subTags, 0, tags.length - 1);
 
-        return fromTags(subTags);
+        String subPath = path.substring(path.indexOf('/') + 1);
+
+        return new HPath(subPath, subTags);
     }
 
     public String getPath() {
@@ -86,6 +97,10 @@ public class HPath {
 
     public static HPath fromPath(String path) {
         return new HPath(path, pathToTags(path));
+    }
+
+    public static HPath empty() {
+        return EMPTY;
     }
 
     /**
