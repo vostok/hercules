@@ -24,11 +24,13 @@ public final class ByteBufferPool {
     private static final long totalCapacityHardLimit = VmUtil.maxDirectMemory() * 3 / 4;// 75%
 
     /**
-     * Acquire {@link ByteBuffer} with capacity is at least {@code size}.
+     * Acquire {@link ByteBuffer} with capacity is at least {@code capacity} and limit is exactly equal to {@code capacity}.
      * <p>
      * If no appropriate buffer in the pool, then create new one.
      * <p>
      * Acquired buffer is ready for using. So, there is no reason to call {@link ByteBuffer#clear()} on it.
+     * <p>
+     * Also, calling {@link ByteBuffer#clear()} may be dangerous due to limit to be changed.
      *
      * @param capacity a minimum buffer capacity
      * @return the byte buffer
@@ -38,6 +40,7 @@ public final class ByteBufferPool {
         if (buffer != null) {
             totalCapacity.addAndGet(-buffer.capacity);
             count.decrementAndGet();
+            buffer.buffer.limit(capacity);
             return buffer.buffer;
         } else {
             ByteBuffer bb;
@@ -114,6 +117,7 @@ public final class ByteBufferPool {
             totalCapacity.addAndGet(-buffer.capacity);
             count.decrementAndGet();
             if (buffer.capacity >= capacity) {
+                buffer.buffer.limit(capacity);
                 return buffer.buffer;
             }
 
