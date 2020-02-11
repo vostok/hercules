@@ -42,12 +42,12 @@ public class GraphiteEventSender extends Sender {
         final int graphitePort = PropertiesUtil.get(Props.GRAPHITE_PORT, properties).get();
         final int retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
         final int diagnosticLogWritePeriodMs = PropertiesUtil.get(Props.DIAGNOSTIC_LOG_WRITE_PERIOD_MS, properties).get();
-        final boolean supportTagsEnable = PropertiesUtil.get(Props.SUPPORT_TAGS_ENABLE, properties).get();
+        final boolean graphiteTagsEnable = PropertiesUtil.get(Props.GRAPHITE_TAGS_ENABLE, properties).get();
 
         graphitePinger = new GraphitePinger(graphiteHost, graphitePort);
         graphiteClient = new GraphiteClient(graphiteHost, graphitePort, retryLimit);
         graphiteClientTimer = metricsCollector.timer("graphiteClientRequestTimeMs");
-        metricsConverter = supportTagsEnable ? new MetricWithTagsEventConverter() : new MetricEventConverter();
+        metricsConverter = graphiteTagsEnable ? new MetricWithTagsEventConverter() : new MetricEventConverter();
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleWithFixedDelay(this::logSentMetricsCount,
@@ -134,8 +134,8 @@ public class GraphiteEventSender extends Sender {
                         withDefault(60000).
                         build();
 
-        static final Parameter<Boolean> SUPPORT_TAGS_ENABLE =
-                Parameter.booleanParameter("support.tags.enable").
+        static final Parameter<Boolean> GRAPHITE_TAGS_ENABLE =
+                Parameter.booleanParameter("graphite.tags.enable").
                         withDefault(false).
                         build();
     }
