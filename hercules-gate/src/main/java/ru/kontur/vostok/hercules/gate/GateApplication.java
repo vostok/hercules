@@ -24,7 +24,6 @@ import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.sd.BeaconService;
 import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
-import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.DefaultHttpServerRequestWeigher;
 import ru.kontur.vostok.hercules.undertow.util.DefaultThrottledHttpServerRequestProcessor;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
@@ -171,13 +170,15 @@ public class GateApplication {
 
         Properties throttlingProperties = PropertiesUtil.ofScope(httpServerProperies, Scopes.THROTTLING);
 
-        SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(metricsCollector, eventSender);
-        Throttle<HttpServerRequest, SendContext> throttle = new CapacityThrottle<>(
+        SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(eventSender, metricsCollector);
+        CapacityThrottle<HttpServerRequest, SendContext> throttle = new CapacityThrottle<>(
                 throttlingProperties,
                 new DefaultHttpServerRequestWeigher(),
                 sendRequestProcessor,
                 new DefaultThrottledHttpServerRequestProcessor()
         );
+        metricsCollector.gauge("throttling.totalCapacity", throttle::totalCapacity);
+        metricsCollector.gauge("throttling.availableCapacity", throttle::availableCapacity);
 
         long maxContentLength = PropertiesUtil.get(HttpServer.Props.MAX_CONTENT_LENGTH, httpServerProperies).get();
 
@@ -185,9 +186,9 @@ public class GateApplication {
         HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
 
         HttpHandler sendAsyncHandler = authHandlerWrapper.wrap(
-                new GateHandler(metricsCollector, authProvider, throttle, authValidationManager, streamStorage, true, maxContentLength));
+                new GateHandler(authProvider, throttle, authValidationManager, streamStorage, true, maxContentLength, metricsCollector));
         HttpHandler sendHandler = authHandlerWrapper.wrap(
-                new GateHandler(metricsCollector, authProvider, throttle, authValidationManager, streamStorage, false, maxContentLength));
+                new GateHandler(authProvider, throttle, authValidationManager, streamStorage, false, maxContentLength, metricsCollector));
 
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperies, metricsCollector).
                 post("/stream/sendAsync", sendAsyncHandler).

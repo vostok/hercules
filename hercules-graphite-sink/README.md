@@ -36,6 +36,8 @@ Application is configured through properties file.
 
 `sink.sender.diagnosticLogWritePeriodMs` - timeout for log count sent metrics to Graphite, default value: `60000`
 
+`sink.sender.graphite.tags.enable` - sending metrics with tags, default value: `false`
+
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
 
@@ -89,6 +91,7 @@ sink.sender.graphite.port=2003
 sink.sender.retryLimit=3
 sink.sender.pingPeriodMs=30000
 sink.sender.diagnosticLogWritePeriodMs=60000
+sink.sender.graphite.tags.enable=false
 
 metrics.graphite.server.addr=graphite.ru
 metrics.graphite.server.port=2003

@@ -5,26 +5,32 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.ByteBuffer;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Pool of reusable ByteBuffers.
  * <p>
- * Class is thread-safe.
+ * Pool serves for direct buffers only. Class is thread-safe.
  *
  * @author Gregory Koshelev
  */
-public class ByteBufferPool {
+public final class ByteBufferPool {
     private static final NavigableSet<ByteBufferWrapper> buffers = new ConcurrentSkipListSet<>();
 
+    private static final AtomicInteger count = new AtomicInteger(0);
     private static final AtomicLong totalCapacity = new AtomicLong(0);
     private static final long totalCapacitySoftLimit = VmUtil.maxDirectMemory() / 2;// 50%
     private static final long totalCapacityHardLimit = VmUtil.maxDirectMemory() * 3 / 4;// 75%
 
     /**
-     * Acquire {@link ByteBuffer} with capacity is at least {@code size}.
+     * Acquire {@link ByteBuffer} with capacity is at least {@code capacity} and limit is exactly equal to {@code capacity}.
      * <p>
      * If no appropriate buffer in the pool, then create new one.
+     * <p>
+     * Acquired buffer is ready for using. So, there is no reason to call {@link ByteBuffer#clear()} on it.
+     * <p>
+     * Also, calling {@link ByteBuffer#clear()} may be dangerous due to limit to be changed.
      *
      * @param capacity a minimum buffer capacity
      * @return the byte buffer
@@ -33,6 +39,8 @@ public class ByteBufferPool {
         ByteBufferWrapper buffer = buffers.tailSet(ByteBufferWrapper.stub(capacity), true).pollFirst();
         if (buffer != null) {
             totalCapacity.addAndGet(-buffer.capacity);
+            count.decrementAndGet();
+            buffer.buffer.limit(capacity);
             return buffer.buffer;
         } else {
             ByteBuffer bb;
@@ -46,11 +54,16 @@ public class ByteBufferPool {
     /**
      * Release {@link ByteBuffer} into the pool.
      * <p>
-     * Released {@link ByteBuffer} is ready for using as {@link ByteBuffer#clear()} has been called.
+     * Method accepts only reusable direct buffers, otherwise it will be no-op.
+     * Also, if the pool exceeds memory limit then the buffer will be throw away.
      *
      * @param buffer the byte buffer
      */
     public static void release(ByteBuffer buffer) {
+        if (!buffer.isDirect() || buffer.isReadOnly()) {
+            return;
+        }
+
         buffer.clear();
         int capacity = buffer.capacity();
         long currentTotalCapacity;
@@ -60,6 +73,7 @@ public class ByteBufferPool {
                 return;
             }
         } while (!totalCapacity.compareAndSet(currentTotalCapacity, currentTotalCapacity + capacity));
+        count.incrementAndGet();
         buffers.add(ByteBufferWrapper.wrap(buffer));
     }
 
@@ -70,6 +84,15 @@ public class ByteBufferPool {
      */
     public static long totalCapacity() {
         return totalCapacity.get();
+    }
+
+    /**
+     * Return count of buffers inside the pool.
+     *
+     * @return count
+     */
+    public static int count() {
+        return count.get();
     }
 
     private static ByteBuffer allocateNew(int capacity) {
@@ -92,13 +115,19 @@ public class ByteBufferPool {
                 return null;
             }
             totalCapacity.addAndGet(-buffer.capacity);
+            count.decrementAndGet();
             if (buffer.capacity >= capacity) {
+                buffer.buffer.limit(capacity);
                 return buffer.buffer;
             }
 
             freedCapacity += buffer.capacity;
         } while (freedCapacity < capacity);
         return null;
+    }
+
+    private ByteBufferPool() {
+        /* static class */
     }
 
     /**

@@ -15,7 +15,7 @@ public final class QueryUtil {
      *
      * @param parameter the parameter
      * @param request   the http request
-     * @param <T>       the value of parameter
+     * @param <T>       the value type of parameter
      * @return the value of query parameter
      */
     public static <T> ParameterValue<T> get(Parameter<T> parameter, HttpServerRequest request) {

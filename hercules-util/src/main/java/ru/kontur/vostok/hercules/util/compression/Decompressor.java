@@ -7,4 +7,8 @@ import java.nio.ByteBuffer;
  */
 public interface Decompressor {
     void decompress(ByteBuffer src, ByteBuffer dest);
+
+    default void decompress(byte[] src, ByteBuffer dest) {
+        decompress(ByteBuffer.wrap(src), dest);
+    }
 }

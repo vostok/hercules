@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.http;
+package ru.kontur.vostok.hercules.http.header;
 
 /**
  * @author Gregory Koshelev

@@ -20,6 +20,9 @@ import java.util.Optional;
 public class SentryExceptionConverter {
 
     private static final int NOT_FOUND = -1;
+    private static final StackTraceInterface EMPTY_STACK_TRACE = new StackTraceInterface(
+            new SentryStackTraceElement[]{SentryStackTraceElementConverter.convert(Container.empty())}
+            );
 
     /**
      * Convert exception details from a Hercules event to a Sentry event
@@ -41,8 +44,9 @@ public class SentryExceptionConverter {
                         .map(SentryStackTraceElementConverter::convert)
                         .toArray(SentryStackTraceElement[]::new)
                 )
+                .filter(elements -> elements.length > 0)
                 .map(StackTraceInterface::new)
-                .orElse(new StackTraceInterface(new StackTraceElement[0]));
+                .orElse(EMPTY_STACK_TRACE);
 
         return new SentryException(
                 message,

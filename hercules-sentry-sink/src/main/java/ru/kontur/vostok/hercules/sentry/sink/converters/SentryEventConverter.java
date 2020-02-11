@@ -201,11 +201,7 @@ public class SentryEventConverter {
             }
 
             if (VariantUtil.isPrimitive(value)) {
-                String stringValue = extractString(value);
-                if (stringValue.length() > MAX_TEG_LENGTH) {
-                    stringValue = stringValue.substring(0, MAX_TEG_LENGTH);
-                }
-                eventBuilder.withTag(tagName, stringValue);
+                eventBuilder.withTag(tagName, sanitizeTagValue(value));
                 continue;
             }
 
@@ -243,28 +239,91 @@ public class SentryEventConverter {
     }
 
     private static Object extractObject(Variant variant) {
-        switch (variant.getType()) {
+        return asSentryObject(variant.getType(), variant.getValue());
+    }
+
+    private static Object asSentryObject(Type type, Object object) {
+        switch (type) {
             case STRING:
-                return new String((byte[]) variant.getValue(), StandardCharsets.UTF_8);
+                return new String((byte[]) object, StandardCharsets.UTF_8);
             case CONTAINER:
                 Map<String, Object> map = new HashMap<>();
-                for (Map.Entry<TinyString, Variant> entry : ((Container) variant.getValue()).tags().entrySet()) {
+                for (Map.Entry<TinyString, Variant> entry : ((Container) object).tags().entrySet()) {
                     map.put(entry.getKey().toString(), extractObject(entry.getValue()));
                 }
                 return map;
             case VECTOR:
-                Vector vector = (Vector) variant.getValue();
-                Object[] objects = (Object[]) vector.getValue();
-                List<Object> resultList = new ArrayList<>();
-                for (Object object : objects) {
-                    resultList.add(extractObject(new Variant(vector.getType(), object)));
-                }
-                return resultList;
+                Vector vector = (Vector) object;
+                return extractFromVector(vector);
             case NULL:
                 return "null";
             default:
-                return variant.getValue();
+                return object;
         }
+    }
+
+    private static List<Object> extractFromVector(Vector vector) {
+        List<Object> resultList = new ArrayList<>();
+        switch (vector.getType()) {
+            case BYTE:
+                byte[] bytes = (byte[]) vector.getValue();
+                for (byte element : bytes) {
+                    resultList.add(element);
+                }
+                break;
+            case SHORT:
+                short[] shorts = (short[]) vector.getValue();
+                for (short element : shorts) {
+                    resultList.add(element);
+                }
+                break;
+            case INTEGER:
+                int[] ints = (int[]) vector.getValue();
+                for (int element : ints) {
+                    resultList.add(element);
+                }
+                break;
+            case LONG:
+                long[] longs = (long[]) vector.getValue();
+                for (long element : longs) {
+                    resultList.add(element);
+                }
+                break;
+            case FLAG:
+                boolean[] flags = (boolean[]) vector.getValue();
+                for (boolean element : flags) {
+                    resultList.add(element);
+                }
+                break;
+            case FLOAT:
+                float[] floats = (float[]) vector.getValue();
+                for (float element : floats) {
+                    resultList.add(element);
+                }
+                break;
+            case DOUBLE:
+                double[] doubles = (double[]) vector.getValue();
+                for (double element : doubles) {
+                    resultList.add(element);
+                }
+                break;
+            default:
+                Object[] objects = (Object[]) vector.getValue();
+                for (Object element : objects) {
+                    resultList.add(asSentryObject(vector.getType(), element));
+                }
+        }
+        return resultList;
+    }
+
+    private static String sanitizeTagValue(Variant value) {
+        String stringValue = extractString(value).trim();
+        if (stringValue.length() > MAX_TEG_LENGTH) {
+            stringValue = stringValue.substring(0, MAX_TEG_LENGTH);
+        } else if (stringValue.length() == 0) {
+            stringValue = "[empty]";
+        }
+        return stringValue.replace('\n', ' ');
     }
 
     private static ExceptionInterface convertException(final Container exception) {

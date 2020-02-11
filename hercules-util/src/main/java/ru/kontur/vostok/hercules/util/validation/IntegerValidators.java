@@ -19,6 +19,20 @@ public final class IntegerValidators {
     }
 
     /**
+     * Range validator checks if value is limited to a range of {@code left} to {@code right}.
+     *
+     * @param left  left bound, inclusive
+     * @param right right bound, exclusive
+     * @return Range validator
+     */
+    public static Validator<Integer> range(int left, int right) {
+        return value ->
+                (value >= left && value < right)
+                        ? ValidationResult.ok()
+                        : ValidationResult.error("Value should be in range [" + left + ", " + right + ")");
+    }
+
+    /**
      * Port validator
      *
      * @return validator

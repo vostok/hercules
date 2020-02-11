@@ -2,8 +2,10 @@ package ru.kontur.vostok.hercules.gate;
 
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -18,18 +20,18 @@ import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.util.Maps;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
  */
 public class GateHandler implements HttpHandler {
-    private final MetricsCollector metricsCollector;
-
     private final AuthProvider authProvider;
     private final Throttle<HttpServerRequest, SendContext> throttle;
     private final StreamStorage streamStorage;
@@ -38,19 +40,40 @@ public class GateHandler implements HttpHandler {
     private final boolean async;
     private final long maxContentLength;
 
+    private final TimeSource time;
+
     private final Meter requestMeter;
     private final Meter requestSizeMeter;
+    private final Timer requestThrottleDurationMsTimer;
 
     public GateHandler(
-            MetricsCollector metricsCollector,
             AuthProvider authProvider,
             Throttle<HttpServerRequest, SendContext> throttle,
             AuthValidationManager authValidationManager,
             StreamStorage streamStorage,
             boolean async,
-            long maxContentLength
-    ) {
-        this.metricsCollector = metricsCollector;
+            long maxContentLength,
+            MetricsCollector metricsCollector) {
+        this(
+                authProvider,
+                throttle,
+                authValidationManager,
+                streamStorage,
+                async,
+                maxContentLength,
+                metricsCollector,
+                TimeSource.SYSTEM);
+    }
+
+    GateHandler(
+            AuthProvider authProvider,
+            Throttle<HttpServerRequest, SendContext> throttle,
+            AuthValidationManager authValidationManager,
+            StreamStorage streamStorage,
+            boolean async,
+            long maxContentLength,
+            MetricsCollector metricsCollector,
+            TimeSource time) {
 
         this.authProvider = authProvider;
         this.throttle = throttle;
@@ -60,6 +83,8 @@ public class GateHandler implements HttpHandler {
         this.async = async;
         this.maxContentLength = maxContentLength;
 
+        this.time = time;
+
         if (async) {
             this.requestMeter = metricsCollector.meter("gateHandlerAsyncRequests");
             this.requestSizeMeter = metricsCollector.meter("gateHandlerAsyncRequestSizeBytes");
@@ -67,6 +92,7 @@ public class GateHandler implements HttpHandler {
             this.requestMeter = metricsCollector.meter("gateHandlerSyncRequests");
             this.requestSizeMeter = metricsCollector.meter("gateHandlerSyncRequestSizeBytes");
         }
+        this.requestThrottleDurationMsTimer = metricsCollector.timer("requestThrottleDurationMs");
     }
 
     @Override
@@ -130,7 +156,9 @@ public class GateHandler implements HttpHandler {
         ContentValidator validator = authValidationManager.validator(apiKey, stream);
 
         SendContext context = new SendContext(async, topic, tags, partitions, shardingKey, validator);
-        throttle.throttleAsync(request, context);
+        try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(requestThrottleDurationMsTimer, TimeUnit.MILLISECONDS, time)) {
+            throttle.throttleAsync(request, context);
+        }
     }
 
     private static class QueryParameters {

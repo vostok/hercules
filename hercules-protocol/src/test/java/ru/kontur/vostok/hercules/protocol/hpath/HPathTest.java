@@ -30,4 +30,19 @@ public class HPathTest {
         Assert.assertEquals(TinyString.of("last"), iterator.next());
         Assert.assertFalse(iterator.hasNext());
     }
+
+    @Test
+    public void subpathTest() {
+        HPath hPath = HPath.fromPath("root/next/last");
+        HPath subpath = hPath.subpath();
+        HPath subsubpath = subpath.subpath();
+
+        Assert.assertEquals("next/last", subpath.getPath());
+        Assert.assertEquals(TinyString.of("next"), subpath.getRootTag());
+
+        Assert.assertEquals("last", subsubpath.getPath());
+        Assert.assertEquals(TinyString.of("last"), subsubpath.getRootTag());
+
+        Assert.assertEquals(HPath.empty(), subsubpath.subpath());
+    }
 }

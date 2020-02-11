@@ -9,6 +9,7 @@ import ru.kontur.vostok.hercules.http.handler.AboutHandler;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.handler.PingHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandlerBuilder;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.Properties;
 
@@ -17,10 +18,16 @@ import java.util.Properties;
  */
 public class InstrumentedRouteHandlerBuilder extends RouteHandlerBuilder {
     private final MetricsCollector metricsCollector;
+    private final TimeSource time;
 
     public InstrumentedRouteHandlerBuilder(Properties properties, MetricsCollector metricsCollector) {
+        this(properties, metricsCollector, TimeSource.SYSTEM);
+    }
+
+    InstrumentedRouteHandlerBuilder(Properties properties, MetricsCollector metricsCollector, TimeSource time) {
         super(properties);
         this.metricsCollector = metricsCollector;
+        this.time = time;
 
         get("/ping", new PingHandler());
         get("/about", new AboutHandler());

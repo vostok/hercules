@@ -55,9 +55,7 @@ public abstract class AbstractSinkDaemon {
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
-            CommonMetrics.registerCommonMetrics(
-                    metricsCollector,
-                    PropertiesUtil.get(Props.THREAD_GROUP_REGEXP, metricsProperties).get());
+            CommonMetrics.registerCommonMetrics(metricsCollector);
 
             this.sender = createSender(senderProperties, metricsCollector);
             sender.start();
@@ -157,11 +155,6 @@ public abstract class AbstractSinkDaemon {
         static final Parameter<Integer> POOL_SIZE =
                 Parameter.integerParameter("poolSize").
                         withDefault(1).
-                        build();
-
-        static final Parameter<String[]> THREAD_GROUP_REGEXP =
-                Parameter.stringArrayParameter("thread.group.regexp").
-                        withDefault(new String[]{}).
                         build();
     }
 }

@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.http;
 
+import ru.kontur.vostok.hercules.http.header.HttpHeaders;
+
 import java.util.Map;
 import java.util.Optional;
 
