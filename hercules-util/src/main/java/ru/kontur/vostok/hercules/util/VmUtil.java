@@ -7,6 +7,8 @@ import java.lang.management.RuntimeMXBean;
 import java.util.List;
 
 /**
+ *
+ *
  * @author Gregory Koshelev
  */
 public final class VmUtil {
@@ -21,6 +23,7 @@ public final class VmUtil {
             if (arg.startsWith("-XX:MaxDirectMemorySize=")) {
                 String size = arg.substring("-XX:MaxDirectMemorySize=".length());
                 maxDirectMemorySize = parseSize(size, Runtime.getRuntime().maxMemory());
+                break;
             }
         }
 
