@@ -28,7 +28,7 @@ Properties:
   environment?: String # Environment
   release?: String # Release version of application
   traceId?: String or UUID # Trace identifier
-  fingerprint?: Vector<String> # Labels for grouping in Sentry
+  fingerprint?: Vector<String> or String # Labels for grouping in Sentry
   platform?: String # Platform of application
   logger?: String # Logger which created the event
 ```

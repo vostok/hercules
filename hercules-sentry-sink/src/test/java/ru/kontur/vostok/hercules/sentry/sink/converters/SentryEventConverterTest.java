@@ -446,4 +446,20 @@ public class SentryEventConverterTest {
 
         Assert.assertEquals(uuid.toString(), sentryEvent.getTransaction());
     }
+
+    @Test
+    public void shouldAcceptStringAsFingerprint() {
+        final String fingerprint = "some_fingerprint";
+
+        final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
+                .create(0, someUuid)
+                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
+                        Container.of(SentryTags.FINGERPRINT_TAG.getName(), Variant.ofString(fingerprint))))
+                .build();
+
+        final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
+
+        Assert.assertEquals(fingerprint, sentryEvent.getFingerprint().get(0));
+        Assert.assertEquals(1, sentryEvent.getFingerprint().size());
+    }
 }
