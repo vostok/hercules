@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.sentry.sink;
+package ru.kontur.vostok.hercules.sentry.sink.filter;
 
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;

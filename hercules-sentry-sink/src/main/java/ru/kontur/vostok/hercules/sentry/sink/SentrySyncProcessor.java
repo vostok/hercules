@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 public class SentrySyncProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
+    private static final Pattern FORBIDDEN_CHARS_PATTERN = Pattern.compile("[^-_a-z0-9]");
 
     private final Level defaultLevel = Level.WARNING;
     private final int retryLimit;
@@ -233,8 +234,7 @@ public class SentrySyncProcessor {
     }
 
     private String sanitizeName(String name) {
-        Pattern pattern = Pattern.compile("[^-_a-z0-9]");
-        return pattern.matcher(name.toLowerCase()).replaceAll("_");
+        return FORBIDDEN_CHARS_PATTERN.matcher(name.toLowerCase()).replaceAll("_");
     }
 
     private String makePrefix(final String organization, final String project) {
