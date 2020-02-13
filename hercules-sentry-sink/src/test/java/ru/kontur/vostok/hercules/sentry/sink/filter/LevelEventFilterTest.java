@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.sentry.sink;
+package ru.kontur.vostok.hercules.sentry.sink.filter;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -20,14 +20,14 @@ public class LevelEventFilterTest {
     @BeforeClass
     public static void init() {
         Properties properties = new Properties();
-        properties.setProperty("0.level", "ERROR");
+        properties.setProperty("level", "WARNING"); //This value does not equal default value "ERROR"
         filter = new LevelEventFilter(properties);
     }
 
     @Test
     public void shouldReturnTrueIfLevelEqualsWithRequired() {
         Event event = getEventBuilder().
-                tag("level", Variant.ofString("error")).
+                tag("level", Variant.ofString("warning")).
                 build();
 
         Assert.assertTrue(filter.test(event));
