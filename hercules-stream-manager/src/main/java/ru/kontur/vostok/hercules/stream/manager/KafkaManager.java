@@ -11,8 +11,10 @@ import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.util.time.DurationUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,7 +27,6 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class KafkaManager {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaManager.class);
 
     private final AdminClient adminClient;
@@ -36,7 +37,7 @@ public class KafkaManager {
         this.replicationFactor = replicationFactor;
     }
 
-    public void createTopic(String topic, int partitions, Long ttl) {
+    public CreateTopicResult createTopic(String topic, int partitions, Long ttl) {
         Map<String, String> configs = new HashMap<>();
         if (ttl != null) {
             configs.put("retention.ms", ttl.toString());
@@ -48,8 +49,14 @@ public class KafkaManager {
         Future<Void> future = result.values().get(topic);
         try {
             future.get();
-        } catch (Exception e) {
-            LOGGER.error("Topic creation fails with exception", e);
+            return CreateTopicResult.CREATED;
+        } catch (Exception ex) {
+            if (ex.getCause() instanceof TopicExistsException) {
+                LOGGER.warn("Topic already exists");
+                return CreateTopicResult.ALREADY_EXISTS;
+            }
+            LOGGER.error("Topic creation failed with exception", ex);
+            return CreateTopicResult.FAILED;
         }
     }
 
@@ -64,8 +71,8 @@ public class KafkaManager {
         Future<Void> future = result.values().get(resourceConfig);
         try {
             future.get();
-        } catch (Exception e) {
-            LOGGER.error("Change of ttl fails with exception", e);
+        } catch (Exception ex) {
+            LOGGER.error("Change of ttl fails with exception", ex);
         }
     }
 
@@ -75,8 +82,8 @@ public class KafkaManager {
         Future<Void> future = result.values().get(topic);
         try {
             future.get();
-        } catch (Exception e) {
-            LOGGER.error("Increasing of partitions count fails with exception", e);
+        } catch (Exception ex) {
+            LOGGER.error("Increasing of partitions count fails with exception", ex);
         }
     }
 
@@ -85,12 +92,12 @@ public class KafkaManager {
         Future<Void> future = result.all();
         try {
             future.get();
-        } catch (Exception e) {
-            LOGGER.error("Topic deletion fails with exception", e);
+        } catch (Exception ex) {
+            LOGGER.error("Topic deletion fails with exception", ex);
         }
     }
 
     public void close(long duration, TimeUnit unit) {
-        adminClient.close(duration, unit);
+        adminClient.close(DurationUtil.of(duration, unit));
     }
 }
