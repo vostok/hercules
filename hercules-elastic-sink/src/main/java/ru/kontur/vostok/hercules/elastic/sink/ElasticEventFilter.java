@@ -28,7 +28,7 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class ElasticEventFilter extends EventFilter {
-    ElasticEventFilter(Properties properties) {
+    public ElasticEventFilter(Properties properties) {
         super(properties);
     }
 

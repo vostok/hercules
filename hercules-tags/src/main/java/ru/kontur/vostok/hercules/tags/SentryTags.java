@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.tags;
 
 import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.util.StandardExtractors;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
 
@@ -32,6 +33,7 @@ public class SentryTags {
      * The strings which are used for grouping the events by the issues in Sentry
      */
     public static final TagDescription<Optional<String[]>> FINGERPRINT_TAG = TagDescriptionBuilder.stringVector("fingerprint")
+            .addScalarExtractor(Type.STRING, o -> new String[]{StandardExtractors.extractString(o)})
             .optional()
             .build();
 
