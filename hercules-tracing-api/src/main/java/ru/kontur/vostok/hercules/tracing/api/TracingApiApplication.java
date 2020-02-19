@@ -1,36 +1,32 @@
-package ru.kontur.hercules.tracing.api;
+package ru.kontur.vostok.hercules.tracing.api;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
-import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
+import ru.kontur.vostok.hercules.health.CommonMetrics;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.curator.CuratorClient;
-import ru.kontur.vostok.hercules.health.CommonMetrics;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
- * TracingApiApplication
+ * Tracing API Application
  *
- * @author Kirill Sulim
+ * @author Gregory Koshelev
  */
 public class TracingApiApplication {
     private static final Logger LOGGER = LoggerFactory.getLogger(TracingApiApplication.class);
 
-    private static CuratorClient curatorClient;
     private static MetricsCollector metricsCollector;
-    private static CassandraConnector cassandraConnector;
     private static TracingReader tracingReader;
     private static HttpServer server;
 
@@ -44,23 +40,15 @@ public class TracingApiApplication {
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
-            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-            Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-
-            curatorClient = new CuratorClient(curatorProperties);
-            curatorClient.start();
-
+            Properties readerProperties = PropertiesUtil.ofScope(properties, "reader");
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            cassandraConnector = new CassandraConnector(cassandraProperties);
-            cassandraConnector.connect();
-
-            tracingReader = new TracingReader(cassandraConnector);
+            tracingReader = TracingReader.createTracingReader(readerProperties);
 
             server = createHttpServer(httpServerProperties);
             server.start();
@@ -88,11 +76,11 @@ public class TracingApiApplication {
         }
 
         try {
-            if (cassandraConnector != null) {
-                cassandraConnector.close();
+            if (tracingReader != null) {
+                tracingReader.close();
             }
         } catch (Throwable t) {
-            LOGGER.error("Error on stopping cassandra connector", t);
+            LOGGER.error("Error on stopping tracing reader", t);
             //TODO: Process error
         }
 
@@ -102,15 +90,6 @@ public class TracingApiApplication {
             }
         } catch (Throwable t) {
             LOGGER.error("Error on metrics collector shutdown", t);
-            //TODO: Process error
-        }
-
-        try {
-            if (curatorClient != null) {
-                curatorClient.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping curator client", t);
             //TODO: Process error
         }
 

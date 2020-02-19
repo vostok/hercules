@@ -1,4 +1,4 @@
-package ru.kontur.hercules.tracing.api;
+package ru.kontur.vostok.hercules.tracing.api.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
@@ -7,22 +7,27 @@ import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import ru.kontur.hercules.tracing.api.cassandra.PagedResult;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
+import ru.kontur.vostok.hercules.tracing.api.Page;
+import ru.kontur.vostok.hercules.tracing.api.TracingReader;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 /**
  * @author Gregory Koshelev
  */
-public class TracingReader {
+public class CassandraTracingReader implements TracingReader {
     private static final EventReader EVENT_READER = EventReader.readAllTags();
 
     private final CassandraConnector cassandraConnector;
@@ -30,36 +35,41 @@ public class TracingReader {
     private final PreparedStatement selectTraceSpansByTraceIdQuery;
     private final PreparedStatement selectTraceSpansByTraceIdAndParentSpanIdQuery;
 
-    public TracingReader(CassandraConnector cassandraConnector) {
-        this.cassandraConnector = cassandraConnector;
+    public CassandraTracingReader(Properties properties) {
+        Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
+
+        this.cassandraConnector = new CassandraConnector(cassandraProperties);
         this.session = cassandraConnector.session();
+
+        String table = PropertiesUtil.get(Props.TABLE, properties).get();
 
         this.selectTraceSpansByTraceIdQuery = session.prepare(
                 "SELECT payload" +
-                        " FROM tracing_spans" +
+                        " FROM " + table +
                         " WHERE trace_id = ?");
         this.selectTraceSpansByTraceIdAndParentSpanIdQuery = session.prepare(
                 "SELECT payload" +
-                        " FROM tracing_spans" +
+                        " FROM " + table +
                         " WHERE trace_id = ? AND parent_span_id = ?");
     }
 
     /**
      * Get trace spans by trace id
      *
-     * @param traceId           trace id
-     * @param limit             max count of fetched events
-     * @param pagingStateString page state returned in previous fetch or null on first fetch
+     * @param traceId     trace id
+     * @param limit       max count of fetched events
+     * @param pagingState page state returned in previous fetch or null on first fetch
      * @return list of events
      */
-    public PagedResult<Event> getTraceSpansByTraceId(
+    @Override
+    public Page<Event> getTraceSpansByTraceId(
             @NotNull final UUID traceId,
             final int limit,
-            @Nullable final String pagingStateString) {
+            @Nullable final String pagingState) {
         return select(
                 selectTraceSpansByTraceIdQuery,
                 limit,
-                pagingStateString,
+                pagingState,
                 traceId
         );
     }
@@ -67,26 +77,32 @@ public class TracingReader {
     /**
      * Get trace spans by span id and parent span id
      *
-     * @param traceId           trace id
-     * @param parentSpanId      parent span id
-     * @param limit             max count of fetched events
-     * @param pagingStateString page state returned in previous fetch or null on first fetch
+     * @param traceId      trace id
+     * @param parentSpanId parent span id
+     * @param limit        max count of fetched events
+     * @param pagingState  page state returned in previous fetch or null on first fetch
      * @return list of events
      */
-    public PagedResult<Event> getTraceSpansByTraceIdAndParentSpanId(
+    @Override
+    public Page<Event> getTraceSpansByTraceIdAndParentSpanId(
             @NotNull final UUID traceId,
             @NotNull final UUID parentSpanId,
             final int limit,
-            @Nullable final String pagingStateString) {
+            @Nullable final String pagingState) {
         return select(
                 selectTraceSpansByTraceIdAndParentSpanIdQuery,
                 limit,
-                pagingStateString,
+                pagingState,
                 traceId,
                 parentSpanId);
     }
 
-    private PagedResult<Event> select(
+    @Override
+    public void close() {
+        cassandraConnector.close();
+    }
+
+    private Page<Event> select(
             @NotNull final PreparedStatement selectQuery,
             final int limit,
             @Nullable final String pagingStateString,
@@ -125,7 +141,7 @@ public class TracingReader {
 
         final ByteBuffer pagingState = resultSet.getExecutionInfo().getPagingState();
 
-        return new PagedResult<>(
+        return new Page<>(
                 events,
                 pagingState != null ? ByteUtil.toHexString(pagingState) : null);
     }
@@ -133,5 +149,12 @@ public class TracingReader {
     private static Event convert(final Row row) {
         final ByteBuffer payload = row.getByteBuffer(0);
         return EVENT_READER.read(new Decoder(payload));
+    }
+
+    private static class Props {
+        static Parameter<String> TABLE =
+                Parameter.stringParameter("table").
+                        withDefault("tracing_spans").
+                        build();
     }
 }

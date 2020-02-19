@@ -1,8 +1,8 @@
-package ru.kontur.hercules.tracing.api.json;
+package ru.kontur.vostok.hercules.tracing.api.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import ru.kontur.hercules.tracing.api.cassandra.PagedResult;
+import ru.kontur.vostok.hercules.tracing.api.Page;
 import ru.kontur.vostok.hercules.json.EventToJsonWriter;
 import ru.kontur.vostok.hercules.protocol.Event;
 
@@ -20,12 +20,12 @@ public final class EventToJsonConverter {
 
     private static final JsonFactory FACTORY = new JsonFactory();
 
-    public static String pagedResultAsString(final PagedResult<Event> pagedResult) {
+    public static String pagedResultAsString(final Page<Event> page) {
         try (
             final StringWriter writer = new StringWriter();
             final JsonGenerator jsonGenerator = FACTORY.createGenerator(writer)
         ) {
-            writePagedResult(jsonGenerator, pagedResult);
+            writePagedResult(jsonGenerator, page);
             jsonGenerator.flush();
             writer.flush();
             return writer.toString();
@@ -34,13 +34,13 @@ public final class EventToJsonConverter {
         }
     }
 
-    public static void writePagedResult(final JsonGenerator jsonGenerator, final PagedResult<Event> pagedResult) throws IOException {
+    public static void writePagedResult(final JsonGenerator jsonGenerator, final Page<Event> page) throws IOException {
         jsonGenerator.writeStartObject();
-        if (Objects.nonNull(pagedResult.getPagingState())) {
-            jsonGenerator.writeStringField("pagingState", pagedResult.getPagingState());
+        if (Objects.nonNull(page.state())) {
+            jsonGenerator.writeStringField("pagingState", page.state());
         }
         jsonGenerator.writeFieldName("result");
-        writeEventCollection(jsonGenerator, pagedResult.getResult());
+        writeEventCollection(jsonGenerator, page.elements());
         jsonGenerator.writeEndObject();
     }
 

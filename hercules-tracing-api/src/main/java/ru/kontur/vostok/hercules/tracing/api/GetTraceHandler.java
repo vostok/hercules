@@ -1,7 +1,7 @@
-package ru.kontur.hercules.tracing.api;
+package ru.kontur.vostok.hercules.tracing.api;
 
-import ru.kontur.hercules.tracing.api.cassandra.PagedResult;
-import ru.kontur.hercules.tracing.api.json.EventToJsonConverter;
+import ru.kontur.vostok.hercules.tracing.api.cassandra.CassandraTracingReader;
+import ru.kontur.vostok.hercules.tracing.api.json.EventToJsonConverter;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
@@ -63,7 +63,7 @@ public class GetTraceHandler implements HttpHandler {
         }
 
         if (!parentSpanId.isEmpty()) {
-            final PagedResult<Event> traceSpansByTraceIdAndParentSpanId = tracingReader.getTraceSpansByTraceIdAndParentSpanId(
+            final Page<Event> traceSpansByTraceIdAndParentSpanId = tracingReader.getTraceSpansByTraceIdAndParentSpanId(
                     traceId.get(),
                     parentSpanId.get(),
                     limit.get(),
@@ -72,7 +72,7 @@ public class GetTraceHandler implements HttpHandler {
             request.getResponse().setContentType(MimeTypes.APPLICATION_JSON);
             request.getResponse().send(EventToJsonConverter.pagedResultAsString(traceSpansByTraceIdAndParentSpanId));
         } else {
-            final PagedResult<Event> traceSpansByTraceId = tracingReader.getTraceSpansByTraceId(
+            final Page<Event> traceSpansByTraceId = tracingReader.getTraceSpansByTraceId(
                     traceId.get(),
                     limit.get(),
                     pagingState.orEmpty(null));
