@@ -1,4 +1,4 @@
-package ru.kontur.hercules.tracing.api;
+package ru.kontur.vostok.hercules.tracing.api;
 
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;

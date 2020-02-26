@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.clickhouse.sink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.clickhouse.util.ClickHouseConnector;
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
@@ -42,7 +43,7 @@ public abstract class ClickHouseSender extends Sender {
     public ClickHouseSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
-        Properties clickhouseProperties = PropertiesUtil.ofScope(properties, "clickhouse");
+        Properties clickhouseProperties = PropertiesUtil.ofScope(properties, Scopes.CLICKHOUSE);
         this.connector = new ClickHouseConnector(clickhouseProperties);
 
         this.processingTimeMsTimer = metricsCollector.timer("processingTimeMs");
