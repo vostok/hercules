@@ -1,13 +1,12 @@
 package ru.kontur.vostok.hercules.tracing.api;
 
-import ru.kontur.vostok.hercules.tracing.api.cassandra.CassandraTracingReader;
-import ru.kontur.vostok.hercules.tracing.api.json.EventToJsonConverter;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.tracing.api.json.EventToJsonConverter;
 import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 import java.util.UUID;

@@ -30,16 +30,17 @@ import java.util.UUID;
 public class CassandraTracingReader implements TracingReader {
     private static final EventReader EVENT_READER = EventReader.readAllTags();
 
-    private final CassandraConnector cassandraConnector;
+    private final CassandraConnector connector;
     private final CqlSession session;
+
     private final PreparedStatement selectTraceSpansByTraceIdQuery;
     private final PreparedStatement selectTraceSpansByTraceIdAndParentSpanIdQuery;
 
     public CassandraTracingReader(Properties properties) {
         Properties cassandraProperties = PropertiesUtil.ofScope(properties, Scopes.CASSANDRA);
 
-        this.cassandraConnector = new CassandraConnector(cassandraProperties);
-        this.session = cassandraConnector.session();
+        this.connector = new CassandraConnector(cassandraProperties);
+        this.session = connector.session();
 
         String table = PropertiesUtil.get(Props.TABLE, properties).get();
 
@@ -99,7 +100,7 @@ public class CassandraTracingReader implements TracingReader {
 
     @Override
     public void close() {
-        cassandraConnector.close();
+        connector.close();
     }
 
     private Page<Event> select(

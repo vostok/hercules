@@ -121,21 +121,6 @@ Application is configured through properties file.
 
 `context.instance.id` - id of instance
 
-### Apache Curator settings
-See Curator Config from Apache Curator documentation. Main settings are presented below.
-
-`curator.connectString` - default value: `localhost:2181`
-
-`curator.connectionTimeout` - default value: `10000`
-
-`curator.sessionTimeout` - default value: `30000`
-
-`curator.retryPolicy.baseSleepTime` - default value: `1000`
-
-`curator.retryPolicy.maxRetries` - default value: `5`
-
-`curator.retryPolicy.maxSleepTime` - default value: `8000`
-
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance to which metrics are sent, default value: `localhost`
 
@@ -207,13 +192,6 @@ application.port=6310
 context.environment=dev
 context.zone=default
 context.instance.id=1
-
-curator.connectString=localhost:2181
-curator.connectionTimeout=10000
-curator.sessionTimeout=30000
-curator.retryPolicy.baseSleepTime=1000
-curator.retryPolicy.maxRetries=5
-curator.retryPolicy.maxSleepTime=8000
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003

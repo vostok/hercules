@@ -80,7 +80,7 @@ public class ClickHouseTracingReader implements TracingReader {
             }
             ResultSet resultSet = select.executeQuery();
             int rowCounter = 0;
-            List<Event> events = new ArrayList<Event>(limit);
+            List<Event> events = new ArrayList<>(limit);
             while (resultSet.next()) {
                 events.add(convert(resultSet.getBytes(1)));
                 rowCounter++;
