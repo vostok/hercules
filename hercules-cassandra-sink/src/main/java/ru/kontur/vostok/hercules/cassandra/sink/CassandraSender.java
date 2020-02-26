@@ -75,8 +75,6 @@ public abstract class CassandraSender extends Sender {
 
     @Override
     public void start() {
-        cassandraConnector.connect();
-
         CqlSession session = cassandraConnector.session();
         preparedStatement = session.prepare(query());
 
