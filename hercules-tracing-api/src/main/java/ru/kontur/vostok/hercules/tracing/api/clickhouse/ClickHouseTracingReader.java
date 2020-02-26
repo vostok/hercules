@@ -47,7 +47,7 @@ public class ClickHouseTracingReader implements TracingReader {
         this.selectByTraceIdQuery = "SELECT payload" +
                 " FROM " + table +
                 " WHERE trace_id = ?" +
-                " ORDER BY span_id" +
+                " ORDER BY parent_span_id, span_id" +
                 " LIMIT ? OFFSET ?";
         this.selectByTraceIdAndParentSpanIdQuery = "SELECT payload" +
                 " FROM " + table +
@@ -85,7 +85,7 @@ public class ClickHouseTracingReader implements TracingReader {
                 events.add(convert(resultSet.getBytes(1)));
                 rowCounter++;
             }
-            return new Page<>(events, offsetToPagingState(offset + rowCounter));
+            return new Page<>(events, rowCounter == limit ? offsetToPagingState(offset + limit) : null);
         } catch (SQLException ex) {
             //TODO: Process SQL Exception
             LOGGER.error("Read failed with exception", ex);
