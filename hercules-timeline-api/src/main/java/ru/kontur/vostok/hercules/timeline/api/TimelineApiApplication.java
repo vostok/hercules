@@ -65,7 +65,6 @@ public class TimelineApiApplication {
             authManager.start();
 
             cassandraConnector = new CassandraConnector(cassandraProperties);
-            cassandraConnector.connect();
 
             timelineReader = new TimelineReader(
                     PropertiesUtil.ofScope(properties, "timeline.api.reader"),
