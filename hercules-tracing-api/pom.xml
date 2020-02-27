@@ -5,7 +5,7 @@
     <parent>
         <artifactId>hercules</artifactId>
         <groupId>ru.kontur.vostok.hercules</groupId>
-        <version>0.35.1-SNAPSHOT</version>
+        <version>0.36.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,6 +34,10 @@
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-cassandra-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-clickhouse-util</artifactId>
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
@@ -69,7 +73,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>ru.kontur.hercules.tracing.api.TracingApiApplication</mainClass>
+                                    <mainClass>ru.kontur.vostok.hercules.tracing.api.TracingApiApplication</mainClass>
                                 </transformer>
                             </transformers>
                             <createDependencyReducedPom>false</createDependencyReducedPom>

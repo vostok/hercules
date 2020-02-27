@@ -67,9 +67,11 @@ public class CassandraConnector {
         this.consistencyLevel = PropertiesUtil.get(Props.CONSISTENCY_LEVEL, properties).get();
 
         this.batchSizeBytesLimit = PropertiesUtil.get(Props.BATCH_SIZE_BYTES_LIMIT, properties).get();
+
+        init();
     }
 
-    public void connect() {
+    private void init() {
         DriverConfigLoader configLoader = DriverConfigLoader.programmaticBuilder().
                 withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofMillis(requestTimeoutMs)).
                 withString(DefaultDriverOption.REQUEST_CONSISTENCY, consistencyLevel).

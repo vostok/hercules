@@ -141,6 +141,10 @@ HTTP Server binds on host:port are defined in Main Application settings.
 
 `http.server.throttling.requestTimeout` - timeout for request, which capacity throttling more then permissible, default value: `5000`
 
+### Validation settings
+
+`validation.max.event.size` - max size of Hercules event, value must be consistent with broker setting `max.message.bytes`, default value: `500000`
+
 ### Kafka Producer settings
 See Producer's Config from Apache Kafka documentation. Main settings are presented below.
 
@@ -217,6 +221,8 @@ http.server.maxContentLength=25165824
 http.server.connection.threshold=100000
 http.server.throttling.capacity=1073741824
 http.server.throttling.requestTimeout=10000
+
+validation.max.event.size=500000
 
 producer.bootstrap.servers=localhost:9092
 producer.acks=all

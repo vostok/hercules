@@ -48,19 +48,20 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
     private final EventSender eventSender;
     private final TimeSource time;
 
-    private final EventValidator eventValidator = new EventValidator();
+    private final EventValidator eventValidator;
     private final Lz4Decompressor lz4Decompressor = new Lz4Decompressor();
 
     private final Timer readEventsDurationMsTimer;
     private final Meter sentEventsMeter;
     private final Timer decompressionTimeMsTimer;
 
-    public SendRequestProcessor(EventSender eventSender, MetricsCollector metricsCollector) {
-        this(eventSender, metricsCollector, TimeSource.SYSTEM);
+    public SendRequestProcessor(EventSender eventSender, EventValidator eventValidator, MetricsCollector metricsCollector) {
+        this(eventSender, eventValidator, metricsCollector, TimeSource.SYSTEM);
     }
 
-    SendRequestProcessor(EventSender eventSender, MetricsCollector metricsCollector, TimeSource time) {
+    SendRequestProcessor(EventSender eventSender, EventValidator eventValidator, MetricsCollector metricsCollector, TimeSource time) {
         this.eventSender = eventSender;
+        this.eventValidator = eventValidator;
         this.time = time;
 
         this.readEventsDurationMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".readEventsDurationMs");

@@ -46,7 +46,6 @@ public class TimelineManagerApplication {
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
 
             cassandraConnector = new CassandraConnector(cassandraProperties);
-            cassandraConnector.connect();
 
             CassandraManager cassandraManager = new CassandraManager(cassandraConnector);
 

@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
@@ -45,6 +46,7 @@ public class GateApplication {
     private static MetricsCollector metricsCollector;
     private static HttpServer server;
     private static EventSender eventSender;
+    private static EventValidator eventValidator;
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
     private static AuthValidationManager authValidationManager;
@@ -65,12 +67,14 @@ public class GateApplication {
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
+            Properties validationProperties = PropertiesUtil.ofScope(properties, "validation");
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
             eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
+            eventValidator = new EventValidator(validationProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -164,13 +168,13 @@ public class GateApplication {
         LOGGER.info("Finished Gateway shutdown for {}  millis", System.currentTimeMillis() - start);
     }
 
-    private static HttpServer createHttpServer(Properties httpServerProperies) {
+    private static HttpServer createHttpServer(Properties httpServerProperties) {
         StreamRepository streamRepository = new StreamRepository(curatorClient);
         StreamStorage streamStorage = new StreamStorage(streamRepository, 30_000L /* TODO: for test usages; It should be moved to configuration */);
 
-        Properties throttlingProperties = PropertiesUtil.ofScope(httpServerProperies, Scopes.THROTTLING);
+        Properties throttlingProperties = PropertiesUtil.ofScope(httpServerProperties, Scopes.THROTTLING);
 
-        SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(eventSender, metricsCollector);
+        SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(eventSender, eventValidator, metricsCollector);
         CapacityThrottle<HttpServerRequest, SendContext> throttle = new CapacityThrottle<>(
                 throttlingProperties,
                 new DefaultHttpServerRequestWeigher(),
@@ -180,7 +184,7 @@ public class GateApplication {
         metricsCollector.gauge("throttling.totalCapacity", throttle::totalCapacity);
         metricsCollector.gauge("throttling.availableCapacity", throttle::availableCapacity);
 
-        long maxContentLength = PropertiesUtil.get(HttpServer.Props.MAX_CONTENT_LENGTH, httpServerProperies).get();
+        long maxContentLength = PropertiesUtil.get(HttpServer.Props.MAX_CONTENT_LENGTH, httpServerProperties).get();
 
         AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager);
         HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
@@ -190,7 +194,7 @@ public class GateApplication {
         HttpHandler sendHandler = authHandlerWrapper.wrap(
                 new GateHandler(authProvider, throttle, authValidationManager, streamStorage, false, maxContentLength, metricsCollector));
 
-        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperies, metricsCollector).
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
                 post("/stream/sendAsync", sendAsyncHandler).
                 post("/stream/send", sendHandler).
                 build();
@@ -198,7 +202,7 @@ public class GateApplication {
         return new UndertowHttpServer(
                 Application.application().getConfig().getHost(),
                 Application.application().getConfig().getPort(),
-                httpServerProperies,
+                httpServerProperties,
                 handler);
     }
 }
