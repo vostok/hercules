@@ -86,13 +86,13 @@ public class SentrySyncProcessor {
         }
         final Optional<Container> properties = ContainerUtil.extract(event.getPayload(), CommonTags.PROPERTIES_TAG);
         if (!properties.isPresent()) {
-            LOGGER.warn("Missing required tag '{}'", CommonTags.PROPERTIES_TAG.getName());
+            LOGGER.debug("Missing required tag '{}'", CommonTags.PROPERTIES_TAG.getName());
             return false;
         }
 
         Optional<String> organizationName = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
         if (!organizationName.isPresent()) {
-            LOGGER.warn("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
+            LOGGER.debug("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
             return false;
         }
         String organization = sanitizeName(organizationName.get());
@@ -105,7 +105,7 @@ public class SentrySyncProcessor {
         if (rateLimiter.updateAndCheck(organization)) {
             processed = tryToSend(event, organization, sentryProject);
         } else {
-            LOGGER.warn("Excess of rate limit. Reject event by project '{}'", organization);
+            LOGGER.debug("Excess of rate limit. Reject event by project '{}'", organization);
             rejectRateLimitMeterMap
                     .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "rateLimitRejectEventCount"))
                     .mark();
@@ -193,8 +193,7 @@ public class SentrySyncProcessor {
         Result<SentryClient, ErrorInfo> sentryClientResult =
                 sentryClientHolder.getOrCreateClient(organization, sentryProject);
         if (!sentryClientResult.isOk()) {
-            LOGGER.error(String.format("Cannot get client for project '%s' in organization '%s'",
-                    sentryProject, organization));
+            LOGGER.warn("Cannot get client for project '{}' in organization '{}'", sentryProject, organization);
             processErrorInfo = sentryClientResult.getError();
             processErrorInfo.setIsRetryableForApiClient();
             return Result.error(processErrorInfo);
@@ -212,20 +211,19 @@ public class SentrySyncProcessor {
             sentryClientResult.get().sendEvent(sentryEvent);
             return Result.ok();
         } catch (InvalidDsnException e) {
-            LOGGER.error("InvalidDsnException: " + e.getMessage(), e);
+            LOGGER.error("InvalidDsnException", e);
             processErrorInfo = new ErrorInfo("InvalidDSN", false);
         } catch (ConnectionException e) {
             Integer responseCode = e.getResponseCode();
-            String message = e.getMessage();
             if (responseCode != null) {
-                LOGGER.error(String.format("ConnectionException %d: %s", responseCode, message), e);
+                LOGGER.error("ConnectionException {}", responseCode, e);
                 processErrorInfo = new ErrorInfo("ConnectionException", responseCode);
             } else {
-                LOGGER.error(String.format("ConnectionException: %s", message), e);
+                LOGGER.error("ConnectionException", e);
                 processErrorInfo = new ErrorInfo("ConnectionException");
             }
         } catch (Exception e) {
-            LOGGER.error(String.format("Other exception of sending to Sentry: %s", e.getMessage()), e);
+            LOGGER.error("Other exception of sending to Sentry", e);
             processErrorInfo = new ErrorInfo("OtherException", e.getMessage());
         }
         processErrorInfo.setIsRetryableForSending();
