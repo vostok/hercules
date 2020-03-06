@@ -89,9 +89,8 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                         ParameterValue<Integer> originalContentLength =
                                                 HeaderUtil.get(ORIGINAL_CONTENT_LENGTH, request);
                                         if (originalContentLength.isError()) {
+                                            tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);
                                             LOGGER.warn("Request has header Content-Encoding, but there is no valid Original-Content-Length");
-                                            request.complete(HttpStatusCodes.BAD_REQUEST);
-                                            callback.call();
                                             return;
                                         }
                                         buffer = ByteBufferPool.acquire(originalContentLength.get());
@@ -99,16 +98,14 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                             lz4Decompressor.decompress(bytes, buffer);
                                         }
                                     } else {
-                                        request.complete(HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE);
-                                        callback.call();
+                                        tryComplete(request, HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE, callback);
                                         return;
                                     }
 
                                     process(request, buffer, context, callback);
                                 } catch (RuntimeException ex) {
-                                    request.complete(HttpStatusCodes.BAD_REQUEST);
+                                    tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);
                                     LOGGER.error("Cannot process request due to exception", ex);
-                                    callback.call();
                                 } finally {
                                     if (buffer != null) {
                                         ByteBufferPool.release(buffer);
@@ -118,12 +115,8 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                 }
                             }),
                     (r, e) -> {
-                        try {
-                            LOGGER.error("Request body was read with exception", e);
-                            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
-                        } finally {
-                            callback.call();
-                        }
+                        tryComplete(request, HttpStatusCodes.INTERNAL_SERVER_ERROR, callback);
+                        LOGGER.error("Request body was read with exception", e);
                     });
         } catch (Throwable throwable) {
             // Should never happened
@@ -139,14 +132,12 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
         try {
             reader = new ReaderIterator<>(new Decoder(buffer), EventReader.readTags(context.getTags()));
         } catch (InvalidDataException ex) {
-            request.complete(HttpStatusCodes.BAD_REQUEST);
-            callback.call();
+            tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);
             LOGGER.error("Request is malformed", ex);
             return;
         }
         if (reader.getTotal() == 0) {
-            request.complete(HttpStatusCodes.OK);
-            callback.call();
+            tryComplete(request, HttpStatusCodes.OK, callback);
             return;
         }
         send(request, reader, context, callback);
@@ -160,30 +151,29 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
             try {
                 event = reader.next();
                 if (!eventValidator.validate(event)) {
+                    if (processed.compareAndSet(false, true)) {
+                        tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);
+                    }
                     //TODO: Metrics are coming!
                     LOGGER.warn("Invalid event data");
-                    if (processed.compareAndSet(false, true)) {
-                        request.complete(HttpStatusCodes.BAD_REQUEST);
-                        callback.call();
-                    }
                     return;
                 }
             } catch (Exception ex) {
+                if (processed.compareAndSet(false, true)) {
+                    tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);
+                }
                 LOGGER.error("Exception on validation event", ex);
                 //TODO: Metrics are coming!
-                if (processed.compareAndSet(false, true)) {
-                    request.complete(HttpStatusCodes.BAD_REQUEST);
-                    callback.call();
-                }
                 return;
             }
             if (!context.getValidator().validate(event)) {
                 //TODO: should to log filtered events
                 if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
                     if (!context.isAsync()) {
-                        request.complete(HttpStatusCodes.OK);
+                        tryComplete(request, HttpStatusCodes.OK, callback);
+                    } else {
+                        callback.call();
                     }
-                    callback.call();
                 }
                 continue;
             }
@@ -196,9 +186,10 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                     () -> {
                         if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
                             if (!context.isAsync()) {
-                                request.complete(HttpStatusCodes.OK);
+                                tryComplete(request, HttpStatusCodes.OK, callback);
+                            } else {
+                                callback.call();
                             }
-                            callback.call();
                         }
                         sentEventsMeter.mark(1);
                     },
@@ -206,15 +197,26 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                         //TODO: Metrics are coming!
                         if (processed.compareAndSet(false, true)) {
                             if (!context.isAsync()) {
-                                request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+                                tryComplete(request, HttpStatusCodes.INTERNAL_SERVER_ERROR, callback);
+                            } else {
+                                callback.call();
                             }
-                            callback.call();
                         }
                     }
             );
         }
         if (context.isAsync()) {
             request.complete(HttpStatusCodes.OK);
+        }
+    }
+
+    private void tryComplete(HttpServerRequest request, int code, ThrottleCallback callback) {
+        try {
+            request.complete(code);
+        } catch (Exception ex) {
+            LOGGER.error("Error on request completion", ex);
+        } finally {
+            callback.call();
         }
     }
 
