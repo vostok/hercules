@@ -127,6 +127,10 @@ public class ClickHouseConnector {
         } catch (SQLException ex) {
             LOGGER.error("Cannot create connection due to exception", ex);
             return null;
+        } catch (RuntimeException ex) {
+            // Got RuntimeException (bug in ClickHouse JDBC driver)
+            LOGGER.error("Cannot create connection due to runtime exception", ex);
+            return null;
         }
     }
 
