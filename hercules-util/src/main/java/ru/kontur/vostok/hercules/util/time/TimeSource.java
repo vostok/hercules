@@ -36,4 +36,8 @@ public interface TimeSource {
      * @see Thread#sleep(long)
      */
     void sleep(long millis);
+
+    default Timer timer(long timeoutMs) {
+        return new Timer(this, timeoutMs);
+    }
 }
