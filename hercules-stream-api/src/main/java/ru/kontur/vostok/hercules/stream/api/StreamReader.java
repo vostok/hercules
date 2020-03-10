@@ -14,7 +14,8 @@ import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.util.Maps;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.time.StopwatchUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
+import ru.kontur.vostok.hercules.util.time.Timer;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.time.Duration;
@@ -35,6 +36,8 @@ public class StreamReader {
     private final Properties properties;
     private final ConsumerPool<Void, byte[]> consumerPool;
 
+    private final TimeSource time;
+
     private final MetricsCollector metricsCollector;
     private final Meter receivedEventsCountMeter;
     private final Meter receivedBytesCountMeter;
@@ -44,8 +47,17 @@ public class StreamReader {
     public StreamReader(Properties properties,
                         ConsumerPool<Void, byte[]> consumerPool,
                         MetricsCollector metricsCollector) {
+        this(properties, consumerPool, metricsCollector, TimeSource.SYSTEM);
+    }
+
+    StreamReader(Properties properties,
+                 ConsumerPool<Void, byte[]> consumerPool,
+                 MetricsCollector metricsCollector,
+                 TimeSource time) {
         this.properties = properties;
         this.consumerPool = consumerPool;
+
+        this.time = time;
 
         this.metricsCollector = metricsCollector;
         this.receivedEventsCountMeter = metricsCollector.meter("receivedEventsCount");
@@ -64,13 +76,11 @@ public class StreamReader {
             return ByteStreamContent.empty();
         }
 
-        long elapsedTimeMs = 0L;
-        long remainingTimeMs = readTimeoutMs;
-        final long readStartedMs = System.currentTimeMillis();
+        Timer timer = time.timer(readTimeoutMs);
 
         Consumer<Void, byte[]> consumer = null;
         try {
-            consumer = consumerPool.acquire(remainingTimeMs, TimeUnit.MILLISECONDS);
+            consumer = consumerPool.acquire(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
 
             Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(partitions);
 
@@ -102,10 +112,7 @@ public class StreamReader {
             consumer.assign(partitionsToRead);
             seekToNextOffsets(consumer, partitionsToRead, nextOffsets);
 
-            elapsedTimeMs = StopwatchUtil.elapsedTime(readStartedMs);
-            remainingTimeMs = StopwatchUtil.remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
-
-            List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, remainingTimeMs);
+            List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, timer);
 
             int sizeOfEvents = 0;
             for (byte[] event : events) {
@@ -139,15 +146,12 @@ public class StreamReader {
     private static <K, V> List<V> pollAndUpdateNextOffsets(Consumer<K, V> consumer,
                                                            Map<TopicPartition, Long> nextOffsets,
                                                            int take,
-                                                           long timeoutMs) {
+                                                           Timer timer) {
         List<V> events = new ArrayList<>(take);
         int count = 0;
 
-        long elapsedTimeMs = 0L;
-        long remainingTimeMs = timeoutMs;
-        final long pollStartedAt = System.currentTimeMillis();
         do {
-            Duration timeout = Duration.ofMillis(remainingTimeMs);
+            Duration timeout = timer.toDuration();
 
             ConsumerRecords<K, V> records = consumer.poll(timeout);
             for (TopicPartition partition : records.partitions()) {
@@ -165,11 +169,8 @@ public class StreamReader {
                     break;
                 }
             }
-
-            elapsedTimeMs = StopwatchUtil.elapsedTime(pollStartedAt);
-            remainingTimeMs = StopwatchUtil.remainingTimeOrZero(timeoutMs, elapsedTimeMs);
         }
-        while ((count < take) && (remainingTimeMs > 0));
+        while ((count < take) && !timer.isExpired());
 
         return events;
     }

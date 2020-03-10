@@ -22,6 +22,7 @@ import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
+import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -53,6 +54,8 @@ public class Sink {
     private final Pattern pattern;
     private final KafkaConsumer<UUID, Event> consumer;
 
+    private final Timer timer;
+
     private final Meter droppedEventsMeter;
     private final Meter filteredEventsMeter;
     private final Meter processedEventsMeter;
@@ -67,6 +70,18 @@ public class Sink {
             List<PatternMatcher> patternMatchers,
             EventDeserializer deserializer,
             MetricsCollector metricsCollector) {
+        this(executor, applicationId, properties, processor, patternMatchers, deserializer, metricsCollector, TimeSource.SYSTEM);
+    }
+
+    Sink(
+            ExecutorService executor,
+            String applicationId,
+            Properties properties,
+            Processor processor,
+            List<PatternMatcher> patternMatchers,
+            EventDeserializer deserializer,
+            MetricsCollector metricsCollector,
+            TimeSource time) {
         this.executor = executor;
         this.processor = processor;
 
@@ -91,6 +106,8 @@ public class Sink {
         UuidDeserializer keyDeserializer = new UuidDeserializer();
 
         this.consumer = new KafkaConsumer<>(consumerProperties, keyDeserializer, deserializer);
+
+        this.timer = time.timer(pollTimeoutMs);
 
         droppedEventsMeter = metricsCollector.meter("droppedEvents");
         filteredEventsMeter = metricsCollector.meter("filteredEvents");
@@ -156,13 +173,12 @@ public class Sink {
                         int droppedEvents = 0;
                         int filteredEvents = 0;
 
-                        long timeoutMs = pollTimeoutMs;
-                        long startedAt = TimeSource.SYSTEM.milliseconds();
+                        timer.reset();
 
                         do {
                             ConsumerRecords<UUID, Event> pollResult;
                             try {
-                                pollResult = poll(Duration.ofMillis(timeoutMs));
+                                pollResult = poll(timer.toDuration());
                             } catch (WakeupException ex) {
                                 /*
                                  * WakeupException is used to terminate polling
@@ -187,7 +203,7 @@ public class Sink {
                                     events.add(event);
                                 }
                             }
-                        } while (events.size() < batchSize && (timeoutMs = pollTimeoutMs - (TimeSource.SYSTEM.milliseconds() - startedAt)) > 0);
+                        } while (events.size() < batchSize && !timer.isExpired());
 
                         ProcessorResult result = processor.process(events);
                         if (result.isSuccess()) {
