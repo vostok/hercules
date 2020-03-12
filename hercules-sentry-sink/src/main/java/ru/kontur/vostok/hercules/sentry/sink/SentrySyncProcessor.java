@@ -64,6 +64,7 @@ public class SentrySyncProcessor {
         this.eventConverter = eventConverter;
         this.metricsCollector = metricsCollector;
 
+        this.sentryClientHolder.update();
         long clientsUpdatePeriodMs = PropertiesUtil.get(Props.CLIENTS_UPDATE_PERIOD_MS, sinkProperties).get();
         this.executor = Executors.newSingleThreadScheduledExecutor(
                 ThreadFactories.newNamedThreadFactory("sentry-clients-update"));
@@ -72,7 +73,6 @@ public class SentrySyncProcessor {
                 clientsUpdatePeriodMs,
                 clientsUpdatePeriodMs,
                 TimeUnit.MILLISECONDS);
-        this.sentryClientHolder.update();
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
         this.rateLimiter = new RateLimiter(rateLimiterProperties);
