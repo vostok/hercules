@@ -19,6 +19,7 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.throttling.rate.RateLimiter;
+import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -26,6 +27,8 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -40,6 +43,7 @@ public class SentrySyncProcessor {
     private final Level defaultLevel = Level.WARNING;
     private final int retryLimit;
     private final SentryClientHolder sentryClientHolder;
+    private final ScheduledExecutorService executor;
     private final SentryEventConverter eventConverter;
     private final MetricsCollector metricsCollector;
     private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
@@ -60,7 +64,15 @@ public class SentrySyncProcessor {
         this.eventConverter = eventConverter;
         this.metricsCollector = metricsCollector;
 
-        this.sentryClientHolder.init();
+        long clientsUpdatePeriodMs = PropertiesUtil.get(Props.CLIENTS_UPDATE_PERIOD_MS, sinkProperties).get();
+        this.executor = Executors.newSingleThreadScheduledExecutor(
+                ThreadFactories.newNamedThreadFactory("sentry-clients-update"));
+        this.executor.scheduleAtFixedRate(
+                this.sentryClientHolder::update,
+                clientsUpdatePeriodMs,
+                clientsUpdatePeriodMs,
+                TimeUnit.MILLISECONDS);
+        this.sentryClientHolder.update();
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
         this.rateLimiter = new RateLimiter(rateLimiterProperties);
@@ -244,10 +256,18 @@ public class SentrySyncProcessor {
         return metricsCollector.meter(prefix + "errorTypes." + MetricsUtil.sanitizeMetricName(errorType));
     }
 
+    public void stop() {
+        executor.shutdown();
+    }
+
     private static class Props {
         static final Parameter<Integer> RETRY_LIMIT =
                 Parameter.integerParameter("sentry.retryLimit").
                         withDefault(3).
+                        build();
+        static final Parameter<Long> CLIENTS_UPDATE_PERIOD_MS =
+                Parameter.longParameter("sentry.clientsUpdatePeriodMs").
+                        withDefault(1_000L * 60 * 60).
                         build();
     }
 }

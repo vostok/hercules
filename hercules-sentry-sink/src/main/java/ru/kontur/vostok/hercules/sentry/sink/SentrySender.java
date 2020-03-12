@@ -13,6 +13,7 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * SentrySender sends events to Sentry
@@ -68,5 +69,16 @@ public class SentrySender extends Sender {
                 Parameter.stringParameter("sentry.token").
                         required().
                         build();
+    }
+
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
+        boolean stopped = false;
+        try {
+            stopped = super.stop(timeout, unit);
+        } finally {
+            this.processor.stop();
+        }
+        return stopped;
     }
 }
