@@ -290,7 +290,7 @@ public class SentryClientHolder {
      * then updates dsn-keys of every project,<p>
      * then updates clients by dsn-keys.
      */
-    public void init() {
+    public void update() {
         try {
             LOGGER.info("Updating Sentry clients");
             Result<List<OrganizationInfo>, ErrorInfo> organizations = sentryApiClient.getOrganizations();

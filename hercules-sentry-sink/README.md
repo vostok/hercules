@@ -24,6 +24,8 @@ Application is configured through properties file.
 
 `sink.sender.sentry.rewritingUrl` - URL for sending events to Sentry. This URL rewrites protocol, host and port in DSN received from Sentry
 
+`sink.sender.sentry.clientsUpdatePeriodMs` - period of client cache update in milliseconds. Default value: `3600000` ms.
+
 ### Filters settings
 Settings filling in is described in [SentryWhitelistEventFilter javadoc](../hercules-sentry-sink/src/main/java/ru/kontur/vostok/hercules/sentry/sink/filter/SentryWhitelistEventFilter.java).
 
