@@ -53,7 +53,6 @@ public class StreamApiApplication {
 
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-            Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
             curatorClient = new CuratorClient(curatorProperties);
@@ -66,7 +65,10 @@ public class StreamApiApplication {
             authManager = new AuthManager(curatorClient);
             authManager.start();
 
-            consumerPool = new ConsumerPool<>(consumerProperties, new VoidDeserializer(), new ByteArrayDeserializer(),
+            consumerPool = new ConsumerPool<>(
+                    PropertiesUtil.ofScope(properties, "stream.api.pool"),
+                    new VoidDeserializer(),
+                    new ByteArrayDeserializer(),
                     metricsCollector);
             consumerPool.start();
 

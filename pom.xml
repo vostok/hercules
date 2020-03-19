@@ -16,7 +16,7 @@
 
         <hercules.version>0.36.1-SNAPSHOT</hercules.version>
 
-        <kafka.version>2.2.0</kafka.version>
+        <kafka.version>2.4.0</kafka.version>
         <zookeeper.version>3.4.13</zookeeper.version>
         <curator.version>4.0.1</curator.version>
         <cassandra-driver.version>4.0.1</cassandra-driver.version>
