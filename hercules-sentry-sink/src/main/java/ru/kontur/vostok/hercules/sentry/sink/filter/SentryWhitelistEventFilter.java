@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,6 +38,7 @@ import java.util.stream.Stream;
 public class SentryWhitelistEventFilter extends EventFilter {
     private static final String STAR = "*";
     private static final int SIZE = 3;
+    private static final Pattern FORBIDDEN_CHARS_PATTERN = Pattern.compile("[^-_a-zA-Z0-9]");
     private final List<String[]> patterns;
 
     public SentryWhitelistEventFilter(Properties properties) {
@@ -65,9 +67,9 @@ public class SentryWhitelistEventFilter extends EventFilter {
             return false;
         }
         Container properties = propertiesOptional.get();
-        String project = ContainerUtil.extract(properties, CommonTags.PROJECT_TAG).orElse(null);
-        String environment = ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG).orElse(null);
-        String subproject = ContainerUtil.extract(properties, CommonTags.SUBPROJECT_TAG).orElse(null);
+        String project = sanitize(ContainerUtil.extract(properties, CommonTags.PROJECT_TAG).orElse(null));
+        String environment = sanitize(ContainerUtil.extract(properties, CommonTags.ENVIRONMENT_TAG).orElse(null));
+        String subproject = sanitize(ContainerUtil.extract(properties, CommonTags.SUBPROJECT_TAG).orElse(null));
 
         for (String[] pattern : patterns) {
             if (testValue(project, pattern[0])
@@ -77,6 +79,13 @@ public class SentryWhitelistEventFilter extends EventFilter {
             }
         }
         return false;
+    }
+
+    private static String sanitize(String value) {
+        if (value == null) {
+            return null;
+        }
+        return FORBIDDEN_CHARS_PATTERN.matcher(value).replaceAll("_");
     }
 
     private static boolean testValue(String value, String patternElement) {
