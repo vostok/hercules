@@ -11,15 +11,20 @@ import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
 /**
+ * TODO: Should be rewritten (broken style, misleading naming, confusing code)
+ *
  * @author Petr Demenev
  */
 public final class StreamValidators {
-
     private static final String regex = "[a-z0-9_]{1,48}";
 
     private static final Validator<String> nameValidator = StringValidators.matchesWith(regex);
     private static final Validator<Integer> partitionValidator = IntegerValidators.positive();
     private static final Validator<Long> ttlValidator = LongValidators.positive();
+    private static final Validator<String> DESCRIPTION_VALIDATOR =
+            (x) -> (x == null || x.length() < 1_000)
+                    ? ValidationResult.ok()
+                    : ValidationResult.error("String exceeds length limit 1000");
 
     private static final Validator<BaseStream> baseStreamValidator = baseStreamValidator();
     private static final Validator<DerivedStream> derivedStreamValidator = derivedStreamValidator();
@@ -55,6 +60,11 @@ public final class StreamValidators {
             result = ttlValidator.validate(stream.getTtl());
             if (result.isError()) {
                 return ValidationResult.error("Ttl is invalid: " + result.error());
+            }
+
+            result = DESCRIPTION_VALIDATOR.validate(stream.getDescription());
+            if (result.isError()) {
+                return ValidationResult.error("Description is invalid: " + result.error());
             }
 
             return ValidationResult.ok();
