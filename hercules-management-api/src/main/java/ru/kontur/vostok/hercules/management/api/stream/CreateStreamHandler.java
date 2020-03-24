@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.management.api.stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
@@ -10,6 +8,8 @@ import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
+import ru.kontur.vostok.hercules.meta.serialization.Deserializer;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -21,7 +21,6 @@ import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -37,15 +36,14 @@ public class CreateStreamHandler implements HttpHandler {
     private final TaskQueue<StreamTask> taskQueue;
     private final StreamRepository streamRepository;
 
-    private final ObjectReader deserializer;
+    private final Deserializer deserializer;
 
     public CreateStreamHandler(AuthProvider authProvider, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
         this.authProvider = authProvider;
         this.taskQueue = taskQueue;
         this.streamRepository = streamRepository;
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        this.deserializer = objectMapper.readerFor(Stream.class);
+        this.deserializer = Deserializer.forClass(Stream.class);
     }
 
     @Override
@@ -58,7 +56,7 @@ public class CreateStreamHandler implements HttpHandler {
 
         request.readBodyAsync((r, bytes) -> {
             try {
-                Stream stream = deserializer.readValue(bytes);
+                Stream stream = deserializer.deserialize(bytes);
 
                 if (stream.getShardingKey() == null) {
                     stream.setShardingKey(new String[0]);
@@ -66,6 +64,7 @@ public class CreateStreamHandler implements HttpHandler {
 
                 ValidationResult validationResult = STREAM_VALIDATOR.validate(stream);
                 if (validationResult.isError()) {
+                    LOGGER.warn(validationResult.error());
                     r.complete(HttpStatusCodes.BAD_REQUEST);
                     return;
                 }
@@ -107,8 +106,8 @@ public class CreateStreamHandler implements HttpHandler {
                                 10_000L,//TODO: Move to properties
                                 TimeUnit.MILLISECONDS);
                 HttpAsyncApiHelper.awaitAndComplete(taskFuture, r);
-            } catch (IOException ex) {
-                LOGGER.warn("Error on processing request", ex);
+            } catch (DeserializationException ex) {
+                LOGGER.warn("Error on entity deserialization", ex);
                 r.complete(HttpStatusCodes.BAD_REQUEST);
                 return;
             } catch (Exception ex) {

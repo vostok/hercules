@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.management.api.timeline;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
@@ -10,6 +8,8 @@ import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
+import ru.kontur.vostok.hercules.meta.serialization.Deserializer;
 import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
@@ -17,7 +17,6 @@ import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskType;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -32,15 +31,14 @@ public class CreateTimelineHandler implements HttpHandler {
     private final TaskQueue<TimelineTask> taskQueue;
     private final TimelineRepository repository;
 
-    private final ObjectReader deserializer;
+    private final Deserializer deserializer;
 
     public CreateTimelineHandler(AuthProvider authProvider, TaskQueue<TimelineTask> taskQueue, TimelineRepository repository) {
         this.authProvider = authProvider;
         this.taskQueue = taskQueue;
         this.repository = repository;
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        this.deserializer = objectMapper.readerFor(Timeline.class);
+        this.deserializer = Deserializer.forClass(Timeline.class);
     }
 
     @Override
@@ -53,7 +51,7 @@ public class CreateTimelineHandler implements HttpHandler {
 
         request.readBodyAsync((r, bytes) -> {
             try {
-                Timeline timeline = deserializer.readValue(bytes);
+                Timeline timeline = deserializer.deserialize(bytes);
 
                 AuthResult authResult = authProvider.authManage(r, timeline.getName());
                 if (!authResult.isSuccess()) {
@@ -64,6 +62,8 @@ public class CreateTimelineHandler implements HttpHandler {
                     r.complete(HttpStatusCodes.FORBIDDEN);
                     return;
                 }
+
+                //TODO: Validate timeline
 
                 if (repository.exists(timeline.getName())) {
                     r.complete(HttpStatusCodes.CONFLICT);
@@ -90,8 +90,8 @@ public class CreateTimelineHandler implements HttpHandler {
                                 10_000L,//TODO: Move to properties
                                 TimeUnit.MILLISECONDS);
                 HttpAsyncApiHelper.awaitAndComplete(taskFuture, request);
-            } catch (IOException ex) {
-                LOGGER.warn("Error on processing request", ex);
+            } catch (DeserializationException ex) {
+                LOGGER.warn("Error on entity deserialization", ex);
                 r.complete(HttpStatusCodes.BAD_REQUEST);
                 return;
             } catch (Exception ex) {

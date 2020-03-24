@@ -46,6 +46,21 @@ public final class Validators {
         };
     }
 
+    /**
+     * Validator accepts values which are accepted by at least one validator.
+     *
+     * @param v1  the first validator
+     * @param v2  the second validator
+     * @param <T> the value type
+     * @return validator
+     */
+    public static <T> Validator<T> or(Validator<T> v1, Validator<T> v2) {
+        return (x) -> {
+            ValidationResult result = v1.validate(x);
+            return result.isOk() ? result : v2.validate(x);
+        };
+    }
+
     private Validators() {
         /* static class */
     }
