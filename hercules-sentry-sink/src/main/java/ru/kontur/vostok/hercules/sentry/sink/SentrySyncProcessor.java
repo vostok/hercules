@@ -14,15 +14,16 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.sentry.SentryThrottlingService;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
-import ru.kontur.vostok.hercules.throttling.rate.RateLimiter;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -49,9 +50,8 @@ public class SentrySyncProcessor {
     private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Meter> rejectRateLimitMeterMap = new ConcurrentHashMap<>();
 
-    private final RateLimiter rateLimiter;
+    private final SentryThrottlingService rateLimiter;
 
     public SentrySyncProcessor(
             Properties sinkProperties,
@@ -75,7 +75,7 @@ public class SentrySyncProcessor {
                 TimeUnit.MILLISECONDS);
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
-        this.rateLimiter = new RateLimiter(rateLimiterProperties);
+        this.rateLimiter = new SentryThrottlingService(rateLimiterProperties, metricsCollector);
     }
 
     /**
@@ -90,6 +90,8 @@ public class SentrySyncProcessor {
      */
     public boolean process(Event event) throws BackendServiceFailedException {
         final long sendingStart = System.currentTimeMillis();
+
+        final long eventTimestampMs = TimeUtil.ticksToMillis(event.getTimestamp());
 
         final Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
                 .flatMap(SentryLevelEnumParser::parse);
@@ -113,16 +115,9 @@ public class SentrySyncProcessor {
         String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
 
         final String prefix = makePrefix(organization, sentryProject);
-        boolean processed;
-        if (rateLimiter.updateAndCheck(organization)) {
-            processed = tryToSend(event, organization, sentryProject);
-        } else {
-            LOGGER.debug("Excess of rate limit. Reject event by project '{}'", organization);
-            rejectRateLimitMeterMap
-                    .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "rateLimitRejectEventCount"))
-                    .mark();
-            processed = false;
-        }
+        boolean processed =
+                rateLimiter.check(organization, eventTimestampMs)
+                        && tryToSend(event, organization, sentryProject);
 
         final long processingTimeMs = System.currentTimeMillis() - sendingStart;
         eventProcessingTimerMap
