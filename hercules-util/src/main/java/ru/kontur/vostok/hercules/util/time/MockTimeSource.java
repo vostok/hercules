@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * Mock the clock.
  * <p>
  * This time source should be used in unit testing of time-specific algorithms with full control over the clock.
+ * <p>
+ * This class doesn't suit for multi-threading testing: see javadoc for {@link #sleep(long)} method.
  *
  * @author Gregory Koshelev
  */
@@ -42,6 +44,13 @@ public class MockTimeSource implements TimeSource {
         return nanoseconds.get();
     }
 
+    /**
+     * Fake sleep is only moves the clock forward for the specified time.
+     * <p>
+     * Thus, calling this method from different threads yields the clock is moved forward for multiple times.
+     *
+     * @param millis the time to sleep in milliseconds
+     */
     @Override
     public void sleep(long millis) {
         if (millis < 0) {
