@@ -113,9 +113,9 @@ public class SentryWhitelistEventFilterTest {
     }
 
     @Test
-    public void ignoreCaseTest() {
+    public void valueSanitationTest() {
         Properties properties = new Properties();
-        properties.setProperty("patterns", "my_Project:testing:my_subproject");
+        properties.setProperty("patterns", "MY_Project:testing:multi_word_subproject_value");
         SentryWhitelistEventFilter filter = new SentryWhitelistEventFilter(properties);
 
         Event event = getEventBuilder().
@@ -124,8 +124,8 @@ public class SentryWhitelistEventFilterTest {
                         Variant.ofContainer(
                                 Container.builder().
                                         tag("project", Variant.ofString("my_project")).
-                                        tag("environment", Variant.ofString("Testing")).
-                                        tag("subproject", Variant.ofString("MY_SUBPROJECT")).
+                                        tag("environment", Variant.ofString("TESTING")).
+                                        tag("subproject", Variant.ofString("multi.word subproject/value")).
                                         build())).
                 build();
         Assert.assertTrue(filter.test(event));

@@ -2,12 +2,12 @@ package ru.kontur.vostok.hercules.throttling;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.util.concurrent.LifoSemaphore;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.util.Properties;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,7 +24,7 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
     private final RequestProcessor<R, C> requestProcessor;
     private final ThrottledRequestProcessor<R> throttledRequestProcessor;
 
-    private final Semaphore semaphore;
+    private final LifoSemaphore semaphore;
 
     /**
      * @param properties                configuration properties
@@ -45,7 +45,7 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
         this.requestProcessor = requestProcessor;
         this.throttledRequestProcessor = throttledRequestProcessor;
 
-        this.semaphore = new Semaphore(capacity > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) capacity);
+        this.semaphore = new LifoSemaphore(capacity > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) capacity);
     }
 
     /**

@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.sink;
 
 import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +13,12 @@ import java.util.concurrent.TimeUnit;
 public abstract class Processor {
     private volatile ProcessorStatus status = ProcessorStatus.AVAILABLE;
     private final Object mutex = new Object();
+
+    private final TimeSource time;
+
+    public Processor(TimeSource time) {
+        this.time = time;
+    }
 
     /**
      * Return {@code true} if processor is available.
@@ -79,5 +86,9 @@ public abstract class Processor {
             this.status = status;
             mutex.notifyAll();
         }
+    }
+
+    protected final TimeSource time() {
+        return time;
     }
 }

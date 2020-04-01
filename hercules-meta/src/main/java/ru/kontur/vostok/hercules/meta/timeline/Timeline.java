@@ -13,6 +13,7 @@ public class Timeline {
     private long timetrapSize;
     private String[] streams;
     private Filter[] filters;
+    private String description;
 
     public String getName() {
         return name;
@@ -61,5 +62,12 @@ public class Timeline {
     }
     public void setFilters(Filter[] filters) {
         this.filters = filters;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

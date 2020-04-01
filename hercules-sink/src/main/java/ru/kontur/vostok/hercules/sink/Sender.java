@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.List;
 import java.util.Properties;
@@ -28,10 +29,16 @@ public abstract class Sender extends Processor {
     /**
      * Sender.
      *
-     * @param properties sender's properties.
+     * @param properties       sender's properties.
      * @param metricsCollector metrics collector
      */
     public Sender(Properties properties, MetricsCollector metricsCollector) {
+        this(properties, metricsCollector, TimeSource.SYSTEM);
+    }
+
+    Sender(Properties properties, MetricsCollector metricsCollector, TimeSource time) {
+        super(time);
+
         this.metricsCollector = metricsCollector;
 
         this.pingPeriodMs = PropertiesUtil.get(Props.PING_PERIOD_MS, properties).get();

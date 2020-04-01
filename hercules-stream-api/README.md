@@ -194,17 +194,6 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
-### Kafka Consumer settings
-See Consumer's Config from Apache Kafka documentation. Main settings are presented below.
-
-`consumer.bootstrap.servers` - see KafkaConsumer's `bootstrap.servers` property. Required.
-
-`consumer.max.poll.records` - see KafkaConsumer's `max.poll.records` property. Default value: `10000`.
-
-`consumer.poolSize` - consumers pool size. Default value: `4`.
-
-`consumer.metric.reporters` - a list of classes to use as metrics reporters
-
 ### Http Server settings
 `http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
@@ -214,6 +203,20 @@ See Consumer's Config from Apache Kafka documentation. Main settings are present
 
 ### Stream API settings
 `stream.api.reader.readTimeoutMs` - time to read from Kafka in millis, default value: `1000`.
+
+`stream.api.pool.size` - consumers pool size. Default value: `4`.
+
+#### Kafka Consumer settings
+Consumer settings have base scope `stream.api.pool.consumer`.
+Thus, Consumer's config property `bootstrap.server` is accessed via `stream.api.pool.consumer.bootstrap.servers`.
+
+See the list of supported config properties in Apache Kafka documentation. Main properties are presented below.
+
+`stream.api.pool.consumer.bootstrap.servers` - see KafkaConsumer's `bootstrap.servers` property. Required.
+
+`stream.api.pool.consumer.max.poll.records` - see KafkaConsumer's `max.poll.records` property. Default value: `10000`.
+
+`stream.api.pool.consumer.metric.reporters` - a list of classes to use as metrics reporters
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-stream-api.jar application.properties=file://path/to/file/application.properties`
@@ -248,14 +251,14 @@ metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-consumer.bootstrap.servers=localhost:9092
-consumer.max.poll.records=10000
-consumer.poolSize=16
-consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
-
 http.server.ioThreads=8
 http.server.workerThreads=32
 http.server.rootPath=/
 
 stream.api.reader.readTimeoutMs=1000
+
+stream.api.pool.size=4
+stream.api.pool.consumer.bootstrap.servers=localhost:9092
+stream.api.pool.consumer.max.poll.records=10000
+stream.api.pool.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 ```

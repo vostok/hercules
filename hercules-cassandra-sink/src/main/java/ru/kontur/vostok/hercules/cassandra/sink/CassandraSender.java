@@ -18,7 +18,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.time.StopwatchUtil;
+import ru.kontur.vostok.hercules.util.time.Timer;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
@@ -133,13 +133,11 @@ public abstract class CassandraSender extends Sender {
             asyncTasks.add(session.executeAsync(batchBuilder.build()));
         }
 
-        long elapsedTimeMs = 0L;
-        long remainingTimeMs = timeoutMs;
-        final long startedAtMs = System.currentTimeMillis();
+        Timer timer = time().timer(timeoutMs);
 
         for (CompletionStage<AsyncResultSet> asyncTask : asyncTasks) {
             try {
-                asyncTask.toCompletableFuture().get(remainingTimeMs, TimeUnit.MILLISECONDS);
+                asyncTask.toCompletableFuture().get(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
             } catch (TimeoutException | InterruptedException ex) {
                 throw new BackendServiceFailedException(ex);
             } catch (ExecutionException ex) {
@@ -154,9 +152,6 @@ public abstract class CassandraSender extends Sender {
                 LOGGER.warn("Event dropped due to exception", ex);
                 rejectedEvents++;
             }
-
-            elapsedTimeMs = StopwatchUtil.elapsedTime(startedAtMs);
-            remainingTimeMs = StopwatchUtil.remainingTimeOrZero(timeoutMs, elapsedTimeMs);
         }
 
         return events.size() - rejectedEvents;
