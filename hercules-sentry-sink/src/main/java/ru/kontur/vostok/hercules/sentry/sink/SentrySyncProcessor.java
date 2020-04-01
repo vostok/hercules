@@ -14,7 +14,6 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
-import ru.kontur.vostok.hercules.sentry.SentryThrottlingService;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
@@ -51,7 +50,7 @@ public class SentrySyncProcessor {
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
 
-    private final SentryThrottlingService rateLimiter;
+    private final SentryThrottlingService throttlingService;
 
     public SentrySyncProcessor(
             Properties sinkProperties,
@@ -75,7 +74,7 @@ public class SentrySyncProcessor {
                 TimeUnit.MILLISECONDS);
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
-        this.rateLimiter = new SentryThrottlingService(rateLimiterProperties, metricsCollector);
+        this.throttlingService = new SentryThrottlingService(rateLimiterProperties, metricsCollector);
     }
 
     /**
@@ -116,7 +115,7 @@ public class SentrySyncProcessor {
 
         final String prefix = makePrefix(organization, sentryProject);
         boolean processed =
-                rateLimiter.check(organization, eventTimestampMs)
+                throttlingService.check(organization, eventTimestampMs)
                         && tryToSend(event, organization, sentryProject);
 
         final long processingTimeMs = System.currentTimeMillis() - sendingStart;
