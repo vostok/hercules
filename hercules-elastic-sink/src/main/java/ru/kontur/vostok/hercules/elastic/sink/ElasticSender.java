@@ -46,6 +46,8 @@ public class ElasticSender extends Sender {
     private final boolean leproseryEnable;
     private final LeproserySender leproserySender;
 
+    private final IndicesMetricsCollector totalEventsIndicesMetricsCollector;
+    private final IndicesMetricsCollector nonRetryableEventsIndicesMetricsCollector;
     private final Meter droppedNonRetryableErrorsMeter;
     private final Meter indexValidationErrorsMeter;
 
@@ -64,11 +66,11 @@ public class ElasticSender extends Sender {
 
         this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_ENABLE, properties).get();
         this.leproserySender = leproseryEnable
-                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY),
-                metricsCollector,
-                mergePropertiesTagToRoot)
+                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector, mergePropertiesTagToRoot)
                 : null;
 
+        this.totalEventsIndicesMetricsCollector = new IndicesMetricsCollector("totalEvents", 10_000, metricsCollector);
+        this.nonRetryableEventsIndicesMetricsCollector = new IndicesMetricsCollector("nonRetryableEvents", 10_000, metricsCollector);
         this.droppedNonRetryableErrorsMeter = metricsCollector.meter("droppedNonRetryableErrors");
         this.indexValidationErrorsMeter = metricsCollector.meter("indexValidationErrors");
     }
@@ -90,7 +92,9 @@ public class ElasticSender extends Sender {
         Map<String, EventWrapper> readyToSend = new HashMap<>(events.size());
         for (Event event : events) {
             Optional<String> index = indexResolver.resolve(event);
-            EventWrapper wrapper = new EventWrapper(event, index.orElse("null"));
+            String nonNullIndex = index.orElse("null");
+            EventWrapper wrapper = new EventWrapper(event, nonNullIndex);
+            totalEventsIndicesMetricsCollector.markEvent(nonNullIndex);
             if (index.isPresent()) {
                 readyToSend.put(wrapper.getId(), wrapper);
             } else {
@@ -121,8 +125,8 @@ public class ElasticSender extends Sender {
             }
 
             droppedCount = errorsProcess(nonRetryableErrorsMap);
-        } catch (Exception e) {
-            throw new BackendServiceFailedException(e);
+        } catch (Exception ex) {
+            throw new BackendServiceFailedException(ex);
         }
 
         return events.size() - droppedCount;
@@ -156,11 +160,17 @@ public class ElasticSender extends Sender {
         if (nonRetryableErrorsInfo.isEmpty()) {
             return 0;
         }
+
+        for (EventWrapper wrapper : nonRetryableErrorsInfo.keySet()) {
+            nonRetryableEventsIndicesMetricsCollector.markEvent(wrapper.getIndex());
+        }
+
         if (leproseryEnable) {
             try {
                 leproserySender.convertAndSend(nonRetryableErrorsInfo);
                 return 0;
-            } catch (Exception e) {
+            } catch (Exception ex) {
+                LOGGER.warn("Failed to send non retryable events to leprosery", ex);
                 droppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
                 return nonRetryableErrorsInfo.size();
             }

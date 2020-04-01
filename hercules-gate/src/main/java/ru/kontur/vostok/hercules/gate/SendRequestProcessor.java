@@ -53,6 +53,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
 
     private final Timer readEventsDurationMsTimer;
     private final Meter sentEventsMeter;
+    private final Meter lostEventsMeter;
     private final Timer decompressionTimeMsTimer;
 
     public SendRequestProcessor(EventSender eventSender, EventValidator eventValidator, MetricsCollector metricsCollector) {
@@ -66,6 +67,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
 
         this.readEventsDurationMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".readEventsDurationMs");
         this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sentEvents");
+        this.lostEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".lostEvents");
         this.decompressionTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".decompressionTimeMs");
     }
 
@@ -194,7 +196,6 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                         sentEventsMeter.mark(1);
                     },
                     () -> {
-                        //TODO: Metrics are coming!
                         if (processed.compareAndSet(false, true)) {
                             if (!context.isAsync()) {
                                 tryComplete(request, HttpStatusCodes.INTERNAL_SERVER_ERROR, callback);
@@ -202,6 +203,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                 callback.call();
                             }
                         }
+                        lostEventsMeter.mark();
                     }
             );
         }
