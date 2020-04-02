@@ -66,7 +66,6 @@ public class SentryEventConverter {
     private static final String DELIMITER = ".";
     private static final int MAX_TEG_LENGTH = 200;
 
-
     private final Sdk sdk;
 
     public SentryEventConverter(String version) {
@@ -112,8 +111,11 @@ public class SentryEventConverter {
             ContainerUtil.extract(properties, SentryTags.RELEASE_TAG)
                     .ifPresent(eventBuilder::withRelease);
 
-            ContainerUtil.extract(properties, SentryTags.TRACE_ID_TAG)
-                    .ifPresent(eventBuilder::withTransaction);
+            Optional<String> traceIdOptional = ContainerUtil.extract(properties, SentryTags.TRACE_ID_TAG);
+            if (traceIdOptional.isPresent()) {
+                eventBuilder.withTransaction(traceIdOptional.get());
+                eventBuilder.withTag("traceId", traceIdOptional.get());
+            }
 
             ContainerUtil.extract(properties, SentryTags.PLATFORM_TAG)
                     .map(String::toLowerCase)
