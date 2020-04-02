@@ -128,7 +128,7 @@ public class SentryEventConverterTest {
 
     @Test
     public void shouldSetAttributes() {
-        final String transaction = "my_transaction";
+        final String traceId = "my_trace_ID";
         final String release = "my_release 0.1.0";
         final String fingerprintWord1 = "{{ default }}";
         final String fingerprintWord2 = "my_label";
@@ -137,7 +137,7 @@ public class SentryEventConverterTest {
         final ru.kontur.vostok.hercules.protocol.Event event = EventBuilder
                 .create(0, someUuid)
                 .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
-                        .tag(SentryTags.TRACE_ID_TAG.getName(), Variant.ofString(transaction))
+                        .tag(SentryTags.TRACE_ID_TAG.getName(), Variant.ofString(traceId))
                         .tag(SentryTags.RELEASE_TAG.getName(), Variant.ofString(release))
                         .tag(SentryTags.FINGERPRINT_TAG.getName(), Variant.ofVector(Vector.ofStrings(fingerprintWord1, fingerprintWord2)))
                         .tag(SentryTags.PLATFORM_TAG.getName(), Variant.ofString(platform))
@@ -148,7 +148,8 @@ public class SentryEventConverterTest {
 
         final Event sentryEvent = SENTRY_EVENT_CONVERTER.convert(event);
 
-        Assert.assertEquals(transaction, sentryEvent.getTransaction());
+        Assert.assertEquals(traceId, sentryEvent.getTransaction());
+        Assert.assertEquals(traceId, sentryEvent.getTags().get("traceId"));
         Assert.assertEquals(release, sentryEvent.getRelease());
         Assert.assertTrue(sentryEvent.getFingerprint().contains(fingerprintWord1));
         Assert.assertTrue(sentryEvent.getFingerprint().contains(fingerprintWord2));
