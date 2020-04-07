@@ -15,7 +15,7 @@ public class SlidingRateLimiter {
     private final long eventTokens;
 
     private final AtomicLong availableTokens;
-    private final AtomicLong lastUpdatedAt;
+    private final AtomicLong updatedAtMs;
 
     /**
      * Rate limiter accepts no more than {@code limit} events for every {@code timeWindowsMs} milliseconds. Thus,
@@ -33,7 +33,7 @@ public class SlidingRateLimiter {
         this.eventTokens = timeWindowMs;
 
         this.availableTokens = new AtomicLong(maximumTokens);
-        this.lastUpdatedAt = new AtomicLong(startedAtMs);
+        this.updatedAtMs = new AtomicLong(startedAtMs);
     }
 
     /**
@@ -43,12 +43,12 @@ public class SlidingRateLimiter {
      * @return {@code true} if rate doesn't exceed limit, otherwise {@code false}
      */
     public boolean updateAndCheck(long timeMs) {
-        long currentLastUpdatedAt;
+        long currentUpdatedAtMs;
         do {
-            currentLastUpdatedAt = lastUpdatedAt.get();
-        } while (timeMs > currentLastUpdatedAt && !lastUpdatedAt.compareAndSet(currentLastUpdatedAt, timeMs));
+            currentUpdatedAtMs = updatedAtMs.get();
+        } while (timeMs > currentUpdatedAtMs && !updatedAtMs.compareAndSet(currentUpdatedAtMs, timeMs));
 
-        long deltaMs = Math.max(timeMs - currentLastUpdatedAt, 0);
+        long deltaMs = Math.max(timeMs - currentUpdatedAtMs, 0);
         long increaseTokens = deltaMs * limit;
         long currentAvailableTokens;
         long newAvailableTokens;

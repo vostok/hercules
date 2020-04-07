@@ -60,36 +60,42 @@ public class SlidingRateLimiterTest {
 
         assertTrue(service.updateAndCheck(TIME.milliseconds()));
 
-        sleep(2_000);
+        TIME.sleep(2_000);
         assertTrue(service.updateAndCheck(TIME.milliseconds()));
 
-        sleep(2_000);
+        TIME.sleep(2_000);
         assertTrue(service.updateAndCheck(TIME.milliseconds()));
 
-        sleep(2_000);
+        TIME.sleep(2_000);
         assertTrue(service.updateAndCheck(TIME.milliseconds()));
         assertFalse(service.updateAndCheck(TIME.milliseconds()));
     }
 
     @Test
-    public void shouldBeDropLargeLoad() {
+    public void shouldDropExtraLoad() {
         SlidingRateLimiter service = new SlidingRateLimiter(10_000, 3_000L, TIME.milliseconds());
-        assertEquals(50f, sendAndCalculateDroppedPercent(service, 20_000), 2f);
+
+        assertEquals(50f, sendAndCalculateDroppedPercent(service, 20_000), 1f);
         assertEquals(100f, sendAndCalculateDroppedPercent(service, 20_000), 1f);
         assertEquals(100f, sendAndCalculateDroppedPercent(service, 20_000), 1f);
     }
 
     @Test
-    public void shouldBeRecoverWithAverageSize() {
+    public void shouldRecoverLimits() {
         SlidingRateLimiter service = new SlidingRateLimiter(1_000, 1_000L, TIME.milliseconds());
+
         assertEquals(0f, sendAndCalculateDroppedPercent(service, 350), 1f);
-        sleep(1_000);
-        assertEquals(95f, sendAndCalculateDroppedPercent(service, 20_000), 2f);
-        sleep(1_000);
+
+        TIME.sleep(1_000);
+        assertEquals(95f, sendAndCalculateDroppedPercent(service, 20_000), 1f);
+
+        TIME.sleep(1_000);
         assertEquals(0f, sendAndCalculateDroppedPercent(service, 350), 1f);
-        sleep(1_000);
-        assertEquals(10f, sendAndCalculateDroppedPercent(service, 1_100), 4f);
-        sleep(1_000);
+
+        TIME.sleep(1_000);
+        assertEquals(10f, sendAndCalculateDroppedPercent(service, 1_100), 1f);
+
+        TIME.sleep(1_000);
         assertEquals(0f, sendAndCalculateDroppedPercent(service, 350), 1f);
     }
 
@@ -101,9 +107,5 @@ public class SlidingRateLimiterTest {
             }
         }
         return droppedCount * 100f / requestCount;
-    }
-
-    private void sleep(long millis) {
-        TIME.sleep(millis);
     }
 }
