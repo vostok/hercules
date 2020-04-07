@@ -54,13 +54,27 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with write access to the stream is specified. Required.
+`apiKey`  
+The API Key with write access to the stream is specified.  
+*Required*
 
-`ContentType: application/octet-stream`
+`Content-Type: application/octet-stream`  
+*Required*
+
+`Content-Length`  
+*Required*
+
+`Content-Encoding: lz4`  
+If LZ4-compression is used.  
+*Optional*
+
+`Original-Content-Length`  
+If `Content-Encoding` is used. Value MUST equal original content length (before compression) and cannot be greater than `100 * 10^6 bytes`.   
+*Optional (required if `Content-Encoding` is used)*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
 **Request body:**
 
@@ -82,6 +96,10 @@ Count		Integer
 `404` - the stream not found.
 
 `413` - request entity too large.
+
+`415` - unsupported `Content-Encoding`.
+
+`503` - the gate is overloaded and request has been throttled.
 
 ### Send Async
 
@@ -93,13 +111,27 @@ Count		Integer
 
 **Request headers**
 
-`apiKey` - the API Key with write access to the stream is specified. Required.
+`apiKey`  
+The API Key with write access to the stream is specified.  
+*Required*
 
-`ContentType: application/octet-stream`
+`Content-Type: application/octet-stream`  
+*Required*
+
+`Content-Length`  
+*Required*
+
+`Content-Encoding: lz4`  
+If LZ4-compression is used.  
+*Optional*
+
+`Original-Content-Length`  
+If `Content-Encoding` is used. Value MUST equal original content length (before compression) and cannot be greater than `100 * 10^6 bytes`.  
+*Optional (required if `Content-Encoding` is used)*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
 **Request body:**
 
@@ -121,6 +153,10 @@ Count		Integer
 `404` - the stream not found.
 
 `413` - request entity too large.
+
+`415` - unsupported `Content-Encoding`.
+
+`503` - the gate is overloaded and request has been throttled.
 
 ## Settings
 Application is configured through properties file.

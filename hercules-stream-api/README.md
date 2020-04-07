@@ -53,9 +53,16 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with read access to the stream is specified. Required.
+`apiKey`  
+The API Key with read access to the stream is specified.  
+*Required*
 
-`ContentType: application/octet-stream`
+`Content-Type: application/octet-stream`  
+*Required*
+
+`Accept-Encoding: lz4`  
+If client supports LZ4-compression. Then server MAY compress response body using LZ4-compression.  
+*Optional*
 
 **Query parameters:**
 
@@ -97,7 +104,15 @@ Offset          Long
 
 **Response headers:**
 
-ContentType: application/octet-stream
+`Content-Type: application/octet-stream`
+
+`Content-Length`
+
+`Content-Encoding: lz4`  
+If response body is compressed. See Request headers for details.
+
+`Original-Content-Length`  
+If `Content-Encoding` is used. Value MUST equal original content length (before compression).
 
 **Response body:**
 
@@ -145,7 +160,9 @@ Events          Count, Event*
 
 **Response headers:**
 
-ContentType: application/octet-stream
+`Content-Type: application/octet-stream`
+
+`Content-Length`
 
 **Response body:**
 

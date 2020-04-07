@@ -1,28 +1,23 @@
-# Hercules Management Api
-Management Api is used for working with streams, timelines, rules and blacklist in Apache Kafka.
-Management Api provides following opportunities:
+# Hercules Management API
+Management API is used for working with streams, timelines, rules and blacklist.
+Management API provides following methods:
 * Streams:
-  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for create stream;
-  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for delete stream;
-  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for change TTL of stream;
-  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for increase partitions count in stream;
+  * Create / delete / change Streams using [Stream Manager](../hercules-stream-manager/README.md);
   * Show all streams;
   * Get info about stream.
   
 * Timelines:
-  * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for creat timeline;
-  * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for delete timeline;
-  * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for change TTL of timeline;
-  * Show all timelines;
-  * Get info about timeline.
+  * Create / delete / change Timelines using [Timeline Manager](../hercules-timeline-manager/README.md);
+  * Show all Timelines;
+  * Get info about Timeline.
 
 * Rules:
-  * Create rule;
+  * Set rules for API Key;
   * Show all rules.
   
 * Blacklist:
-  * Add apiKey to blacklist;
-  * Remove apiKey from blacklist;
+  * Add API Key to blacklist;
+  * Remove API Key from blacklist;
   * Show all records in blacklist.
   
 ## API methods
@@ -82,27 +77,35 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream is specified.  
+*Required*
+
+`Content-Type: application/json`  
+*Required*
 
 **Request body:**
 
-```
-"type": type of stream
-"name": name of stream
-"partitions": count of partition in stream
-"shardingKey": sharding keys array
-"ttl": time to live
-```
+Request body contains JSON-object with following properties:
+- `type` - the Stream type (`base` or `derived`), *string*
+- `name` - the Stream name, *string*
+- `partitions` - the Stream partitions count, *integer*
+- `shardingKey` - Sharding key is array of [HPath](../hercules-protocol/doc/h-path.md), *array of strings*
+- `ttl` - events time to live (TTL) in milliseconds, *integer*
+- `description` - the Stream description, *string*
+- `streams` - streams to fill target derived stream (for `derived` streams only), *array of strings*
+- `filters` - filters array (for `derived` streams only, *array of objects*
 
 **Request body example:**
 
 ```
 {
   "type": "base",
-  "name": "project_test_stream_0",
+  "name": "project_test_stream",
   "partitions": 1,
   "shardingKey": [],
-  "ttl": 3600000
+  "ttl": 3600000,
+  "description": "Test stream"
 }
 ```
 
@@ -128,11 +131,13 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the stream is specified.  
+*Required*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
 **Response codes:**
 
@@ -156,11 +161,13 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - any API Key. Required.
+`apiKey` or `masterApiKey`  
+Any valid API Key.  
+*Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -189,13 +196,15 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream is specified.  
+*Required*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
-`newPartitions` - new count of partition in stream. Required.
+`newPartitions` - new count of partitions in stream. *Required*
 
 **Response codes:**
 
@@ -211,9 +220,9 @@ ContentType: application/json
 
 `409` - conflict. New partition count less then old.
 
-### Change ttl of stream
+### Change TTL of stream
 
-**Description:** The method to change ttl of stream.
+**Description:** The method to change TTL of stream.
 
 **Method:** `POST`
 
@@ -221,13 +230,15 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream is specified.  
+*Required*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
-`newTtl` - new ttl of stream. Required.
+`newTtl` - new TTL of stream. *Required*
 
 **Response codes:**
 
@@ -251,15 +262,17 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream is specified.  
+*Required*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -268,7 +281,8 @@ ContentType: application/json
     "name": "stream",
     "partitions": 3,
     "shardingKey": [],
-    "ttl": 86300000
+    "ttl": 86300000,
+    "description": "Some stream"
 }
 ```
 
@@ -296,19 +310,24 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream is specified.  
+*Required*
+
+`Content-Type: application/json`  
+*Required*
 
 **Request body:**
 
-```
-"name": name of timeline
-"slices": count of slice
-"shardingKey": sharding keys array
-"ttl": time to live
-"timetrapSize": timetrap size
-"streams": streams in timeline
-"filters": filters array
-```
+Request body contains JSON-object with following properties:
+- `name` - the Timeline name, *string*
+- `slices` - slices count, *integer*
+- `shardingKey` - Sharding Key is array of [HPath](../hercules-protocol/doc/h-path.md), *array of strings*
+- `ttl` - events time to live (TTL) in milliseconds, *integer*
+- `timetrapSize` - timetrap size in milliseconds, *integer*
+- `streams` - streams to fill target timeline, *array of strings*
+- `filters` - filters array, *array of objects*
+- `description` - description, *string*
 
 **Request body example:**
 
@@ -324,9 +343,8 @@ ContentType: application/json
   "streams": [
     "stream"
   ],
-  "filters": [
-    "filter"
-  ]
+  "filters": [],
+  "description": "Some timeline"
 }
 ```
 
@@ -352,11 +370,13 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the timeline is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the timeline is specified.  
+*Required*
 
 **Query parameters:**
 
-`timeline` - the name of timeline. Required.
+`timeline` - the name of timeline. *Required*
 
 **Response codes:**
 
@@ -380,11 +400,13 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - any API Key. Required.
+`apiKey` or `masterApiKey`  
+Any valid API Key.  
+*Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -403,7 +425,7 @@ ContentType: application/json
 
 `401` - apiKey is absent.
 
-### Change ttl of timeline
+### Change TTL of timeline
 
 **Description:** The method to change ttl of timeline.
 
@@ -413,17 +435,19 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream is specified.  
+*Required*
 
 **Query parameters:**
 
-`timeline` - the name of timeline. Required.
+`timeline` - the name of timeline. *Required*
 
-`newTtl` - new ttl of timeline. Required.
+`newTtl` - new TTL of timeline. *Required*
 
 **Response codes:**
 
-`200` - successfully change ttl of timeline.
+`200` - successfully change TTL of timeline.
 
 `400` - bad request.
 
@@ -443,15 +467,17 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the timeline is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the timeline is specified.  
+*Required*
 
 **Query parameters:**
 
-`timeline` - the name of timeline. Required.
+`timeline` - the name of timeline. *Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -464,7 +490,8 @@ ContentType: application/json
     "streams": [
         "stream"
     ],
-    "filters": []
+    "filters": [],
+    "description": "Some timeline"
 }
 ```
 
@@ -492,15 +519,17 @@ ContentType: application/json
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`
+The API key for rules management.  
+*Required*
 
 **Query parameters:**
 
-`key` - the API key for which rule is set. Required.
+`key` - the API key for which rule is set. *Required*
 
-`pattern` - pattern for stream or timeline names. Required.
+`pattern` - pattern for stream or timeline names. *Required*
 
-`rights` - combination of read, write and modified rights. Required. 
+`rights` - combination of read, write and manage rights. *Required*  
 Available values : ---, r--, -w-, --m, rw-, r-m, -wm, rwm.
 
 **Response codes:**
@@ -521,11 +550,13 @@ Available values : ---, r--, -w-, --m, rw-, r-m, -wm, rwm.
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`  
+The API key for rules management.  
+*Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -556,11 +587,13 @@ ContentType: application/json
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`  
+The API key for rules management.  
+*Required*
 
 **Query parameters:**
 
-`key` - the API key for adding to blacklist. Required.
+`key` - the API key for adding to blacklist. *Required*
 
 **Response codes:**
 
@@ -580,11 +613,13 @@ ContentType: application/json
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`  
+The API key for rules management.  
+*Required*
 
 **Query parameters:**
 
-`key` - the API key for removing from blacklist. Required.
+`key` - the API key for removing from blacklist. *Required*
 
 **Response codes:**
 
@@ -604,11 +639,13 @@ ContentType: application/json
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`  
+The API key for rules management.  
+*Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
