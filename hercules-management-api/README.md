@@ -526,6 +526,9 @@ The API key for rules management.
 **Query parameters:**
 
 `key` - the API key for which rule is set. *Required*
+Key must contain only lowercase alphanumeric characters and underscore.
+The end of the key must contain an UUID in lowercase without a hyphens.
+Example: `key_name_5c43280c246f41f5acdebc31a6436e8c`.
 
 `pattern` - pattern for stream or timeline names. *Required*
 

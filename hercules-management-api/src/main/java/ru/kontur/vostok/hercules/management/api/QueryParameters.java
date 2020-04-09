@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.management.api;
 
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
+import ru.kontur.vostok.hercules.util.validation.StringValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
 /**
@@ -40,7 +41,8 @@ public final class QueryParameters {
 
     public static Parameter<String> KEY =
             Parameter.stringParameter("key").
-                    required().//TODO: Add validation on key format
+                    required().
+                    withValidator(StringValidators.matchesWith("^[a-z0-9_]*[a-f0-9]{32}$")).
                     build();
 
     public static Parameter<String> PATTERN =
