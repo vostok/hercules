@@ -75,6 +75,7 @@
         <module>hercules-clickhouse-util</module>
         <module>hercules-clickhouse-sink</module>
         <module>hercules-tracing-sink-clickhouse</module>
+        <module>hercules-elastic-adapter</module>
     </modules>
 
     <dependencyManagement>

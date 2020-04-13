@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.protocol;
 
+import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.ContainerReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ContainerWriter;
@@ -20,6 +21,23 @@ public class ContainerWriteReadTest {
                 build();
 
         pipe.process(container).assertEquals(HerculesProtocolAssert::assertEquals);
+    }
+
+    @Test
+    public void shouldRedefineTagsInContainerBuilder() {
+        Container expected = Container.builder().
+                tag("int", Variant.ofInteger(123)).
+                tag("string", Variant.ofString("Sample")).
+                build();
+
+        Container actual = Container.builder().
+                tag("int", Variant.ofInteger(456)).
+                tag("string", Variant.ofString("Sample")).
+                tag("int", Variant.ofInteger(123)).
+                build();
+
+        Assert.assertEquals(expected.sizeOf(), actual.sizeOf());
+        HerculesProtocolAssert.assertEquals(expected, actual);
     }
 
     @Test

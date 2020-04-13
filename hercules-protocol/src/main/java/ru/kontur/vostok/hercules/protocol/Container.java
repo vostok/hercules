@@ -96,9 +96,29 @@ public class Container {
         }
 
         public ContainerBuilder tag(TinyString key, Variant value) {
-            tags.put(key, value);
-            size += key.sizeOf();
+            Variant oldValue = tags.put(key, value);
+
+            if (oldValue == null) {
+                size += key.sizeOf();
+            } else {
+                size -= oldValue.sizeOf();
+            }
             size += value.sizeOf();
+
+            return this;
+        }
+
+
+        /**
+         * Add all tags.
+         * <p>
+         * Effective equivalent of {@code tags.forEach(builder::tag)}.
+         *
+         * @param tags tags to add
+         * @return this builder
+         */
+        public ContainerBuilder tags(Map<TinyString, Variant> tags) {
+            tags.forEach(this::tag);
 
             return this;
         }

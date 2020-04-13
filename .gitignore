@@ -6,3 +6,5 @@ target
 .idea
 *.log
 
+# OS specific files
+.DS_store
