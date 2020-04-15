@@ -398,6 +398,14 @@
                 <version>2.19.0</version>
                 <scope>test</scope>
             </dependency>
+
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-protocol</artifactId>
+                <version>${hercules.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

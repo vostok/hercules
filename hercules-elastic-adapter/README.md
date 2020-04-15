@@ -146,8 +146,6 @@ HTTP Server binds on host:port are defined in Main Application settings.
 
 `gate.client.urls` - Gate topology, required
 
-`gate.client.leprosery.stream` - Leprosery stream, required
-
 ### Index Manager settings
 `index.manager.config.path` - index name to stream and properties mapping, default value: `file://indices.json`
 
@@ -182,7 +180,6 @@ context.zone=default
 
 gate.client.apiKey=api_key_cef2e9a230dc434ebdfa7db549bd3138
 gate.client.urls=http://localhost:6306
-gate.client.leprosery.stream=leprosery_stream
 
 index.manager.config.path=file://indices.json
 ```

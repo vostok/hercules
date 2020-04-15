@@ -7,7 +7,6 @@ import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateSender;
-import ru.kontur.vostok.hercules.elastic.adapter.leprosery.LeproserySender;
 import ru.kontur.vostok.hercules.elastic.adapter.handler.BulkHandler;
 import ru.kontur.vostok.hercules.elastic.adapter.handler.IndexHandler;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexManager;
@@ -32,7 +31,6 @@ public class ElasticAdapterApplication {
 
     private static MetricsCollector metricsCollector;
     private static GateSender gateSender;
-    private static LeproserySender leproserySender;
     private static IndexManager indexManager;
     private static HttpServer httpServer;
 
@@ -56,9 +54,6 @@ public class ElasticAdapterApplication {
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
             gateSender = new GateSender(gateClientProperties);
-
-            String leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, gateClientProperties).get();
-            leproserySender = new LeproserySender(leproseryStream, gateSender);
 
             indexManager = new IndexManager(indexManagerProperties);
 
@@ -110,9 +105,9 @@ public class ElasticAdapterApplication {
 
     private static HttpServer createHttpServer(Properties httpServerProperties) {
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
-                post("/_bulk", new BulkHandler(indexManager, gateSender, leproserySender)).
-                post("/:index/_bulk", new BulkHandler(indexManager, gateSender, leproserySender)).
-                post("/:index/_doc/_bulk", new BulkHandler(indexManager, gateSender, leproserySender)).
+                post("/_bulk", new BulkHandler(indexManager, gateSender)).
+                post("/:index/_bulk", new BulkHandler(indexManager, gateSender)).
+                post("/:index/_doc/_bulk", new BulkHandler(indexManager, gateSender)).
                 post("/:index/_doc/", new IndexHandler(indexManager, gateSender)).
                 build();
 

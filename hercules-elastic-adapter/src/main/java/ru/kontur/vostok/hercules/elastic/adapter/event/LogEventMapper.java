@@ -22,15 +22,15 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Create Hercules event
+ * Create Hercules event from elastic-compatible log event and context properties.
+ *
  * @author Gregory Koshelev
  */
 public class LogEventMapper {
@@ -39,13 +39,13 @@ public class LogEventMapper {
     private static final Map<Class<?>, Function<Object, Variant>> TYPE_MAPPER;
     private static final Map<Class<?>, Function<List<?>, Variant>> LIST_TYPE_MAPPER;
 
-    private static final Set<TinyString> LOG_EVENT_TAGS =
-            new HashSet<>(Arrays.asList(
+    private static final List<TinyString> LOG_EVENT_TAGS =
+            Arrays.asList(
                     LogEventTags.LEVEL_TAG.getName(),
                     LogEventTags.MESSAGE_TAG.getName(),
                     LogEventTags.MESSAGE_TEMPLATE_TAG.getName(),
                     LogEventTags.EXCEPTION_TAG.getName(),
-                    LogEventTags.STACK_TRACE_TAG.getName()));
+                    LogEventTags.STACK_TRACE_TAG.getName());
 
     static {
         TYPE_MAPPER = new HashMap<>();
@@ -66,6 +66,16 @@ public class LogEventMapper {
         LIST_TYPE_MAPPER.put(Map.class, list -> Variant.ofVector(Vector.ofContainers(toContainersArray(list))));
     }
 
+    /**
+     * Try to create Hercules event from elastic-compatible log event and context properties.
+     * <p>
+     * Context properties are defined by index name.
+     *
+     * @param document   elastic-compatible log event
+     * @param properties context properties
+     * @param index      index name
+     * @return result with event if succeeded or error otherwise
+     */
     public static Result<Event, String> from(Map<String, Object> document, Map<TinyString, Variant> properties, String index) {
         Map<TinyString, Variant> tags;
         try {
@@ -94,14 +104,11 @@ public class LogEventMapper {
             return Result.error("Provided timestamp is invalid: " + dateTime);
         }
 
-        if (zonedDateTime.isBefore(ZonedDateTime.now().minusYears(1)) || zonedDateTime.isAfter(ZonedDateTime.now().plusMonths(1))) {
-            return Result.error("Provided timestamp is outside the processable range [now - year; now + month]: " + dateTime);
-        }
-
         long timestamp = TimeUtil.dateTimeToUnixTicks(zonedDateTime);
         UUID eventId = UuidGenerator.getClientInstance().next();
 
         EventBuilder eventBuilder = EventBuilder.create(timestamp, eventId).version(1);
+        eventBuilder.tag(LogEventTags.UTC_OFFSET_TAG.getName(), Variant.ofLong(toUtcOffsetTicks(zonedDateTime)));
         for (TinyString k : LOG_EVENT_TAGS) {
             Variant v = tags.remove(k);
             if (v != null) {
@@ -119,13 +126,14 @@ public class LogEventMapper {
     }
 
     /**
-     * Convert map to Variant format
+     * Convert JSON-friendly map to Hercules-friendly one.
      *
-     * @param map Map from json
-     * @return map in variant format of data
+     * @param map JSON-friendly map
+     * @return Hercules-friendly map
+     * @throws InconsistentElementTypesListException if internally map contains list of elements with different types
      */
     private static Map<TinyString, Variant> processMap(Map<String, Object> map) throws InconsistentElementTypesListException {
-        Map<TinyString, Variant> result = new HashMap<>();
+        Map<TinyString, Variant> result = new LinkedHashMap<>();
 
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             Object value = entry.getValue();
@@ -139,6 +147,13 @@ public class LogEventMapper {
         return result;
     }
 
+    /**
+     * Convert object to variant.
+     *
+     * @param value object
+     * @return variant
+     * @throws InconsistentElementTypesListException if object contains list (or object is list itself) of elements with different types
+     */
     private static Variant toVariant(Object value) throws InconsistentElementTypesListException {
         if (value instanceof List<?>) {
             return toVectorVariant((List<?>) value);
@@ -156,6 +171,13 @@ public class LogEventMapper {
         return func.apply(value);
     }
 
+    /**
+     * Convert map to {@link Variant} of {@link Container}.
+     *
+     * @param map the map
+     * @return the container variant
+     * @throws InconsistentElementTypesListException if internally map contains list of elements with different types
+     */
     private static Variant toContainerVariant(Map<String, Object> map) throws InconsistentElementTypesListException {
         return Variant.ofContainer(toContainer(map));
     }
@@ -167,6 +189,7 @@ public class LogEventMapper {
      *
      * @param list list of objects
      * @return {@link Variant}
+     * @throws InconsistentElementTypesListException if list (or internal one) contains elements of different types
      */
     private static Variant toVectorVariant(List<?> list) throws InconsistentElementTypesListException {
         if (list.size() == 0) {
@@ -194,6 +217,13 @@ public class LogEventMapper {
         return func.apply(list);
     }
 
+    /**
+     * Convert list of maps to {@link Container} array.
+     *
+     * @param list of maps
+     * @return container array
+     * @throws InconsistentElementTypesListException if internally some map contains list of elements with different types
+     */
     private static Container[] toContainersArray(List<?> list) throws InconsistentElementTypesListException {
         Container[] array = new Container[list.size()];
 
@@ -205,6 +235,13 @@ public class LogEventMapper {
         return array;
     }
 
+    /**
+     * Convert map to {@Container}
+     *
+     * @param map the map
+     * @return the container
+     * @throws InconsistentElementTypesListException if internally map contains list of elements with different types
+     */
     private static Container toContainer(Map<String, Object> map) throws InconsistentElementTypesListException {
         Container.ContainerBuilder builder = Container.builder();
 
@@ -218,5 +255,15 @@ public class LogEventMapper {
         }
 
         return builder.build();
+    }
+
+    /**
+     * Convert datetime UTC offset to 100ns ticks.
+     *
+     * @param dateTime datetime
+     * @return UTC offset in 100ns ticks
+     */
+    private static long toUtcOffsetTicks(ZonedDateTime dateTime) {
+        return TimeUtil.secondsToTicks(dateTime.getOffset().getTotalSeconds());
     }
 }

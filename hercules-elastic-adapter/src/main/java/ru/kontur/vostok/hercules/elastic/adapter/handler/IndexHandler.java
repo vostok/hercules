@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.elastic.adapter.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.elastic.adapter.document.DocumentReader;
+import ru.kontur.vostok.hercules.elastic.adapter.event.EventValidator;
 import ru.kontur.vostok.hercules.elastic.adapter.event.LogEventMapper;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateSender;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateStatus;
@@ -37,9 +38,13 @@ public class IndexHandler implements HttpHandler {
     private final IndexManager indexManager;
     private final GateSender gateSender;
 
+    private final EventValidator validator;
+
     public IndexHandler(IndexManager indexManager, GateSender gateSender) {
         this.indexManager = indexManager;
         this.gateSender = gateSender;
+
+        validator = new EventValidator();
     }
 
     @Override
@@ -76,7 +81,7 @@ public class IndexHandler implements HttpHandler {
         String stream = indexMeta.getStream();
 
         Result<Event, String> result = LogEventMapper.from(document, indexMeta.getProperties(), index);
-        if (result.isOk()) {
+        if (result.isOk() && validator.validate(result.get())) {
             GateStatus status = gateSender.send(Collections.singletonList(result.get()), false, stream);
             tryComplete(request, status);
         } else {

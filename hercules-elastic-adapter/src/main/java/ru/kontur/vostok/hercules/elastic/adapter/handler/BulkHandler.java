@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.elastic.adapter.bulk.BulkReader;
 import ru.kontur.vostok.hercules.elastic.adapter.bulk.IndexRequest;
+import ru.kontur.vostok.hercules.elastic.adapter.event.EventValidator;
 import ru.kontur.vostok.hercules.elastic.adapter.event.LogEventMapper;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateSender;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateStatus;
-import ru.kontur.vostok.hercules.elastic.adapter.leprosery.LeproserySender;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexManager;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexMeta;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -30,12 +30,14 @@ public class BulkHandler implements HttpHandler {
 
     private final IndexManager indexManager;
     private final GateSender gateSender;
-    private final LeproserySender leproserySender;
 
-    public BulkHandler(IndexManager indexManager, GateSender gateSender, LeproserySender leproserySender) {
+    private final EventValidator validator;
+
+    public BulkHandler(IndexManager indexManager, GateSender gateSender) {
         this.indexManager = indexManager;
         this.gateSender = gateSender;
-        this.leproserySender = leproserySender;
+
+        validator = new EventValidator();
     }
 
     @Override
@@ -79,7 +81,7 @@ public class BulkHandler implements HttpHandler {
             }
 
             Result<Event, String> result = LogEventMapper.from(indexRequest.getDocument(), meta.getProperties(), index);
-            if (result.isOk()) {
+            if (result.isOk() && validator.validate(result.get())) {
                 events.computeIfAbsent(meta.getStream(), k -> new ArrayList<>(1_000)).add(result.get());//TODO: Magic number
             } else {
                 //TODO: Leprosery
@@ -92,8 +94,6 @@ public class BulkHandler implements HttpHandler {
                 //TODO: should retry the request or send 503 back
             }
         }
-
-        leproserySender.send(leproseryEvents);
 
         tryComplete(request, HttpStatusCodes.OK);//TODO: Make response like Elasticsearch does
     }

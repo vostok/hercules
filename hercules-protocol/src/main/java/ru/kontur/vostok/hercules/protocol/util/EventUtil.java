@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.protocol.util;
 
 import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Sizes;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.encoder.CollectionWriter;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
