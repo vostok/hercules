@@ -38,6 +38,10 @@ Application is configured through properties file.
 
 `sink.sender.graphite.tags.enable` - sending metrics with tags, default value: `false`
 
+### Filters settings
+
+`sink.filter.list` - list of filter classes. Set value: `ru.kontur.vostok.hercules.graphite.sink.MetricEventFilter`
+
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
 
@@ -92,6 +96,8 @@ sink.sender.retryLimit=3
 sink.sender.pingPeriodMs=30000
 sink.sender.diagnosticLogWritePeriodMs=60000
 sink.sender.graphite.tags.enable=false
+
+sink.filter.list=ru.kontur.vostok.hercules.graphite.sink.MetricEventFilter
 
 metrics.graphite.server.addr=graphite.ru
 metrics.graphite.server.port=2003

@@ -2,15 +2,14 @@ package ru.kontur.vostok.hercules.graphite.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.graphite.sink.converter.MetricEventConverter;
 import ru.kontur.vostok.hercules.graphite.sink.converter.MetricConverter;
+import ru.kontur.vostok.hercules.graphite.sink.converter.MetricEventConverter;
 import ru.kontur.vostok.hercules.graphite.sink.converter.MetricWithTagsEventConverter;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.format.EventFormatter;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -68,7 +67,6 @@ public class GraphiteEventSender extends Sender {
         }
 
         List<GraphiteMetricData> metricsToSend = events.stream()
-                .filter(this::validate)
                 .map(metricsConverter::convert)
                 .collect(Collectors.toList());
 
@@ -94,18 +92,6 @@ public class GraphiteEventSender extends Sender {
         graphiteClient.close();
 
         return stopped;
-    }
-
-    private boolean validate(Event event) {
-        if (MetricEventFilter.isValid(event)) {
-            return true;
-        }
-
-        if (event != null) {
-            LOGGER.warn("Invalid metric event: {}", EventFormatter.format(event, true));
-        }
-
-        return false;
     }
 
     private void logSentMetricsCount() {
