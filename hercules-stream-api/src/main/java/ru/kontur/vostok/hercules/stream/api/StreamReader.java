@@ -12,11 +12,8 @@ import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.util.Maps;
-import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.time.Timer;
-import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,7 +30,6 @@ import java.util.concurrent.TimeoutException;
 public class StreamReader {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamReader.class);
 
-    private final Properties properties;
     private final ConsumerPool<Void, byte[]> consumerPool;
 
     private final TimeSource time;
@@ -41,8 +37,6 @@ public class StreamReader {
     private final MetricsCollector metricsCollector;
     private final Meter receivedEventsCountMeter;
     private final Meter receivedBytesCountMeter;
-
-    private final long readTimeoutMs;
 
     public StreamReader(Properties properties,
                         ConsumerPool<Void, byte[]> consumerPool,
@@ -54,7 +48,6 @@ public class StreamReader {
                  ConsumerPool<Void, byte[]> consumerPool,
                  MetricsCollector metricsCollector,
                  TimeSource time) {
-        this.properties = properties;
         this.consumerPool = consumerPool;
 
         this.time = time;
@@ -62,11 +55,9 @@ public class StreamReader {
         this.metricsCollector = metricsCollector;
         this.receivedEventsCountMeter = metricsCollector.meter("receivedEventsCount");
         this.receivedBytesCountMeter = metricsCollector.meter("receivedBytesCount");
-
-        readTimeoutMs = PropertiesUtil.get(Props.READ_TIMEOUT_MS, properties).get();
     }
 
-    public ByteStreamContent read(Stream stream, StreamReadState state, int shardIndex, int shardCount, int take) {
+    public ByteStreamContent read(Stream stream, StreamReadState state, int shardIndex, int shardCount, int take, int timeoutMs) {
 
         StreamMetricsCollector streamMetricsCollector = new StreamMetricsCollector(metricsCollector, stream.getName());
 
@@ -76,7 +67,7 @@ public class StreamReader {
             return ByteStreamContent.empty();
         }
 
-        Timer timer = time.timer(readTimeoutMs);
+        Timer timer = time.timer(timeoutMs);
 
         Consumer<Void, byte[]> consumer = null;
         try {
@@ -173,13 +164,5 @@ public class StreamReader {
         while ((count < take) && !timer.isExpired());
 
         return events;
-    }
-
-    static class Props {
-        static final Parameter<Long> READ_TIMEOUT_MS =
-                Parameter.longParameter("readTimeoutMs").
-                        withDefault(1_000L).
-                        withValidator(LongValidators.positive()).
-                        build();
     }
 }

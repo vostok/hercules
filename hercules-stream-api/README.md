@@ -74,6 +74,8 @@ If client supports LZ4-compression. Then server MAY compress response body using
 
 `take` - maximum events to read. Required.
 
+`timeoutMs` *(optional)* - maximum time to read in milliseconds is in range `[500, 10 000]`, default value: `1 000` ms.
+
 **Request body:**
 
 Optional read state by shards `State` is provided in the request body as follows:
@@ -219,8 +221,6 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 `http.server.rootPath` - base url, default value: `/`
 
 ### Stream API settings
-`stream.api.reader.readTimeoutMs` - time to read from Kafka in millis, default value: `1000`.
-
 `stream.api.pool.size` - consumers pool size. Default value: `4`.
 
 #### Kafka Consumer settings
@@ -271,8 +271,6 @@ metrics.period=60
 http.server.ioThreads=8
 http.server.workerThreads=32
 http.server.rootPath=/
-
-stream.api.reader.readTimeoutMs=1000
 
 stream.api.pool.size=4
 stream.api.pool.consumer.bootstrap.servers=localhost:9092
