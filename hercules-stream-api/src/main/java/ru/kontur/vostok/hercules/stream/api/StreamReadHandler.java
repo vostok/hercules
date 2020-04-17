@@ -32,9 +32,9 @@ import java.util.Optional;
 /**
  * @author Gregory Koshelev
  */
-public class ReadStreamHandler implements HttpHandler {
+public class StreamReadHandler implements HttpHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReadStreamHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StreamReadHandler.class);
 
     private static final StreamReadStateReader STATE_READER = new StreamReadStateReader();
     private static final ByteStreamContentWriter CONTENT_WRITER = new ByteStreamContentWriter();
@@ -45,7 +45,7 @@ public class ReadStreamHandler implements HttpHandler {
     private final StreamReader streamReader;
     private final StreamRepository streamRepository;
 
-    public ReadStreamHandler(AuthProvider authProvider, StreamRepository streamRepository, StreamReader streamReader) {
+    public StreamReadHandler(AuthProvider authProvider, StreamRepository streamRepository, StreamReader streamReader) {
         this.authProvider = authProvider;
         this.streamRepository = streamRepository;
         this.streamReader = streamReader;
@@ -131,6 +131,15 @@ public class ReadStreamHandler implements HttpHandler {
             return;
         }
 
+        ParameterValue<Integer> timeoutMs = QueryUtil.get(QueryParameters.TIMEOUT_MS, request);
+        if (!timeoutMs.isOk()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.TIMEOUT_MS + " error: " + timeoutMs.result().error());
+            return;
+        }
+
         request.readBodyAsync(
                 (r, bytes) -> request.dispatchAsync(
                         () -> {
@@ -140,7 +149,8 @@ public class ReadStreamHandler implements HttpHandler {
                                         STATE_READER.read(new Decoder(bytes)),
                                         shardIndex.get(),
                                         shardCount.get(),
-                                        take.get());
+                                        take.get(),
+                                        timeoutMs.get());
 
                                 request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
 
