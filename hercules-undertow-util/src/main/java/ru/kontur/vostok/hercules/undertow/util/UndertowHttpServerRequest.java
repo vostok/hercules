@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.undertow.util;
 
+import io.undertow.io.Receiver;
 import io.undertow.io.Sender;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderValues;
@@ -9,6 +10,7 @@ import ru.kontur.vostok.hercules.http.HttpMethod;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpServerRequestException;
 import ru.kontur.vostok.hercules.http.HttpServerResponse;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.IoCallback;
 import ru.kontur.vostok.hercules.http.NotSupportedHttpMethodException;
 import ru.kontur.vostok.hercules.http.ReadBodyCallback;
@@ -99,10 +101,22 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
         try {
             exchange.getRequestReceiver().receiveFullBytes(
                     (exchange, bytes) -> callback.dispatch(this, bytes),
-                    (exchange, exception) -> errorCallback.error(this, new HttpServerRequestException(exception)));
+                    (exchange, exception) -> errorCallback.error(this, wrap(exception))
+            );
         } catch (Throwable throwable) {
             errorCallback.error(this, new HttpServerRequestException(throwable));
         }
+    }
+
+    private HttpServerRequestException wrap(IOException exception) {
+        if (exception instanceof Receiver.RequestToLargeException) {
+            return new HttpServerRequestException(exception, HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE);
+        }
+        String message = exception.getMessage();
+        if (message != null && message.startsWith("UT000128")) {
+            return new HttpServerRequestException(exception, HttpStatusCodes.CLIENT_CLOSED_REQUEST);
+        }
+        return new HttpServerRequestException(exception);
     }
 
     @Override
