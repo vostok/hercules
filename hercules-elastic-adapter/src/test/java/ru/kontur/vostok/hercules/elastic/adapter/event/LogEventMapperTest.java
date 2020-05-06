@@ -6,7 +6,6 @@ import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.HerculesProtocolAssert;
-import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.tags.CommonTags;

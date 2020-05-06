@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Index multiple documents using default index name if specified.
+ * <p>
+ * See Elasticsearch Bulk API docs for details.
+ *
  * @author Gregory Koshelev
  */
 public class BulkHandler implements HttpHandler {

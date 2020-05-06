@@ -117,12 +117,4 @@ public class ElasticAdapterApplication {
                 httpServerProperties,
                 handler);
     }
-
-    private static class Props {
-        static Parameter<String> LEPROSERY_STREAM =
-                Parameter.stringParameter("leprosery.stream").
-                        required().
-                        build();
-
-    }
 }

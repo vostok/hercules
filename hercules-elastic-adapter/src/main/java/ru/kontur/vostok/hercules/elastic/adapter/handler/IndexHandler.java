@@ -20,6 +20,10 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
+ * Index single document using provided index name.
+ * <p>
+ * See Elasticsearch Index API docs for details.
+ *
  * @author Gregory Koshelev
  */
 public class IndexHandler implements HttpHandler {
