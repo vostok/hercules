@@ -75,6 +75,7 @@
         <module>hercules-clickhouse-util</module>
         <module>hercules-clickhouse-sink</module>
         <module>hercules-tracing-sink-clickhouse</module>
+        <module>hercules-elastic-adapter</module>
     </modules>
 
     <dependencyManagement>
@@ -395,6 +396,14 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>2.19.0</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-protocol</artifactId>
+                <version>${hercules.version}</version>
+                <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
         </dependencies>

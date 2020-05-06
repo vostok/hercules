@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.util.collection;
 
+import java.util.List;
+
 /**
  * @author Gregory Koshelev
  */
@@ -15,6 +17,28 @@ public final class ArrayUtil {
             }
         }
         return false;
+    }
+
+    public static float[] toFloatArray(List<?> list) {
+        float[] array = new float[list.size()];
+
+        int i = 0;
+        for (Object element : list) {
+            array[i] = (float) element;
+        }
+
+        return array;
+    }
+
+    public static boolean[] toBooleanArray(List<?> list) {
+        boolean[] array = new boolean[list.size()];
+
+        int i = 0;
+        for (Object element : list) {
+            array[i] = (boolean) element;
+        }
+
+        return array;
     }
 
     private ArrayUtil() {
