@@ -29,11 +29,13 @@ Application is configured through properties file.
 ### Filters settings
 Settings filling in is described in [SentryWhitelistEventFilter javadoc](../hercules-sentry-sink/src/main/java/ru/kontur/vostok/hercules/sentry/sink/filter/SentryWhitelistEventFilter.java).
 
-`sink.filter.list` - list of filter classes. Set value: `ru.kontur.vostok.hercules.sentry.sink.filter.LevelEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryWhitelistEventFilter`
+`sink.filter.list` - list of filter classes. Set value: `ru.kontur.vostok.hercules.sentry.sink.filter.LevelEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryWhitelistEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryBlacklistEventFilter`
 
 `sink.filter.0.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `ERROR` 
 
-`sink.filter.1.patterns` - pattern of tag values. Current tag values are compared with this pattern in filter.
+`sink.filter.1.patterns` - pattern of tag values. Current tag values are compared with this pattern in whitelist.
+
+`sink.filter.2.patterns` - pattern of tag values. Current tag values are compared with this pattern in blacklist.
 
 ### Rate Limiting settings 
 
@@ -92,9 +94,10 @@ sink.sender.readTimeoutMs=25000
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
-sink.filter.list=ru.kontur.vostok.hercules.sentry.sink.filter.LevelEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryWhitelistEventFilter
+sink.filter.list=ru.kontur.vostok.hercules.sentry.sink.filter.LevelEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryWhitelistEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryBlacklistEventFilter
 sink.filter.0.level=ERROR
 sink.filter.1.patterns=*:*:*
+sink.filter.2.patterns=test_project:testing:test_subproject
 
 sink.pattern=logs_*
 
