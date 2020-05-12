@@ -199,7 +199,6 @@ public class SentrySyncProcessor {
         Result<SentryClient, ErrorInfo> sentryClientResult =
                 sentryClientHolder.getOrCreateClient(organization, sentryProject);
         if (!sentryClientResult.isOk()) {
-            LOGGER.warn("Cannot get client for project '{}' in organization '{}'", sentryProject, organization);
             processErrorInfo = sentryClientResult.getError();
             processErrorInfo.setIsRetryableForApiClient();
             return Result.error(processErrorInfo);
