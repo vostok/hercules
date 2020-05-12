@@ -1,10 +1,16 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.encoder.CollectionWriter;
+import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
+import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -81,6 +87,31 @@ public class EventUtil {
 
     public static String extractStringId(final Event event) {
         return Base64.getEncoder().encodeToString(eventIdAsBytes(event.getTimestamp(), event.getUuid()));
+    }
+
+    private static final int SIZE_OF_EVENT_COUNT = Type.INTEGER.size;
+    private static final CollectionWriter<Event> EVENT_COLLECTION_WRITER = new CollectionWriter<>(new EventWriter());
+
+    public static byte[] toBytes(@NotNull List<Event> events) {
+        ByteBuffer buffer = ByteBuffer.allocate(sizeOf(events));
+
+        write(buffer, events);
+
+        return buffer.array();
+    }
+
+    private static int sizeOf(List<Event> events) {
+        int size = SIZE_OF_EVENT_COUNT;
+        for (Event event: events) {
+            size += event.sizeOf();
+        }
+
+        return size;
+    }
+
+    private static void write(ByteBuffer buffer, List<Event> events) {
+        Encoder encoder = new Encoder(buffer);
+        EVENT_COLLECTION_WRITER.write(encoder, events);
     }
 
     private EventUtil() {

@@ -53,9 +53,16 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with read access to the stream is specified. Required.
+`apiKey`  
+The API Key with read access to the stream is specified.  
+*Required*
 
-`ContentType: application/octet-stream`
+`Content-Type: application/octet-stream`  
+*Required*
+
+`Accept-Encoding: lz4`  
+If client supports LZ4-compression. Then server MAY compress response body using LZ4-compression.  
+*Optional*
 
 **Query parameters:**
 
@@ -66,6 +73,8 @@ instanceId - instance identifier
 `shardCount` - the total logical shards. Should be positive. Required.
 
 `take` - maximum events to read. Required.
+
+`timeoutMs` *(optional)* - maximum time to read in milliseconds is in range `[500, 10 000]`, default value: `1 000` ms.
 
 **Request body:**
 
@@ -97,7 +106,15 @@ Offset          Long
 
 **Response headers:**
 
-ContentType: application/octet-stream
+`Content-Type: application/octet-stream`
+
+`Content-Length`
+
+`Content-Encoding: lz4`  
+If response body is compressed. See Request headers for details.
+
+`Original-Content-Length`  
+If `Content-Encoding` is used. Value MUST equal original content length (before compression).
 
 **Response body:**
 
@@ -145,7 +162,9 @@ Events          Count, Event*
 
 **Response headers:**
 
-ContentType: application/octet-stream
+`Content-Type: application/octet-stream`
+
+`Content-Length`
 
 **Response body:**
 
@@ -202,8 +221,6 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 `http.server.rootPath` - base url, default value: `/`
 
 ### Stream API settings
-`stream.api.reader.readTimeoutMs` - time to read from Kafka in millis, default value: `1000`.
-
 `stream.api.pool.size` - consumers pool size. Default value: `4`.
 
 #### Kafka Consumer settings
@@ -254,8 +271,6 @@ metrics.period=60
 http.server.ioThreads=8
 http.server.workerThreads=32
 http.server.rootPath=/
-
-stream.api.reader.readTimeoutMs=1000
 
 stream.api.pool.size=4
 stream.api.pool.consumer.bootstrap.servers=localhost:9092

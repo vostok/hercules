@@ -29,4 +29,10 @@ public class QueryParameters {
                     required().
                     withValidator(IntegerValidators.positive()).
                     build();
+
+    public static final Parameter<Integer> TIMEOUT_MS =
+            Parameter.integerParameter("timeoutMs").
+                    withDefault(1_000).
+                    withValidator(IntegerValidators.range(500, 10_000)).
+                    build();
 }

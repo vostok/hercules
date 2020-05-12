@@ -120,6 +120,26 @@ public class ByteUtil {
         return size;
     }
 
+    /**
+     * Returns the index within source array of the first occurrence of the {@code needle} byte
+     * starting from the {@code offset} position.
+     * <p>
+     * If no {@code needle} byte occurs, then {@code -1} is returned.
+     *
+     * @param source the byte array
+     * @param needle the byte to search
+     * @param offset the starting position
+     * @return index of the first occurrence of the {@code needle} byte or {@code -1} if no {@code needle} byte occurs
+     */
+    public static int find(byte[] source, byte needle, int offset) {
+        for (int i = offset; i < source.length; i++) {
+            if (source[i] == needle) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private static byte[] fromRawHexString(String string, int offset) {
         byte[] bytes = new byte[(string.length() - offset) / 2];
 

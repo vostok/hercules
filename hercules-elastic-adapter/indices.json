@@ -1,0 +1,9 @@
+{
+  "test_index" : {
+    "stream" : "test_stream",
+    "properties" : {
+      "project" : "test_project",
+      "environment" : "testing"
+    }
+  }
+}

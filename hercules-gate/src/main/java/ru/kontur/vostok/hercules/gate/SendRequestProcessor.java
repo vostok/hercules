@@ -117,7 +117,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                 }
                             }),
                     (r, e) -> {
-                        tryComplete(request, HttpStatusCodes.INTERNAL_SERVER_ERROR, callback);
+                        tryComplete(request, e.getStatusCodeOrDefault(HttpStatusCodes.INTERNAL_SERVER_ERROR), callback);
                         LOGGER.error("Request body was read with exception", e);
                     });
         } catch (Throwable throwable) {
