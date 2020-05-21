@@ -16,7 +16,6 @@ import ru.kontur.vostok.hercules.stream.manager.kafka.DeleteTopicResult;
 import ru.kontur.vostok.hercules.stream.manager.kafka.KafkaManager;
 import ru.kontur.vostok.hercules.stream.manager.kafka.KafkaManagerException;
 import ru.kontur.vostok.hercules.stream.manager.kafka.Topic;
-import ru.kontur.vostok.hercules.stream.manager.kafka.TopicNotFoundException;
 import ru.kontur.vostok.hercules.stream.manager.kafka.UpdateTopicResult;
 
 import java.util.EnumMap;
@@ -277,6 +276,13 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
      */
     private boolean tryChangeTtlTopic(Topic topic) {
         try {
+            Optional<Topic> actualTopic = kafkaManager.getTopic(topic.name());
+            if (!actualTopic.isPresent()) {
+                // Should never happen
+                LOGGER.warn("Changing TTL of not existing Topic '{}'", topic.name());
+                return true;
+            }
+
             UpdateTopicResult result = kafkaManager.changeTtl(topic);
             switch (result) {
                 case UPDATED:

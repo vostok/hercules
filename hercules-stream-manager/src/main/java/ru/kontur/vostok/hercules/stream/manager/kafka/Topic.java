@@ -5,6 +5,8 @@ import ru.kontur.vostok.hercules.meta.stream.Stream;
 import java.util.Objects;
 
 /**
+ * POJO abstraction describes topic in Kafka.
+ *
  * @author Gregory Koshelev
  */
 public final class Topic {

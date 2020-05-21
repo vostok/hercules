@@ -95,6 +95,13 @@ public abstract class TaskExecutor<T> {
         }
     }
 
+    /**
+     * Execute task and return {@code true} if task should be removed
+     * (task has been processed successfully or no retry is needed).
+     *
+     * @param task task
+     * @return {@code true} if task should be removed, {@code false} if task should be retried
+     */
     protected abstract boolean execute(T task);
 
     /**
@@ -135,7 +142,7 @@ public abstract class TaskExecutor<T> {
         try {
             repository.delete(fullname);
         } catch (CuratorException e) {
-            LOGGER.info("Cannot delete invalid task '" + fullname + "'", e);
+            LOGGER.warn("Cannot delete invalid task '" + fullname + "'", e);
         }
     }
 

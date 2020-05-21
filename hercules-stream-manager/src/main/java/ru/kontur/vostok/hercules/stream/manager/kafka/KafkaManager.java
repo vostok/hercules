@@ -17,8 +17,6 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.time.DurationUtil;
 
 import java.util.Collections;
@@ -33,8 +31,6 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class KafkaManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaManager.class);
-
     private final AdminClient adminClient;
     private final short replicationFactor;
 
@@ -43,6 +39,13 @@ public class KafkaManager {
         this.replicationFactor = replicationFactor;
     }
 
+    /**
+     * Create topic in Kafka.
+     *
+     * @param topic topic
+     * @return {@link CreateTopicResult#CREATED} if topic has been created, {@link CreateTopicResult#ALREADY_EXISTS} if topic is already exists
+     * @throws KafkaManagerException in case of any error
+     */
     public CreateTopicResult createTopic(Topic topic) throws KafkaManagerException {
         Map<String, String> configs = new HashMap<>();
         configs.put(TopicConfig.RETENTION_MS_CONFIG, Long.toString(topic.ttl()));
@@ -62,6 +65,13 @@ public class KafkaManager {
         }
     }
 
+    /**
+     * Delete topic in Kafka.
+     *
+     * @param topic topic
+     * @return {@link DeleteTopicResult#DELETED} if topic has been deleted, {@link DeleteTopicResult#NOT_FOUND} if topic not found (thus, nothing to delete
+     * @throws KafkaManagerException
+     */
     public DeleteTopicResult deleteTopic(String topic) throws KafkaManagerException {
         DeleteTopicsResult result = adminClient.deleteTopics(Collections.singletonList(topic));
         Future<Void> future = result.values().get(topic);
@@ -76,6 +86,15 @@ public class KafkaManager {
         }
     }
 
+    /**
+     * Add partitions to topic in Kafka.
+     * <p>
+     * New partition count should be greater than old one.
+     *
+     * @param topic topic
+     * @return {@link UpdateTopicResult#UPDATED} if partitions has been added successfully, {@link UpdateTopicResult#NOT_FOUND} if topic not found
+     * @throws KafkaManagerException in case of any error
+     */
     public UpdateTopicResult increasePartitions(Topic topic) throws KafkaManagerException {
         NewPartitions request = NewPartitions.increaseTo(topic.partitions());
 
@@ -92,6 +111,13 @@ public class KafkaManager {
         }
     }
 
+    /**
+     * Change TTL (i.e. {@code retention.ms} config) of topic in Kafka.
+     *
+     * @param topic topic
+     * @return {@link UpdateTopicResult#UPDATED} if retention period has been updated successfully, {@link UpdateTopicResult#NOT_FOUND} if topic not found
+     * @throws KafkaManagerException in case of any error
+     */
     public UpdateTopicResult changeTtl(Topic topic) throws KafkaManagerException {
         ConfigResource resourceConfig = new ConfigResource(ConfigResource.Type.TOPIC, topic.name());
         ConfigEntry retentionConfigEntry = new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, Long.toString(topic.ttl()));
@@ -104,6 +130,7 @@ public class KafkaManager {
             future.get();
             return UpdateTopicResult.UPDATED;
         } catch (Exception ex) {
+            // Actually, never happen. See https://issues.apache.org/jira/browse/KAFKA-10033
             if (ex.getCause() instanceof UnknownTopicOrPartitionException) {
                 return UpdateTopicResult.NOT_FOUND;
             }
@@ -111,6 +138,13 @@ public class KafkaManager {
         }
     }
 
+    /**
+     * Get topic from Kafka.
+     *
+     * @param topic topic name
+     * @return topic if it exists or {@link Optional#empty()} otherwise
+     * @throws KafkaManagerException in case of any error
+     */
     public Optional<Topic> getTopic(String topic) throws KafkaManagerException {
         try {
             int partitions = getPartitions(topic);
@@ -131,7 +165,7 @@ public class KafkaManager {
      * @param topic topic
      * @return partition count
      * @throws TopicNotFoundException if Topic not found
-     * @throws KafkaManagerException  in case of any errors
+     * @throws KafkaManagerException  in case of any error
      */
     private int getPartitions(String topic) throws TopicNotFoundException, KafkaManagerException {
         DescribeTopicsResult result = adminClient.describeTopics(Collections.singletonList(topic));
@@ -153,7 +187,7 @@ public class KafkaManager {
      * @param topic topic
      * @return TTL if defined, otherwise {@code -1}
      * @throws TopicNotFoundException if Topic not found
-     * @throws KafkaManagerException  in case of any errors
+     * @throws KafkaManagerException  in case of any error
      */
     private long getTtl(String topic) throws TopicNotFoundException, KafkaManagerException {
         ConfigResource configResource = new ConfigResource(ConfigResource.Type.TOPIC, topic);

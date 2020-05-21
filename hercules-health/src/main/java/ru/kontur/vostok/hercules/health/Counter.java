@@ -16,7 +16,7 @@ public interface Counter {
     /**
      * Decrement by value.
      *
-     * @param value
+     * @param value value
      */
     void decrement(long value);
 
