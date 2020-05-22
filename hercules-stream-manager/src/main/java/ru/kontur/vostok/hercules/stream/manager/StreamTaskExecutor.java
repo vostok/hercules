@@ -2,16 +2,25 @@ package ru.kontur.vostok.hercules.stream.manager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.health.Meter;
+import org.slf4j.MDC;
+import ru.kontur.vostok.hercules.health.Counter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.task.TaskExecutor;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
+import ru.kontur.vostok.hercules.stream.manager.kafka.CreateTopicResult;
+import ru.kontur.vostok.hercules.stream.manager.kafka.DeleteTopicResult;
+import ru.kontur.vostok.hercules.stream.manager.kafka.KafkaManager;
+import ru.kontur.vostok.hercules.stream.manager.kafka.KafkaManagerException;
+import ru.kontur.vostok.hercules.stream.manager.kafka.Topic;
+import ru.kontur.vostok.hercules.stream.manager.kafka.UpdateTopicResult;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Gregory Koshelev
@@ -21,11 +30,11 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
 
     private final KafkaManager kafkaManager;
     private final StreamRepository streamRepository;
-    private final Meter createdStreamCount;
-    private final Meter deletedStreamCount;
-    private final Meter updatedStreamCount;
+    private final Counter createdStreamCount;
+    private final Counter deletedStreamCount;
+    private final Counter updatedStreamCount;
 
-    private final Map<StreamTaskType, StreamTaskProcessor> processors;
+    private final Map<StreamTaskType, Processor> processors;
 
     protected StreamTaskExecutor(
             StreamTaskRepository streamTaskRepository,
@@ -36,11 +45,11 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
         super(streamTaskRepository, pollingTimeoutMillis);
         this.kafkaManager = kafkaManager;
         this.streamRepository = streamRepository;
-        this.createdStreamCount = metricsCollector.meter("createdStreamCount");
-        this.deletedStreamCount = metricsCollector.meter("deletedStreamCount");
-        this.updatedStreamCount = metricsCollector.meter("updatedStreamCount");
+        this.createdStreamCount = metricsCollector.counter("createdStreamCount");
+        this.deletedStreamCount = metricsCollector.counter("deletedStreamCount");
+        this.updatedStreamCount = metricsCollector.counter("updatedStreamCount");
 
-        Map<StreamTaskType, StreamTaskProcessor> processors = new EnumMap<>(StreamTaskType.class);
+        Map<StreamTaskType, Processor> processors = new EnumMap<>(StreamTaskType.class);
         processors.put(StreamTaskType.CREATE, this::create);
         processors.put(StreamTaskType.DELETE, this::delete);
         processors.put(StreamTaskType.INCREASE_PARTITIONS, this::increasePartitions);
@@ -50,79 +59,258 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
 
     @Override
     protected boolean execute(StreamTask task) {
-        return processors.getOrDefault(task.getType(), this::unknown).process(task);
+        Stream stream = task.getStream();
+        try {
+            MDC.put("stream", stream.getName());
+            Processor processor = processors.get(task.getType());
+            if (processor != null) {
+                return processor.process(stream);
+            } else {
+                LOGGER.error("Unknown task type '{}'", task.getType());
+                return true;
+            }
+        } finally {
+            MDC.remove("stream");
+        }
     }
 
-    private boolean create(StreamTask task) {
-        CreateTopicResult result = kafkaManager.createTopic(task.getStream().getName(), task.getStream().getPartitions(), task.getStream().getTtl());//TODO: process creation error
-        if (result == CreateTopicResult.FAILED) {
-            //Topic creation failed. Task will be deleted, since it difficult to determine cause of failure.
-            return true;
-        }
-        LOGGER.info("Created topic '{}'", task.getStream().getName());
+    private boolean create(Stream stream) {
+        return tryCreateTopic(Topic.forStream(stream)) && tryCreateStream(stream);
+    }
+
+    private boolean delete(Stream stream) {
+        return tryDeleteStream(stream) && tryDeleteTopic(Topic.forStream(stream));
+    }
+
+    private boolean increasePartitions(Stream stream) {
+        return tryIncreasePartitionsTopic(Topic.forStream(stream)) && tryUpdateStream(stream);
+    }
+
+    private boolean changeTtl(Stream stream) {
+        return tryChangeTtlTopic(Topic.forStream(stream)) && tryUpdateStream(stream);
+    }
+
+    /**
+     * Try to create Stream.
+     * <p>
+     * Ignore already existed streams. This means that two cases are equivalent:    <br>
+     * 1. Successfully created stream.                                              <br>
+     * 2. Stream already exists.
+     *
+     * @param stream stream
+     * @return {@code true} if stream has been created (or exists), {@code false} in case of any errors
+     */
+    private boolean tryCreateStream(Stream stream) {
         try {
-            streamRepository.create(task.getStream());
+            if (streamRepository.create(stream).isSuccess()) {
+                LOGGER.info("Stream has been created");
+                createdStreamCount.increment();
+            } else {
+                // Should never happen
+                LOGGER.warn("Stream already exists");
+            }
         } catch (Exception ex) {
             LOGGER.error("Stream creation failed with exception", ex);
             return false;
         }
-        createdStreamCount.mark();
         return true;
     }
 
-    private boolean delete(StreamTask task) {
+    /**
+     * Try to delete Stream.
+     * <p>
+     * Ignore not existed streams. This means that two cases are equivalent:    <br>
+     * 1. Successfully deleted stream.                                          <br>
+     * 2. Stream doesn't exist.
+     *
+     * @param stream stream
+     * @return {@code true} if stream doesn't exist anymore, {@code false} in case of any error
+     */
+    private boolean tryDeleteStream(Stream stream) {
         try {
-            streamRepository.delete(task.getStream().getName());
+            if (streamRepository.delete(stream.getName()).isSuccess()) {
+                LOGGER.info("Stream has been deleted");
+                deletedStreamCount.increment();
+            } else {
+                // Case is possible only on retry
+                LOGGER.warn("Stream does not exist");
+            }
         } catch (Exception ex) {
             LOGGER.error("Stream deletion failed with exception", ex);
             return false;
         }
-        kafkaManager.deleteTopic(task.getStream().getName());//TODO: process deletion error
-        LOGGER.info("Deleted topic '{}'", task.getStream().getName());
-        deletedStreamCount.mark();
         return true;
     }
 
-    private boolean increasePartitions(StreamTask task) {
-        kafkaManager.increasePartitions(task.getStream().getName(), task.getStream().getPartitions());//TODO: process error
-        LOGGER.info("Increase partitions for topic '{}", task.getStream().getName());
+    /**
+     * Try to update Stream.
+     * <p>
+     * Ignore not existed streams.
+     *
+     * @param stream stream
+     * @return {@code false} in case of any error, otherwise {@code true}
+     */
+    private boolean tryUpdateStream(Stream stream) {
         try {
-            streamRepository.update(task.getStream());
+            if (streamRepository.update(stream).isSuccess()) {
+                LOGGER.info("Stream has been updated");
+                updatedStreamCount.increment();
+            } else {
+                // Should never happen
+                LOGGER.warn("Stream does not exist");
+            }
         } catch (Exception ex) {
-            LOGGER.error("Stream update failed with exception", ex);
+            LOGGER.error("Stream updating failed with exception", ex);
             return false;
         }
-        updatedStreamCount.mark();
         return true;
-
     }
 
-    private boolean changeTtl(StreamTask task) {
-        kafkaManager.changeTtl(task.getStream().getName(), task.getStream().getTtl());
-        LOGGER.info("Change ttl for topic '{}'", task.getStream().getName());
+    /**
+     * Try to create Topic.
+     * <p>
+     * Ignore already existed topics.
+     *
+     * @param topic topic
+     * @return {@code true} if topic has been created (or exists), {@code false} in case of any errors
+     */
+    private boolean tryCreateTopic(Topic topic) {
+        CreateTopicResult result;
         try {
-            streamRepository.update(task.getStream());
-        } catch (Exception ex) {
-            LOGGER.error("Stream update failed with exception", ex);
+            result = kafkaManager.createTopic(topic);
+            switch (result) {
+                case CREATED:
+                    LOGGER.info("Topic '{}' has been created: {}", topic.name(), topic);
+                    return true;
+                case ALREADY_EXISTS:
+                    // Case is possible only on retry
+                    LOGGER.warn("Topic '{}' already exists: need {}, but got {}", topic.name(), topic, kafkaManager.getTopic(topic.name()));
+                    return true;
+                default:
+                    // Should never happen
+                    LOGGER.error("Unknown result '{}'", result);
+                    return false;
+            }
+        } catch (KafkaManagerException ex) {
+            LOGGER.error("Topic creation failed with exception", ex);
             return false;
         }
-        updatedStreamCount.mark();
-        return true;
     }
 
-    private boolean unknown(StreamTask task) {
-        LOGGER.error("Unknown task type {}", task.getType());
-        return true;
+    /**
+     * Try to delete Topic.
+     * <p>
+     * Ignore not existed topics. This means that two cases are equivalent: <br>
+     * 1. Successfully deleted topic.                                       <br>
+     * 2. Topic doesn't exist.
+     *
+     * @param topic topic
+     * @return {@code true} if topic doesn't exist anymore, {@code false} in case of any error
+     */
+    private boolean tryDeleteTopic(Topic topic) {
+        try {
+            DeleteTopicResult result = kafkaManager.deleteTopic(topic.name());
+            switch (result) {
+                case NOT_FOUND:
+                    LOGGER.warn("Topic '{}' not found", topic.name());
+                    return true;
+                case DELETED:
+                    LOGGER.info("Topic '{}' has been deleted", topic.name());
+                    return true;
+                default:
+                    LOGGER.error("Unknown result '{}'", result);
+                    return false;
+            }
+        } catch (KafkaManagerException ex) {
+            LOGGER.error("Topic deletion failed with exception", ex);
+            return false;
+        }
+    }
+
+    /**
+     * Try to increase partitions for topic.
+     * <p>
+     * Ignore not existed topics.
+     *
+     * @param topic topic
+     * @return {@code false} in case of any errors, otherwise {@code true}
+     */
+    private boolean tryIncreasePartitionsTopic(Topic topic) {
+        try {
+            Optional<Topic> actualTopic = kafkaManager.getTopic(topic.name());
+            if (!actualTopic.isPresent()) {
+                // Should never happen
+                LOGGER.warn("Increasing partitions of not existing Topic '{}'", topic.name());
+                return true;
+            }
+            if ((topic.partitions() > actualTopic.get().partitions())) {
+                UpdateTopicResult result = kafkaManager.increasePartitions(topic);
+                switch (result) {
+                    case UPDATED:
+                        LOGGER.info("Increased partitions for topic '{}'", topic.name());
+                        return true;
+                    case NOT_FOUND:
+                        // Should never happen
+                        LOGGER.warn("Topic '{}' not found", topic.name());
+                        return true;
+                    default:
+                        // Should never happen
+                        LOGGER.error("Unknown result '{}'", result);
+                        return false;
+                }
+            }
+            return true;
+        } catch (KafkaManagerException ex) {
+            LOGGER.error("Increasing partitions failed with exception", ex);
+            return false;// Task should be retried.
+        }
+    }
+
+    /**
+     * Try to change TTL for Topic.
+     * <p>
+     * Ignore not existed topics.
+     *
+     * @param topic topic
+     * @return {@code false} in case of any errors, otherwise {@code true}
+     */
+    private boolean tryChangeTtlTopic(Topic topic) {
+        try {
+            Optional<Topic> actualTopic = kafkaManager.getTopic(topic.name());
+            if (!actualTopic.isPresent()) {
+                // Should never happen
+                LOGGER.warn("Changing TTL of not existing Topic '{}'", topic.name());
+                return true;
+            }
+
+            UpdateTopicResult result = kafkaManager.changeTtl(topic);
+            switch (result) {
+                case UPDATED:
+                    LOGGER.info("TTL for Topic '{}' has been changed", topic.name());
+                    return true;
+                case NOT_FOUND:
+                    // Should never happen
+                    LOGGER.warn("Topic '{}' not found", topic.name());
+                    return true;
+                default:
+                    // Should never happen
+                    LOGGER.error("Unknown result '{}'", result);
+                    return false;
+            }
+        } catch (KafkaManagerException ex) {
+            LOGGER.error("Changing Topic TTL failed with exception", ex);
+            return false;
+        }
     }
 
     @FunctionalInterface
-    private interface StreamTaskProcessor {
+    private interface Processor {
         /**
-         * Process the task.
+         * Process the stream.
          *
-         * @param task the task
-         * @return {@code true} if task was processed. Return {@code false} if the task should be retried.
+         * @param stream the stream
+         * @return {@code true} if processed. Return {@code false} if the executor's task should be retried.
          */
-        boolean process(StreamTask task);
+        boolean process(Stream stream);
     }
 }
