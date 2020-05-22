@@ -136,7 +136,7 @@ public class StreamReadHandler implements HttpHandler {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
                     MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.TIMEOUT_MS + " error: " + timeoutMs.result().error());
+                    "Parameter " + QueryParameters.TIMEOUT_MS.name() + " error: " + timeoutMs.result().error());
             return;
         }
 

@@ -13,6 +13,7 @@ public class LongValidatorsTest {
     public void shouldValidatePositive() {
         Validator<Long> validator = LongValidators.positive();
 
+        assertTrue(validator.validate(null).isError());
         assertFalse(validator.validate(1L).isError());
         assertTrue(validator.validate(0L).isError());
         assertTrue(validator.validate(-1L).isError());
@@ -22,6 +23,7 @@ public class LongValidatorsTest {
     public void shouldValidateNonNegative() {
         Validator<Long> validator = LongValidators.nonNegative();
 
+        assertTrue(validator.validate(null).isError());
         assertFalse(validator.validate(1L).isError());
         assertFalse(validator.validate(0L).isError());
         assertTrue(validator.validate(-1L).isError());
