@@ -85,7 +85,7 @@ public class ChangeTimelineTtlHandler implements HttpHandler {
                 taskQueue.submit(
                         new TimelineTask(timeline, TimelineTaskType.CHANGE_TTL),
                         timeline.getName(),
-                        10_000L,//TODO: Move to Properties or add timeout query param
+                        QueryUtil.get(QueryParameters.TIMEOUT_MS, request).get(),
                         TimeUnit.MILLISECONDS);
         HttpAsyncApiHelper.awaitAndComplete(taskFuture, request);
     }

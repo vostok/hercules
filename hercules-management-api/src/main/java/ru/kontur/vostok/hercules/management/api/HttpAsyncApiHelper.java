@@ -31,12 +31,17 @@ public class HttpAsyncApiHelper {
 
         if (QueryUtil.get(QueryParameters.ASYNC, request).isEmpty()) {
             task.await();
-            if (task.isDone()) {
-                request.complete(HttpStatusCodes.OK);
-                return;
+            switch (task.status()) {
+                case DONE:
+                    request.complete(HttpStatusCodes.OK);
+                    return;
+                case EXPIRED:
+                    request.complete(HttpStatusCodes.REQUEST_TIMEOUT);
+                    return;
+                default:
+                    request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+                    return;
             }
-            request.complete(HttpStatusCodes.REQUEST_TIMEOUT);
-            return;
         }
         request.complete(HttpStatusCodes.OK);
     }

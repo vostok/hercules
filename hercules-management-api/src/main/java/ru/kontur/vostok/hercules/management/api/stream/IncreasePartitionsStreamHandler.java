@@ -95,7 +95,7 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
                 taskQueue.submit(
                         new StreamTask(stream, StreamTaskType.INCREASE_PARTITIONS),
                         stream.getName(),
-                        10_000L,//TODO: Move to Properties or add timeout query param
+                        QueryUtil.get(QueryParameters.TIMEOUT_MS, request).get(),
                         TimeUnit.MILLISECONDS);
         HttpAsyncApiHelper.awaitAndComplete(taskFuture, request);
     }

@@ -1,5 +1,5 @@
 # Hercules Stream Manager
-Stream Manager is used for create, delete and increase partitions in Apache Kafka topics.
+Stream Manager creates, deletes and updates Streams. Also, Stream Manager applies appropriate changes to topics in Apache Kafka.
 
 ## Settings
 Application is configured through properties file.

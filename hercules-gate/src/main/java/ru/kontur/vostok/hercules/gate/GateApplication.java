@@ -40,16 +40,16 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class GateApplication {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(GateApplication.class);
 
     private static MetricsCollector metricsCollector;
-    private static HttpServer server;
-    private static EventSender eventSender;
-    private static EventValidator eventValidator;
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
     private static AuthValidationManager authValidationManager;
+    private static StreamStorage streamStorage;
+    private static EventSender eventSender;
+    private static EventValidator eventValidator;
+    private static HttpServer server;
     private static BeaconService beaconService;
 
     public static void main(String[] args) {
@@ -62,19 +62,16 @@ public class GateApplication {
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
-            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-            Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
-            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-            Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
+            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties validationProperties = PropertiesUtil.ofScope(properties, "validation");
+            Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
+            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+            Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
-
-            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
-            eventValidator = new EventValidator(validationProperties);
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -84,6 +81,12 @@ public class GateApplication {
 
             authValidationManager = new AuthValidationManager(curatorClient);
             authValidationManager.start();
+
+            StreamRepository streamRepository = new StreamRepository(curatorClient);
+            streamStorage = new StreamStorage(streamRepository);
+
+            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
+            eventValidator = new EventValidator(validationProperties);
 
             server = createHttpServer(httpServerProperties);
             server.start();
@@ -132,19 +135,19 @@ public class GateApplication {
         }
 
         try {
-            if (authManager != null) {
-                authManager.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on auth manager shutdown", t);
-        }
-
-        try {
             if (authValidationManager != null) {
                 authValidationManager.stop();
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping auth validation manager", t);
+        }
+
+        try {
+            if (authManager != null) {
+                authManager.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on auth manager shutdown", t);
         }
 
         try {
@@ -169,9 +172,6 @@ public class GateApplication {
     }
 
     private static HttpServer createHttpServer(Properties httpServerProperties) {
-        StreamRepository streamRepository = new StreamRepository(curatorClient);
-        StreamStorage streamStorage = new StreamStorage(streamRepository, 30_000L /* TODO: for test usages; It should be moved to configuration */);
-
         Properties throttlingProperties = PropertiesUtil.ofScope(httpServerProperties, Scopes.THROTTLING);
 
         SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(eventSender, eventValidator, metricsCollector);
