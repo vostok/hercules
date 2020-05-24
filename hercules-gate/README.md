@@ -69,7 +69,7 @@ If LZ4-compression is used.
 *Optional*
 
 `Original-Content-Length`  
-If `Content-Encoding` is used. Value MUST equal original content length (before compression) and cannot be greater than `100 * 10^6 bytes`.   
+If `Content-Encoding` is used. Value MUST equal original content length (before compression) and must be lesser than `100 * 10^6 bytes`.   
 *Optional (required if `Content-Encoding` is used)*
 
 **Query parameters:**
