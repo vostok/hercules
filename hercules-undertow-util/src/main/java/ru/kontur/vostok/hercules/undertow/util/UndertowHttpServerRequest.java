@@ -113,7 +113,7 @@ public class UndertowHttpServerRequest implements HttpServerRequest {
             return new HttpServerRequestException(exception, HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE);
         }
         String message = exception.getMessage();
-        if (message != null && message.startsWith("UT000128")) {
+        if (message != null && message.contains("UT000128")) {
             return new HttpServerRequestException(exception, HttpStatusCodes.CLIENT_CLOSED_REQUEST);
         }
         return new HttpServerRequestException(exception);
