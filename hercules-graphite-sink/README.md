@@ -40,7 +40,19 @@ Application is configured through properties file.
 
 ### Filters settings
 
-`sink.filter.list` - list of filter classes. Set value: `ru.kontur.vostok.hercules.graphite.sink.MetricEventFilter`
+`sink.filter.list` - list of filter classes. Set value: `ru.kontur.vostok.hercules.graphite.sink.filter.MetricEventFilter,ru.kontur.vostok.hercules.graphite.sink.filter.MetricAclEventFilter`
+
+`sink.filter.1.acl.path` - path to access control list. ACL file contains rules (each on a new line).
+Rules are written as `<statement> <pattern>`, where `<statement>` - action applied to the metric event (DENY or PERMIT),
+`<pattern>` - pattern for matching metric name. 
+
+Example: 
+```
+DENY value
+PERMIT value.*
+```
+
+`sink.filter.1.acl.defaultStatement` - default statement, default value: `DENY`
 
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
@@ -97,7 +109,9 @@ sink.sender.pingPeriodMs=30000
 sink.sender.diagnosticLogWritePeriodMs=60000
 sink.sender.graphite.tags.enable=false
 
-sink.filter.list=ru.kontur.vostok.hercules.graphite.sink.MetricEventFilter
+sink.filter.list=ru.kontur.vostok.hercules.graphite.sink.filter.MetricEventFilter,ru.kontur.vostok.hercules.graphite.sink.filter.MetricAclEventFilter
+sink.filter.1.acl.path=file://metrics.acl
+sink.filter.1.acl.defaultStatement=DENY
 
 metrics.graphite.server.addr=graphite.ru
 metrics.graphite.server.port=2003
