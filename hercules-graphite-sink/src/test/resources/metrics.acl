@@ -1,0 +1,3 @@
+DENY test.foo.bar.*
+PERMIT test.foo.*
+DENY test.*
