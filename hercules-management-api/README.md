@@ -78,11 +78,17 @@ instanceId - instance identifier
 **Request headers**
 
 `apiKey` or `masterApiKey`  
-The API Key with manage access to the stream is specified.  
+The API Key with manage access to the stream.  
 *Required*
 
 `Content-Type: application/json`  
 *Required*
+
+**Query parameters**
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Request body:**
 
@@ -132,12 +138,16 @@ Request body contains JSON-object with following properties:
 **Request headers**
 
 `apiKey` or `masterApiKey`    
-The API Key with manage access to the stream is specified.  
+The API Key with manage access to the stream.  
 *Required*
 
 **Query parameters:**
 
 `stream` - the name of stream. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -197,7 +207,7 @@ Any valid API Key.
 **Request headers**
 
 `apiKey` or `masterApiKey`  
-The API Key with manage access to the stream is specified.  
+The API Key with manage access to the stream.  
 *Required*
 
 **Query parameters:**
@@ -205,6 +215,10 @@ The API Key with manage access to the stream is specified.
 `stream` - the name of stream. *Required*
 
 `newPartitions` - new count of partitions in stream. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -231,7 +245,7 @@ The API Key with manage access to the stream is specified.
 **Request headers**
 
 `apiKey` or `masterApiKey`  
-The API Key with manage access to the stream is specified.  
+The API Key with manage access to the stream.  
 *Required*
 
 **Query parameters:**
@@ -239,6 +253,10 @@ The API Key with manage access to the stream is specified.
 `stream` - the name of stream. *Required*
 
 `newTtl` - new TTL of stream. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -263,7 +281,7 @@ The API Key with manage access to the stream is specified.
 **Request headers**
 
 `apiKey` or `masterApiKey`  
-The API Key with manage access to the stream is specified.  
+The API Key with manage access to the stream.  
 *Required*
 
 **Query parameters:**
@@ -311,11 +329,17 @@ The API Key with manage access to the stream is specified.
 **Request headers**
 
 `apiKey` or `masterApiKey`  
-The API Key with manage access to the stream is specified.  
+The API Key with manage access to the stream.  
 *Required*
 
 `Content-Type: application/json`  
 *Required*
+
+**Query parameters**
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Request body:**
 
@@ -371,12 +395,16 @@ Request body contains JSON-object with following properties:
 **Request headers**
 
 `apiKey` or `masterApiKey`  
-The API Key with manage access to the timeline is specified.  
+The API Key with manage access to the timeline.  
 *Required*
 
 **Query parameters:**
 
 `timeline` - the name of timeline. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -436,7 +464,7 @@ Any valid API Key.
 **Request headers**
 
 `apiKey` or `masterApiKey`  
-The API Key with manage access to the stream is specified.  
+The API Key with manage access to the stream.  
 *Required*
 
 **Query parameters:**
@@ -444,6 +472,10 @@ The API Key with manage access to the stream is specified.
 `timeline` - the name of timeline. *Required*
 
 `newTtl` - new TTL of timeline. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -468,7 +500,7 @@ The API Key with manage access to the stream is specified.
 **Request headers**
 
 `apiKey` or `masterApiKey`  
-The API Key with manage access to the timeline is specified.  
+The API Key with manage access to the timeline.  
 *Required*
 
 **Query parameters:**

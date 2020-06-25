@@ -77,7 +77,7 @@ public class DeleteTimelineHandler implements HttpHandler {
                 taskQueue.submit(
                         new TimelineTask(stub, TimelineTaskType.DELETE),
                         stub.getName(),
-                        10_000L,//TODO: Move to Properties
+                        QueryUtil.get(QueryParameters.TIMEOUT_MS, request).get(),
                         TimeUnit.MILLISECONDS);
         HttpAsyncApiHelper.awaitAndComplete(taskFuture, request);
     }

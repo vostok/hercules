@@ -77,8 +77,8 @@ public class DeleteStreamHandler implements HttpHandler {
                 taskQueue.submit(
                         new StreamTask(stub, StreamTaskType.DELETE),
                         stub.getName(),
-                10_000L,//TODO: Move to Properties
-                TimeUnit.MILLISECONDS);
+                        QueryUtil.get(QueryParameters.TIMEOUT_MS, request).get(),
+                        TimeUnit.MILLISECONDS);
         HttpAsyncApiHelper.awaitAndComplete(taskFuture, request);
     }
 }

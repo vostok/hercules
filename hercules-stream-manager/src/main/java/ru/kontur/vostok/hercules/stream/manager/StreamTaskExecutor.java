@@ -17,6 +17,7 @@ import ru.kontur.vostok.hercules.stream.manager.kafka.KafkaManager;
 import ru.kontur.vostok.hercules.stream.manager.kafka.KafkaManagerException;
 import ru.kontur.vostok.hercules.stream.manager.kafka.Topic;
 import ru.kontur.vostok.hercules.stream.manager.kafka.UpdateTopicResult;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -131,6 +132,9 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
             if (streamRepository.delete(stream.getName()).isSuccess()) {
                 LOGGER.info("Stream has been deleted");
                 deletedStreamCount.increment();
+                // FIXME: Workaround for KAFKA-3450 bug (see https://issues.apache.org/jira/browse/KAFKA-3450)
+                // If stream has been deleted then should wait until cache of streams in the Gate to be invalidated.
+                TimeSource.SYSTEM.sleep(12_000);
             } else {
                 // Case is possible only on retry
                 LOGGER.warn("Stream does not exist");
