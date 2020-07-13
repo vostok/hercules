@@ -5,13 +5,17 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
+import ru.kontur.vostok.hercules.elastic.sink.index.IndexValidator;
+import ru.kontur.vostok.hercules.elastic.sink.index.LogEventIndexResolver;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
@@ -33,10 +37,10 @@ public class ElasticSender extends Sender {
 
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
 
-    private final boolean mergePropertiesTagToRoot;
-
     private final IndexPolicy indexPolicy;
     private final IndexResolver indexResolver;
+
+    private final EventMappingWriter eventMappingWriter;
 
     private final ElasticClient client;
 
@@ -54,10 +58,19 @@ public class ElasticSender extends Sender {
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
-        this.mergePropertiesTagToRoot = PropertiesUtil.get(Props.MERGE_PROPERTIES_TAG_TO_ROOT, properties).get();
-
         this.indexPolicy = PropertiesUtil.get(Props.INDEX_POLICY, properties).get();
-        this.indexResolver = IndexResolver.forPolicy(indexPolicy);
+        if (indexPolicy == IndexPolicy.STATIC) {
+            ParameterValue<String> indexNameValue = PropertiesUtil.get(Props.INDEX_NAME, properties);
+            if (indexNameValue.isEmpty()) {
+                throw new IllegalArgumentException("Index name must be defined if 'static' index policy is used");
+            }
+            Optional<String> indexNameOptional = Optional.of(indexNameValue.get()).map(IndexResolver::sanitize);
+            this.indexResolver = (e) -> indexNameOptional;
+        } else {
+            this.indexResolver = LogEventIndexResolver.forPolicy(indexPolicy);
+        }
+
+        this.eventMappingWriter = new EventMappingWriter(PropertiesUtil.ofScope(properties, "elastic.mapping"));
 
         this.client = new ElasticClient(PropertiesUtil.ofScope(properties, "elastic.client"), indexPolicy, metricsCollector);
 
@@ -66,7 +79,7 @@ public class ElasticSender extends Sender {
 
         this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_ENABLE, properties).get();
         this.leproserySender = leproseryEnable
-                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector, mergePropertiesTagToRoot)
+                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector, eventMappingWriter)
                 : null;
 
         this.totalEventsIndicesMetricsCollector = new IndicesMetricsCollector("totalEvents", 10_000, metricsCollector);
@@ -189,20 +202,28 @@ public class ElasticSender extends Sender {
         toUnchecked(() -> {
             IndexToElasticJsonWriter.writeIndex(stream, wrapper.getIndex(), wrapper.getId());
             stream.write('\n');
-            EventToElasticJsonWriter.writeEvent(stream, wrapper.getEvent(), mergePropertiesTagToRoot);
+            eventMappingWriter.write(stream, wrapper.getEvent());
             stream.write('\n');
         });
     }
 
     private static class Props {
-        static final Parameter<Boolean> MERGE_PROPERTIES_TAG_TO_ROOT = Parameter
-                .booleanParameter("elastic.mergePropertiesTagToRoot")
-                .withDefault(Boolean.FALSE)
-                .build();
-
         static final Parameter<IndexPolicy> INDEX_POLICY =
                 Parameter.enumParameter("elastic.index.policy", IndexPolicy.class).
                         withDefault(IndexPolicy.DAILY).
+                        build();
+
+        static final Parameter<String> INDEX_NAME =
+                Parameter.stringParameter("elastic.index.name").
+                        withValidator((v) -> {
+                            if (!IndexValidator.isValidIndexName(v)) {
+                                return ValidationResult.error("Invalid index name");
+                            }
+                            if (!IndexValidator.isValidLength(v)) {
+                                return ValidationResult.error("Index name exceeds length limit");
+                            }
+                            return ValidationResult.ok();
+                        }).
                         build();
 
         static final Parameter<Integer> RETRY_LIMIT = Parameter

@@ -30,14 +30,25 @@ Application is configured through properties file.
 #### Sender settings
 `sink.sender.pingPeriodMs` - elastic server ping period, default value: `5000`
 
-`sink.sender.elastic.mergePropertiesTagToRoot` - flag for moving the contents of the properties container to the root of the object, default value: `false`
-
-`sink.sender.elastic.index.policy` - index policy: use index per day or index lifecycle management. Should be one of `DAILY` or `ILM`, default value: `DAILY`
-
 `sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
 
 `sink.sender.retryOnUnknownErrors` - should retry request to elastic in case of unknown errors, default value: `false`
- 
+
+##### Index Settings
+`sink.sender.elastic.index.policy` - index policy: should use static index name, index per day or index lifecycle management. Should be one of `STATIC`, `DAILY` or `ILM`, respectively, default value: `DAILY`
+
+`sink.sender.elastic.index.name` - static index name if index policy `STATIC` is used
+
+##### Mapping Settings
+`sink.sender.elastic.mapping.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`
+
+`sink.sender.elastic.mapping.timestamp.field` - field name for event timestamp, default value: `@timestamp`
+
+`sink.sender.elastic.mapping.timestamp.format` - timestamp field format is compatible with `java.time.format.DateTimeFormatter`,
+default value: `yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX`
+
+`sink.sender.elastic.mapping.file` - path to mapping file, see `ru.kontur.vostok.hercules.json.mapping.MappingLoader` for details, required
+
 ##### Elastic Client settings
 `sink.sender.elastic.client.hosts` - list of elastic hosts
 
@@ -127,10 +138,16 @@ sink.consumer.max.poll.interval.ms=370000
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 sink.sender.pingPeriodMs=60000
-sink.sender.elastic.mergePropertiesTagToRoot=true
-sink.sender.elastic.index.policy=DAILY
+
 sink.sender.retryLimit=2
 sink.sender.retryOnUnknownErrors=true
+
+sink.sender.elastic.index.policy=DAILY
+
+sink.sender.elastic.mapping.timestamp.enable=true
+sink.sender.elastic.mapping.timestamp.field=@timestamp
+sink.sender.elastic.mapping.timestamp.format=yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX
+sink.sender.elastic.mapping.file=resource://log-event.mapping
 
 sink.sender.elastic.client.hosts=localhost:9201
 sink.sender.elastic.client.maxConnections=30

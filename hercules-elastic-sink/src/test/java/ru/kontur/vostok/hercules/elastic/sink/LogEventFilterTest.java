@@ -13,10 +13,10 @@ import java.util.Properties;
 /**
  * @author Gregory Koshelev
  */
-public class ElasticEventFilterTest {
+public class LogEventFilterTest {
     @Test
     public void shouldPassCorrectEvents() {
-        ElasticEventFilter filter = new ElasticEventFilter(new Properties());
+        LogEventFilter filter = new LogEventFilter(new Properties());
 
         Event event = getEventBuilder().
                 tag("properties", Variant.ofContainer(Container.of("elk-index", Variant.ofString("my_project-my_subproject")))).
@@ -65,7 +65,7 @@ public class ElasticEventFilterTest {
 
     @Test
     public void shouldDenyInvalidEvents() {
-        ElasticEventFilter filter = new ElasticEventFilter(new Properties());
+        LogEventFilter filter = new LogEventFilter(new Properties());
 
         Event event = getEventBuilder().build();
         Assert.assertFalse(filter.test(event));
