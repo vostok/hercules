@@ -33,6 +33,6 @@ public class QueryParameters {
     public static final Parameter<Integer> TIMEOUT_MS =
             Parameter.integerParameter("timeoutMs").
                     withDefault(1_000).
-                    withValidator(IntegerValidators.range(500, 10_000)).
+                    withValidator(IntegerValidators.rangeInclusive(500, 10_000)).
                     build();
 }

@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.health;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricFilter;
@@ -87,7 +86,7 @@ public class MetricsCollector {
      * @return requested counter
      */
     public Counter counter(String name) {
-        return registry.counter(name);
+        return new CounterImpl(registry.counter(name));
     }
 
     /**
@@ -168,7 +167,7 @@ public class MetricsCollector {
     /**
      * @author Gregory Koshelev
      */
-    public static class MeterImpl implements ru.kontur.vostok.hercules.health.Meter {
+    public static class MeterImpl implements Meter {
         private final com.codahale.metrics.Meter meter;
 
         MeterImpl(com.codahale.metrics.Meter meter) {
@@ -189,7 +188,7 @@ public class MetricsCollector {
     /**
      * @author Gregory Koshelev
      */
-    public static class TimerImpl implements ru.kontur.vostok.hercules.health.Timer {
+    public static class TimerImpl implements Timer {
         private final com.codahale.metrics.Timer timer;
 
         public TimerImpl(com.codahale.metrics.Timer timer) {
@@ -199,6 +198,27 @@ public class MetricsCollector {
         @Override
         public void update(long duration, TimeUnit unit) {
             timer.update(duration, unit);
+        }
+    }
+
+    /**
+     * @author Gregory Koshelev
+     */
+    public static class CounterImpl implements Counter {
+        private final com.codahale.metrics.Counter counter;
+
+        public CounterImpl(com.codahale.metrics.Counter counter) {
+            this.counter = counter;
+        }
+
+        @Override
+        public void increment(long value) {
+            counter.inc(value);
+        }
+
+        @Override
+        public void decrement(long value) {
+            counter.dec(value);
         }
     }
 }

@@ -1,0 +1,1 @@
+integerTag to stringField using ru.kontur.vostok.hercules.json.mapping.IntegerToStringTransformer

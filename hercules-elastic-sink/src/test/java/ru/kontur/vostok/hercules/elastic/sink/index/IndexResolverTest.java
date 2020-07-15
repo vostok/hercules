@@ -20,7 +20,7 @@ import static org.junit.Assert.assertFalse;
 public class IndexResolverTest {
     @Test
     public void shoulNotResolveIndexIfNoSuitableTags() {
-        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY);
+        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY);
         final Event event = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000") //TODO: fix me!
                 .build();
         Optional<String> result = indexResolver.resolve(event);
@@ -29,7 +29,7 @@ public class IndexResolverTest {
 
     @Test
     public void shouldResolveDailyIndex() {
-        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY);
+        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY);
         final Event event = EventBuilder.create(
                 TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
                 "00000000-0000-0000-0000-000000000000").
@@ -48,7 +48,7 @@ public class IndexResolverTest {
 
     @Test
     public void shouldResolveIlmIndex() {
-        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.ILM);
+        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.ILM);
         final Event event = EventBuilder.create(
                 TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
                 "00000000-0000-0000-0000-000000000000").
@@ -67,7 +67,7 @@ public class IndexResolverTest {
 
     @Test
     public void shouldIgnoreBadIndexName() {
-        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY);
+        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY);
         final Event event = EventBuilder.create(
                 TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
                 "00000000-0000-0000-0000-000000000000").
@@ -86,7 +86,7 @@ public class IndexResolverTest {
 
     @Test
     public void shouldSanitizeIndexName() {
-        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY);
+        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY);
         final Event event = EventBuilder.create(
                 TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
                 "00000000-0000-0000-0000-000000000000").

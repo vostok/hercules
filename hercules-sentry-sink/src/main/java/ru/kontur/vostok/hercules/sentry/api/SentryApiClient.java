@@ -154,7 +154,6 @@ public class SentryApiClient {
         }
         HttpPost post = new HttpPost(ORGANIZATIONS_URL);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        LOGGER.info("Creating of new organization '{}' in Sentry", organization);
         return request(post, new TypeReference<OrganizationInfo>() {});
     }
 
@@ -177,7 +176,6 @@ public class SentryApiClient {
         }
         HttpPost post = new HttpPost(String.format(CREATE_TEAM_URL, organization));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        LOGGER.info("Creating of new team '{}' in Sentry", team);
         return request(post, new TypeReference<TeamInfo>() {});
     }
 
@@ -201,7 +199,6 @@ public class SentryApiClient {
         }
         HttpPost post = new HttpPost(String.format(CREATE_PROJECT_URL, organization, team));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        LOGGER.info("Creating of new project '{}' in Sentry", project);
         return request(post, new TypeReference<ProjectInfo>() {});
     }
 

@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.elastic.sink;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
@@ -30,11 +31,14 @@ public class LeproserySenderTest {
     @Test
     public void toLeproseryEventTest() {
         Event originalEvent = createEvent();
+
+        EventMappingWriter eventMappingWriter = createEventMappingWriter();
+
         Properties properties = new Properties();
         properties.setProperty("stream", "leprosery-stream");
         properties.setProperty("apiKey", "123");
         properties.setProperty("gate.client.urls", "localhost:8080");
-        LeproserySender leproserySender = new LeproserySender(properties, metricsCollectorMock,true);
+        LeproserySender leproserySender = new LeproserySender(properties, metricsCollectorMock, eventMappingWriter);
 
         Event leproseryEvent = leproserySender.toLeproseryEvent(
                 originalEvent,
@@ -48,8 +52,8 @@ public class LeproserySenderTest {
         Assert.assertEquals("my-original-index", getValueFromProperties(leproseryEvent, "original-index"));
         Assert.assertEquals("leprosery", getValueFromProperties(leproseryEvent, "elk-index"));
         Assert.assertEquals("{\"@timestamp\":\"2019-10-25T08:55:21.839000000Z\"," +
-                        "\"project\":\"my-project\",\"my_tag\":\"My value\"," +
-                        "\"message\":\"Test event\",\"level\":\"info\"}",
+                        "\"message\":\"Test event\",\"level\":\"info\"," +
+                        "\"project\":\"my-project\",\"my_tag\":\"My value\"}",
                 getValueFromProperties(leproseryEvent, "text"));
     }
 
@@ -65,6 +69,12 @@ public class LeproserySenderTest {
                         .tag("my_tag", Variant.ofString("My value"))
                         .build()))
                 .build();
+    }
+
+    private EventMappingWriter createEventMappingWriter() {
+        Properties properties = new Properties();
+        properties.setProperty("file", "resource://log-event.mapping");
+        return new EventMappingWriter(properties);
     }
 
     private String getValueFromProperties(Event event, String tag) {

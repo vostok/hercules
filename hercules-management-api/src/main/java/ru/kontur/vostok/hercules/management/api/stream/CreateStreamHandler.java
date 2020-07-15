@@ -7,7 +7,9 @@ import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
+import ru.kontur.vostok.hercules.management.api.QueryParameters;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.serialization.Deserializer;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
@@ -103,7 +105,7 @@ public class CreateStreamHandler implements HttpHandler {
                         taskQueue.submit(
                                 new StreamTask(stream, StreamTaskType.CREATE),
                                 stream.getName(),
-                                10_000L,//TODO: Move to properties
+                                QueryUtil.get(QueryParameters.TIMEOUT_MS, request).get(),
                                 TimeUnit.MILLISECONDS);
                 HttpAsyncApiHelper.awaitAndComplete(taskFuture, r);
             } catch (DeserializationException ex) {

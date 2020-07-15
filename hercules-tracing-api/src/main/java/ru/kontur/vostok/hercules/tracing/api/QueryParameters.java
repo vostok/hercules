@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.tracing.api;
 
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.uuid.UuidUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.UUID;
@@ -11,12 +12,12 @@ import java.util.UUID;
  */
 public final class QueryParameters {
     public static final Parameter<UUID> TRACE_ID =
-            Parameter.parameter("traceId", Parsers.fromFunction(UUID::fromString)).
+            Parameter.parameter("traceId", Parsers.fromFunction(UuidUtil::fromString)).
                     required().
                     build();
 
     public static final Parameter<UUID> PARENT_SPAN_ID =
-            Parameter.parameter("parentSpanId", Parsers.fromFunction(UUID::fromString)).
+            Parameter.parameter("parentSpanId", Parsers.fromFunction(UuidUtil::fromString)).
                     build();
 
     public static final Parameter<Integer> LIMIT =

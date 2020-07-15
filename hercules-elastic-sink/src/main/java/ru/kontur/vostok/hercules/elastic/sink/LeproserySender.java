@@ -9,6 +9,7 @@ import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterExcepti
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
@@ -56,16 +57,16 @@ class LeproserySender {
     private final String leproseryIndex;
     private final GateClient gateClient;
     private final String leproseryApiKey;
-    private final boolean mergePropertiesTagToRoot;
+    private final EventMappingWriter eventMappingWriter;
 
     private final Meter sentToLeproseryEventCountMeter;
     private final Meter sentToLeproseryWithErrorsEventCountMeter;
 
-    LeproserySender(Properties properties, MetricsCollector metricsCollector, boolean mergePropertiesTagToRoot) {
+    LeproserySender(Properties properties, MetricsCollector metricsCollector, EventMappingWriter eventMappingWriter) {
         sentToLeproseryEventCountMeter = metricsCollector.meter("sentToLeproseryEventCount");
         sentToLeproseryWithErrorsEventCountMeter = metricsCollector.meter("sentToLeproseryWithErrorsEventCount");
 
-        this.mergePropertiesTagToRoot = mergePropertiesTagToRoot;
+        this.eventMappingWriter = eventMappingWriter;
 
         this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, properties).get();
         this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, properties).get();
@@ -124,7 +125,7 @@ class LeproserySender {
 
         byte[] textBytes;
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream(EXPECTED_EVENT_SIZE_BYTES)) {
-            EventToElasticJsonWriter.writeEvent(stream, event, mergePropertiesTagToRoot);
+            eventMappingWriter.write(stream, event);
             textBytes = stream.toByteArray();
         } catch (IOException e) {
             LOGGER.error("Error of creating json from non-retryable event for leprosery event", e);

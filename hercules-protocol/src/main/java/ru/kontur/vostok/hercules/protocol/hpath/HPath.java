@@ -75,16 +75,19 @@ public class HPath {
         return new TagIterator();
     }
 
-    private static TinyString[] pathToTags(String path) {
-        if (path == null) {
-            return new TinyString[0];
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof HPath)) {
+            return false;
         }
 
-        return TinyString.toTinyStrings(path.split("/"));
+        HPath other = (HPath) obj;
+        return path.equals(other.path);
     }
 
-    private static String tagsToPath(String... tags) {
-        return String.join("/", tags);
+    @Override
+    public int hashCode() {
+        return path.hashCode();
     }
 
     public static HPath fromTag(String tag) {
@@ -99,8 +102,29 @@ public class HPath {
         return new HPath(path, pathToTags(path));
     }
 
+    public static HPath combine(HPath base, TinyString tag) {
+        int pathLength = base.tags.length + 1;
+        TinyString[] tags = new TinyString[pathLength];
+        System.arraycopy(base.tags, 0, tags, 0, base.tags.length);
+        tags[pathLength - 1] = tag;
+        return new HPath(base.path + "/" + tag.toString(), tags);
+    }
+
     public static HPath empty() {
         return EMPTY;
+    }
+
+
+    private static TinyString[] pathToTags(String path) {
+        if (path == null) {
+            return new TinyString[0];
+        }
+
+        return TinyString.toTinyStrings(path.split("/"));
+    }
+
+    private static String tagsToPath(String... tags) {
+        return String.join("/", tags);
     }
 
     /**
