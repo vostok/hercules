@@ -11,5 +11,9 @@ public enum IndexPolicy {
     /**
      * Index Lifecycle management is used
      */
-    ILM;
+    ILM,
+    /**
+     * Static index name
+     */
+    STATIC;
 }
