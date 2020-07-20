@@ -18,18 +18,19 @@ public interface IndexCreator {
      *     DD   - day of month started with 1
      * </pre>
      *
-     * @param policy the index policy
+     * @param policy     the index policy
      * @param restClient REST client
      * @return index creator instance
      */
     static IndexCreator forPolicy(IndexPolicy policy, RestClient restClient) {
         switch (policy) {
             case DAILY:
+            case STATIC:
                 return new SimpleIndexCreator(restClient);
             case ILM:
                 return new IlmIndexCreator(restClient);
-                default:
-                    throw new IllegalArgumentException("Unknown index policy " + policy);
+            default:
+                throw new IllegalArgumentException("Unknown index policy " + policy);
         }
     }
 }
