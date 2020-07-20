@@ -30,7 +30,7 @@ public class IndexToElasticJsonWriterTest {//FIXME: Rewrite and move index resol
                 "{" +
                         "\"index\":{" +
                         "\"_index\":\"just-some-index-value-1970.01.01\"," +
-                        "\"_type\":\"LogEvent\"," +
+                        "\"_type\":\"_doc\"," +
                         "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                         "}" +
                         "}",
@@ -55,7 +55,7 @@ public class IndexToElasticJsonWriterTest {//FIXME: Rewrite and move index resol
                 "{" +
                         "\"index\":{" +
                         "\"_index\":\"awesome-project-production-1970.01.01\"," +
-                        "\"_type\":\"LogEvent\"," +
+                        "\"_type\":\"_doc\"," +
                         "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                         "}" +
                         "}",
@@ -81,7 +81,7 @@ public class IndexToElasticJsonWriterTest {//FIXME: Rewrite and move index resol
                 "{" +
                         "\"index\":{" +
                         "\"_index\":\"awesome-project-production-subproject-1970.01.01\"," +
-                        "\"_type\":\"LogEvent\"," +
+                        "\"_type\":\"_doc\"," +
                         "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                         "}" +
                         "}",
@@ -107,7 +107,7 @@ public class IndexToElasticJsonWriterTest {//FIXME: Rewrite and move index resol
                 "{" +
                         "\"index\":{" +
                         "\"_index\":\"awesome_project-production-subproject-1970.01.01\"," +
-                        "\"_type\":\"LogEvent\"," +
+                        "\"_type\":\"_doc\"," +
                         "\"_id\":\"AAAAAAAAAAAAAAAAAAAQAJlPj884PwAA\"" +
                         "}" +
                         "}",
