@@ -1,6 +1,6 @@
-package ru.kontur.vostok.hercules.json.mapping;
+package ru.kontur.vostok.hercules.json.format;
 
-import ru.kontur.vostok.hercules.json.transformer.Transformer;
+import ru.kontur.vostok.hercules.json.format.transformer.Transformer;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 

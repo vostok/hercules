@@ -1,6 +1,6 @@
-package ru.kontur.vostok.hercules.json.mapping;
+package ru.kontur.vostok.hercules.json.format;
 
-import ru.kontur.vostok.hercules.json.DocumentWriter;
+import ru.kontur.vostok.hercules.json.format.transformer.Transformer;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
@@ -11,36 +11,34 @@ import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
 /**
- * Maps {@link Event} to the JSON-document and write it to {@link OutputStream}.
+ * Format {@link Event} to the JSON-document.
  * <p>
  * Features:
  * <ul>
  *   <li>Event timestamp can be used as JSON-document field,
  *   <li>Event payload can be mapped using {@link Mapper} implementations,
- *   <li>By default, {@link Mapper#PLAIN} is used if no mapping is specified.
+ *   <li>By default, {@link Transformer#PLAIN} is used if no mapping is specified.
  * </ul>
  *
  * @author Gregory Koshelev
  * @see MappingLoader
  * @see Mapper
- * @see DocumentWriter
  */
-public class EventMappingWriter {
+public class EventJsonFormatter {
     private final boolean timestampEnabled;
     private final String timestampField;
     private final DateTimeFormatter timestampFormatter;
-    private final HTree<Mapper> mappers;
+    private final Mapping mapping;
 
-    public EventMappingWriter(Properties properties) {
+    public EventJsonFormatter(Properties properties) {
         timestampEnabled = PropertiesUtil.get(Props.TIMESTAMP_ENABLE, properties).get();
         if (timestampEnabled) {
             timestampField = PropertiesUtil.get(Props.TIMESTAMP_FIELD, properties).get();
@@ -50,60 +48,62 @@ public class EventMappingWriter {
             timestampFormatter = null;
         }
 
-        mappers = MappingLoader.loadMapping(PropertiesUtil.get(Props.FILE, properties).get());
+        mapping = MappingLoader.loadMapping(PropertiesUtil.get(Props.FILE, properties).get());
     }
 
-    public void write(OutputStream out, Event event) throws IOException {
+    public Map<String, Object> format(Event event) {
         Map<String, Object> document = new LinkedHashMap<>();
 
         if (timestampEnabled) {
             document.put(timestampField, timestampFormatter.format(TimeUtil.unixTicksToInstant(event.getTimestamp())));
         }
 
-        HTree<Mapper>.Navigator navigator = mappers.navigator();
+        for (Iterator<Mapper> it = mapping.iterator(); it.hasNext(); ) {
+            Mapper mapper = it.next();
+            mapper.map(event, document);
+        }
+
+        HTree<Boolean>.Navigator navigator = mapping.navigator();
         process(document, navigator, event.getPayload());
 
-        DocumentWriter.writeTo(out, document);
+        return document;
     }
 
-    private void process(Map<String, Object> document, HTree<Mapper>.Navigator navigator, Container container) {
+    private void process(Map<String, Object> document, HTree<Boolean>.Navigator navigator, Container container) {
         for (Map.Entry<TinyString, Variant> tag : container.tags().entrySet()) {
             Variant value = tag.getValue();
             if (navigator.navigateToChild(tag.getKey())) {
-                Mapper mapper = navigator.getValue();
-                if (mapper != null) {
-                    mapper.map(tag.getKey(), value, document);
-                } else {
+                if (!navigator.hasValue()) {
                     if (value.getType() != Type.CONTAINER || !navigator.hasChildren()) {
-                        Mapper.PLAIN.map(tag.getKey(), value, document);
+                        document.putIfAbsent(tag.getKey().toString(), Transformer.PLAIN.transform(tag.getValue()));
                     } else {
                         process(document, navigator, (Container) value.getValue());
                     }
                 }
                 navigator.navigateToParent();
             } else {
-                Mapper.PLAIN.map(tag.getKey(), value, document);
+                document.putIfAbsent(tag.getKey().toString(), Transformer.PLAIN.transform(tag.getValue()));
             }
         }
     }
 
-    static class Props {
-        static final Parameter<Boolean> TIMESTAMP_ENABLE =
+    public static class Props {
+        public static final Parameter<Boolean> TIMESTAMP_ENABLE =
                 Parameter.booleanParameter("timestamp.enable").
                         withDefault(true).
                         build();
 
-        static final Parameter<String> TIMESTAMP_FIELD =
+        public static final Parameter<String> TIMESTAMP_FIELD =
                 Parameter.stringParameter("timestamp.field").
                         withDefault("@timestamp").
                         build();
 
-        static final Parameter<String> TIMESTAMP_FORMAT =
+        public static final Parameter<String> TIMESTAMP_FORMAT =
                 Parameter.stringParameter("timestamp.format").
                         withDefault("yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX").
                         build();
 
-        static final Parameter<String> FILE =
+        public static final Parameter<String> FILE =
                 Parameter.stringParameter("file").
                         required().
                         build();

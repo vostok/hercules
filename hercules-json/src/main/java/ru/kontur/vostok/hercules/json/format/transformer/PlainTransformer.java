@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.json.transformer;
+package ru.kontur.vostok.hercules.json.format.transformer;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.TinyString;
@@ -13,9 +13,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Transforms the value of any type to a JSON-document's compatible format.
+ * <p>
+ * JSON-document may include:
+ * <ul>
+ *   <li>Boxed primitive,
+ *   <li>{@link String},
+ *   <li>arrays of primitives,
+ *   <li>{@link java.util.List} of {@link String} or {@link Map}
+ *   <li>{@link Map} with string key and values from above
+ * </ul>
+ *
  * @author Gregory Koshelev
  */
 public class PlainTransformer implements Transformer {
+    /**
+     * Transforms the value of any type to a JSON-document's compatible format.
+     *
+     * @param value the value
+     * @return transformed result
+     */
     @Override
     public Object transform(Variant value) {
         return transformVariant(value);
@@ -36,7 +53,7 @@ public class PlainTransformer implements Transformer {
             case NULL:
                 return value.getValue();
             case STRING:
-                return new String((byte[]) value.getValue(),StandardCharsets.UTF_8);
+                return new String((byte[]) value.getValue(), StandardCharsets.UTF_8);
             case VECTOR:
                 return transformVector((Vector) value.getValue());
             default:

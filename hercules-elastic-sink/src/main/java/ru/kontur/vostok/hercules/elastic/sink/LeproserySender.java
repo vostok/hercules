@@ -9,7 +9,8 @@ import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterExcepti
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
+import ru.kontur.vostok.hercules.json.DocumentWriter;
+import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
@@ -57,16 +58,16 @@ class LeproserySender {
     private final String leproseryIndex;
     private final GateClient gateClient;
     private final String leproseryApiKey;
-    private final EventMappingWriter eventMappingWriter;
+    private final EventJsonFormatter eventFormatter;
 
     private final Meter sentToLeproseryEventCountMeter;
     private final Meter sentToLeproseryWithErrorsEventCountMeter;
 
-    LeproserySender(Properties properties, MetricsCollector metricsCollector, EventMappingWriter eventMappingWriter) {
+    LeproserySender(Properties properties, MetricsCollector metricsCollector, EventJsonFormatter eventFormatter) {
         sentToLeproseryEventCountMeter = metricsCollector.meter("sentToLeproseryEventCount");
         sentToLeproseryWithErrorsEventCountMeter = metricsCollector.meter("sentToLeproseryWithErrorsEventCount");
 
-        this.eventMappingWriter = eventMappingWriter;
+        this.eventFormatter = eventFormatter;
 
         this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, properties).get();
         this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, properties).get();
@@ -125,7 +126,7 @@ class LeproserySender {
 
         byte[] textBytes;
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream(EXPECTED_EVENT_SIZE_BYTES)) {
-            eventMappingWriter.write(stream, event);
+            DocumentWriter.writeTo(stream, eventFormatter.format(event));
             textBytes = stream.toByteArray();
         } catch (IOException e) {
             LOGGER.error("Error of creating json from non-retryable event for leprosery event", e);

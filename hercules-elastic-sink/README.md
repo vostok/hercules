@@ -39,15 +39,15 @@ Application is configured through properties file.
 
 `sink.sender.elastic.index.name` - static index name if index policy `STATIC` is used
 
-##### Mapping Settings
-`sink.sender.elastic.mapping.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`
+##### Format Settings
+`sink.sender.elastic.format.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`
 
-`sink.sender.elastic.mapping.timestamp.field` - field name for event timestamp, default value: `@timestamp`
+`sink.sender.elastic.format.timestamp.field` - field name for event timestamp, default value: `@timestamp`
 
-`sink.sender.elastic.mapping.timestamp.format` - timestamp field format is compatible with `java.time.format.DateTimeFormatter`,
+`sink.sender.elastic.format.timestamp.format` - timestamp field format is compatible with `java.time.format.DateTimeFormatter`,
 default value: `yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX`
 
-`sink.sender.elastic.mapping.file` - path to mapping file, see `ru.kontur.vostok.hercules.json.mapping.MappingLoader` for details, required
+`sink.sender.elastic.format.file` - path to mapping file, see `ru.kontur.vostok.hercules.json.mapping.MappingLoader` for details, required
 
 ##### Elastic Client settings
 `sink.sender.elastic.client.hosts` - list of elastic hosts

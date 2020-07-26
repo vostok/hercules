@@ -1,7 +1,7 @@
-package ru.kontur.vostok.hercules.elastic.sink.mapping;
+package ru.kontur.vostok.hercules.elastic.sink.format;
 
 import ru.kontur.vostok.hercules.elastic.sink.StackTraceCreator;
-import ru.kontur.vostok.hercules.json.transformer.Transformer;
+import ru.kontur.vostok.hercules.json.format.transformer.Transformer;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 

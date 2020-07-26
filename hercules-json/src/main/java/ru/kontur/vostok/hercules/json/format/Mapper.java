@@ -1,12 +1,11 @@
-package ru.kontur.vostok.hercules.json.mapping;
+package ru.kontur.vostok.hercules.json.format;
 
-import ru.kontur.vostok.hercules.protocol.TinyString;
-import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.Event;
 
 import java.util.Map;
 
 /**
- * Maps event tag to JSON-document.
+ * Maps part of event to JSON-document.
  * <p>
  * JSON-document is represented by object model of nested {@link Map} objects.<br>
  * A key of an entry is the tag name.
@@ -23,7 +22,5 @@ import java.util.Map;
  * @see ru.kontur.vostok.hercules.json.DocumentWriter
  */
 public interface Mapper {
-    Mapper PLAIN = new PlainMapper();
-
-    void map(TinyString tag, Variant value, Map<String, Object> document);
+    void map(Event event, Map<String, Object> document);
 }

@@ -1,0 +1,3 @@
+combine beginTimestampUtc,timestampOffset to dateTime using ru.kontur.vostok.hercules.json.format.combiner.IsoDateTimeCombiner
+combine beginTimestampUtc,endTimestampUtc to latencyMs using ru.kontur.vostok.hercules.json.format.combiner.LatencyMsCombiner
+combine beginTimestampUtc,endTimestampUtc to latency using ru.kontur.vostok.hercules.json.format.combiner.LatencyStringCombiner

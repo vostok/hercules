@@ -9,7 +9,8 @@ import ru.kontur.vostok.hercules.elastic.sink.index.IndexValidator;
 import ru.kontur.vostok.hercules.elastic.sink.index.LogEventIndexResolver;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
+import ru.kontur.vostok.hercules.json.DocumentWriter;
+import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
@@ -36,11 +37,12 @@ public class ElasticSender extends Sender {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSender.class);
 
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
+    private static final ValidationResult UNDEFINED_INDEX_VALIDATION_RESULT = ValidationResult.error("Undefined index");
 
     private final IndexPolicy indexPolicy;
     private final IndexResolver indexResolver;
 
-    private final EventMappingWriter eventMappingWriter;
+    private final EventJsonFormatter eventFormatter;
 
     private final ElasticClient client;
 
@@ -70,7 +72,7 @@ public class ElasticSender extends Sender {
             this.indexResolver = LogEventIndexResolver.forPolicy(indexPolicy);
         }
 
-        this.eventMappingWriter = new EventMappingWriter(PropertiesUtil.ofScope(properties, "elastic.mapping"));
+        this.eventFormatter = new EventJsonFormatter(PropertiesUtil.ofScope(properties, "elastic.format"));
 
         this.client = new ElasticClient(PropertiesUtil.ofScope(properties, "elastic.client"), indexPolicy, metricsCollector);
 
@@ -79,7 +81,7 @@ public class ElasticSender extends Sender {
 
         this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_ENABLE, properties).get();
         this.leproserySender = leproseryEnable
-                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector, eventMappingWriter)
+                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector, eventFormatter)
                 : null;
 
         this.totalEventsIndicesMetricsCollector = new IndicesMetricsCollector("totalEvents", 10_000, metricsCollector);
@@ -112,7 +114,7 @@ public class ElasticSender extends Sender {
                 readyToSend.put(wrapper.getId(), wrapper);
             } else {
                 indexValidationErrorsMeter.mark();
-                nonRetryableErrorsMap.put(wrapper, ValidationResult.error("Event index is null"));
+                nonRetryableErrorsMap.put(wrapper, UNDEFINED_INDEX_VALIDATION_RESULT);
             }
         }
 
@@ -199,10 +201,11 @@ public class ElasticSender extends Sender {
     }
 
     private void writeEventToStream(ByteArrayOutputStream stream, EventWrapper wrapper) {
+        Map<String, Object> document = eventFormatter.format(wrapper.getEvent());
         toUnchecked(() -> {
             IndexToElasticJsonWriter.writeIndex(stream, wrapper.getIndex(), wrapper.getId());
             stream.write('\n');
-            eventMappingWriter.write(stream, wrapper.getEvent());
+            DocumentWriter.writeTo(stream, document);
             stream.write('\n');
         });
     }

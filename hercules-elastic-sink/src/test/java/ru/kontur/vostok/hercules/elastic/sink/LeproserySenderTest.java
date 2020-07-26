@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.elastic.sink;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
+import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
@@ -32,13 +32,13 @@ public class LeproserySenderTest {
     public void toLeproseryEventTest() {
         Event originalEvent = createEvent();
 
-        EventMappingWriter eventMappingWriter = createEventMappingWriter();
+        EventJsonFormatter eventFormatter = createEventFormatter();
 
         Properties properties = new Properties();
         properties.setProperty("stream", "leprosery-stream");
         properties.setProperty("apiKey", "123");
         properties.setProperty("gate.client.urls", "localhost:8080");
-        LeproserySender leproserySender = new LeproserySender(properties, metricsCollectorMock, eventMappingWriter);
+        LeproserySender leproserySender = new LeproserySender(properties, metricsCollectorMock, eventFormatter);
 
         Event leproseryEvent = leproserySender.toLeproseryEvent(
                 originalEvent,
@@ -52,8 +52,8 @@ public class LeproserySenderTest {
         Assert.assertEquals("my-original-index", getValueFromProperties(leproseryEvent, "original-index"));
         Assert.assertEquals("leprosery", getValueFromProperties(leproseryEvent, "elk-index"));
         Assert.assertEquals("{\"@timestamp\":\"2019-10-25T08:55:21.839000000Z\"," +
-                        "\"message\":\"Test event\",\"level\":\"info\"," +
-                        "\"project\":\"my-project\",\"my_tag\":\"My value\"}",
+                        "\"project\":\"my-project\",\"my_tag\":\"My value\"," +
+                        "\"message\":\"Test event\",\"level\":\"info\"}",
                 getValueFromProperties(leproseryEvent, "text"));
     }
 
@@ -71,10 +71,10 @@ public class LeproserySenderTest {
                 .build();
     }
 
-    private EventMappingWriter createEventMappingWriter() {
+    private EventJsonFormatter createEventFormatter() {
         Properties properties = new Properties();
-        properties.setProperty("file", "resource://log-event.mapping");
-        return new EventMappingWriter(properties);
+        properties.setProperty(EventJsonFormatter.Props.FILE.name(), "resource://log-event.mapping");
+        return new EventJsonFormatter(properties);
     }
 
     private String getValueFromProperties(Event event, String tag) {

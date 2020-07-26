@@ -1,8 +1,7 @@
-package ru.kontur.vostok.hercules.json.transformer;
+package ru.kontur.vostok.hercules.json.format.transformer;
 
 import org.junit.Test;
 import ru.kontur.vostok.hercules.json.DocumentWriter;
-import ru.kontur.vostok.hercules.json.transformer.PlainTransformer;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
