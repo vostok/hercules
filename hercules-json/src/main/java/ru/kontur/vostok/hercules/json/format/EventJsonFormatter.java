@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.json.format;
 
+import ru.kontur.vostok.hercules.json.Document;
 import ru.kontur.vostok.hercules.json.format.transformer.Transformer;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -14,7 +15,6 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -51,11 +51,11 @@ public class EventJsonFormatter {
         mapping = MappingLoader.loadMapping(PropertiesUtil.get(Props.FILE, properties).get());
     }
 
-    public Map<String, Object> format(Event event) {
-        Map<String, Object> document = new LinkedHashMap<>();
+    public Document format(Event event) {
+        Document document = new Document();
 
         if (timestampEnabled) {
-            document.put(timestampField, timestampFormatter.format(TimeUtil.unixTicksToInstant(event.getTimestamp())));
+            document.putIfAbsent(timestampField, timestampFormatter.format(TimeUtil.unixTicksToInstant(event.getTimestamp())));
         }
 
         for (Iterator<Mapper> it = mapping.iterator(); it.hasNext(); ) {
@@ -69,7 +69,7 @@ public class EventJsonFormatter {
         return document;
     }
 
-    private void process(Map<String, Object> document, HTree<Boolean>.Navigator navigator, Container container) {
+    private void process(Document document, HTree<Boolean>.Navigator navigator, Container container) {
         for (Map.Entry<TinyString, Variant> tag : container.tags().entrySet()) {
             Variant value = tag.getValue();
             if (navigator.navigateToChild(tag.getKey())) {

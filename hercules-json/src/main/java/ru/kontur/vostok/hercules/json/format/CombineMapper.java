@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.json.format;
 
-import ru.kontur.vostok.hercules.json.DocumentUtil;
+import ru.kontur.vostok.hercules.json.Document;
 import ru.kontur.vostok.hercules.json.format.combiner.Combiner;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -10,7 +10,6 @@ import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Combines two or more tag values to the single field using {@link Combiner}.
@@ -36,7 +35,7 @@ public class CombineMapper implements Mapper {
     }
 
     @Override
-    public void map(Event event, Map<String, Object> document) {
+    public void map(Event event, Document document) {
         Container payload = event.getPayload();
 
         Variant[] values = new Variant[sourcePaths.size()];
@@ -49,6 +48,6 @@ public class CombineMapper implements Mapper {
             values[i++] = value;
         }
 
-        DocumentUtil.subdocument(document, destinationPath).putIfAbsent(field, combiner.combine(values));
+        document.subdocument(destinationPath).putIfAbsent(field, combiner.combine(values));
     }
 }

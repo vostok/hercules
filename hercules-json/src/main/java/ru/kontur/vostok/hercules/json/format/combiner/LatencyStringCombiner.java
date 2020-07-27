@@ -19,8 +19,11 @@ public class LatencyStringCombiner implements Combiner {
      */
     @Override
     public Object combine(Variant... values) {
-        if (values.length != 2 || values[0].getType() != Type.LONG || values[1].getType() != Type.LONG) {
+        if (values.length != 2) {
             throw new IllegalArgumentException("Combiner expects 2 timestamps");
+        }
+        if (values[0].getType() != Type.LONG || values[1].getType() != Type.LONG) {
+            return null;
         }
 
         long beginTimestamp = (long) values[0].getValue();

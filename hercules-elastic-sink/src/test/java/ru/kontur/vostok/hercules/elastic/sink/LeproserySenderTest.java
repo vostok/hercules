@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -38,11 +39,13 @@ public class LeproserySenderTest {
         properties.setProperty("stream", "leprosery-stream");
         properties.setProperty("apiKey", "123");
         properties.setProperty("gate.client.urls", "localhost:8080");
-        LeproserySender leproserySender = new LeproserySender(properties, metricsCollectorMock, eventFormatter);
+        LeproserySender leproserySender = new LeproserySender(properties, metricsCollectorMock);
 
         Event leproseryEvent = leproserySender.toLeproseryEvent(
-                originalEvent,
-                "my-original-index",
+                new ElasticDocument(
+                        EventUtil.extractStringId(originalEvent),
+                        "my-original-index",
+                        eventFormatter.format(originalEvent)),
                 "my error reason").get();
 
         Assert.assertEquals("my error reason",

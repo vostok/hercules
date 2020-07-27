@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.json.format;
 
-import ru.kontur.vostok.hercules.json.DocumentUtil;
+import ru.kontur.vostok.hercules.json.Document;
 import ru.kontur.vostok.hercules.json.format.transformer.Transformer;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -32,15 +32,13 @@ public class MoveMapper implements Mapper {
     }
 
     @Override
-    public void map(Event event, Map<String, Object> document) {
+    public void map(Event event, Document document) {
         Variant value = sourcePath.extract(event.getPayload());
-        if (value == null) {
+        if (value == null || value.getType() != Type.CONTAINER) {
             return;
         }
-        if (value.getType() != Type.CONTAINER) {
-            throw new IllegalArgumentException("Expect container but got " + value.getType());
-        }
-        writeContainer(DocumentUtil.subdocument(document, destinationPath), (Container) value.getValue());
+
+        writeContainer(document.subdocument(destinationPath), (Container) value.getValue());
     }
 
     private void writeContainer(Map<String, Object> document, Container container) {

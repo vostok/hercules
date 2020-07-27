@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.json.format;
 
-import ru.kontur.vostok.hercules.json.DocumentUtil;
+import ru.kontur.vostok.hercules.json.Document;
 import ru.kontur.vostok.hercules.json.format.transformer.Transformer;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.Variant;
@@ -9,7 +9,6 @@ import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Maps the tag value to the document's field using {@link Transformer}.
@@ -34,11 +33,11 @@ public class TransformMapper implements Mapper {
         this.transformer = transformer;
     }
 
-    public void map(Event event, Map<String, Object> document) {
+    public void map(Event event, Document document) {
         Variant value = sourcePath.extract(event.getPayload());
         if (value == null) {
             return;
         }
-        DocumentUtil.subdocument(document, destinationPath).putIfAbsent(field, transformer.transform(value));
+        document.subdocument(destinationPath).putIfAbsent(field, transformer.transform(value));
     }
 }

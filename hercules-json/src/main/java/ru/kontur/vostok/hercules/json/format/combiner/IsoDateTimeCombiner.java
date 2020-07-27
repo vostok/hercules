@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.json.format.combiner;
 
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
@@ -25,8 +26,12 @@ public class IsoDateTimeCombiner implements Combiner {
     @Override
     public Object combine(Variant... values) {
         if (values.length != 2) {
-            throw new IllegalArgumentException("Combiner expects 2 args, but got " + values.length);
+            throw new IllegalArgumentException("Combiner expects 2 args: timestamp and zone offset");
         }
+        if (values[0].getType() != Type.LONG || values[1].getType() != Type.LONG) {
+            return null;
+        }
+
         Variant timestamp = values[0];
         Variant offset = values[1];
 

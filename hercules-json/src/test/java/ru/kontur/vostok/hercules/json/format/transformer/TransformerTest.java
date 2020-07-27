@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.json.format.transformer;
 
 import org.junit.Test;
+import ru.kontur.vostok.hercules.json.Document;
 import ru.kontur.vostok.hercules.json.DocumentWriter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
@@ -40,7 +41,7 @@ public class TransformerTest {
         Object transform = PlainTransformer.PLAIN.transform(Variant.ofContainer(container));
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        DocumentWriter.writeTo(stream, (Map<String, Object>) transform);
+        DocumentWriter.writeTo(stream, Document.of((Map<String, Object>) transform));
 
         assertEquals(
                 "{" +
