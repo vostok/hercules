@@ -51,6 +51,30 @@ public class ElasticEventFormatAndWriteTest {
         );
     }
 
+    @Test
+    public void shouldIgnoreIncorrectException() throws IOException {
+        Event event = EventBuilder.create(0, "11203800-63fd-11e8-83e2-3a587d902000").
+                tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.of("someKey", Variant.ofString("some value")))).
+                tag(LogEventTags.EXCEPTION_TAG.getName(), Variant.ofString("java.lang.ClassCastException")).
+                tag(LogEventTags.MESSAGE_TAG.getName(), Variant.ofString("Test message")).
+                build();
+
+        Properties properties = new Properties();
+        properties.setProperty("file", "resource://log-event.mapping");
+        EventJsonFormatter formatter = new EventJsonFormatter(properties);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DocumentWriter.writeTo(stream, formatter.format(event));
+
+        assertEquals("{" +
+                        "\"@timestamp\":\"1970-01-01T00:00:00.000000000Z\"," +
+                        "\"someKey\":\"some value\"," +
+                        "\"message\":\"Test message\"" +
+                        "}",
+                stream.toString(StandardCharsets.UTF_8.name())
+        );
+    }
+
     private Container createException() {
         return Container.builder()
                 .tag(ExceptionTags.TYPE_TAG.getName(), Variant.ofString("com.example.test.exceptions.ExceptionClass"))
