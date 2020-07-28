@@ -31,6 +31,7 @@ public class HTree<T> {
      * @param value the value
      * @return previously added {@code value} or {@code null} otherwise
      */
+    @Nullable
     public T put(HPath path, T value) {
         HNode<T> current = root;
         HPath.TagIterator iterator = path.it();
@@ -104,6 +105,9 @@ public class HTree<T> {
             return !current.children.isEmpty();
         }
 
+        public boolean hasValue() {
+            return current.value != null;
+        }
         /**
          * Returns {@code true} if the current node is the root.
          *

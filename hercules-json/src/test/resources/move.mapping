@@ -1,1 +1,2 @@
-source/* to destination/*
+move source/* to destination/*
+move sourceWithExcepted/* to destinationWithoutExcepted/* except shouldExceptOne,shouldExceptTwo

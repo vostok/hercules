@@ -1,7 +1,8 @@
-package ru.kontur.vostok.hercules.elastic.sink.mapping;
+package ru.kontur.vostok.hercules.elastic.sink.format;
 
 import org.junit.Test;
-import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
+import ru.kontur.vostok.hercules.json.DocumentWriter;
+import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
@@ -22,9 +23,9 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Gregory Koshelev
  */
-public class ElasticEventMappingWriterTest {
+public class ElasticEventFormatAndWriteTest {
     @Test
-    public void shouldMapAndWriteLogEvent() throws IOException {
+    public void shouldFormatAndWriteLogEvent() throws IOException {
         Event event = EventBuilder.create(0, "11203800-63fd-11e8-83e2-3a587d902000").
                 tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.of("someKey", Variant.ofString("some value")))).
                 tag(LogEventTags.EXCEPTION_TAG.getName(), Variant.ofContainer(createException())).
@@ -33,10 +34,10 @@ public class ElasticEventMappingWriterTest {
 
         Properties properties = new Properties();
         properties.setProperty("file", "resource://log-event.mapping");
-        EventMappingWriter writer = new EventMappingWriter(properties);
+        EventJsonFormatter formatter = new EventJsonFormatter(properties);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        writer.write(stream, event);
+        DocumentWriter.writeTo(stream, formatter.format(event));
 
         assertEquals("{" +
                         "\"@timestamp\":\"1970-01-01T00:00:00.000000000Z\"," +

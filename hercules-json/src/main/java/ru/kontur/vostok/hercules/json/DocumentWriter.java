@@ -39,8 +39,8 @@ public final class DocumentWriter {
      * @param document the JSON-document
      * @throws IOException IO exception of underlying JSON-writer
      */
-    public static void writeTo(OutputStream out, Map<String, Object> document) throws IOException {
-        OBJECT_WRITER.writeValue(out, document);
+    public static void writeTo(OutputStream out, Document document) throws IOException {
+        OBJECT_WRITER.writeValue(out, document.document());
     }
 
     private DocumentWriter() {

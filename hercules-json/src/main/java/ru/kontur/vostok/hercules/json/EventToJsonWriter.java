@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
@@ -10,7 +11,6 @@ import ru.kontur.vostok.hercules.protocol.Vector;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,7 +18,9 @@ import java.util.UUID;
  * EventToJsonWriter
  *
  * @author Kirill Sulim
+ * @deprecated Use {@link EventJsonFormatter} and {@link DocumentWriter}
  */
+@Deprecated
 public final class EventToJsonWriter {
 
     @FunctionalInterface
