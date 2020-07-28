@@ -28,10 +28,10 @@ import java.util.Map;
  */
 public class PlainTransformer implements Transformer {
     /**
-     * Transforms the value of any type to a JSON-document's compatible format.
+     * Transform the value of any type to a JSON-document's compatible format.
      *
      * @param value the value
-     * @return transformed result
+     * @return the transformed result
      */
     @Override
     public Object transform(Variant value) {

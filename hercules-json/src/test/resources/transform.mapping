@@ -1,1 +1,2 @@
-transform integerTag to stringField using ru.kontur.vostok.hercules.json.format.IntegerToStringTransformer
+transform integerTag to stringField using ru.kontur.vostok.hercules.json.format.transformer.ScalarToStringTransformer
+transform tag to sub/field

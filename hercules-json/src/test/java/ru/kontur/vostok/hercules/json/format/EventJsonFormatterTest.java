@@ -78,6 +78,7 @@ public class EventJsonFormatterTest {
     public void shouldTransformTags() throws IOException {
         Event event = EventBuilder.create(TimeUtil.unixTimeToUnixTicks(3600), "11203800-63fd-11e8-83e2-3a587d902000").
                 tag("integerTag", Variant.ofInteger(123)).
+                tag("tag", Variant.ofString("value")).
                 build();
 
         Properties properties = new Properties();
@@ -89,7 +90,10 @@ public class EventJsonFormatterTest {
 
         assertEquals("{" +
                         "\"@timestamp\":\"1970-01-01T01:00:00.000000000Z\"," +
-                        "\"stringField\":\"123\"" +
+                        "\"stringField\":\"123\"," +
+                        "\"sub\":{" +
+                        "\"field\":\"value\"" +
+                        "}" +
                         "}",
                 stream.toString(StandardCharsets.UTF_8.name())
         );
