@@ -27,6 +27,11 @@ Application is configured through properties file.
 
 `sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
 
+#### Filter settings
+`sink.filter.list` - list of filter classes (inheritors of the `ru.kontur.vostok.hercules.sink.filter.EventFilter` class).
+Properties for each defined filter under the scope `N`, where `N` is the position of the filter in the property `list`.
+See `ru.kontur.vostok.hercules.sink.filter.EventFilter` for details.
+
 #### Sender settings
 `sink.sender.pingPeriodMs` - elastic server ping period, default value: `5000`
 
@@ -39,15 +44,15 @@ Application is configured through properties file.
 
 `sink.sender.elastic.index.name` - static index name if index policy `STATIC` is used
 
-##### Mapping Settings
-`sink.sender.elastic.mapping.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`
+##### Format Settings
+`sink.sender.elastic.format.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`
 
-`sink.sender.elastic.mapping.timestamp.field` - field name for event timestamp, default value: `@timestamp`
+`sink.sender.elastic.format.timestamp.field` - field name for event timestamp, default value: `@timestamp`
 
-`sink.sender.elastic.mapping.timestamp.format` - timestamp field format is compatible with `java.time.format.DateTimeFormatter`,
+`sink.sender.elastic.format.timestamp.format` - timestamp field format is compatible with `java.time.format.DateTimeFormatter`,
 default value: `yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX`
 
-`sink.sender.elastic.mapping.file` - path to mapping file, see `ru.kontur.vostok.hercules.json.mapping.MappingLoader` for details, required
+`sink.sender.elastic.format.file` - path to the mapping file. Can use `resource://log-event.mapping` if sink processes logs. See `ru.kontur.vostok.hercules.json.mapping.MappingLoader` for details, required
 
 ##### Elastic Client settings
 `sink.sender.elastic.client.hosts` - list of elastic hosts
@@ -137,6 +142,8 @@ sink.consumer.max.partition.fetch.bytes=52428800
 sink.consumer.max.poll.interval.ms=370000
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
+sink.filter.list=ru.kontur.vostok.hercules.elastic.sink.LogEventFilter
+
 sink.sender.pingPeriodMs=60000
 
 sink.sender.retryLimit=2
@@ -144,10 +151,10 @@ sink.sender.retryOnUnknownErrors=true
 
 sink.sender.elastic.index.policy=DAILY
 
-sink.sender.elastic.mapping.timestamp.enable=true
-sink.sender.elastic.mapping.timestamp.field=@timestamp
-sink.sender.elastic.mapping.timestamp.format=yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX
-sink.sender.elastic.mapping.file=resource://log-event.mapping
+sink.sender.elastic.format.timestamp.enable=true
+sink.sender.elastic.format.timestamp.field=@timestamp
+sink.sender.elastic.format.timestamp.format=yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX
+sink.sender.elastic.format.file=file://log-event.mapping
 
 sink.sender.elastic.client.hosts=localhost:9201
 sink.sender.elastic.client.maxConnections=30
@@ -181,4 +188,13 @@ context.zone=default
 
 http.server.ioThreads=1
 http.server.workerThreads=1
+```
+
+### `log-event.mapping` sample:
+```text
+# Move all tags from properties container to upper level
+move properties/* to *
+
+# Render structured exception as string stack trace
+transform exception to stackTrace using ru.kontur.vostok.hercules.elastic.sink.format.ExceptionToStackTraceTransformer
 ```

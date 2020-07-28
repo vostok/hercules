@@ -9,9 +9,12 @@ import ru.kontur.vostok.hercules.elastic.sink.index.IndexValidator;
 import ru.kontur.vostok.hercules.elastic.sink.index.LogEventIndexResolver;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
+import ru.kontur.vostok.hercules.json.Document;
+import ru.kontur.vostok.hercules.json.DocumentWriter;
+import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -21,6 +24,7 @@ import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,11 +40,12 @@ public class ElasticSender extends Sender {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSender.class);
 
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
+    private static final ValidationResult UNDEFINED_INDEX_VALIDATION_RESULT = ValidationResult.error("Undefined index");
 
     private final IndexPolicy indexPolicy;
     private final IndexResolver indexResolver;
 
-    private final EventMappingWriter eventMappingWriter;
+    private final EventJsonFormatter eventFormatter;
 
     private final ElasticClient client;
 
@@ -70,7 +75,7 @@ public class ElasticSender extends Sender {
             this.indexResolver = LogEventIndexResolver.forPolicy(indexPolicy);
         }
 
-        this.eventMappingWriter = new EventMappingWriter(PropertiesUtil.ofScope(properties, "elastic.mapping"));
+        this.eventFormatter = new EventJsonFormatter(PropertiesUtil.ofScope(properties, "elastic.format"));
 
         this.client = new ElasticClient(PropertiesUtil.ofScope(properties, "elastic.client"), indexPolicy, metricsCollector);
 
@@ -79,7 +84,7 @@ public class ElasticSender extends Sender {
 
         this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_ENABLE, properties).get();
         this.leproserySender = leproseryEnable
-                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector, eventMappingWriter)
+                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector)
                 : null;
 
         this.totalEventsIndicesMetricsCollector = new IndicesMetricsCollector("totalEvents", 10_000, metricsCollector);
@@ -100,30 +105,34 @@ public class ElasticSender extends Sender {
         }
 
         int droppedCount;
-        Map<EventWrapper, ValidationResult> nonRetryableErrorsMap = new HashMap<>(events.size());
-        //event-id -> event-wrapper
-        Map<String, EventWrapper> readyToSend = new HashMap<>(events.size());
-        for (Event event : events) {
-            Optional<String> index = indexResolver.resolve(event);
-            String nonNullIndex = index.orElse("null");
-            EventWrapper wrapper = new EventWrapper(event, nonNullIndex);
-            totalEventsIndicesMetricsCollector.markEvent(nonNullIndex);
-            if (index.isPresent()) {
-                readyToSend.put(wrapper.getId(), wrapper);
-            } else {
-                indexValidationErrorsMeter.mark();
-                nonRetryableErrorsMap.put(wrapper, ValidationResult.error("Event index is null"));
-            }
-        }
+        Map<ElasticDocument, ValidationResult> nonRetryableErrorsMap = new HashMap<>(events.size());
+        //event-id -> elastic document
+        Map<String, ElasticDocument> readyToSend = new HashMap<>(events.size());
 
         try {
+            for (Event event : events) {
+                Optional<String> index = indexResolver.resolve(event);
+                String nonNullIndex = index.orElse("null");
+                totalEventsIndicesMetricsCollector.markEvent(nonNullIndex);
+                Document jsonDocument = eventFormatter.format(event);
+                ElasticDocument document = new ElasticDocument(EventUtil.extractStringId(event), nonNullIndex, jsonDocument);
+                if (index.isPresent()) {
+                    readyToSend.put(document.id(), document);
+                } else {
+                    indexValidationErrorsMeter.mark();
+                    nonRetryableErrorsMap.put(document, UNDEFINED_INDEX_VALIDATION_RESULT);
+                }
+            }
+
             if (!readyToSend.isEmpty()) {
                 int retryCount = retryLimit;
                 do {
                     ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);//TODO: Replace EXPECTED_EVENT_SIZE_BYTES with heuristic is depending on Hercules event size
-                    readyToSend.values().forEach(wrapper -> writeEventToStream(dataStream, wrapper));
-                    ElasticResponseHandler.Result result = client.index(dataStream.toByteArray());
+                    for (ElasticDocument document : readyToSend.values()) {
+                        writeEventToStream(dataStream, document.index(), document.id(), document.document());
+                    }
 
+                    ElasticResponseHandler.Result result = client.index(dataStream.toByteArray());
                     if (result.getTotalErrors() != 0) {
                         resultProcess(result).forEach((eventId, validationResult) ->
                                 nonRetryableErrorsMap.put(readyToSend.remove(eventId), validationResult));
@@ -169,13 +178,13 @@ public class ElasticSender extends Sender {
     /**
      * @return count of dropped events
      */
-    private int errorsProcess(Map<EventWrapper, ValidationResult> nonRetryableErrorsInfo) {
+    private int errorsProcess(Map<ElasticDocument, ValidationResult> nonRetryableErrorsInfo) {
         if (nonRetryableErrorsInfo.isEmpty()) {
             return 0;
         }
 
-        for (EventWrapper wrapper : nonRetryableErrorsInfo.keySet()) {
-            nonRetryableEventsIndicesMetricsCollector.markEvent(wrapper.getIndex());
+        for (ElasticDocument document : nonRetryableErrorsInfo.keySet()) {
+            nonRetryableEventsIndicesMetricsCollector.markEvent(document.index());
         }
 
         if (leproseryEnable) {
@@ -188,23 +197,21 @@ public class ElasticSender extends Sender {
                 return nonRetryableErrorsInfo.size();
             }
         } else {
-            nonRetryableErrorsInfo.forEach((wrapper, validationResult) ->
+            nonRetryableErrorsInfo.forEach((document, validationResult) ->
                     LOGGER.warn("Non retryable error info: id = {}, index = {}, reason = {}",
-                            wrapper.getId(),
-                            wrapper.getIndex(),
+                            document.id(),
+                            document.index(),
                             validationResult.error()));
             droppedNonRetryableErrorsMeter.mark(nonRetryableErrorsInfo.size());
             return nonRetryableErrorsInfo.size();
         }
     }
 
-    private void writeEventToStream(ByteArrayOutputStream stream, EventWrapper wrapper) {
-        toUnchecked(() -> {
-            IndexToElasticJsonWriter.writeIndex(stream, wrapper.getIndex(), wrapper.getId());
-            stream.write('\n');
-            eventMappingWriter.write(stream, wrapper.getEvent());
-            stream.write('\n');
-        });
+    private void writeEventToStream(ByteArrayOutputStream stream, String index, String documentId, Document document) throws IOException {
+        IndexToElasticJsonWriter.writeIndex(stream, index, documentId);
+        stream.write('\n');
+        DocumentWriter.writeTo(stream, document);
+        stream.write('\n');
     }
 
     private static class Props {

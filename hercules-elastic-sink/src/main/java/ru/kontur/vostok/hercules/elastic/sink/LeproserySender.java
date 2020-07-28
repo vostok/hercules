@@ -9,12 +9,12 @@ import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterExcepti
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.json.mapping.EventMappingWriter;
+import ru.kontur.vostok.hercules.json.DocumentWriter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
-import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
@@ -57,16 +57,13 @@ class LeproserySender {
     private final String leproseryIndex;
     private final GateClient gateClient;
     private final String leproseryApiKey;
-    private final EventMappingWriter eventMappingWriter;
 
     private final Meter sentToLeproseryEventCountMeter;
     private final Meter sentToLeproseryWithErrorsEventCountMeter;
 
-    LeproserySender(Properties properties, MetricsCollector metricsCollector, EventMappingWriter eventMappingWriter) {
+    LeproserySender(Properties properties, MetricsCollector metricsCollector) {
         sentToLeproseryEventCountMeter = metricsCollector.meter("sentToLeproseryEventCount");
         sentToLeproseryWithErrorsEventCountMeter = metricsCollector.meter("sentToLeproseryWithErrorsEventCount");
-
-        this.eventMappingWriter = eventMappingWriter;
 
         this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, properties).get();
         this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, properties).get();
@@ -82,7 +79,7 @@ class LeproserySender {
      * Convert event to leprosery like event and send to Leprosery.
      * @param eventErrorInfos  - map of event wrapper (contains event, event-index, event-id) -> result of validation with reason
      */
-    public void convertAndSend(Map<EventWrapper, ValidationResult> eventErrorInfos) {
+    public void convertAndSend(Map<ElasticDocument, ValidationResult> eventErrorInfos) {
         List<Event> events = convert(eventErrorInfos);
         int count = events.size();
         byte[] data = EventWriterUtil.toBytes(events.toArray(new Event[0]));
@@ -98,12 +95,12 @@ class LeproserySender {
         }
     }
 
-    private List<Event> convert(Map<EventWrapper, ValidationResult> eventErrorInfos) {
+    private List<Event> convert(Map<ElasticDocument, ValidationResult> eventErrorInfos) {
         return eventErrorInfos.entrySet().stream()
                 .map(entry -> {
-                    EventWrapper wrapper = entry.getKey();
+                    ElasticDocument document = entry.getKey();
                     ValidationResult validationResult = entry.getValue();
-                    return toLeproseryEvent(wrapper.getEvent(), wrapper.getIndex(), validationResult.error());
+                    return toLeproseryEvent(document, validationResult.error());
                 })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -113,19 +110,18 @@ class LeproserySender {
     /**
      * Create Hercules Protocol event for leprosery with json line of invalid event
      *
-     * @param event non-retryable event
-     * @param index to be used when put events to ELK
+     * @param document non-retryable elastic document
      * @param error message of error
      * @return Hercules Protocol event which is sent to leprosery
      */
-    public Optional<Event> toLeproseryEvent(Event event, String index, String error) {
-        int argsSize = (PROJECT_NAME + SERVICE_NAME + error + index + leproseryIndex).getBytes(StandardCharsets.UTF_8).length;
+    public Optional<Event> toLeproseryEvent(ElasticDocument document, String error) {
+        int argsSize = (PROJECT_NAME + SERVICE_NAME + error + document.index() + leproseryIndex).getBytes(StandardCharsets.UTF_8).length;
         int minimalSize = EMPTY_LEPROSERY_EVENT_SIZE_BYTES + argsSize;
         int maxSize = MAX_EVENT_SIZE_BYTES - minimalSize;
 
         byte[] textBytes;
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream(EXPECTED_EVENT_SIZE_BYTES)) {
-            eventMappingWriter.write(stream, event);
+            DocumentWriter.writeTo(stream, document.document());
             textBytes = stream.toByteArray();
         } catch (IOException e) {
             LOGGER.error("Error of creating json from non-retryable event for leprosery event", e);
@@ -146,7 +142,7 @@ class LeproserySender {
                         .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(PROJECT_NAME))
                         .tag(SERVICE, Variant.ofString(SERVICE_NAME))
                         .tag(TEXT, Variant.ofString(textBytes))
-                        .tag(ORIGINAL_INDEX, Variant.ofString(index))
+                        .tag(ORIGINAL_INDEX, Variant.ofString(document.index()))
                         .tag(ElasticSearchTags.ELK_INDEX_TAG.getName(), Variant.ofString(leproseryIndex))
                         .build()))
                 .build());
