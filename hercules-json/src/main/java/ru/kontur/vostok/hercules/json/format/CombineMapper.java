@@ -48,6 +48,10 @@ public class CombineMapper implements Mapper {
             values[i++] = value;
         }
 
-        document.subdocument(destinationPath).putIfAbsent(field, combiner.combine(values));
+        Object result = combiner.combine(values);
+        if (result == null) {
+            return;
+        }
+        document.subdocument(destinationPath).putIfAbsent(field, result);
     }
 }

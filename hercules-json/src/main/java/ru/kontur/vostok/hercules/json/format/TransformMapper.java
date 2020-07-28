@@ -38,6 +38,10 @@ public class TransformMapper implements Mapper {
         if (value == null) {
             return;
         }
-        document.subdocument(destinationPath).putIfAbsent(field, transformer.transform(value));
+        Object result = transformer.transform(value);
+        if (result == null) {
+            return;
+        }
+        document.subdocument(destinationPath).putIfAbsent(field, result);
     }
 }
