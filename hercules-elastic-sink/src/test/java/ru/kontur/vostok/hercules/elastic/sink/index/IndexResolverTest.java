@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.Properties;
 
 import static org.junit.Assert.assertFalse;
 
@@ -18,9 +19,17 @@ import static org.junit.Assert.assertFalse;
  * @author Gregory Koshelev
  */
 public class IndexResolverTest {
+    public static final Properties INDEX_RESOLVER_PROPERTIES;
+    static {
+        Properties props = new Properties();
+        props.setProperty(IndexResolver.Props.INDEX_PATH.name(), "properties/elk-index");
+        props.setProperty(IndexResolver.Props.INDEX_TAGS.name(), "properties/project,properties/environment?,properties/subproject?");
+        INDEX_RESOLVER_PROPERTIES = props;
+    }
+
     @Test
     public void shoulNotResolveIndexIfNoSuitableTags() {
-        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY);
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY, INDEX_RESOLVER_PROPERTIES);
         final Event event = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000") //TODO: fix me!
                 .build();
         Optional<String> result = indexResolver.resolve(event);
@@ -29,7 +38,7 @@ public class IndexResolverTest {
 
     @Test
     public void shouldResolveDailyIndex() {
-        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY);
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY, INDEX_RESOLVER_PROPERTIES);
         final Event event = EventBuilder.create(
                 TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
                 "00000000-0000-0000-0000-000000000000").
@@ -48,7 +57,7 @@ public class IndexResolverTest {
 
     @Test
     public void shouldResolveIlmIndex() {
-        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.ILM);
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.ILM, INDEX_RESOLVER_PROPERTIES);
         final Event event = EventBuilder.create(
                 TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
                 "00000000-0000-0000-0000-000000000000").
@@ -67,7 +76,7 @@ public class IndexResolverTest {
 
     @Test
     public void shouldIgnoreBadIndexName() {
-        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY);
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY, INDEX_RESOLVER_PROPERTIES);
         final Event event = EventBuilder.create(
                 TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
                 "00000000-0000-0000-0000-000000000000").
@@ -86,7 +95,7 @@ public class IndexResolverTest {
 
     @Test
     public void shouldSanitizeIndexName() {
-        IndexResolver indexResolver = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY);
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY, INDEX_RESOLVER_PROPERTIES);
         final Event event = EventBuilder.create(
                 TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
                 "00000000-0000-0000-0000-000000000000").
