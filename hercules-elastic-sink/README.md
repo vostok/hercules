@@ -44,10 +44,10 @@ See `ru.kontur.vostok.hercules.sink.filter.EventFilter` for details.
 
 `sink.sender.elastic.index.resolver.index.name` - static index name if index policy `STATIC` is used
 
-`sink.sender.elastic.index.resolver.index.path` - the optional path of the tag with index name. Should be valid HPath if present. Index policy should be `ILM` or `DAYILY`
+`sink.sender.elastic.index.resolver.index.path` - the optional path of the tag with index name. Should be valid HPath if present. Index policy should be `ILM` or `DAILY`
 
 `sink.sender.elastic.index.resolver.index.tags` - the optional tags to build index name if no stored index name from above setting.
-Each tag definition should be a valid HPath. Tag is optional if HPath ends with `?`. Index policy should be `ILM` or `DAYILY`
+Each tag definition should be a valid HPath. Tag is optional if HPath ends with `?`. Index policy should be `ILM` or `DAILY`
 
 ##### Format Settings
 `sink.sender.elastic.format.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`

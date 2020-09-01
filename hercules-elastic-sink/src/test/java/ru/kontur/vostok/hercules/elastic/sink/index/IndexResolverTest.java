@@ -28,7 +28,7 @@ public class IndexResolverTest {
     }
 
     @Test
-    public void shoulNotResolveIndexIfNoSuitableTags() {
+    public void shouldNotResolveIndexIfNoSuitableTags() {
         IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.DAILY, INDEX_RESOLVER_PROPERTIES);
         final Event event = EventBuilder.create(0, "00000000-0000-1000-994f-8fcf383f0000") //TODO: fix me!
                 .build();
@@ -110,5 +110,44 @@ public class IndexResolverTest {
         Optional<String> index = indexResolver.resolve(event);
         Assert.assertTrue(index.isPresent());
         Assert.assertEquals("project_to_test_-d.e.v-__-2019.12.01", index.get());
+    }
+
+    @Test
+    public void shouldResolveIndexNameWithoutOptionalParts() {
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.ILM, INDEX_RESOLVER_PROPERTIES);
+        final Event event = EventBuilder.create(
+                TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
+                "00000000-0000-0000-0000-000000000000").
+                tag("properties", Variant.ofContainer(
+                        Container.builder().
+                                tag("project", Variant.ofString("proj")).
+                                tag("env", Variant.ofString("dev")).// But configured tag is environment
+                                tag("subproject", Variant.ofString("subproj")).
+                                build())).
+                build();
+
+        Optional<String> index = indexResolver.resolve(event);
+        Assert.assertTrue(index.isPresent());
+        Assert.assertEquals("proj-subproj", index.get());
+    }
+
+    @Test
+    public void shouldResolvePredefinedIndexName() {
+        IndexResolver indexResolver = IndexResolver.forPolicy(IndexPolicy.ILM, INDEX_RESOLVER_PROPERTIES);
+        final Event event = EventBuilder.create(
+                TimeUtil.dateTimeToUnixTicks(ZonedDateTime.of(2019, 12, 1, 10, 42, 0, 0, ZoneOffset.UTC)),
+                "00000000-0000-0000-0000-000000000000").
+                tag("properties", Variant.ofContainer(
+                        Container.builder().
+                                tag("project", Variant.ofString("proj")).
+                                tag("environment", Variant.ofString("dev")).
+                                tag("subproject", Variant.ofString("subproj")).
+                                tag("elk-index", Variant.ofString("custom-index")).
+                                build())).
+                build();
+
+        Optional<String> index = indexResolver.resolve(event);
+        Assert.assertTrue(index.isPresent());
+        Assert.assertEquals("custom-index", index.get());
     }
 }

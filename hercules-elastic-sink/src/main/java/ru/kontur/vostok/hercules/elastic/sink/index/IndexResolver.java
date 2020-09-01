@@ -53,7 +53,7 @@ public class IndexResolver {
      *
      * @param indexPolicy the index policy
      * @param properties  the properties
-     * @return
+     * @return index resolver
      */
     public static IndexResolver forPolicy(IndexPolicy indexPolicy, Properties properties) {
         if (indexPolicy == IndexPolicy.STATIC) {
@@ -62,7 +62,7 @@ public class IndexResolver {
                 throw new IllegalArgumentException("Index name must be defined if 'static' index policy is used");
             }
             Optional<String> indexNameOptional = Optional.of(indexNameValue.get()).map(IndexResolver::sanitize);
-            return new IndexResolver((e) -> indexNameOptional);
+            return new IndexResolver(e -> indexNameOptional);
 
         }
 
@@ -71,10 +71,10 @@ public class IndexResolver {
         String[] indexTags = PropertiesUtil.get(Props.INDEX_TAGS, properties).get();
         List<IndexPart> indexParts = new ArrayList<>(indexTags.length);
         for (String indexTag : indexTags) {
-            boolean optional = indexTag.endsWith("?");
-            HPath path = HPath.fromPath(optional ? indexTag.substring(0, indexTag.length() - 1) : indexTag);
+            boolean isOptional = indexTag.endsWith("?");
+            HPath path = HPath.fromPath(isOptional ? indexTag.substring(0, indexTag.length() - 1) : indexTag);
 
-            indexParts.add(new IndexPart(path, optional));
+            indexParts.add(new IndexPart(path, isOptional));
         }
         PrefixResolver prefixResolver = new PrefixResolver(indexPath.orEmpty(null), indexParts);
 
