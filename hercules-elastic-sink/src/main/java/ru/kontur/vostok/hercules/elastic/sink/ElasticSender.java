@@ -5,8 +5,6 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
-import ru.kontur.vostok.hercules.elastic.sink.index.IndexValidator;
-import ru.kontur.vostok.hercules.elastic.sink.index.LogEventIndexResolver;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.json.Document;
@@ -18,7 +16,6 @@ import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
@@ -30,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-
-import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
 /**
  * @author Gregory Koshelev
@@ -64,16 +59,9 @@ public class ElasticSender extends Sender {
         super(properties, metricsCollector);
 
         this.indexPolicy = PropertiesUtil.get(Props.INDEX_POLICY, properties).get();
-        if (indexPolicy == IndexPolicy.STATIC) {
-            ParameterValue<String> indexNameValue = PropertiesUtil.get(Props.INDEX_NAME, properties);
-            if (indexNameValue.isEmpty()) {
-                throw new IllegalArgumentException("Index name must be defined if 'static' index policy is used");
-            }
-            Optional<String> indexNameOptional = Optional.of(indexNameValue.get()).map(IndexResolver::sanitize);
-            this.indexResolver = (e) -> indexNameOptional;
-        } else {
-            this.indexResolver = LogEventIndexResolver.forPolicy(indexPolicy);
-        }
+
+        Properties indexResolverProperties = PropertiesUtil.ofScope(properties, "elastic.index.resolver");
+        this.indexResolver = IndexResolver.forPolicy(indexPolicy, indexResolverProperties);
 
         this.eventFormatter = new EventJsonFormatter(PropertiesUtil.ofScope(properties, "elastic.format"));
 
@@ -218,19 +206,6 @@ public class ElasticSender extends Sender {
         static final Parameter<IndexPolicy> INDEX_POLICY =
                 Parameter.enumParameter("elastic.index.policy", IndexPolicy.class).
                         withDefault(IndexPolicy.DAILY).
-                        build();
-
-        static final Parameter<String> INDEX_NAME =
-                Parameter.stringParameter("elastic.index.name").
-                        withValidator((v) -> {
-                            if (!IndexValidator.isValidIndexName(v)) {
-                                return ValidationResult.error("Invalid index name");
-                            }
-                            if (!IndexValidator.isValidLength(v)) {
-                                return ValidationResult.error("Index name exceeds length limit");
-                            }
-                            return ValidationResult.ok();
-                        }).
                         build();
 
         static final Parameter<Integer> RETRY_LIMIT = Parameter
