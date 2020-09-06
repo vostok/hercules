@@ -18,18 +18,18 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Gregory Koshelev
  */
-public class EventJsonFormatterTest {
+public class EventToJsonFormatterTest {
     @Test
     public void shouldMapEventTimestamp() throws IOException {
         Event event = EventBuilder.create(TimeUtil.unixTimeToUnixTicks(3600), "11203800-63fd-11e8-83e2-3a587d902000").
                 build();
 
         Properties properties = new Properties();
-        properties.setProperty(EventJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "true");
-        properties.setProperty(EventJsonFormatter.Props.TIMESTAMP_FIELD.name(), "@timestamp");
-        properties.setProperty(EventJsonFormatter.Props.TIMESTAMP_FORMAT.name(), "yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX");
-        properties.setProperty(EventJsonFormatter.Props.FILE.name(), "resource://empty.mapping");
-        EventJsonFormatter formatter = new EventJsonFormatter(properties);
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "true");
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_FIELD.name(), "@timestamp");
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_FORMAT.name(), "yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX");
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://empty.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DocumentWriter.writeTo(stream, formatter.format(event));
@@ -55,9 +55,9 @@ public class EventJsonFormatterTest {
                 build();
 
         Properties properties = new Properties();
-        properties.setProperty(EventJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "false");
-        properties.setProperty(EventJsonFormatter.Props.FILE.name(), "resource://move.mapping");
-        EventJsonFormatter formatter = new EventJsonFormatter(properties);
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "false");
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://move.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DocumentWriter.writeTo(stream, formatter.format(event));
@@ -82,8 +82,8 @@ public class EventJsonFormatterTest {
                 build();
 
         Properties properties = new Properties();
-        properties.setProperty(EventJsonFormatter.Props.FILE.name(), "resource://transform.mapping");
-        EventJsonFormatter formatter = new EventJsonFormatter(properties);
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://transform.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DocumentWriter.writeTo(stream, formatter.format(event));
@@ -106,8 +106,8 @@ public class EventJsonFormatterTest {
                 build();
 
         Properties properties = new Properties();
-        properties.setProperty(EventJsonFormatter.Props.FILE.name(), "resource://tag-to-multiple-fields.mapping");
-        EventJsonFormatter formatter = new EventJsonFormatter(properties);
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://tag-to-multiple-fields.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DocumentWriter.writeTo(stream, formatter.format(event));
@@ -130,9 +130,9 @@ public class EventJsonFormatterTest {
                 build();
 
         Properties properties = new Properties();
-        properties.setProperty(EventJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "false");
-        properties.setProperty(EventJsonFormatter.Props.FILE.name(), "resource://combine.mapping");
-        EventJsonFormatter formatter = new EventJsonFormatter(properties);
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "false");
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://combine.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DocumentWriter.writeTo(stream, formatter.format(event));

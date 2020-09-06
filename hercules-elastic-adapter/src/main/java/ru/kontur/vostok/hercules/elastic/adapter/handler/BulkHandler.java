@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.elastic.adapter.bulk.BulkReader;
 import ru.kontur.vostok.hercules.elastic.adapter.bulk.IndexRequest;
-import ru.kontur.vostok.hercules.elastic.adapter.event.EventValidator;
-import ru.kontur.vostok.hercules.elastic.adapter.event.LogEventMapper;
+import ru.kontur.vostok.hercules.elastic.adapter.format.EventValidator;
+import ru.kontur.vostok.hercules.elastic.adapter.format.JsonToEventFormatter;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateSender;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateStatus;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexManager;
@@ -14,7 +14,6 @@ import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,28 +67,21 @@ public class BulkHandler implements HttpHandler {
         Iterator<IndexRequest> iterator = BulkReader.read(data, defaultIndex, defaultType);
 
         Map<String, List<Event>> events = new HashMap<>();
-        List<Event> leproseryEvents = new ArrayList<>(100);//TODO: Magic number
 
         while (iterator.hasNext()) {
             IndexRequest indexRequest = iterator.next();
 
             String index = indexRequest.getAction().getIndex();
             if (index == null) {
-                //TODO: Leprosery
                 continue;
             }
             IndexMeta meta = indexManager.meta(index);
             if (meta == null) {
-                //TODO: Leprosery
                 continue;
             }
 
-            Result<Event, String> result = LogEventMapper.from(indexRequest.getDocument(), meta.getProperties(), index);
-            if (result.isOk() && validator.validate(result.get())) {
-                events.computeIfAbsent(meta.getStream(), k -> new ArrayList<>(1_000)).add(result.get());//TODO: Magic number
-            } else {
-                //TODO: Leprosery
-            }
+            Event event = JsonToEventFormatter.format(indexRequest.getDocument(), index, meta);
+            events.computeIfAbsent(meta.getStream(), k -> new ArrayList<>(1_000)).add(event);//TODO: Magic number
         }
 
         for (Map.Entry<String, List<Event>> batch : events.entrySet()) {

@@ -34,7 +34,7 @@ public class Mapping {
      * <p>
      * Tag is mappable if it has defined mappers.
      * <p>
-     * Navigator helps {@link EventJsonFormatter} to determine which tags don't have defined mapping.
+     * Navigator helps {@link EventToJsonFormatter} to determine which tags don't have defined mapping.
      *
      * @return navigator
      */

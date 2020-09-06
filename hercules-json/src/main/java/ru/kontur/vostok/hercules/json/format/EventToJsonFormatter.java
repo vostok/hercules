@@ -32,13 +32,13 @@ import java.util.Properties;
  * @see MappingLoader
  * @see Mapper
  */
-public class EventJsonFormatter {
+public class EventToJsonFormatter {
     private final boolean timestampEnabled;
     private final String timestampField;
     private final DateTimeFormatter timestampFormatter;
     private final Mapping mapping;
 
-    public EventJsonFormatter(Properties properties) {
+    public EventToJsonFormatter(Properties properties) {
         timestampEnabled = PropertiesUtil.get(Props.TIMESTAMP_ENABLE, properties).get();
         if (timestampEnabled) {
             timestampField = PropertiesUtil.get(Props.TIMESTAMP_FIELD, properties).get();

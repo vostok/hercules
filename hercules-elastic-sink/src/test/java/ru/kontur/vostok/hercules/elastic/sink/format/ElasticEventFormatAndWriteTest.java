@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.elastic.sink.format;
 
 import org.junit.Test;
 import ru.kontur.vostok.hercules.json.DocumentWriter;
-import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
+import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
@@ -34,7 +34,7 @@ public class ElasticEventFormatAndWriteTest {
 
         Properties properties = new Properties();
         properties.setProperty("file", "resource://log-event.mapping");
-        EventJsonFormatter formatter = new EventJsonFormatter(properties);
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DocumentWriter.writeTo(stream, formatter.format(event));
@@ -61,7 +61,7 @@ public class ElasticEventFormatAndWriteTest {
 
         Properties properties = new Properties();
         properties.setProperty("file", "resource://log-event.mapping");
-        EventJsonFormatter formatter = new EventJsonFormatter(properties);
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DocumentWriter.writeTo(stream, formatter.format(event));

@@ -37,7 +37,7 @@ public class BulkReaderTest {
         assertNull(action.getId());
 
 
-        Map<String, Object> document = indexRequest.getDocument();
+        Map<String, Object> document = indexRequest.getDocument().document();
         assertNotNull(document);
 
         Map<String, Object> expected = new HashMap<>();
@@ -58,10 +58,10 @@ public class BulkReaderTest {
         Iterator<IndexRequest> iterator = BulkReader.read(data, null, null);
 
         assertTrue(iterator.hasNext());
-        assertEquals("First message", iterator.next().getDocument().get("message"));
+        assertEquals("First message", iterator.next().getDocument().document().get("message"));
 
         assertTrue(iterator.hasNext());
-        assertEquals("Second message", iterator.next().getDocument().get("message"));
+        assertEquals("Second message", iterator.next().getDocument().document().get("message"));
 
         assertFalse(iterator.hasNext());
     }
@@ -79,7 +79,7 @@ public class BulkReaderTest {
         IndexRequest indexRequest = iterator.next();
 
         assertEquals("1", indexRequest.getAction().getId());
-        assertMapEquals(Collections.singletonMap("field1", "value1"), indexRequest.getDocument());
+        assertMapEquals(Collections.singletonMap("field1", "value1"), indexRequest.getDocument().document());
 
         assertFalse(iterator.hasNext());
     }
@@ -97,7 +97,7 @@ public class BulkReaderTest {
         IndexRequest indexRequest = iterator.next();
 
         assertEquals("1", indexRequest.getAction().getId());
-        assertMapEquals(Collections.singletonMap("field1", "value1"), indexRequest.getDocument());
+        assertMapEquals(Collections.singletonMap("field1", "value1"), indexRequest.getDocument().document());
 
         assertFalse(iterator.hasNext());
     }

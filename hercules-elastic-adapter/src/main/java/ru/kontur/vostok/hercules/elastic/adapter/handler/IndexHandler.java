@@ -2,9 +2,10 @@ package ru.kontur.vostok.hercules.elastic.adapter.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.elastic.adapter.document.DocumentReader;
-import ru.kontur.vostok.hercules.elastic.adapter.event.EventValidator;
-import ru.kontur.vostok.hercules.elastic.adapter.event.LogEventMapper;
+import ru.kontur.vostok.hercules.elastic.adapter.format.JsonToEventFormatter;
+import ru.kontur.vostok.hercules.json.Document;
+import ru.kontur.vostok.hercules.json.DocumentReader;
+import ru.kontur.vostok.hercules.elastic.adapter.format.EventValidator;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateSender;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateStatus;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexManager;
@@ -13,7 +14,6 @@ import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -71,22 +71,23 @@ public class IndexHandler implements HttpHandler {
     }
 
     private void process(HttpServerRequest request, byte[] data, String index) {
-        Map<String, Object> document = DocumentReader.read(data);
+        Document document = DocumentReader.read(data);
         if (document == null) {
             tryComplete(request, HttpStatusCodes.BAD_REQUEST);
+            return;
         }
 
-        IndexMeta indexMeta = indexManager.meta(index);
-        if (indexMeta == null) {
+        IndexMeta meta = indexManager.meta(index);
+        if (meta == null) {
             tryComplete(request, HttpStatusCodes.NOT_FOUND);
             return;
         }
 
-        String stream = indexMeta.getStream();
+        String stream = meta.getStream();
 
-        Result<Event, String> result = LogEventMapper.from(document, indexMeta.getProperties(), index);
-        if (result.isOk() && validator.validate(result.get())) {
-            GateStatus status = gateSender.send(Collections.singletonList(result.get()), false, stream);
+        Event event = JsonToEventFormatter.format(document, index, meta);
+        if (validator.validate(event)) {
+            GateStatus status = gateSender.send(Collections.singletonList(event), false, stream);
             tryComplete(request, status);
         } else {
             tryComplete(request, HttpStatusCodes.BAD_REQUEST);

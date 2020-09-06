@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexMeta;
-import ru.kontur.vostok.hercules.protocol.TinyString;
+import ru.kontur.vostok.hercules.elastic.adapter.format.mapping.Mapping;
+import ru.kontur.vostok.hercules.elastic.adapter.format.mapping.MappingLoader;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.util.Maps;
 
 import java.io.IOException;
@@ -46,12 +48,23 @@ public class ConfigParser {
     }
 
     private static IndexMeta from(ConfigIndexMeta src) {
-        if (src.getProperties() == null) {
-            return new IndexMeta(Collections.emptyMap(), src.getStream());
+        Map<HPath, Variant> properties = Collections.emptyMap();
+        if (src.getProperties() != null) {
+            Map<HPath, Variant> props = new HashMap<>(Maps.effectiveHashMapCapacity(src.getProperties().size()));
+            src.getProperties().forEach((k, v) -> props.put(HPath.fromPath(k), Variant.ofString(v)));
+            properties = props;
         }
 
-        Map<TinyString, Variant> properties = new HashMap<>(Maps.effectiveHashMapCapacity(src.getProperties().size()));
-        src.getProperties().forEach((k, v) -> properties.put(TinyString.of(k), Variant.ofString(v)));
-        return new IndexMeta(properties, src.getStream());
+        HPath indexPath = HPath.empty();
+        if (src.getIndexPath() != null) {
+            indexPath = HPath.fromPath(src.getIndexPath());
+        }
+
+        Mapping mapping = Mapping.empty();
+        if (src.getMappingFile() != null) {
+            mapping = MappingLoader.loadMapping(src.getMappingFile());
+        }
+
+        return new IndexMeta(src.getStream(), properties, indexPath, src.getTimestampFormat(), mapping);
     }
 }

@@ -3,7 +3,7 @@ package ru.kontur.vostok.hercules.elastic.sink;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
+import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
@@ -33,7 +33,7 @@ public class LeproserySenderTest {
     public void toLeproseryEventTest() {
         Event originalEvent = createEvent();
 
-        EventJsonFormatter eventFormatter = createEventFormatter();
+        EventToJsonFormatter eventFormatter = createEventFormatter();
 
         Properties properties = new Properties();
         properties.setProperty("stream", "leprosery-stream");
@@ -74,10 +74,10 @@ public class LeproserySenderTest {
                 .build();
     }
 
-    private EventJsonFormatter createEventFormatter() {
+    private EventToJsonFormatter createEventFormatter() {
         Properties properties = new Properties();
-        properties.setProperty(EventJsonFormatter.Props.FILE.name(), "resource://log-event.mapping");
-        return new EventJsonFormatter(properties);
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://log-event.mapping");
+        return new EventToJsonFormatter(properties);
     }
 
     private String getValueFromProperties(Event event, String tag) {

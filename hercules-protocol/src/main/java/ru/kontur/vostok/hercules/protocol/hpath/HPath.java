@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.protocol.hpath;
 
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
@@ -98,7 +99,10 @@ public class HPath {
         return new HPath(tagsToPath(tags), TinyString.toTinyStrings(tags));
     }
 
-    public static HPath fromPath(String path) {
+    public static HPath fromPath(@NotNull String path) {
+        if (path.isEmpty()) {
+            return empty();
+        }
         return new HPath(path, pathToTags(path));
     }
 
@@ -114,6 +118,9 @@ public class HPath {
         return EMPTY;
     }
 
+    public static boolean isNullOrEmpty(HPath path) {
+        return path == null || path == EMPTY;
+    }
 
     private static TinyString[] pathToTags(String path) {
         if (path == null) {

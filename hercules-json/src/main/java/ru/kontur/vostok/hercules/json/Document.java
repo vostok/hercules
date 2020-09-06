@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.json;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,13 +34,44 @@ public class Document {
     }
 
     /**
-     * Puts the field to the document if absent.
+     * Put the field to the document if absent.
      *
      * @param field the field name
      * @param value the value
      */
     public void putIfAbsent(String field, Object value) {
         document.putIfAbsent(field, value);
+    }
+
+    /**
+     * Get the field value if exists.
+     *
+     * @param field the field name
+     * @return the value or {@code null} if absent
+     */
+    @Nullable
+    public Object get(String field) {
+        return document.get(field);
+    }
+
+    /**
+     * Get the field value for the path if exists.
+     *
+     * @param path the path in JSON-document
+     * @return the value or {@code null} if absent.
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public Object get(List<String> path) {
+        Object value = document;
+        for (String field : path) {
+            if (value instanceof Map) {
+                value = ((Map<String, Object>) value).get(field);
+            } else {
+                return null;
+            }
+        }
+        return value;
     }
 
     /**
@@ -62,7 +95,12 @@ public class Document {
         return current;
     }
 
-    Map<String, Object> document() {
+    /**
+     * Returns the document itself.
+     *
+     * @return the document
+     */
+    public Map<String, Object> document() {
         return document;
     }
 

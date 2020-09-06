@@ -36,6 +36,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-tags</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-json</artifactId>
+        </dependency>
 
         <!--Jackson: JSON -->
         <dependency>
