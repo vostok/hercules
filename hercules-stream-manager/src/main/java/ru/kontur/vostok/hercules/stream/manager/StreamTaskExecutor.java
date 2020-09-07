@@ -185,6 +185,10 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
             switch (result) {
                 case CREATED:
                     LOGGER.info("Topic '{}' has been created: {}", topic.name(), topic);
+                    //FIXME: This workaround should be removed when Hercules Gate gets cached topics (see https://issues.apache.org/jira/browse/KAFKA-3450)
+                    // After topic creation has a small time interval when brokers don't have newly created topic in their metadata.
+                    // Thus, producing fails and gets retries until topic metadata gets up to date
+                    TimeSource.SYSTEM.sleep(1_000);
                     return true;
                 case ALREADY_EXISTS:
                     // Case is possible only on retry
