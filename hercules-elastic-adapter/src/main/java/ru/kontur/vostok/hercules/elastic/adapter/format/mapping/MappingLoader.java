@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  *   <li>Supports commentary line is started with symbol {@code '#'},</li>
  *   <li><b>move</b> mapping should be in form
  *       {@code "move <sourcePath>/* to <destinationPath>/*[ except <exceptedField1>,<exceptedField2>,...]"},<br>
- *       source and destination paths can be empty,
+ *       source and destination paths can be empty (should be {@code "*"} in this case),
  *       excepted fields are optional: list of fields which should not move to destination path,</li>
  *   <li><b>transform</b> mapping should be in form
  *       {@code "transform <sourcePath> to <destinationPath>[ using <transformerClass>]"},<br>

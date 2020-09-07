@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * Maps the field to the tag.
+ *
  * @author Gregory Koshelev
  */
 public class TransformMapper implements Mapper {
@@ -17,7 +19,6 @@ public class TransformMapper implements Mapper {
     private final Transformer transformer;
 
     public TransformMapper(String source, HPath destinationPath, Transformer transformer) {
-        String[] segments = source.split("/");
         this.sourcePath = Arrays.asList(source.split("/"));
         this.destinationPath = destinationPath;
         this.transformer = transformer;

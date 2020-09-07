@@ -90,7 +90,7 @@ public class JsonToEventFormatter {
         }
 
         switch (format) {
-            case ISO_DATETIME:
+            case ISO_DATE_TIME:
                 if (!(value instanceof String)) {
                     return defaultTimestamp();
                 }

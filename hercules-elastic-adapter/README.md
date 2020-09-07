@@ -193,7 +193,8 @@ index.manager.config.path=file://indices.json
       "properties/project": "test_project"
     },
     "indexPath": "properties/elk-index",
-    "timestampFormat": "ISO_DATETIME",
+    "timestampFormat": "ISO_DATE_TIME",
     "mappingFile": "resource://log-event.reverse.mapping"
   }
-}```
+}
+```

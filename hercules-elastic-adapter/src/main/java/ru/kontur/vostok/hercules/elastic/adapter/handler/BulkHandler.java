@@ -81,7 +81,9 @@ public class BulkHandler implements HttpHandler {
             }
 
             Event event = JsonToEventFormatter.format(indexRequest.getDocument(), index, meta);
-            events.computeIfAbsent(meta.getStream(), k -> new ArrayList<>(1_000)).add(event);//TODO: Magic number
+            if (validator.validate(event)) {//TODO: Errors should be added to response as Elasticsearch do
+                events.computeIfAbsent(meta.getStream(), k -> new ArrayList<>(1_000)).add(event);//TODO: Magic number
+            }
         }
 
         for (Map.Entry<String, List<Event>> batch : events.entrySet()) {

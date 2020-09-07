@@ -4,7 +4,7 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.util.ClassUtil;
 
 /**
- * Transforms the field value of the JSON-document to the variant.
+ * Transforms the field value of the JSON-document to the {@link Variant}.
  *
  * @author Gregory Koshelev
  */
