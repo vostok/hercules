@@ -4,8 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Prefix tree (or Trie) is constructed from a set of {@link HPath}.
@@ -108,6 +109,7 @@ public class HTree<T> {
         public boolean hasValue() {
             return current.value != null;
         }
+
         /**
          * Returns {@code true} if the current node is the root.
          *
@@ -125,10 +127,21 @@ public class HTree<T> {
         public HPath path() {
             return current.path;
         }
+
+        /**
+         * Return the set of child nodes tags.
+         * <p>
+         * This set is a view. It means that changes in the {@link HTree} are also applied to the set.
+         *
+         * @return the set of child nodes tags
+         */
+        public Set<TinyString> children() {
+            return current.children.keySet();
+        }
     }
 
     private static class HNode<T> {
-        final Map<TinyString, HNode<T>> children = new HashMap<>();
+        final Map<TinyString, HNode<T>> children = new LinkedHashMap<>();
         final HNode<T> parent;
         final HPath path;
         T value;

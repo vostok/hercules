@@ -42,7 +42,12 @@ See `ru.kontur.vostok.hercules.sink.filter.EventFilter` for details.
 ##### Index Settings
 `sink.sender.elastic.index.policy` - index policy: should use static index name, index per day or index lifecycle management. Should be one of `STATIC`, `DAILY` or `ILM`, respectively, default value: `DAILY`
 
-`sink.sender.elastic.index.name` - static index name if index policy `STATIC` is used
+`sink.sender.elastic.index.resolver.index.name` - static index name if index policy `STATIC` is used
+
+`sink.sender.elastic.index.resolver.index.path` - the optional path of the tag with index name. Should be valid HPath if present. Index policy should be `ILM` or `DAILY`
+
+`sink.sender.elastic.index.resolver.index.tags` - the optional tags to build index name if no stored index name from above setting.
+Each tag definition should be a valid HPath. Tag is optional if HPath ends with `?`. Index policy should be `ILM` or `DAILY`
 
 ##### Format Settings
 `sink.sender.elastic.format.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`
@@ -149,7 +154,10 @@ sink.sender.pingPeriodMs=60000
 sink.sender.retryLimit=2
 sink.sender.retryOnUnknownErrors=true
 
-sink.sender.elastic.index.policy=DAILY
+sink.sender.elastic.index.policy=ILM
+
+sink.sender.elastic.index.resolver.index.path=properties/elk-index
+sink.sender.elastic.index.resolver.index.tags=properties/project,properties/environment?,properties/subproject?
 
 sink.sender.elastic.format.timestamp.enable=true
 sink.sender.elastic.format.timestamp.field=@timestamp

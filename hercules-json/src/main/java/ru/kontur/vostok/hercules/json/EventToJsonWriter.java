@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
+import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
@@ -18,7 +18,7 @@ import java.util.UUID;
  * EventToJsonWriter
  *
  * @author Kirill Sulim
- * @deprecated Use {@link EventJsonFormatter} and {@link DocumentWriter}
+ * @deprecated Use {@link EventToJsonFormatter} and {@link DocumentWriter}
  */
 @Deprecated
 public final class EventToJsonWriter {

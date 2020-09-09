@@ -39,7 +39,7 @@ import java.util.stream.Stream;
  *       paths should be a valid non-empty {@link HPath} (even for {@code destinationPath} in JSON-document),
  *   <li><b>move</b> mapping should be in form
  *       {@code "move <sourcePath>/* to <destinationPath>/*[ except <exceptedTag1>,<exceptedTag2>,...]"},<br>
- *       source and destinations paths can be empty,
+ *       source and destinations paths can be empty (should be {@code "*"} in this case),
  *       excepted tags are optional: list of tags which should not move to destination path,
  *   <li><b>combine</b> mapping should be in form
  *       {@code "combine <sourcePath1>,<sourcePath2>[,...] to <destinationPath> using <combinerClass>"}.

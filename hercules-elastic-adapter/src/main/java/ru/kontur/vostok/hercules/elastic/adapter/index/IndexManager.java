@@ -1,12 +1,13 @@
 package ru.kontur.vostok.hercules.elastic.adapter.index;
 
+import ru.kontur.vostok.hercules.configuration.Sources;
 import ru.kontur.vostok.hercules.elastic.adapter.index.config.ConfigParser;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
 
@@ -17,8 +18,7 @@ public class IndexManager {
     private final Map<String, IndexMeta> meta;
 
     public IndexManager(Properties properties) {
-        String path = PropertiesUtil.get(Props.CONFIG_PATH, properties).get().substring("file://".length());
-        try (FileInputStream in = new FileInputStream(path)) {
+        try (InputStream in = Sources.load(PropertiesUtil.get(Props.CONFIG_PATH, properties).get())) {
             meta = ConfigParser.parse(in);
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
@@ -27,7 +27,7 @@ public class IndexManager {
 
     //TODO: Map index name to log event properties (project, environment, etc...)
     //TODO: Use index pattern: `<project>-<environment>-<*>`
-    //TODO: Also, can use predefined properties: `awesome-production-000001` -> {poject -> awesome, environment -> production}
+    //TODO: Also, can use predefined properties: `awesome-production-000001` -> {project -> awesome, environment -> production}
     public IndexMeta meta(String index) {
         return meta.get(index);//TODO: replace with search by pattern
     }

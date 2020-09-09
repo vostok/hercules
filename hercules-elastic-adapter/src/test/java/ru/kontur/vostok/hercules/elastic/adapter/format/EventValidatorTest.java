@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.elastic.adapter.event;
+package ru.kontur.vostok.hercules.elastic.adapter.format;
 
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;

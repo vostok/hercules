@@ -147,7 +147,7 @@ HTTP Server binds on host:port are defined in Main Application settings.
 `gate.client.urls` - Gate topology, required
 
 ### Index Manager settings
-`index.manager.config.path` - index name to stream and properties mapping, default value: `file://indices.json`
+`index.manager.config.path` - the path to the per index configuration, default value: `file://indices.json`
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-elastic-adapter.jar application.properties=file://path/to/file/application.properties`
@@ -187,12 +187,14 @@ index.manager.config.path=file://indices.json
 ### `indices.json` sample
 ```json
 {
-  "test_index" : {
-    "stream" : "test_stream",
-    "properties" : {
-      "project" : "test_project",
-      "environment" : "testing"
-    }
+  "test_index": {
+    "stream": "test_stream",
+    "properties": {
+      "properties/project": "test_project"
+    },
+    "indexPath": "properties/elk-index",
+    "timestampFormat": "ISO_DATE_TIME",
+    "mappingFile": "resource://log-event.reverse.mapping"
   }
 }
 ```

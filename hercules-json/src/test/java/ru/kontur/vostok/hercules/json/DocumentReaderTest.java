@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.elastic.adapter.document;
+package ru.kontur.vostok.hercules.json;
 
 import org.junit.Test;
 
@@ -20,7 +20,7 @@ public class DocumentReaderTest {
                 "\"listOfIntegers\": [1, 2, 3], " +
                 "\"listOfStrings\": [\"a\", \"b\", \"c\"]}").
                 getBytes(StandardCharsets.UTF_8);
-        Map<String, Object> document = DocumentReader.read(data);
+        Map<String, Object> document = DocumentReader.read(data).document();
         assertNotNull(document);
 
         Map<String, Object> map = (Map<String, Object>) document.get("map");

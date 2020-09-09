@@ -1,0 +1,9 @@
+# Transform log-specific fields as is
+transform level to level
+transform message to message
+transform messageTemplate to messageTemplate
+transform exception to exception
+transform stackTrace to stackTrace
+
+# Move all fields to properties except level, message, messageTemplate, exception and stackTrace
+move * to properties/* except level,message,messageTemplate,exception,stackTrace

@@ -2,7 +2,8 @@ package ru.kontur.vostok.hercules.elastic.sink;
 
 import org.junit.Test;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
-import ru.kontur.vostok.hercules.elastic.sink.index.LogEventIndexResolver;
+import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
+import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolverTest;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
@@ -116,7 +117,7 @@ public class IndexToElasticJsonWriterTest {//FIXME: Rewrite and move index resol
     }
 
     private void eventProcess(ByteArrayOutputStream stream, Event event) throws IOException {
-        String index = LogEventIndexResolver.forPolicy(IndexPolicy.DAILY).resolve(event).orElseThrow(NullPointerException::new);
+        String index = IndexResolver.forPolicy(IndexPolicy.DAILY, IndexResolverTest.INDEX_RESOLVER_PROPERTIES).resolve(event).orElseThrow(NullPointerException::new);
         String eventId = Optional.ofNullable(EventUtil.extractStringId(event)).orElseThrow(NullPointerException::new);
         IndexToElasticJsonWriter.writeIndex(stream, index, eventId);
     }
