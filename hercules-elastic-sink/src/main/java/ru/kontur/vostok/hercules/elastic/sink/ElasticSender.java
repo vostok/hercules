@@ -9,7 +9,7 @@ import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.json.Document;
 import ru.kontur.vostok.hercules.json.DocumentWriter;
-import ru.kontur.vostok.hercules.json.format.EventJsonFormatter;
+import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
@@ -40,7 +40,7 @@ public class ElasticSender extends Sender {
     private final IndexPolicy indexPolicy;
     private final IndexResolver indexResolver;
 
-    private final EventJsonFormatter eventFormatter;
+    private final EventToJsonFormatter eventFormatter;
 
     private final ElasticClient client;
 
@@ -63,7 +63,7 @@ public class ElasticSender extends Sender {
         Properties indexResolverProperties = PropertiesUtil.ofScope(properties, "elastic.index.resolver");
         this.indexResolver = IndexResolver.forPolicy(indexPolicy, indexResolverProperties);
 
-        this.eventFormatter = new EventJsonFormatter(PropertiesUtil.ofScope(properties, "elastic.format"));
+        this.eventFormatter = new EventToJsonFormatter(PropertiesUtil.ofScope(properties, "elastic.format"));
 
         this.client = new ElasticClient(PropertiesUtil.ofScope(properties, "elastic.client"), indexPolicy, metricsCollector);
 

@@ -1,51 +1,36 @@
-package ru.kontur.vostok.hercules.elastic.adapter.event;
+package ru.kontur.vostok.hercules.elastic.adapter.format.mapping;
 
 import ru.kontur.vostok.hercules.protocol.Container;
-import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.TinyString;
-import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
-import ru.kontur.vostok.hercules.tags.CommonTags;
-import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
-import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.collection.ArrayUtil;
-import ru.kontur.vostok.hercules.util.functional.Result;
-import ru.kontur.vostok.hercules.util.time.TimeUtil;
-import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Create Hercules event from elastic-compatible log event and context properties.
+ * Transforms the object to the variant as is.
+ * <p>
+ * Supported types:
+ * <ul>
+ *     <li>{@link Integer}</li>
+ *     <li>{@link Long}</li>
+ *     <li>{@link Float}</li>
+ *     <li>{@link Double}</li>
+ *     <li>{@link Boolean}</li>
+ *     <li>{@link String}</li>
+ *     <li>{@link Map}</li>
+ *     <li>{@link List} of the types above</li>
+ * </ul>
  *
  * @author Gregory Koshelev
  */
-public class LogEventMapper {
-    private static final TinyString TIMESTAMP_FIELD = TinyString.of("@timestamp");//TODO: should be configurable
-
+public class PlainTransformer implements Transformer {
     private static final Map<Class<?>, Function<Object, Variant>> TYPE_MAPPER;
     private static final Map<Class<?>, Function<List<?>, Variant>> LIST_TYPE_MAPPER;
-
-    private static final List<TinyString> LOG_EVENT_TAGS =
-            Arrays.asList(
-                    LogEventTags.LEVEL_TAG.getName(),
-                    LogEventTags.MESSAGE_TAG.getName(),
-                    LogEventTags.MESSAGE_TEMPLATE_TAG.getName(),
-                    LogEventTags.EXCEPTION_TAG.getName(),
-                    LogEventTags.STACK_TRACE_TAG.getName());
 
     static {
         TYPE_MAPPER = new HashMap<>();
@@ -66,85 +51,9 @@ public class LogEventMapper {
         LIST_TYPE_MAPPER.put(Map.class, list -> Variant.ofVector(Vector.ofContainers(toContainersArray(list))));
     }
 
-    /**
-     * Try to create Hercules event from elastic-compatible log event and context properties.
-     * <p>
-     * Context properties are defined by index name.
-     *
-     * @param document   elastic-compatible log event
-     * @param properties context properties
-     * @param index      index name
-     * @return result with event if succeeded or error otherwise
-     */
-    public static Result<Event, String> from(Map<String, Object> document, Map<TinyString, Variant> properties, String index) {
-        Map<TinyString, Variant> tags;
-        try {
-            tags = processMap(document);
-        } catch (InconsistentElementTypesListException e) {
-            return Result.error("Document contains list elements of different types");
-        }
-
-        Variant variant = tags.get(TIMESTAMP_FIELD);
-        if (variant == null) {
-            return Result.error("Document does not contain timestamp field");
-        }
-        if (variant.getType() != Type.STRING) {
-            return Result.error("Provided timestamp should be string but got " + variant.getType());
-        }
-
-        final String dateTime = new String((byte[]) variant.getValue());
-
-        final ZonedDateTime zonedDateTime;
-        try {
-            zonedDateTime = (ZonedDateTime) DateTimeFormatter.ISO_DATE_TIME.parseBest(
-                    dateTime,
-                    ZonedDateTime::from,
-                    temporal -> LocalDateTime.from(temporal).atZone(ZoneId.of("UTC")));
-        } catch (DateTimeParseException ex) {
-            return Result.error("Provided timestamp is invalid: " + dateTime);
-        }
-
-        long timestamp = TimeUtil.dateTimeToUnixTicks(zonedDateTime);
-        UUID eventId = UuidGenerator.getClientInstance().next();
-
-        EventBuilder eventBuilder = EventBuilder.create(timestamp, eventId).version(1);
-        eventBuilder.tag(LogEventTags.UTC_OFFSET_TAG.getName(), Variant.ofLong(toUtcOffsetTicks(zonedDateTime)));
-        for (TinyString k : LOG_EVENT_TAGS) {
-            Variant v = tags.remove(k);
-            if (v != null) {
-                eventBuilder.tag(k, v);
-            }
-        }
-
-        Container.ContainerBuilder propertiesContainer = Container.builder();
-        propertiesContainer.tags(tags);
-        propertiesContainer.tags(properties);
-        propertiesContainer.tag(ElasticSearchTags.ELK_INDEX_TAG.getName(), Variant.ofString(index));//TODO: Move to IndexMeta / IndexManager
-
-        eventBuilder.tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(propertiesContainer.build()));
-        return Result.ok(eventBuilder.build());
-    }
-
-    /**
-     * Convert JSON-friendly map to Hercules-friendly one.
-     *
-     * @param map JSON-friendly map
-     * @return Hercules-friendly map
-     * @throws InconsistentElementTypesListException if internally map contains list of elements with different types
-     */
-    private static Map<TinyString, Variant> processMap(Map<String, Object> map) throws InconsistentElementTypesListException {
-        Map<TinyString, Variant> result = new LinkedHashMap<>();
-
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            Object value = entry.getValue();
-            if (value == null) {
-                continue;
-            }
-
-            result.put(TinyString.of(entry.getKey()), toVariant(value));
-        }
-
-        return result;
+    @Override
+    public Variant transform(Object value) {
+        return toVariant(value);
     }
 
     /**
@@ -236,7 +145,7 @@ public class LogEventMapper {
     }
 
     /**
-     * Convert map to {@Container}
+     * Convert map to {@link Container}
      *
      * @param map the map
      * @return the container
@@ -255,15 +164,5 @@ public class LogEventMapper {
         }
 
         return builder.build();
-    }
-
-    /**
-     * Convert datetime UTC offset to 100ns ticks.
-     *
-     * @param dateTime datetime
-     * @return UTC offset in 100ns ticks
-     */
-    private static long toUtcOffsetTicks(ZonedDateTime dateTime) {
-        return TimeUtil.secondsToTicks(dateTime.getOffset().getTotalSeconds());
     }
 }

@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.elastic.adapter.document;
+package ru.kontur.vostok.hercules.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -36,7 +36,7 @@ public final class DocumentReader {
      * @param data byte array with UTF-8 encoded JSON-object
      * @return document
      */
-    public static Map<String, Object> read(byte[] data) {
+    public static Document read(byte[] data) {
         return read(data, 0, data.length);
     }
 
@@ -47,7 +47,7 @@ public final class DocumentReader {
      * @param offset JSON-object offset
      * @return document
      */
-    public static Map<String, Object> read(byte[] data, int offset) {
+    public static Document read(byte[] data, int offset) {
         return read(data, offset, data.length - offset);
     }
 
@@ -61,9 +61,9 @@ public final class DocumentReader {
      * @param length JSON-object length
      * @return document
      */
-    public static Map<String, Object> read(byte[] data, int offset, int length) {
+    public static Document read(byte[] data, int offset, int length) {
         try {
-            return DOCUMENT_READER.readValue(data, offset, length);
+            return Document.of(DOCUMENT_READER.readValue(data, offset, length));
         } catch (IOException e) {
             //TODO: May be process exception?
             return null;

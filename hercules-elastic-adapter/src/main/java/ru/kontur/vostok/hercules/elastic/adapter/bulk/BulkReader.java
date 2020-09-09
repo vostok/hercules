@@ -2,11 +2,11 @@ package ru.kontur.vostok.hercules.elastic.adapter.bulk;
 
 import ru.kontur.vostok.hercules.elastic.adapter.bulk.action.IndexAction;
 import ru.kontur.vostok.hercules.elastic.adapter.bulk.action.IndexActionReader;
-import ru.kontur.vostok.hercules.elastic.adapter.document.DocumentReader;
+import ru.kontur.vostok.hercules.json.Document;
+import ru.kontur.vostok.hercules.json.DocumentReader;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Read index requests from bulk request.
@@ -79,7 +79,7 @@ public final class BulkReader {
                     continue;
                 }
 
-                Map<String, Object> document = findDocument();
+                Document document = findDocument();
 
                 if (document == null) {
                     continue;
@@ -105,8 +105,8 @@ public final class BulkReader {
             return action;
         }
 
-        private Map<String, Object> findDocument() {
-            Map<String, Object> document = null;
+        private Document findDocument() {
+            Document document = null;
 
             if (nextPosition < data.length) {
                 int length = lineLength(data, nextPosition);
