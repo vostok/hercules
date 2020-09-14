@@ -19,7 +19,6 @@ import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.util.Maps;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.Arrays;
@@ -99,7 +98,7 @@ public class GateHandler implements HttpHandler {
     public void handle(HttpServerRequest request) {
         requestMeter.mark(1);
 
-        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (streamName.isError()) {
             request.complete(HttpStatusCodes.BAD_REQUEST);
             return;

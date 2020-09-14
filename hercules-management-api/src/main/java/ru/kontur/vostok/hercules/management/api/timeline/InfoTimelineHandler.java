@@ -15,7 +15,7 @@ import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.undertow.util.HttpResponseContentWriter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.util.Optional;
 
@@ -35,7 +35,7 @@ public class InfoTimelineHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        ParameterValue<String> timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
+        Parameter<String>.ParameterValue timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
         if (timelineName.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,

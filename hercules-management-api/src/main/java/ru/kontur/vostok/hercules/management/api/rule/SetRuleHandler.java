@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.QueryParameters;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 /**
  * @author Gregory Koshelev
@@ -22,9 +22,9 @@ public class SetRuleHandler extends RuleHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        ParameterValue<String> key = QueryUtil.get(QueryParameters.KEY, request);
-        ParameterValue<String> pattern = QueryUtil.get(QueryParameters.PATTERN, request);
-        ParameterValue<String> rights = QueryUtil.get(QueryParameters.RIGHTS, request);
+        Parameter<String>.ParameterValue key = QueryUtil.get(QueryParameters.KEY, request);
+        Parameter<String>.ParameterValue pattern = QueryUtil.get(QueryParameters.PATTERN, request);
+        Parameter<String>.ParameterValue rights = QueryUtil.get(QueryParameters.RIGHTS, request);
 
         if (key.isError() || pattern.isError() || rights.isError()) {
             request.complete(HttpStatusCodes.BAD_REQUEST);

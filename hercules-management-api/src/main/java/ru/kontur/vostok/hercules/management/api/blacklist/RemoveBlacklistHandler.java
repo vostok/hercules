@@ -8,7 +8,7 @@ import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.QueryParameters;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 /**
  * @author Gregory Koshelev
@@ -22,7 +22,7 @@ public class RemoveBlacklistHandler extends BlacklistHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        ParameterValue<String> key = QueryUtil.get(QueryParameters.KEY, request);
+        Parameter<String>.ParameterValue key = QueryUtil.get(QueryParameters.KEY, request);
         if (key.isError()) {
             request.complete(HttpStatusCodes.BAD_REQUEST);
             return;

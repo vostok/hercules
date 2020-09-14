@@ -18,7 +18,7 @@ import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +40,7 @@ public class DeleteStreamHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (streamName.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,

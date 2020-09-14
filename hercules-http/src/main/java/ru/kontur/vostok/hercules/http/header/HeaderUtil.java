@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.http.header;
 
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 /**
  * Http request header util
@@ -18,7 +17,7 @@ public final class HeaderUtil {
      * @param <T>       the value type
      * @return the request header value
      */
-    public static <T> ParameterValue<T> get(Parameter<T> parameter, HttpServerRequest request) {
+    public static <T> Parameter<T>.ParameterValue get(Parameter<T> parameter, HttpServerRequest request) {
         String requestHeader = request.getHeader(parameter.name());
         return parameter.from(requestHeader);
     }

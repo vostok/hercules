@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.util.parameter.parsing;
 
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.util.function.Function;
@@ -25,16 +24,16 @@ public final class Parsers {
     public static Parser<Boolean> forBoolean() {
         return s -> {
             if (StringUtil.isNullOrEmpty(s)) {
-                return ParameterValue.empty();
+                return ParsingResult.empty();
             }
             String string = s.trim().toLowerCase();
             if ("true".equals(string)) {
-                return ParameterValue.of(true);
+                return ParsingResult.of(true);
             }
             if ("false".equals(string)) {
-                return ParameterValue.of(false);
+                return ParsingResult.of(false);
             }
-            return ParameterValue.invalid("Cannot parse string to boolean");
+            return ParsingResult.invalid("Cannot parse string '" + s + "' to boolean");
         };
     }
 
@@ -46,12 +45,12 @@ public final class Parsers {
     public static Parser<Short> forShort() {
         return s -> {
             if (StringUtil.isNullOrEmpty(s)) {
-                return ParameterValue.empty();
+                return ParsingResult.empty();
             }
             try {
-                return ParameterValue.of(Short.valueOf(s));
+                return ParsingResult.of(Short.valueOf(s));
             } catch (NumberFormatException ex) {
-                return ParameterValue.invalid(ex.getMessage());
+                return ParsingResult.invalid(ex.getMessage());
             }
         };
     }
@@ -64,12 +63,12 @@ public final class Parsers {
     public static Parser<Integer> forInteger() {
         return s -> {
             if (StringUtil.isNullOrEmpty(s)) {
-                return ParameterValue.empty();
+                return ParsingResult.empty();
             }
             try {
-                return ParameterValue.of(Integer.valueOf(s));
+                return ParsingResult.of(Integer.valueOf(s));
             } catch (NumberFormatException ex) {
-                return ParameterValue.invalid(ex.getMessage());
+                return ParsingResult.invalid(ex.getMessage());
             }
         };
     }
@@ -82,12 +81,12 @@ public final class Parsers {
     public static Parser<Long> forLong() {
         return s -> {
             if (StringUtil.isNullOrEmpty(s)) {
-                return ParameterValue.empty();
+                return ParsingResult.empty();
             }
             try {
-                return ParameterValue.of(Long.valueOf(s));
+                return ParsingResult.of(Long.valueOf(s));
             } catch (NumberFormatException ex) {
-                return ParameterValue.invalid(ex.getMessage());
+                return ParsingResult.invalid(ex.getMessage());
             }
         };
     }
@@ -100,9 +99,9 @@ public final class Parsers {
     public static Parser<String> forString() {
         return s -> {
             if (s == null) {
-                return ParameterValue.empty();
+                return ParsingResult.empty();
             }
-            return ParameterValue.of(s);
+            return ParsingResult.of(s);
         };
     }
 
@@ -114,9 +113,9 @@ public final class Parsers {
     public static Parser<String[]> forStringArray() {
         return s -> {
             if (StringUtil.isNullOrEmpty(s)) {
-                return ParameterValue.empty();
+                return ParsingResult.empty();
             }
-            return ParameterValue.of(s.split(ELEMENT_DELIMITER));
+            return ParsingResult.of(s.split(ELEMENT_DELIMITER));
         };
     }
 
@@ -132,12 +131,12 @@ public final class Parsers {
     public static <T extends Enum<T>> Parser<T> forEnum(Class<T> enumType) {
         return s -> {
             if (StringUtil.isNullOrEmpty(s)) {
-                return ParameterValue.empty();
+                return ParsingResult.empty();
             }
             try {
-                return ParameterValue.of(Enum.valueOf(enumType, s));
+                return ParsingResult.of(Enum.valueOf(enumType, s));
             } catch (IllegalArgumentException ex) {
-                return ParameterValue.invalid(ex.getMessage());
+                return ParsingResult.invalid(ex.getMessage());
             }
         };
     }
@@ -152,13 +151,13 @@ public final class Parsers {
     public static <T> Parser<T> fromFunction(Function<String, T> function) {
         return s -> {
             if (StringUtil.isNullOrEmpty(s)) {
-                return ParameterValue.empty();
+                return ParsingResult.empty();
             }
             try {
                 T result = function.apply(s);
-                return result != null ? ParameterValue.of(result) : ParameterValue.empty();
+                return result != null ? ParsingResult.of(result) : ParsingResult.empty();
             } catch (Exception ex) {
-                return ParameterValue.invalid(ex.getMessage());
+                return ParsingResult.invalid(ex.getMessage());
             }
         };
     }

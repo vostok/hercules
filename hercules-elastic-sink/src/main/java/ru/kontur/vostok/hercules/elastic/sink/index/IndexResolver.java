@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.parsing.ParsingResult;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -57,7 +57,7 @@ public class IndexResolver {
      */
     public static IndexResolver forPolicy(IndexPolicy indexPolicy, Properties properties) {
         if (indexPolicy == IndexPolicy.STATIC) {
-            ParameterValue<String> indexNameValue = PropertiesUtil.get(Props.INDEX_NAME, properties);
+            Parameter<String>.ParameterValue indexNameValue = PropertiesUtil.get(Props.INDEX_NAME, properties);
             if (indexNameValue.isEmpty()) {
                 throw new IllegalArgumentException("Index name must be defined if 'static' index policy is used");
             }
@@ -67,7 +67,7 @@ public class IndexResolver {
         }
 
         //TODO: Should be replaced with multiple indexTags alternatives
-        ParameterValue<HPath> indexPath = PropertiesUtil.get(Props.INDEX_PATH, properties);
+        Parameter<HPath>.ParameterValue indexPath = PropertiesUtil.get(Props.INDEX_PATH, properties);
         String[] indexTags = PropertiesUtil.get(Props.INDEX_TAGS, properties).get();
         List<IndexPart> indexParts = new ArrayList<>(indexTags.length);
         for (String indexTag : indexTags) {
@@ -190,9 +190,9 @@ public class IndexResolver {
         static final Parameter<HPath> INDEX_PATH =
                 Parameter.parameter("index.path", v -> {
                     if (StringUtil.isNullOrEmpty(v)) {
-                        return ParameterValue.empty();
+                        return ParsingResult.empty();
                     }
-                    return ParameterValue.of(HPath.fromPath(v));
+                    return ParsingResult.of(HPath.fromPath(v));
                 }).
                         build();
 

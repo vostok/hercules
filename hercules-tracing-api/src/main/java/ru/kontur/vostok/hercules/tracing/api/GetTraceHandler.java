@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.tracing.api.json.EventToJsonConverter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.util.UUID;
 
@@ -25,7 +25,7 @@ public class GetTraceHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        ParameterValue<UUID> traceId = QueryUtil.get(QueryParameters.TRACE_ID, request);
+        Parameter<UUID>.ParameterValue traceId = QueryUtil.get(QueryParameters.TRACE_ID, request);
         if (traceId.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -34,7 +34,7 @@ public class GetTraceHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<UUID> parentSpanId = QueryUtil.get(QueryParameters.PARENT_SPAN_ID, request);
+        Parameter<UUID>.ParameterValue parentSpanId = QueryUtil.get(QueryParameters.PARENT_SPAN_ID, request);
         if (parentSpanId.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -43,7 +43,7 @@ public class GetTraceHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> limit = QueryUtil.get(QueryParameters.LIMIT, request);
+        Parameter<Integer>.ParameterValue limit = QueryUtil.get(QueryParameters.LIMIT, request);
         if (limit.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -52,7 +52,7 @@ public class GetTraceHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<String> pagingState = QueryUtil.get(QueryParameters.PAGING_STATE, request);
+        Parameter<String>.ParameterValue pagingState = QueryUtil.get(QueryParameters.PAGING_STATE, request);
         if (pagingState.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,

@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.util.properties;
 
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 import java.util.Map;
 import java.util.Properties;
@@ -42,7 +41,7 @@ public final class PropertiesUtil {
         return builder.toString();
     }
 
-    public static <T> ParameterValue<T> get(Parameter<T> parameter, Properties properties) {
+    public static <T> Parameter<T>.ParameterValue get(Parameter<T> parameter, Properties properties) {
         String property = properties.getProperty(parameter.name());
         return parameter.from(property);
     }

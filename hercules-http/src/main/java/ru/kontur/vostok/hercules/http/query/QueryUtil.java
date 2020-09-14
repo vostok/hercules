@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.http.query;
 
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 /**
  * Http request query util
@@ -18,7 +17,7 @@ public final class QueryUtil {
      * @param <T>       the value type of parameter
      * @return the value of query parameter
      */
-    public static <T> ParameterValue<T> get(Parameter<T> parameter, HttpServerRequest request) {
+    public static <T> Parameter<T>.ParameterValue get(Parameter<T> parameter, HttpServerRequest request) {
         String requestParameter = request.getQueryParameter(parameter.name());
         return parameter.from(requestParameter);
     }
