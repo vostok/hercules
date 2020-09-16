@@ -1,10 +1,16 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.Type;
+import ru.kontur.vostok.hercules.protocol.encoder.CollectionWriter;
+import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
+import ru.kontur.vostok.hercules.protocol.encoder.EventWriter;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -17,11 +23,11 @@ public class EventUtil {
 
     private static final int ID_SIZE_IN_BYTES = 24;
 
-    public static ByteBuffer eventIdAsByteBuffer(long timestamp, UUID random) {
+    public static ByteBuffer eventIdAsByteBuffer(long timestamp, UUID uuid) {
         ByteBuffer eventId = ByteBuffer.allocate(ID_SIZE_IN_BYTES);
         eventId.putLong(timestamp);
-        eventId.putLong(random.getMostSignificantBits());
-        eventId.putLong(random.getLeastSignificantBits());
+        eventId.putLong(uuid.getMostSignificantBits());
+        eventId.putLong(uuid.getLeastSignificantBits());
         eventId.position(0);
         return eventId;
     }
@@ -76,11 +82,36 @@ public class EventUtil {
             throw new IllegalArgumentException("Binary representation of event id must be " + ID_SIZE_IN_BYTES + " bytes length");
         }
 
-        return ByteUtil.bytesToHexString(bytes);
+        return ByteUtil.toHexString(bytes);
     }
 
     public static String extractStringId(final Event event) {
         return Base64.getEncoder().encodeToString(eventIdAsBytes(event.getTimestamp(), event.getUuid()));
+    }
+
+    private static final int SIZE_OF_EVENT_COUNT = Type.INTEGER.size;
+    private static final CollectionWriter<Event> EVENT_COLLECTION_WRITER = new CollectionWriter<>(new EventWriter());
+
+    public static byte[] toBytes(@NotNull List<Event> events) {
+        ByteBuffer buffer = ByteBuffer.allocate(sizeOf(events));
+
+        write(buffer, events);
+
+        return buffer.array();
+    }
+
+    private static int sizeOf(List<Event> events) {
+        int size = SIZE_OF_EVENT_COUNT;
+        for (Event event: events) {
+            size += event.sizeOf();
+        }
+
+        return size;
+    }
+
+    private static void write(ByteBuffer buffer, List<Event> events) {
+        Encoder encoder = new Encoder(buffer);
+        EVENT_COLLECTION_WRITER.write(encoder, events);
     }
 
     private EventUtil() {

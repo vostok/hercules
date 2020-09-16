@@ -1,19 +1,16 @@
 package ru.kontur.vostok.hercules.health;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
-import ru.kontur.vostok.hercules.util.application.ApplicationContext;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.application.ApplicationContext;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.net.InetSocketAddress;
 import java.util.Properties;
@@ -24,30 +21,6 @@ import java.util.function.Supplier;
  * @author Gregory Koshelev
  */
 public class MetricsCollector {
-
-    private static class Props {
-        static final PropertyDescription<String> GRAPHITE_SERVER = PropertyDescriptions
-                .stringProperty("graphite.server.addr")
-                .withDefaultValue("localhost")
-                .build();
-
-        static final PropertyDescription<Integer> GRAPHITE_PORT = PropertyDescriptions
-                .integerProperty("graphite.server.port")
-                .withDefaultValue(2003)
-                .withValidator(Validators.portValidator())
-                .build();
-
-        static final PropertyDescription<String> GRAPHITE_PREFIX = PropertyDescriptions
-                .stringProperty("graphite.prefix")
-                .build();
-
-        static final PropertyDescription<Integer> REPORT_PERIOD_SECONDS = PropertyDescriptions
-                .integerProperty("period")
-                .withDefaultValue(60)
-                .withValidator(Validators.greaterThan(0))
-                .build();
-    }
-
     private MetricRegistry registry = new MetricRegistry();
 
     private final long period;
@@ -59,19 +32,19 @@ public class MetricsCollector {
      *
      */
     public MetricsCollector(Properties properties) {
-        String graphiteServerAddr = Props.GRAPHITE_SERVER.extract(properties);
-        int graphiteServerPort = Props.GRAPHITE_PORT.extract(properties);
+        String graphiteServerAddr = PropertiesUtil.get(Props.GRAPHITE_SERVER, properties).get();
+        int graphiteServerPort = PropertiesUtil.get(Props.GRAPHITE_PORT, properties).get();
 
-        ApplicationContext applicationContext = ApplicationContextHolder.get();
+        ApplicationContext context = Application.context();
         String prefix = String.join(".",
-                Props.GRAPHITE_PREFIX.extract(properties),
-                applicationContext.getApplicationId(),
-                applicationContext.getEnvironment(),
-                applicationContext.getZone(),
-                applicationContext.getInstanceId()
+                PropertiesUtil.get(Props.GRAPHITE_PREFIX, properties).get(),
+                context.getApplicationId(),
+                context.getEnvironment(),
+                context.getZone(),
+                context.getInstanceId()
         );
 
-        this.period = Props.REPORT_PERIOD_SECONDS.extract(properties);
+        this.period = PropertiesUtil.get(Props.REPORT_PERIOD_SECONDS, properties).get();
 
         graphite = new Graphite(new InetSocketAddress(graphiteServerAddr, graphiteServerPort));
         graphiteReporter = GraphiteReporter.forRegistry(registry)
@@ -97,53 +70,59 @@ public class MetricsCollector {
     }
 
     /**
-     * Get thoughput meter by the name
+     * Get throughput meter by the name
+     *
      * @param name is the name of the metric
      * @return requested meter
      */
     public Meter meter(String name) {
-        return registry.meter(name);
+        return new MeterImpl(registry.meter(name));
     }
 
     /**
      * Get counter by the name
+     *
      * @param name is the name of the counter
      * @return requested counter
      */
     public Counter counter(String name) {
-        return registry.counter(name);
+        return new CounterImpl(registry.counter(name));
     }
 
     /**
      * Get timer by the name
+     *
      * @param name is the name of the timer
      * @return requested timer
      */
     public Timer timer(String name) {
-        return registry.timer(name);
+        return new TimerImpl(registry.timer(name));
     }
 
     /**
      * Register metric by the name with custom function
-     * @param name is the name of the metric
+     *
+     * @param name     is the name of the metric
      * @param supplier is the custom function to provide metric's values
-     * @param <T> is the metric's value type (ordinarily Integer or Long)
+     * @param <T>      is the metric's value type (ordinarily Integer or Long)
      */
     public <T> void gauge(String name, Supplier<T> supplier) {
         registry.register(name, (Gauge<T>) supplier::get);
     }
 
     /**
-     * Register metric by the name with custom function
+     * Removes the metric with the given name
+     *
      * @param name is the name of the metric
-     * @param supplier is the custom function to provide status handler
+     * @return whether or not the metric was removed
      */
-    public void status(String name, Supplier<IHaveStatusCode> supplier) {
-        registry.register(name, (Gauge<Integer>) () -> supplier.get().getStatusCode());
+    public boolean remove(String name) {
+        return registry.remove(name);
     }
 
     /**
      * Get histogram by the name
+     *
      * @param name is the name of the histogram
      * @return requested histogram
      */
@@ -152,11 +131,94 @@ public class MetricsCollector {
     }
 
     /**
-     * Create HttpMetrics aggregation object
-     * @param name handler name
-     * @return HttpMetrics object
+     * Creates HTTP Metric for the handler.
+     *
+     * @param name the handler name
+     * @return HTTP Metric for the handler
      */
-    public HttpMetrics httpMetrics(String name) {
-        return new HttpMetrics(name, this);
+    public HttpMetric http(String name) {
+        return new HttpMetric(name, this);
+    }
+
+    private static class Props {
+        static final Parameter<String> GRAPHITE_SERVER =
+                Parameter.stringParameter("graphite.server.addr").
+                        withDefault("localhost").
+                        build();
+
+        static final Parameter<Integer> GRAPHITE_PORT =
+                Parameter.integerParameter("graphite.server.port").
+                        withDefault(2003).
+                        withValidator(IntegerValidators.portValidator()).
+                        build();
+
+        static final Parameter<String> GRAPHITE_PREFIX =
+                Parameter.stringParameter("graphite.prefix").
+                        required().
+                        build();
+
+        static final Parameter<Integer> REPORT_PERIOD_SECONDS =
+                Parameter.integerParameter("period").
+                        withDefault(60).
+                        withValidator(IntegerValidators.positive()).
+                        build();
+    }
+
+    /**
+     * @author Gregory Koshelev
+     */
+    public static class MeterImpl implements Meter {
+        private final com.codahale.metrics.Meter meter;
+
+        MeterImpl(com.codahale.metrics.Meter meter) {
+            this.meter = meter;
+        }
+
+        @Override
+        public void mark(long n) {
+            meter.mark(n);
+        }
+
+        @Override
+        public void mark() {
+            meter.mark();
+        }
+    }
+
+    /**
+     * @author Gregory Koshelev
+     */
+    public static class TimerImpl implements Timer {
+        private final com.codahale.metrics.Timer timer;
+
+        public TimerImpl(com.codahale.metrics.Timer timer) {
+            this.timer = timer;
+        }
+
+        @Override
+        public void update(long duration, TimeUnit unit) {
+            timer.update(duration, unit);
+        }
+    }
+
+    /**
+     * @author Gregory Koshelev
+     */
+    public static class CounterImpl implements Counter {
+        private final com.codahale.metrics.Counter counter;
+
+        public CounterImpl(com.codahale.metrics.Counter counter) {
+            this.counter = counter;
+        }
+
+        @Override
+        public void increment(long value) {
+            counter.inc(value);
+        }
+
+        @Override
+        public void decrement(long value) {
+            counter.dec(value);
+        }
     }
 }

@@ -21,6 +21,34 @@ public class Variant {
         return value;
     }
 
+    public int sizeOf() {
+        return Type.TYPE.size + sizeOfValue();
+    }
+
+    private int sizeOfValue() {
+        switch (type) {
+            case BYTE:
+            case SHORT:
+            case INTEGER:
+            case LONG:
+            case FLAG:
+            case FLOAT:
+            case DOUBLE:
+            case UUID:
+            case NULL:
+                return type.size;
+            case CONTAINER:
+                return ((Container) value).sizeOf();
+            case STRING:
+                return Sizes.sizeOfString((byte[]) value);
+            case VECTOR:
+                return ((Vector) value).sizeOf();
+            default:
+                return 0;
+        }
+
+    }
+
     public static Variant ofContainer(Container container) {
         return new Variant(Type.CONTAINER, container);
     }
@@ -55,6 +83,18 @@ public class Variant {
 
     public static Variant ofString(String s) {
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        return new Variant(Type.STRING, bytes);
+    }
+
+    /**
+     * New variant of type {@link Type#STRING} from UTF-8 bytes.
+     * <p>
+     * Passed byte array is used internally in the created variant.
+     *
+     * @param bytes UTF-8 bytes
+     * @return Variant of type {@link Type#STRING}
+     */
+    public static Variant ofString(final byte[] bytes) {
         return new Variant(Type.STRING, bytes);
     }
 

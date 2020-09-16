@@ -1,8 +1,7 @@
 package ru.kontur.vostok.hercules.meta.stream;
 
 import ru.kontur.vostok.hercules.curator.CuratorClient;
-import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.curator.result.DeletionResult;
 import ru.kontur.vostok.hercules.curator.result.ReadResult;
@@ -30,29 +29,29 @@ public class StreamRepository {
         this.serializer = Serializer.forClass(Stream.class);
     }
 
-    public Optional<Stream> read(String name) throws CuratorUnknownException, CuratorInternalException, DeserializationException {
+    public Optional<Stream> read(String name) throws CuratorException, DeserializationException {
         ReadResult readResult = curatorClient.read(zPrefix + '/' + name);
         Optional<byte[]> jsonBytes = readResult.getData();
         return jsonBytes.isPresent() ? Optional.of(deserializer.deserialize(jsonBytes.get())) : Optional.empty();
     }
 
-    public CreationResult create(Stream stream) throws SerializationException, CuratorUnknownException, CuratorInternalException {
+    public CreationResult create(Stream stream) throws CuratorException, SerializationException {
         return curatorClient.create(zPrefix + '/' + stream.getName(), serializer.serialize(stream));
     }
 
-    public List<String> list() throws Exception {
+    public List<String> list() throws CuratorException {
         return curatorClient.children(zPrefix);
     }
 
-    public DeletionResult delete(String name) throws CuratorUnknownException, CuratorInternalException {
+    public DeletionResult delete(String name) throws CuratorException {
         return curatorClient.delete(zPrefix + '/' + name);
     }
 
-    public UpdateResult update(Stream stream) throws SerializationException, CuratorUnknownException, CuratorInternalException {
+    public UpdateResult update(Stream stream) throws CuratorException, SerializationException {
         return curatorClient.update(zPrefix + '/' + stream.getName(), serializer.serialize(stream));
     }
 
-    public boolean exists(String name) throws CuratorUnknownException {
+    public boolean exists(String name) throws CuratorException {
         return curatorClient.exists(zPrefix + '/' + name);
     }
 

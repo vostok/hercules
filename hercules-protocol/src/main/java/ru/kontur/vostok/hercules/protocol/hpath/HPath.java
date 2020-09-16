@@ -1,6 +1,8 @@
 package ru.kontur.vostok.hercules.protocol.hpath;
 
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
@@ -11,11 +13,13 @@ import java.util.NoSuchElementException;
  * @author Gregory Koshelev
  */
 public class HPath {
+    private static final HPath EMPTY = new HPath("", new TinyString[0]);
+
     private final String path;
 
-    private final String[] tags;
+    private final TinyString[] tags;
 
-    private HPath(String path, String[] tags) {
+    private HPath(String path, TinyString[] tags) {
         this.path = path;
         this.tags = tags;
     }
@@ -29,7 +33,7 @@ public class HPath {
         Container current = container;
 
         for (int i = 0; i < size - 1; i++) {
-            String tag = tags[i];
+            TinyString tag = tags[i];
             Variant tagValue = current.get(tag);
             if (tagValue == null || tagValue.getType() != Type.CONTAINER) {
                 return null;
@@ -40,19 +44,28 @@ public class HPath {
         return current.get(tags[size - 1]);
     }
 
-    public String getRootTag() {
+    public TinyString getRootTag() {
         return (tags.length > 0) ? tags[0] : null;
     }
 
-    public HPath getSubHPath() {
-        if (tags.length == 0) {
-            return this;
+    /**
+     * Return sub path is starting with the next tag after the root.
+     * <p>
+     * Return empty sub path (i.e. {@link #empty()} if path is empty itself or it has only root tag.
+     *
+     * @return sub path
+     */
+    public HPath subpath() {
+        if (tags.length == 0 || tags.length == 1) {
+            return EMPTY;
         }
 
-        String[] subTags = new String[tags.length - 1];
+        TinyString[] subTags = new TinyString[tags.length - 1];
         System.arraycopy(tags, 1, subTags, 0, tags.length - 1);
 
-        return fromTags(subTags);
+        String subPath = path.substring(path.indexOf('/') + 1);
+
+        return new HPath(subPath, subTags);
     }
 
     public String getPath() {
@@ -63,24 +76,62 @@ public class HPath {
         return new TagIterator();
     }
 
-    private static String[] pathToTags(String path) {
-        return (path != null) ? path.split("/") : new String[0];
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof HPath)) {
+            return false;
+        }
+
+        HPath other = (HPath) obj;
+        return path.equals(other.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return path.hashCode();
+    }
+
+    public static HPath fromTag(String tag) {
+        return new HPath(tag, new TinyString[]{TinyString.of(tag)});
+    }
+
+    public static HPath fromTags(String... tags) {
+        return new HPath(tagsToPath(tags), TinyString.toTinyStrings(tags));
+    }
+
+    public static HPath fromPath(@NotNull String path) {
+        if (path.isEmpty()) {
+            return empty();
+        }
+        return new HPath(path, pathToTags(path));
+    }
+
+    public static HPath combine(HPath base, TinyString tag) {
+        int pathLength = base.tags.length + 1;
+        TinyString[] tags = new TinyString[pathLength];
+        System.arraycopy(base.tags, 0, tags, 0, base.tags.length);
+        tags[pathLength - 1] = tag;
+        return new HPath(base.path + "/" + tag.toString(), tags);
+    }
+
+    public static HPath empty() {
+        return EMPTY;
+    }
+
+    public static boolean isNullOrEmpty(HPath path) {
+        return path == null || path == EMPTY;
+    }
+
+    private static TinyString[] pathToTags(String path) {
+        if (path == null) {
+            return new TinyString[0];
+        }
+
+        return TinyString.toTinyStrings(path.split("/"));
     }
 
     private static String tagsToPath(String... tags) {
         return String.join("/", tags);
-    }
-
-    public static HPath fromTag(String tag) {
-        return new HPath(tag, new String[]{tag});
-    }
-
-    public static HPath fromTags(String... tags) {
-        return new HPath(tagsToPath(tags), tags);
-    }
-
-    public static HPath fromPath(String path) {
-        return new HPath(path, pathToTags(path));
     }
 
     /**
@@ -88,7 +139,7 @@ public class HPath {
      * <p>
      * It is not thread-safe.
      */
-    public class TagIterator implements Iterator<String> {
+    public class TagIterator implements Iterator<TinyString> {
         private int cursor = 0;
 
         @Override
@@ -97,7 +148,7 @@ public class HPath {
         }
 
         @Override
-        public String next() {
+        public TinyString next() {
             int i = cursor;
             if (i >= tags.length) {
                 throw new NoSuchElementException();

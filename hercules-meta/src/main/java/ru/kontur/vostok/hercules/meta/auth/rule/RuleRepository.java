@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.meta.auth.rule;
 
 import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 
 import java.util.List;
 
@@ -14,16 +15,16 @@ public class RuleRepository {
         this.curatorClient = curatorClient;
     }
 
-    public List<String> list() throws Exception {
+    public List<String> list() throws CuratorException {
         List<String> rules = curatorClient.children(zPrefix);
         return rules;
     }
 
-    public void create(String rule) throws Exception {
+    public void create(String rule) throws CuratorException {
         curatorClient.createIfAbsent(zPrefix + "/" + rule);
     }
 
-    public void delete(String rule) throws Exception {
+    public void delete(String rule) throws CuratorException {
         curatorClient.delete(zPrefix + "/" + rule);
     }
 

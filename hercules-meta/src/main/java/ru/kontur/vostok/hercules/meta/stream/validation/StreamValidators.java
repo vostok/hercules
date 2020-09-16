@@ -7,20 +7,24 @@ import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
-import java.util.Optional;
-
 /**
+ * TODO: Should be rewritten (broken style, misleading naming, confusing code)
+ *
  * @author Petr Demenev
  */
 public final class StreamValidators {
-
     private static final String regex = "[a-z0-9_]{1,48}";
 
     private static final Validator<String> nameValidator = StringValidators.matchesWith(regex);
     private static final Validator<Integer> partitionValidator = IntegerValidators.positive();
     private static final Validator<Long> ttlValidator = LongValidators.positive();
+    private static final Validator<String> DESCRIPTION_VALIDATOR =
+            (x) -> (x == null || x.length() < 1_000)
+                    ? ValidationResult.ok()
+                    : ValidationResult.error("String exceeds length limit 1000");
 
     private static final Validator<BaseStream> baseStreamValidator = baseStreamValidator();
     private static final Validator<DerivedStream> derivedStreamValidator = derivedStreamValidator();
@@ -30,9 +34,9 @@ public final class StreamValidators {
      */
     public static Validator<Stream> streamValidatorForHandler() {
         return stream -> {
-            if(stream instanceof BaseStream) {
+            if (stream instanceof BaseStream) {
                 return baseStreamValidator.validate((BaseStream) stream);
-            } else if(stream instanceof DerivedStream) {
+            } else if (stream instanceof DerivedStream) {
                 return derivedStreamValidator.validate((DerivedStream) stream);
             }
             throw new NotImplementedException(String.format(
@@ -43,22 +47,27 @@ public final class StreamValidators {
 
     private static <T extends Stream> Validator<T> streamValidator() {
         return stream -> {
-            final Optional<String> nameError = nameValidator.validate(stream.getName());
-            if(nameError.isPresent()) {
-                return Optional.of("Name is invalid: " + nameError.get());
+            ValidationResult result = nameValidator.validate(stream.getName());
+            if (result.isError()) {
+                return ValidationResult.error("Name is invalid: " + result.error());
             }
 
-            final Optional<String> partitionError = partitionValidator.validate(stream.getPartitions());
-            if(partitionError.isPresent()) {
-                return Optional.of("Partition is invalid: " + partitionError.get());
+            result = partitionValidator.validate(stream.getPartitions());
+            if (result.isError()) {
+                return ValidationResult.error("Partition is invalid: " + result.error());
             }
 
-            final Optional<String> ttlError = ttlValidator.validate(stream.getTtl());
-            if(ttlError.isPresent()){
-                return Optional.of("Ttl is invalid: " + ttlError.get());
+            result = ttlValidator.validate(stream.getTtl());
+            if (result.isError()) {
+                return ValidationResult.error("Ttl is invalid: " + result.error());
             }
 
-            return Optional.empty();
+            result = DESCRIPTION_VALIDATOR.validate(stream.getDescription());
+            if (result.isError()) {
+                return ValidationResult.error("Description is invalid: " + result.error());
+            }
+
+            return ValidationResult.ok();
         };
     }
 
@@ -71,29 +80,25 @@ public final class StreamValidators {
         final Validator<DerivedStream> baseStreamNamesValidator = baseStreamNamesValidator();
 
         return stream -> {
-            final Optional<String> streamError = streamValidator.validate(stream);
-            if(streamError.isPresent()) {
-                return streamError;
+            ValidationResult result = streamValidator.validate(stream);
+            if (result.isError()) {
+                return result;
             }
 
-            final Optional<String> baseStreamsNamesError = baseStreamNamesValidator.validate(stream);
-            if (baseStreamsNamesError.isPresent()) {
-                return baseStreamsNamesError;
-            }
-
-            return Optional.empty();
+            result = baseStreamNamesValidator.validate(stream);
+            return result;
         };
     }
 
     private static Validator<DerivedStream> baseStreamNamesValidator() {
         return stream -> {
-            for(String streamName : stream.getStreams()) {
-                final Optional<String> nameError = nameValidator.validate(streamName);
-                if(nameError.isPresent()) {
-                    return Optional.of("One of source streams is invalid: " + nameError.get());
+            for (String streamName : stream.getStreams()) {
+                final ValidationResult result = nameValidator.validate(streamName);
+                if (result.isError()) {
+                    return ValidationResult.error("One of source streams is invalid: " + result.error());
                 }
             }
-            return Optional.empty();
+            return ValidationResult.ok();
         };
     }
 

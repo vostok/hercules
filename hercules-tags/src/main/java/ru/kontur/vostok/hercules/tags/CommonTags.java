@@ -28,16 +28,9 @@ public final class CommonTags {
             .build();
 
     /**
-     * Application tag
+     * Subproject tag
      */
-    public static final TagDescription<Optional<String>> APPLICATION_TAG = TagDescriptionBuilder.string("application")
-            .optional()
-            .build();
-
-    /**
-     * Service tag
-     */
-    public static final TagDescription<Optional<String>> SERVICE_TAG = TagDescriptionBuilder.string("service")
+    public static final TagDescription<Optional<String>> SUBPROJECT_TAG = TagDescriptionBuilder.string("subproject")
             .optional()
             .build();
 

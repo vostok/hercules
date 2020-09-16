@@ -1,126 +1,64 @@
 package ru.kontur.vostok.hercules.util.validation;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Predicate;
-
 /**
- * Validators - collection of validators
+ * Validators
  *
- * @author Kirill Sulim
+ * @author Gregory Koshelev
  */
 public final class Validators {
+    private static Validator<?> ANY = (x) -> ValidationResult.ok();
+    private static Validator<?> NOT_NULL = (x) -> x != null ? ValidationResult.ok() : ValidationResult.missed();
 
     /**
-     * Create validator from predicate {@code predicate} with validation error message {@code errorMessage}
+     * Validator accepts any value. Also, null value is acceptable.
      *
-     * @param predicate predicate
-     * @param errorMessage validation error message
+     * @param <T> the value type
      * @return validator
      */
-    public static <T> Validator<T> fromPredicate(Predicate<T> predicate, String errorMessage) {
-        return value -> {
-            if (predicate.test(value)) {
-                return Optional.empty();
-            } else {
-                return Optional.of(errorMessage);
-            }
+    @SuppressWarnings("unchecked")
+    public static <T> Validator<T> any() {
+        return (Validator<T>) ANY;
+    }
+
+    /**
+     * Validator accepts not null values.
+     *
+     * @param <T> the value type
+     * @return validator
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Validator<T> notNull() {
+        return (Validator<T>) NOT_NULL;
+    }
+
+    /**
+     * Validator accepts values which are accepted by both validators.
+     *
+     * @param v1  the first validator
+     * @param v2  the second validator
+     * @param <T> the value type
+     * @return validator
+     */
+    public static <T> Validator<T> and(Validator<T> v1, Validator<T> v2) {
+        return (x) -> {
+            ValidationResult result = v1.validate(x);
+            return result.isOk() ? v2.validate(x) : result;
         };
     }
 
     /**
-     * Create greater than {@code lowerExclusiveBound} validator
+     * Validator accepts values which are accepted by at least one validator.
      *
-     * @param lowerExclusiveBound lower exclusive bound
+     * @param v1  the first validator
+     * @param v2  the second validator
+     * @param <T> the value type
      * @return validator
      */
-    public static <T extends Comparable<T>> Validator<T> greaterThan(T lowerExclusiveBound) {
-        return value -> {
-            if (lowerExclusiveBound.compareTo(value) < 0) {
-                return Optional.empty();
-            } else {
-                return Optional.of(String.format("Value must be greater than '%s' but was '%s'", lowerExclusiveBound, value));
-            }
+    public static <T> Validator<T> or(Validator<T> v1, Validator<T> v2) {
+        return (x) -> {
+            ValidationResult result = v1.validate(x);
+            return result.isOk() ? result : v2.validate(x);
         };
-    }
-
-    /**
-     * Create greater or equals {@code lowerInclusiveBound} validator
-     *
-     * @param lowerInclusiveBound lower inclusive bound
-     * @return validator
-     */
-    public static  <T extends Comparable<T>> Validator<T> greaterOrEquals(T lowerInclusiveBound) {
-        return value -> {
-            if (lowerInclusiveBound.compareTo(value) <= 0) {
-                return Optional.empty();
-            } else {
-                return Optional.of(String.format("Value must be greater or equals '%s' but was '%s'", lowerInclusiveBound, value));
-            }
-        };
-    }
-
-    /**
-     * Create lesser than {@code upperExclusiveBound} validator
-     *
-     * @param upperExclusiveBound upper exclusive bound
-     * @return validator
-     */
-    public static  <T extends Comparable<T>> Validator<T> lesserThan(T upperExclusiveBound) {
-        return value -> {
-            if (0 < upperExclusiveBound.compareTo(value)) {
-                return Optional.empty();
-            } else {
-                return Optional.of(String.format("Value must be lesser than '%s' but was '%s'", upperExclusiveBound, value));
-            }
-        };
-    }
-
-    /**
-     * Create lesser or equals {@code upperInclusiveBound} validator
-     *
-     * @param upperInclusiveBound upper inclusive bound
-     * @return validator
-     */
-    public static  <T extends Comparable<T>> Validator<T> lesserOrEquals(T upperInclusiveBound) {
-        return value -> {
-            if (0 <= upperInclusiveBound.compareTo(value)) {
-                return Optional.empty();
-            } else {
-                return Optional.of(String.format("Value must be lesser or equals '%s' but was '%s'", upperInclusiveBound, value));
-            }
-        };
-    }
-
-    /**
-     * Create interval between {@code lowerInclusiveBound} inclusive and {@code upperExclusiveBound} exclusive validator
-     *
-     * @param lowerInclusiveBound lower inclusive bound
-     * @param upperExclusiveBound upper exclusive bound
-     * @return validator
-     */
-    public static <T extends Comparable<T>> Validator<T> interval(T lowerInclusiveBound, T upperExclusiveBound) {
-        return value -> {
-            if (lowerInclusiveBound.compareTo(value) <= 0 && 0 < upperExclusiveBound.compareTo(value)) {
-                return Optional.empty();
-            } else {
-                return Optional.of(String.format(
-                        "Value must be between '%s' (inclusive) and '%s' (exclusive), but was '%s'",
-                        lowerInclusiveBound,
-                        upperExclusiveBound,
-                        value
-                ));
-            }
-        };
-    }
-
-    /**
-     * Return port validator
-     *
-     * @return validator
-     */
-    public static Validator<Integer> portValidator() {
-        return interval(0, 65_536);
     }
 
     private Validators() {

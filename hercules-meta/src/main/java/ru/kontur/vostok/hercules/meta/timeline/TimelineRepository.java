@@ -1,8 +1,7 @@
 package ru.kontur.vostok.hercules.meta.timeline;
 
 import ru.kontur.vostok.hercules.curator.CuratorClient;
-import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.curator.result.DeletionResult;
 import ru.kontur.vostok.hercules.curator.result.ReadResult;
@@ -30,29 +29,29 @@ public class TimelineRepository {
         this.serializer = Serializer.forClass(Timeline.class);
     }
 
-    public Optional<Timeline> read(String name) throws CuratorUnknownException, CuratorInternalException, DeserializationException {
+    public Optional<Timeline> read(String name) throws CuratorException, DeserializationException {
         ReadResult readResult = curatorClient.read(zPrefix + '/' + name);
         Optional<byte[]> jsonBytes = readResult.getData();
         return jsonBytes.isPresent() ? Optional.of(deserializer.deserialize(jsonBytes.get())) : Optional.empty();
     }
 
-    public CreationResult create(Timeline timeline) throws SerializationException, CuratorUnknownException, CuratorInternalException {
+    public CreationResult create(Timeline timeline) throws CuratorException, SerializationException {
         return curatorClient.create(zPrefix + '/' + timeline.getName(), serializer.serialize(timeline));
     }
 
-    public UpdateResult update(Timeline timeline) throws SerializationException, CuratorUnknownException, CuratorInternalException {
+    public UpdateResult update(Timeline timeline) throws CuratorException, SerializationException {
         return curatorClient.update(zPrefix + '/' + timeline.getName(), serializer.serialize(timeline));
     }
 
-    public List<String> list() throws Exception {
+    public List<String> list() throws CuratorException {
         return curatorClient.children(zPrefix);
     }
 
-    public DeletionResult delete(String name) throws CuratorUnknownException, CuratorInternalException {
+    public DeletionResult delete(String name) throws CuratorException {
         return curatorClient.delete(zPrefix + '/' + name);
     }
 
-    public boolean exists(String name) throws CuratorUnknownException {
+    public boolean exists(String name) throws CuratorException {
         return curatorClient.exists(zPrefix + '/' + name);
     }
 

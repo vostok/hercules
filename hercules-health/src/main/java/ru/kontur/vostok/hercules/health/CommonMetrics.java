@@ -1,11 +1,9 @@
 package ru.kontur.vostok.hercules.health;
 
 import ru.kontur.vostok.hercules.util.collection.CollectionUtil;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -28,34 +26,11 @@ public final class CommonMetrics {
     }
 
     public static void registerCommonMetrics(MetricsCollector metricsCollector) {
-        registerMemoryMetrics(metricsCollector);
+        MemoryMetrics.register(metricsCollector);
+
         registerSystemMetrics(metricsCollector);
         registerGarbageCollectionMetrics(metricsCollector);
         registerThreadsMetrics(metricsCollector);
-    }
-
-    public static void registerCommonMetrics(MetricsCollector metricsCollector, String ... patterns) {
-        registerMemoryMetrics(metricsCollector);
-        registerSystemMetrics(metricsCollector);
-        registerGarbageCollectionMetrics(metricsCollector);
-        registerThreadsMetrics(metricsCollector, patterns);
-    }
-
-    public static void registerMemoryMetrics(MetricsCollector metricsCollector) {
-        final Runtime runtime = Runtime.getRuntime();
-        metricsCollector.gauge("memory.totalMemoryBytes", runtime::totalMemory);
-        metricsCollector.gauge("memory.freeMemoryBytes", runtime::freeMemory);
-        metricsCollector.gauge("memory.usedMemoryBytes", () -> runtime.totalMemory() - runtime.freeMemory());
-        metricsCollector.gauge("memory.maxMemoryBytes", runtime::maxMemory);
-        metricsCollector.gauge("memory.totalFreeMemoryBytes", () -> runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory());
-
-        final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
-        if (Objects.nonNull(memoryMXBean)) {
-            metricsCollector.gauge("memory.heapMaxBytes", () -> memoryMXBean.getHeapMemoryUsage().getMax());
-            metricsCollector.gauge("memory.heapUsedBytes", () -> memoryMXBean.getHeapMemoryUsage().getUsed());
-            metricsCollector.gauge("memory.nonHeapMaxBytes", () -> memoryMXBean.getNonHeapMemoryUsage().getMax());
-            metricsCollector.gauge("memory.nonHeapUsedBytes", () -> memoryMXBean.getNonHeapMemoryUsage().getUsed());
-        }
     }
 
     public static void registerSystemMetrics(MetricsCollector metricsCollector) {
@@ -73,7 +48,7 @@ public final class CommonMetrics {
         }
     }
 
-    public static void registerThreadsMetrics(MetricsCollector metricsCollector, String ... patterns) {
+    public static void registerThreadsMetrics(MetricsCollector metricsCollector, String... patterns) {
         final List<Pattern> compiledPatterns = Arrays.stream(patterns).map(Pattern::compile).collect(Collectors.toList());
 
         final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
@@ -81,15 +56,12 @@ public final class CommonMetrics {
             for (Thread.State state : Thread.State.values()) {
                 metricsCollector.gauge(
                         "threads.states." + state.name() + ".count",
-                        () -> getThreadCount(threadMXBean, state)
-                );
+                        () -> getThreadCount(threadMXBean, state));
 
                 for (Pattern pattern : compiledPatterns) {
-                    final String patternMetricName = GraphiteMetricsUtil.sanitizeMetricName(pattern.pattern());
                     metricsCollector.gauge(
-                            "threads.pattern." + patternMetricName + ".state." + state.name() + ".count",
-                            () -> getThreadCount(threadMXBean, pattern, state)
-                    );
+                            "threads.pattern." + MetricsUtil.sanitizeMetricName(pattern.pattern()) + ".state." + state.name() + ".count",
+                            () -> getThreadCount(threadMXBean, pattern, state));
                 }
             }
         }

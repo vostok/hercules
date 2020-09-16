@@ -1,32 +1,41 @@
 package ru.kontur.vostok.hercules.management.api.blacklist;
 
-import io.undertow.server.HttpServerExchange;
-import ru.kontur.vostok.hercules.auth.AdminAuthManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
+import ru.kontur.vostok.hercules.management.api.QueryParameters;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.BlacklistRepository;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
-
-import java.util.Optional;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 /**
  * @author Gregory Koshelev
  */
 public class RemoveBlacklistHandler extends BlacklistHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoveBlacklistHandler.class);
+
     public RemoveBlacklistHandler(BlacklistRepository repository) {
         super(repository);
     }
 
     @Override
-    public void process(HttpServerExchange exchange) throws Exception {
-        Optional<String> key = ExchangeUtil.extractQueryParam(exchange, "key");
-        if (!key.isPresent()) {
-            ResponseUtil.badRequest(exchange);
+    public void handle(HttpServerRequest request) {
+        Parameter<String>.ParameterValue key = QueryUtil.get(QueryParameters.KEY, request);
+        if (key.isError()) {
+            request.complete(HttpStatusCodes.BAD_REQUEST);
             return;
         }
 
-        //TODO: Validate key format
+        try {
+            repository.remove(key.get());
+        } catch (CuratorException ex) {
+            LOGGER.error("Add key to blacklist error", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return;
+        }
 
-        repository.remove(key.get());
-        ResponseUtil.ok(exchange);
+        request.complete(HttpStatusCodes.OK);
     }
 }

@@ -1,28 +1,23 @@
-# Hercules Management Api
-Management Api is used for working with streams, timelines, rules and blacklist in Apache Kafka.
-Management Api provides following opportunities:
+# Hercules Management API
+Management API is used for working with streams, timelines, rules and blacklist.
+Management API provides following methods:
 * Streams:
-  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for create stream;
-  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for delete stream;
-  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for change TTL of stream;
-  * Gives the command to [Stream Manager](../hercules-stream-manager/README.md) for increase partitions count in stream;
+  * Create / delete / change Streams using [Stream Manager](../hercules-stream-manager/README.md);
   * Show all streams;
   * Get info about stream.
   
 * Timelines:
-  * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for creat timeline;
-  * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for delete timeline;
-  * Gives the command to [Timeline Manager](../hercules-timeline-manager/README.md) for change TTL of timeline;
-  * Show all timelines;
-  * Get info about timeline.
+  * Create / delete / change Timelines using [Timeline Manager](../hercules-timeline-manager/README.md);
+  * Show all Timelines;
+  * Get info about Timeline.
 
 * Rules:
-  * Create rule;
+  * Set rules for API Key;
   * Show all rules.
   
 * Blacklist:
-  * Add apiKey to blacklist;
-  * Remove apiKey from blacklist;
+  * Add API Key to blacklist;
+  * Remove API Key from blacklist;
   * Show all records in blacklist.
   
 ## API methods
@@ -82,27 +77,41 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Required*
+
+`Content-Type: application/json`  
+*Required*
+
+**Query parameters**
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Request body:**
 
-```
-"type": type of stream
-"name": name of stream
-"partitions": count of partition in stream
-"shardingKey": sharding keys array
-"ttl": time to live
-```
+Request body contains JSON-object with following properties:
+- `type` - the Stream type (`base` or `derived`), *string*
+- `name` - the Stream name, *string*
+- `partitions` - the Stream partitions count, *integer*
+- `shardingKey` - Sharding key is array of [HPath](../hercules-protocol/doc/h-path.md), *array of strings*
+- `ttl` - events time to live (TTL) in milliseconds, *integer*
+- `description` - the Stream description, *string*
+- `streams` - streams to fill target derived stream (for `derived` streams only), *array of strings*
+- `filters` - filters array (for `derived` streams only, *array of objects*
 
 **Request body example:**
 
 ```
 {
   "type": "base",
-  "name": "project_test_stream_0",
+  "name": "project_test_stream",
   "partitions": 1,
   "shardingKey": [],
-  "ttl": 3600000
+  "ttl": 3600000,
+  "description": "Test stream"
 }
 ```
 
@@ -128,11 +137,17 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the stream.  
+*Required*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -156,11 +171,13 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - any API Key. Required.
+`apiKey` or `masterApiKey`  
+Any valid API Key.  
+*Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -189,13 +206,19 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Required*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
-`newPartitions` - new count of partition in stream. Required.
+`newPartitions` - new count of partitions in stream. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -211,9 +234,9 @@ ContentType: application/json
 
 `409` - conflict. New partition count less then old.
 
-### Change ttl of stream
+### Change TTL of stream
 
-**Description:** The method to change ttl of stream.
+**Description:** The method to change TTL of stream.
 
 **Method:** `POST`
 
@@ -221,13 +244,19 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Required*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
-`newTtl` - new ttl of stream. Required.
+`newTtl` - new TTL of stream. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -251,15 +280,17 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Required*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -268,7 +299,8 @@ ContentType: application/json
     "name": "stream",
     "partitions": 3,
     "shardingKey": [],
-    "ttl": 86300000
+    "ttl": 86300000,
+    "description": "Some stream"
 }
 ```
 
@@ -296,19 +328,30 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Required*
+
+`Content-Type: application/json`  
+*Required*
+
+**Query parameters**
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Request body:**
 
-```
-"name": name of timeline
-"slices": count of slice
-"shardingKey": sharding keys array
-"ttl": time to live
-"timetrapSize": timetrap size
-"streams": streams in timeline
-"filters": filters array
-```
+Request body contains JSON-object with following properties:
+- `name` - the Timeline name, *string*
+- `slices` - slices count, *integer*
+- `shardingKey` - Sharding Key is array of [HPath](../hercules-protocol/doc/h-path.md), *array of strings*
+- `ttl` - events time to live (TTL) in milliseconds, *integer*
+- `timetrapSize` - timetrap size in milliseconds, *integer*
+- `streams` - streams to fill target timeline, *array of strings*
+- `filters` - filters array, *array of objects*
+- `description` - description, *string*
 
 **Request body example:**
 
@@ -324,9 +367,8 @@ ContentType: application/json
   "streams": [
     "stream"
   ],
-  "filters": [
-    "filter"
-  ]
+  "filters": [],
+  "description": "Some timeline"
 }
 ```
 
@@ -352,11 +394,17 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the timeline is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the timeline.  
+*Required*
 
 **Query parameters:**
 
-`timeline` - the name of timeline. Required.
+`timeline` - the name of timeline. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
@@ -380,11 +428,13 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - any API Key. Required.
+`apiKey` or `masterApiKey`  
+Any valid API Key.  
+*Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -403,7 +453,7 @@ ContentType: application/json
 
 `401` - apiKey is absent.
 
-### Change ttl of timeline
+### Change TTL of timeline
 
 **Description:** The method to change ttl of timeline.
 
@@ -413,17 +463,23 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the stream is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Required*
 
 **Query parameters:**
 
-`timeline` - the name of timeline. Required.
+`timeline` - the name of timeline. *Required*
 
-`newTtl` - new ttl of timeline. Required.
+`newTtl` - new TTL of timeline. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
 
 **Response codes:**
 
-`200` - successfully change ttl of timeline.
+`200` - successfully change TTL of timeline.
 
 `400` - bad request.
 
@@ -443,15 +499,17 @@ ContentType: application/json
 
 **Request headers**
 
-`apiKey` - the API Key with manage access to the timeline is specified. Required.
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the timeline.  
+*Required*
 
 **Query parameters:**
 
-`timeline` - the name of timeline. Required.
+`timeline` - the name of timeline. *Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -464,7 +522,8 @@ ContentType: application/json
     "streams": [
         "stream"
     ],
-    "filters": []
+    "filters": [],
+    "description": "Some timeline"
 }
 ```
 
@@ -492,15 +551,20 @@ ContentType: application/json
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`
+The API key for rules management.  
+*Required*
 
 **Query parameters:**
 
-`key` - the API key for which rule is set. Required.
+`key` - the API key for which rule is set. *Required*
+Key must contain only lowercase alphanumeric characters and underscore.
+The end of the key must contain an UUID in lowercase without a hyphens.
+Example: `key_name_5c43280c246f41f5acdebc31a6436e8c`.
 
-`pattern` - pattern for stream or timeline names. Required.
+`pattern` - pattern for stream or timeline names. *Required*
 
-`rights` - combination of read, write and modified rights. Required. 
+`rights` - combination of read, write and manage rights. *Required*  
 Available values : ---, r--, -w-, --m, rw-, r-m, -wm, rwm.
 
 **Response codes:**
@@ -521,11 +585,13 @@ Available values : ---, r--, -w-, --m, rw-, r-m, -wm, rwm.
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`  
+The API key for rules management.  
+*Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -556,11 +622,13 @@ ContentType: application/json
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`  
+The API key for rules management.  
+*Required*
 
 **Query parameters:**
 
-`key` - the API key for adding to blacklist. Required.
+`key` - the API key for adding to blacklist. *Required*
 
 **Response codes:**
 
@@ -580,11 +648,13 @@ ContentType: application/json
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`  
+The API key for rules management.  
+*Required*
 
 **Query parameters:**
 
-`key` - the API key for removing from blacklist. Required.
+`key` - the API key for removing from blacklist. *Required*
 
 **Response codes:**
 
@@ -604,11 +674,13 @@ ContentType: application/json
 
 **Request headers**
 
-`masterApiKey` - the API key for rules management. Required.
+`masterApiKey`  
+The API key for rules management.  
+*Required*
 
 **Response headers:**
 
-ContentType: application/json
+`Content-Type: application/json`
 
 **Response body example**
 ```
@@ -630,6 +702,18 @@ ContentType: application/json
 ## Settings
 Application is configured through properties file.
 
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
+
+`application.port` - server port, default value: `8080`
+
+### Application context settings
+`context.environment` - id of environment
+
+`context.zone` - id of zone
+
+`context.instance.id` - id of instance
+
 ### Apache Curator settings
 See Curator Config from Apache Curator documentation. Main settings are presented below.
 
@@ -645,21 +729,6 @@ See Curator Config from Apache Curator documentation. Main settings are presente
 
 `curator.retryPolicy.maxSleepTime` - default value: `8000`
 
-### Apache Kafka settings
-See Apache Kafka Config from Apache Kafka documentation. Main settings are presented below.
-
-`kafka.bootstrap.servers`
-
-`kafka.acks`
-
-`kafka.retries`
-
-`kafka.batch.size`
-
-`kafka.linger.ms`
-
-`kafka.buffer.memory`
-
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance to which metrics are sent, default value: `localhost`
 
@@ -670,16 +739,14 @@ See Apache Kafka Config from Apache Kafka documentation. Main settings are prese
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
 ### Http Server settings
-`http.server.host` - server host, default value: `0.0.0.0`
+`http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
-`http.server.port` - server port, default value: `6309`
+`http.server.workerThreads` - the number of worker threads. Worker threads are used to process long running requests and perform blocking tasks. Default value is implementation specific.
 
-### Application context settings
-`context.instance.id` - id of instance
+`http.server.rootPath` - base url, default value: `/`
 
-`context.environment` - id of environment
-
-`context.zone` - id of zone
+### Management API settings
+`keys` - master API keys.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-management-api.jar application.properties=file://path/to/file/application.properties`
@@ -695,6 +762,14 @@ Management Api uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK sh
 
 ### `application.properties` sample:
 ```properties
+keys=123,456
+
+application.host=0.0.0.0
+application.port=6309
+
+context.environment=dev
+context.zone=default
+context.instance.id=1
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000
@@ -703,24 +778,12 @@ curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
 
-kafka.bootstrap.servers=localhost:9092
-kafka.acks=all
-kafka.retries=0
-kafka.batch.size=16384
-kafka.linger.ms=1
-kafka.buffer.memory=33554432
-
-keys=123,456
-
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-http.server.host=0.0.0.0
-http.server.port=6309
-
-context.instance.id=1
-context.environment=dev
-context.zone=default
+http.server.ioThreads=4
+http.server.workerThreads=16
+http.server.rootPath=/
 ```

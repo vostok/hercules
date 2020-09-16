@@ -4,10 +4,14 @@ Elastic Sink is used to move Log Events from Kafka to Elasticsearch.
 ## Settings
 Application is configured through properties file.
 
-### Sink settings
-`sink.poolSize` - number of threads are reading from Apache Kafka, default value: `1`
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
 
-`sink.senderTimeoutMs` - time quota to process Log Events by elastic, default value: `2000`
+`application.port` - server port, default value: `8080`
+
+### Sink settings
+#### Common settings
+`sink.poolSize` - number of threads are reading from Apache Kafka, default value: `1`
 
 `sink.pollTimeoutMs` - poll duration when read from Apache Kafka, default value: `6000`
 
@@ -21,23 +25,79 @@ Application is configured through properties file.
 
 `sink.consumer.max.poll.interval.ms` - time, after which Apache Kafka will exclude the consumer from group if it doesn't poll or commit
 
-`sink.sender.elastic.hosts` - list of elastic hosts
+`sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
 
-`sink.sender.elastic.retryTimeoutMs` - backoff timeout to retry send to elastic, default value: `30000`
+#### Filter settings
+`sink.filter.list` - list of filter classes (inheritors of the `ru.kontur.vostok.hercules.sink.filter.EventFilter` class).
+Properties for each defined filter under the scope `N`, where `N` is the position of the filter in the property `list`.
+See `ru.kontur.vostok.hercules.sink.filter.EventFilter` for details.
 
-`sink.sender.elastic.connectionTimeoutMs` - connection timeout of elastic client, default value: `1000`
-
-`sink.sender.elastic.connectionRequestTimeoutMs` - timeout for request connection of elastic client, default value: `500`
-
-`sink.sender.elastic.socketTimeoutMs` - timeout for response from elastic, default value: `30000`
-
+#### Sender settings
 `sink.sender.pingPeriodMs` - elastic server ping period, default value: `5000`
-
-`sink.sender.retryOnUnknownErrors` - should retry request to elastic in case of unknown errors, default value: `false`
 
 `sink.sender.retryLimit` - count of trying send batch with retryable errors, default value: `3`
 
-`sink.sender.elastic.mergePropertiesTagToRoot` - flag for moving the contents of the properties container to the root of the object, default value: `false`
+`sink.sender.retryOnUnknownErrors` - should retry request to elastic in case of unknown errors, default value: `false`
+
+##### Index Settings
+`sink.sender.elastic.index.policy` - index policy: should use static index name, index per day or index lifecycle management. Should be one of `STATIC`, `DAILY` or `ILM`, respectively, default value: `DAILY`
+
+`sink.sender.elastic.index.resolver.index.name` - static index name if index policy `STATIC` is used
+
+`sink.sender.elastic.index.resolver.index.path` - the optional path of the tag with index name. Should be valid HPath if present. Index policy should be `ILM` or `DAILY`
+
+`sink.sender.elastic.index.resolver.index.tags` - the optional tags to build index name if no stored index name from above setting.
+Each tag definition should be a valid HPath. Tag is optional if HPath ends with `?`. Index policy should be `ILM` or `DAILY`
+
+##### Format Settings
+`sink.sender.elastic.format.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`
+
+`sink.sender.elastic.format.timestamp.field` - field name for event timestamp, default value: `@timestamp`
+
+`sink.sender.elastic.format.timestamp.format` - timestamp field format is compatible with `java.time.format.DateTimeFormatter`,
+default value: `yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX`
+
+`sink.sender.elastic.format.file` - path to the mapping file. Can use `resource://log-event.mapping` if sink processes logs. See `ru.kontur.vostok.hercules.json.mapping.MappingLoader` for details, required
+
+##### Elastic Client settings
+`sink.sender.elastic.client.hosts` - list of elastic hosts
+
+`sink.sender.elastic.client.maxConnections` - maximum connections for underlying http client, default value: `30`
+
+`sink.sender.elastic.client.maxConnectionsPerRoute` - maximum connections per route for underlying http client, default value: `10`
+
+`sink.sender.elastic.client.retryTimeoutMs` - backoff timeout to retry send to elastic, default value: `30000`
+
+`sink.sender.elastic.client.connectionTimeoutMs` - connection timeout of elastic client, default value: `1000`
+
+`sink.sender.elastic.client.connectionRequestTimeoutMs` - timeout for request connection of elastic client, default value: `500`
+
+`sink.sender.elastic.client.socketTimeoutMs` - timeout for response from elastic, default value: `30000`
+
+`sink.sender.elastic.client.redefinedExceptions` - list of errors, which are retryable, but temporarily are treated as non-retryable, list is empty by default
+
+`sink.sender.elastic.client.index.creation.enable` - should create index in case of `index_not_found_exception`, default value: `false`
+  
+`sink.sender.elastic.client.compression.gzip.enable` - flag for enable gzip compression when sending to Elastic, default value: `false`
+ 
+##### Leprosery settings
+`sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`
+
+`sink.sender.leprosery.stream` - stream name for writing non-retryable errors
+ 
+`sink.sender.leprosery.apiKey` - key for writing non-retryable errors
+
+`sink.sender.leprosery.index`- index name for writing non-retryable errors
+
+`sink.sender.leprosery.gate.client.urls` - list of Gate urls
+
+`sink.sender.leprosery.gate.client.requestTimeout` - timeout (ms) of response from gate client, default value: 3000
+
+`sink.sender.leprosery.gate.client.connectionTimeout` - timeout (ms) of try connecting to host, if exceeded expectation then try to another host, default value: 30000
+
+`sink.sender.leprosery.gate.client.connectionCount` - count of simultaneous connections, default value: 1000
+
+`sink.sender.leprosery.gate.client.greyListElementsRecoveryTimeMs` - period (ms) in grey list
 
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
@@ -48,17 +108,17 @@ Application is configured through properties file.
 
 `metrics.period` - the period to send metrics to graphite, default value: `60`
 
-### HTTP Server settings
-`http.server.host` - server host, default value: `"0.0.0.0"`
-
-`http.server.port` - server port
-
 ### Application context settings
 `context.instance.id` - id of instance
 
 `context.environment` - deployment environment (production, staging and so on)
 
 `context.zone` - id of zone
+
+### Http Server settings
+`http.server.ioThreads` - the number of IO threads. Default value: `1`.
+
+`http.server.workerThreads` - the number of worker threads. Default value: `1`.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-elastic-sink.jar application.properties=file://path/to/file/application.properties`
@@ -74,37 +134,75 @@ Streams with log events should be predefined.
 
 ### `application.properties` sample:
 ```properties
+application.host=0.0.0.0
+application.port=6501
+
 sink.poolSize=3
-sink.senderTimeoutMs=120000
 sink.pollTimeoutMs=5000
 sink.batchSize=10000
 sink.pattern=logs_*
 
-sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
+sink.consumer.bootstrap.servers=localhost:9092
 sink.consumer.max.partition.fetch.bytes=52428800
-
 sink.consumer.max.poll.interval.ms=370000
+sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
-sink.sender.elastic.hosts=localhost:9201
+sink.filter.list=ru.kontur.vostok.hercules.elastic.sink.LogEventFilter
 
-sink.sender.elastic.retryTimeoutMs=120000
-sink.sender.elastic.connectionTimeoutMs=1000
-sink.sender.elastic.connectionRequestTimeoutMs=500
-sink.sender.elastic.socketTimeoutMs=120000
 sink.sender.pingPeriodMs=60000
-sink.sender.retryOnUnknownErrors=true
+
 sink.sender.retryLimit=2
-sink.sender.elastic.mergePropertiesTagToRoot=true
+sink.sender.retryOnUnknownErrors=true
+
+sink.sender.elastic.index.policy=ILM
+
+sink.sender.elastic.index.resolver.index.path=properties/elk-index
+sink.sender.elastic.index.resolver.index.tags=properties/project,properties/environment?,properties/subproject?
+
+sink.sender.elastic.format.timestamp.enable=true
+sink.sender.elastic.format.timestamp.field=@timestamp
+sink.sender.elastic.format.timestamp.format=yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX
+sink.sender.elastic.format.file=file://log-event.mapping
+
+sink.sender.elastic.client.hosts=localhost:9201
+sink.sender.elastic.client.maxConnections=30
+sink.sender.elastic.client.maxConnectionsPerRoute=10
+sink.sender.elastic.client.retryTimeoutMs=120000
+sink.sender.elastic.client.connectionTimeoutMs=1000
+sink.sender.elastic.client.connectionRequestTimeoutMs=500
+sink.sender.elastic.client.socketTimeoutMs=120000
+sink.sender.elastic.client.index.creation.enable=false
+sink.sender.elastic.client.compression.gzip.enable=false
+
+
+sink.sender.leprosery.enable=false
+sink.sender.leprosery.stream=some-dlq-stream-name
+sink.sender.leprosery.apiKey=some-dlq-stream-key
+sink.sender.leprosery.index=some-dlq-index-pattern
+sink.sender.leprosery.gate.client.urls=http://localhost:6306
+sink.sender.leprosery.gate.client.requestTimeout=3000
+sink.sender.leprosery.gate.client.connectionTimeout=5000
+sink.sender.leprosery.gate.client.connectionCount=1000
+sink.sender.leprosery.gate.client.greyListElementsRecoveryTimeMs=6000
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-http.server.host=0.0.0.0
-http.server.port=6501
-
 context.instance.id=1
 context.environment=dev
 context.zone=default
+
+http.server.ioThreads=1
+http.server.workerThreads=1
+```
+
+### `log-event.mapping` sample:
+```text
+# Move all tags from properties container to upper level
+move properties/* to *
+
+# Render structured exception as string stack trace
+transform exception to stackTrace using ru.kontur.vostok.hercules.elastic.sink.format.ExceptionToStackTraceTransformer
 ```

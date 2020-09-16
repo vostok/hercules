@@ -1,0 +1,5 @@
+# Move all tags from properties container to upper level
+move properties/* to *
+
+# Render structured exception as string stack trace
+transform exception to stackTrace using ru.kontur.vostok.hercules.elastic.sink.format.ExceptionToStackTraceTransformer

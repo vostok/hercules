@@ -6,10 +6,13 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.DurationUtil;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -26,32 +29,32 @@ import java.util.concurrent.TimeoutException;
 public class ConsumerPool<K, V> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerPool.class);
 
-    private final Properties properties;
-
     private final Deserializer<K> keyDeserializer;
     private final Deserializer<V> valueDeserializer;
 
-    private final String bootstrapServers;
-    private final int maxPollRecords;
-    private final int poolSize;
+    private final int size;
+    private final Properties consumerProperties;
 
     private ArrayBlockingQueue<Consumer<K, V>> consumers;
 
-    public ConsumerPool(Properties properties, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
-        this.properties = properties;
-
+    public ConsumerPool(Properties properties, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer,
+                        MetricsCollector metricsCollector) {
         this.keyDeserializer = keyDeserializer;
         this.valueDeserializer = valueDeserializer;
 
-        bootstrapServers = Props.BOOTSTRAP_SERVERS.extract(properties);
-        maxPollRecords = Props.MAX_POLL_RECORDS.extract(properties);
-        poolSize = Props.POOL_SIZE.extract(properties);
+        size = PropertiesUtil.get(Props.SIZE, properties).get();
 
-        consumers = new ArrayBlockingQueue<>(poolSize);
+        consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
+        consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "stub");
+        consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        consumerProperties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
+        consumerProperties.putIfAbsent(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 10_000);
+
+        consumers = new ArrayBlockingQueue<>(size);
     }
 
     public void start() {
-        for (int i = 0; i < poolSize; i++) {
+        for (int i = 0; i < size; i++) {
             consumers.offer(create());
         }
     }
@@ -74,12 +77,12 @@ public class ConsumerPool<K, V> {
     }
 
     public void stop(long timeout, TimeUnit unit) {
-        List<Consumer<K,V>> list = new ArrayList<>(poolSize);
-        int count = consumers.drainTo(list, poolSize);
-        LOGGER.info("Closing " + count + " of " + poolSize + " consumers");
+        List<Consumer<K, V>> list = new ArrayList<>(size);
+        int count = consumers.drainTo(list, size);
+        LOGGER.info("Closing " + count + " of " + size + " consumers");
 
         Duration duration = DurationUtil.of(timeout, unit);//TODO: Should use (timeout - elapsed time) on each iteration
-        for (Consumer<K,V> consumer : list) {
+        for (Consumer<K, V> consumer : list) {
             try {
                 consumer.wakeup();
             } catch (Exception ex) {
@@ -95,29 +98,14 @@ public class ConsumerPool<K, V> {
     }
 
     private Consumer<K, V> create() {
-        Properties consumerProperties = new Properties();
-        consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, "stub");
-        consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
-
-        return new KafkaConsumer<K, V>(consumerProperties, keyDeserializer, valueDeserializer);
+        return new KafkaConsumer<>(consumerProperties, keyDeserializer, valueDeserializer);
     }
 
     static final class Props {
-        static final PropertyDescription<String> BOOTSTRAP_SERVERS =
-                PropertyDescriptions.stringProperty("bootstrap.servers").build();
-
-        static final PropertyDescription<Integer> MAX_POLL_RECORDS =
-                PropertyDescriptions.integerProperty("max.poll.records").
-                        withDefaultValue(1_000).
-                        withValidator(Validators.interval(1, 100_000)).
-                        build();
-
-        static final PropertyDescription<Integer> POOL_SIZE =
-                PropertyDescriptions.integerProperty("poolSize").
-                        withDefaultValue(4).
-                        withValidator(Validators.greaterThan(0)).
+        static final Parameter<Integer> SIZE =
+                Parameter.integerParameter("size").
+                        withDefault(4).
+                        withValidator(IntegerValidators.positive()).
                         build();
     }
 }

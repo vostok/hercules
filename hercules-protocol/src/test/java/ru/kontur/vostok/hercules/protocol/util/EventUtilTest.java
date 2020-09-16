@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.util;
 
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.EventBuilder;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -16,7 +17,7 @@ public class EventUtilTest {
     @Test
     public void shouldExtractStringId() throws Exception {
         final Event event = EventBuilder.create()
-                .random(UUID.fromString("6e7176f2-f249-43b8-ba54-334cde9d0c23"))
+                .uuid(UUID.fromString("6e7176f2-f249-43b8-ba54-334cde9d0c23"))
                 .timestamp(LocalDateTime.parse("2018-01-15T12:45:00").toEpochSecond(ZoneOffset.UTC) * 100_000_000)
                 .build();
 

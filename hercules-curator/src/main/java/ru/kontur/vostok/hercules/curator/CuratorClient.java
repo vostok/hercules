@@ -17,9 +17,9 @@ import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.curator.result.DeletionResult;
 import ru.kontur.vostok.hercules.curator.result.ReadResult;
 import ru.kontur.vostok.hercules.curator.result.UpdateResult;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,8 +68,14 @@ public class CuratorClient {
      * @param path path
      * @return unordered list of children
      */
-    public List<String> children(String path) throws Exception {
-        return curatorFramework.getChildren().forPath(path);
+    public List<String> children(String path) throws CuratorInternalException, CuratorUnknownException {
+        try {
+            return curatorFramework.getChildren().forPath(path);
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Get children failed with KeeperException", ex);
+        } catch (Exception ex) {
+            throw new CuratorUnknownException("Get children failed with Exception", ex);
+        }
     }
 
     /**
@@ -81,11 +87,15 @@ public class CuratorClient {
         return curatorFramework.getChildren().usingWatcher(watcher).forPath(path);
     }
 
-    public void createIfAbsent(String path) throws Exception {
+    public void createIfAbsent(String path) throws CuratorUnknownException, CuratorInternalException {
         try {
             curatorFramework.create().forPath(path);
         } catch (KeeperException.NodeExistsException ex) {
             return; /* nothing to do: node already exists */
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Create node failed with KeeperException", ex);
+        } catch (Exception ex) {
+            throw new CuratorUnknownException("Create node failed with Exception", ex);
         }
     }
 
@@ -198,12 +208,12 @@ public class CuratorClient {
     }
 
     private static CuratorFramework build(Properties properties) {
-        final String connectString = Props.CONNECT_STRING.extract(properties);
-        final int connectionTimeout = Props.CONNECTION_TIMEOUT_MS.extract(properties);
-        final int sessionTimeout = Props.SESSION_TIMEOUT_MS.extract(properties);
-        final int baseSleepTime = Props.BASE_SLEEP_TIME_MS.extract(properties);
-        final int maxRetries = Props.MAX_RETRIES.extract(properties);
-        final int maxSleepTime = Props.BASE_SLEEP_TIME_MS.extract(properties);
+        final String connectString = PropertiesUtil.get(Props.CONNECT_STRING, properties).get();
+        final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, properties).get();
+        final int sessionTimeout = PropertiesUtil.get(Props.SESSION_TIMEOUT_MS, properties).get();
+        final int baseSleepTime = PropertiesUtil.get(Props.BASE_SLEEP_TIME_MS, properties).get();
+        final int maxRetries = PropertiesUtil.get(Props.MAX_RETRIES, properties).get();
+        final int maxSleepTime = PropertiesUtil.get(Props.MAX_SLEEP_TIME_MS, properties).get();
 
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime);
 
@@ -218,39 +228,39 @@ public class CuratorClient {
     }
 
     private static class Props {
-        static final PropertyDescription<String> CONNECT_STRING = PropertyDescriptions
-                .stringProperty("connectString")
-                .withDefaultValue("localhost:2181")
-                .build();
+        static final Parameter<String> CONNECT_STRING =
+                Parameter.stringParameter("connectString").
+                        withDefault("localhost:2181").
+                        build();
 
-        static final PropertyDescription<Integer> CONNECTION_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("connectionTimeout")
-                .withDefaultValue(10_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
+        static final Parameter<Integer> CONNECTION_TIMEOUT_MS =
+                Parameter.integerParameter("connectionTimeout").
+                        withDefault(10_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
 
-        static final PropertyDescription<Integer> SESSION_TIMEOUT_MS = PropertyDescriptions
-                .integerProperty("sessionTimeout")
-                .withDefaultValue(30_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
+        static final Parameter<Integer> SESSION_TIMEOUT_MS =
+                Parameter.integerParameter("sessionTimeout").
+                        withDefault(30_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
 
-        static final PropertyDescription<Integer> BASE_SLEEP_TIME_MS = PropertyDescriptions
-                .integerProperty("retryPolicy.baseSleepTime")
-                .withDefaultValue(1_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
+        static final Parameter<Integer> BASE_SLEEP_TIME_MS =
+                Parameter.integerParameter("retryPolicy.baseSleepTime").
+                        withDefault(1_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
 
-        static final PropertyDescription<Integer> MAX_RETRIES = PropertyDescriptions
-                .integerProperty("retryPolicy.maxRetries")
-                .withDefaultValue(5)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
+        static final Parameter<Integer> MAX_RETRIES =
+                Parameter.integerParameter("retryPolicy.maxRetries").
+                        withDefault(5).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
 
-        static final PropertyDescription<Integer> MAX_SLEEP_TIME_MS = PropertyDescriptions
-                .integerProperty("retryPolicy.maxSleepTime")
-                .withDefaultValue(8_000)
-                .withValidator(Validators.greaterOrEquals(0))
-                .build();
+        static final Parameter<Integer> MAX_SLEEP_TIME_MS =
+                Parameter.integerParameter("retryPolicy.maxSleepTime").
+                        withDefault(8_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
     }
 }

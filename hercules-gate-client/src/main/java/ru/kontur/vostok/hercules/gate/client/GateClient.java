@@ -19,8 +19,8 @@ import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.io.Closeable;
@@ -55,7 +55,7 @@ public class GateClient implements Closeable {
 
     public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList) {
 
-        this.greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
+        this.greyListElementsRecoveryTimeMs = PropertiesUtil.get(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS, properties).get();
         this.client = client;
         this.whiteList = whiteList;
         this.greyList = new ArrayBlockingQueue<>(whiteList.size());
@@ -68,11 +68,11 @@ public class GateClient implements Closeable {
     }
 
     public GateClient(Properties properties, Topology<String> whiteList) {
-        final int requestTimeout = Props.REQUEST_TIMEOUT.extract(properties);
-        final int connectionTimeout = Props.CONNECTION_TIMEOUT.extract(properties);
-        final int connectionCount = Props.CONNECTION_COUNT.extract(properties);
+        final int requestTimeout = PropertiesUtil.get(Props.REQUEST_TIMEOUT, properties).get();
+        final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT, properties).get();
+        final int connectionCount = PropertiesUtil.get(Props.CONNECTION_COUNT, properties).get();
 
-        this.greyListElementsRecoveryTimeMs = Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.extract(properties);
+        this.greyListElementsRecoveryTimeMs = PropertiesUtil.get(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS, properties).get();
         this.whiteList = whiteList;
         this.greyList = new ArrayBlockingQueue<>(whiteList.size());
 
@@ -88,7 +88,7 @@ public class GateClient implements Closeable {
      * Request to {@value #PING}
      *
      * @param url Gate Url
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws BadRequestException      throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
     public void ping(String url) throws BadRequestException, UnavailableHostException, HttpProtocolException {
@@ -101,11 +101,11 @@ public class GateClient implements Closeable {
     /**
      * Request to {@value #SEND_ASYNC}
      *
-     * @param url Gate url
+     * @param url    Gate url
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param data   payload
+     * @throws BadRequestException      throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
     public void sendAsync(String url, String apiKey, String stream, final byte[] data)
@@ -119,11 +119,11 @@ public class GateClient implements Closeable {
     /**
      * Request to {@value #SEND_ACK}
      *
-     * @param url Gate url
+     * @param url    Gate url
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param data   payload
+     * @throws BadRequestException      throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
     public void send(String url, String apiKey, String stream, final byte[] data)
@@ -138,7 +138,7 @@ public class GateClient implements Closeable {
      * Request to {@value #PING}
      *
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void ping(int retryLimit)
@@ -150,10 +150,10 @@ public class GateClient implements Closeable {
      * Request to {@value #SEND_ASYNC}
      *
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
-     * @param apiKey key for sending
-     * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param apiKey     key for sending
+     * @param stream     topic name in kafka
+     * @param data       payload
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void sendAsync(int retryLimit, String apiKey, String stream, final byte[] data)
@@ -165,10 +165,10 @@ public class GateClient implements Closeable {
      * Request to {@value #SEND_ACK}
      *
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
-     * @param apiKey key for sending
-     * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param apiKey     key for sending
+     * @param stream     topic name in kafka
+     * @param data       payload
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void send(int retryLimit, String apiKey, String stream, final byte[] data)
@@ -179,7 +179,7 @@ public class GateClient implements Closeable {
     /**
      * Request to {@value #PING}. Count of retry is <code>whitelist.size() + 1</code>
      *
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void ping()
@@ -192,8 +192,8 @@ public class GateClient implements Closeable {
      *
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param data   payload
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void sendAsync(String apiKey, String stream, final byte[] data)
@@ -206,8 +206,8 @@ public class GateClient implements Closeable {
      *
      * @param apiKey key for sending
      * @param stream topic name in kafka
-     * @param data payload
-     * @throws BadRequestException throws if was error on client side: 4xx errors or http protocol errors
+     * @param data   payload
+     * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
     public void send(String apiKey, String stream, final byte[] data)
@@ -216,6 +216,8 @@ public class GateClient implements Closeable {
     }
 
     public void close() {
+        scheduler.shutdown();
+
         try {
             client.close();
         } catch (IOException e) {
@@ -243,6 +245,7 @@ public class GateClient implements Closeable {
     }
 
     //TODO: metrics
+
     /**
      * Strategy of sending data to addresses pool
      */
@@ -261,7 +264,9 @@ public class GateClient implements Closeable {
                 sender.send(url);
                 return;
             } catch (HttpProtocolException | UnavailableHostException e) {
-                whiteList.remove(url);
+                if (!whiteList.remove(url)) {
+                    continue;
+                }
                 if (!greyList.offer(new GreyListTopologyElement(url))) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Send fails", e);
@@ -270,9 +275,12 @@ public class GateClient implements Closeable {
                 }
             }
         }
+
+        throw new UnavailableClusterException();
     }
 
     //TODO: metrics
+
     /**
      * Strategy of sending data to single host
      */
@@ -324,9 +332,9 @@ public class GateClient implements Closeable {
     /**
      * Tuning of {@link CloseableHttpClient}
      *
-     * @param requestTimeout request timeout aka socket timeout (in millis)
+     * @param requestTimeout    request timeout aka socket timeout (in millis)
      * @param connectionTimeout connection timeout (in millis)
-     * @param connectionCount maximum client connections
+     * @param connectionCount   maximum client connections
      * @return Customized http client
      */
     private static CloseableHttpClient createHttpClient(int requestTimeout, int connectionTimeout, int connectionCount) {
@@ -357,33 +365,28 @@ public class GateClient implements Closeable {
     }
 
     private static class Props {
-        static final PropertyDescription<Integer> REQUEST_TIMEOUT =
-                PropertyDescriptions
-                        .integerProperty("requestTimeout")
-                        .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
+        static final Parameter<Integer> REQUEST_TIMEOUT =
+                Parameter.integerParameter("requestTimeout")
+                        .withDefault(GateClientDefaults.DEFAULT_TIMEOUT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final PropertyDescription<Integer> CONNECTION_TIMEOUT =
-                PropertyDescriptions
-                        .integerProperty("connectionTimeout")
-                        .withDefaultValue(GateClientDefaults.DEFAULT_TIMEOUT)
+        static final Parameter<Integer> CONNECTION_TIMEOUT =
+                Parameter.integerParameter("connectionTimeout")
+                        .withDefault(GateClientDefaults.DEFAULT_TIMEOUT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final PropertyDescription<Integer> CONNECTION_COUNT =
-                PropertyDescriptions
-                        .integerProperty("connectionCount")
-                        .withDefaultValue(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
+        static final Parameter<Integer> CONNECTION_COUNT =
+                Parameter.integerParameter("connectionCount")
+                        .withDefault(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final PropertyDescription<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME_MS =
-                PropertyDescriptions
-                        .integerProperty("greyListElementsRecoveryTimeMs")
-                        .withDefaultValue(GateClientDefaults.DEFAULT_RECOVERY_TIME)
+        static final Parameter<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME_MS =
+                Parameter.integerParameter("greyListElementsRecoveryTimeMs")
+                        .withDefault(GateClientDefaults.DEFAULT_RECOVERY_TIME)
                         .withValidator(IntegerValidators.positive())
                         .build();
-
     }
 }

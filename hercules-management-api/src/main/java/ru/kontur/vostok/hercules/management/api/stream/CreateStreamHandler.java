@@ -1,13 +1,17 @@
 package ru.kontur.vostok.hercules.management.api.stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
+import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
+import ru.kontur.vostok.hercules.management.api.QueryParameters;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
+import ru.kontur.vostok.hercules.meta.serialization.Deserializer;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -16,11 +20,9 @@ import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -32,75 +34,68 @@ public class CreateStreamHandler implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateStreamHandler.class);
     private static final Validator<Stream> STREAM_VALIDATOR = StreamValidators.streamValidatorForHandler();
 
-    private final AuthManager authManager;
+    private final AuthProvider authProvider;
     private final TaskQueue<StreamTask> taskQueue;
     private final StreamRepository streamRepository;
 
-    private final ObjectReader deserializer;
+    private final Deserializer deserializer;
 
-    public CreateStreamHandler(AuthManager authManager, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
-        this.authManager = authManager;
+    public CreateStreamHandler(AuthProvider authProvider, TaskQueue<StreamTask> taskQueue, StreamRepository streamRepository) {
+        this.authProvider = authProvider;
         this.taskQueue = taskQueue;
         this.streamRepository = streamRepository;
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        this.deserializer = objectMapper.readerFor(Stream.class);
+        this.deserializer = Deserializer.forClass(Stream.class);
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!optionalApiKey.isPresent()) {
-            ResponseUtil.unauthorized(exchange);
-            return;
-        }
-
-        Optional<Integer> optionalContentLength = ExchangeUtil.extractContentLength(exchange);
+    public void handle(HttpServerRequest request) {
+        Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
-            ResponseUtil.lengthRequired(exchange);
+            request.complete(HttpStatusCodes.LENGTH_REQUIRED);
             return;
         }
 
-        final String apiKey = optionalApiKey.get();
-        exchange.getRequestReceiver().receiveFullBytes((exch, bytes) -> {
+        request.readBodyAsync((r, bytes) -> {
             try {
-                Stream stream = deserializer.readValue(bytes);
+                Stream stream = deserializer.deserialize(bytes);
 
                 if (stream.getShardingKey() == null) {
                     stream.setShardingKey(new String[0]);
                 }
 
-                Optional<String> streamError = STREAM_VALIDATOR.validate(stream);
-                if (streamError.isPresent()) {
-                    ResponseUtil.badRequest(exch);
+                ValidationResult validationResult = STREAM_VALIDATOR.validate(stream);
+                if (validationResult.isError()) {
+                    LOGGER.warn(validationResult.error());
+                    r.complete(HttpStatusCodes.BAD_REQUEST);
                     return;
                 }
 
-                AuthResult authResult = authManager.authManage(apiKey, stream.getName());
+                AuthResult authResult = authProvider.authManage(r, stream.getName());
                 if (!authResult.isSuccess()) {
                     if (authResult.isUnknown()) {
-                        ResponseUtil.unauthorized(exch);
+                        r.complete(HttpStatusCodes.UNAUTHORIZED);
                         return;
                     }
-                    ResponseUtil.forbidden(exch);
+                    r.complete(HttpStatusCodes.FORBIDDEN);
                     return;
                 }
 
                 if (streamRepository.exists(stream.getName())) {
-                    ResponseUtil.conflict(exch);
+                    r.complete(HttpStatusCodes.CONFLICT);
                     return;
                 }
 
                 if (stream instanceof DerivedStream) {// Auth source streams for DerivedStream
                     String[] streams = ((DerivedStream) stream).getStreams();
                     if (streams == null || streams.length == 0) {
-                        ResponseUtil.badRequest(exch);
+                        r.complete(HttpStatusCodes.BAD_REQUEST);
                         return;
                     }
                     for (String sourceStream : streams) {
-                        authResult = authManager.authRead(apiKey, sourceStream);
+                        authResult = authProvider.authRead(r, sourceStream);
                         if (!authResult.isSuccess()) {
-                            ResponseUtil.forbidden(exch);
+                            r.complete(HttpStatusCodes.FORBIDDEN);
                             return;
                         }
                     }
@@ -110,34 +105,21 @@ public class CreateStreamHandler implements HttpHandler {
                         taskQueue.submit(
                                 new StreamTask(stream, StreamTaskType.CREATE),
                                 stream.getName(),
-                                10_000L,//TODO: Move to properties
+                                QueryUtil.get(QueryParameters.TIMEOUT_MS, request).get(),
                                 TimeUnit.MILLISECONDS);
-                if (taskFuture.isFailed()) {
-                    ResponseUtil.internalServerError(exch);
-                    return;
-                }
-
-                if (!ExchangeUtil.extractQueryParam(exch, "async").isPresent()) {
-                    taskFuture.await();
-                    if (taskFuture.isDone()) {
-                        ResponseUtil.ok(exch);
-                        return;
-                    }
-                    ResponseUtil.requestTimeout(exch);
-                    return;
-                }
-                ResponseUtil.ok(exch);
-            } catch (IOException e) {
-                LOGGER.error("Error on processing request", e);
-                ResponseUtil.badRequest(exch);
+                HttpAsyncApiHelper.awaitAndComplete(taskFuture, r);
+            } catch (DeserializationException ex) {
+                LOGGER.warn("Error on entity deserialization", ex);
+                r.complete(HttpStatusCodes.BAD_REQUEST);
                 return;
-            } catch (Exception e) {
-                LOGGER.error("Error on processing request", e);
-                ResponseUtil.internalServerError(exch);
+            } catch (Exception ex) {
+                LOGGER.error("Error on processing request", ex);
+                r.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
                 return;
             }
-        }, (exch, exception) -> {
-            ResponseUtil.badRequest(exch);
+        }, (r, exception) -> {
+            LOGGER.error("Error on processing request", exception);
+            r.complete(HttpStatusCodes.BAD_REQUEST);
             return;
         });
     }

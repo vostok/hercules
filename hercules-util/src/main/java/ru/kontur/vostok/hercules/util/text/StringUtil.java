@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.util.text;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -66,6 +67,52 @@ public final class StringUtil {
     }
 
     /**
+     * Split source string by delimiter char into non empty substrings.
+     *
+     * @param source    the source string
+     * @param delimiter the delimiter char
+     * @return substrings
+     * @see StringUtil#split(String, char, boolean)
+     */
+    public static String[] split(String source, char delimiter) {
+        return split(source, delimiter, true);
+    }
+
+    /**
+     * Split source string by delimiter char into substrings. Empty substrings can be omitted by trim flag.
+     *
+     * @param source    the source string
+     * @param delimiter the delimiter char
+     * @param trim      should omit empty substrings
+     * @return substrings
+     */
+    public static String[] split(String source, char delimiter, boolean trim) {
+        List<String> substrings = new ArrayList<>();
+        int offset = 0;
+        int length = source.length();
+        int position = 0;
+        while (offset < length && (position = source.indexOf(delimiter, offset)) != -1) {
+            if (position == offset) {
+                if (!trim) {
+                    substrings.add("");
+                }
+                offset++;
+            } else {
+                substrings.add(source.substring(offset, position));
+                offset = position + 1;
+            }
+        }
+        if (offset < length) {
+            substrings.add(source.substring(offset));
+        } else {
+            if (!trim) {
+                substrings.add("");
+            }
+        }
+        return substrings.toArray(new String[0]);
+    }
+
+    /**
      * Repeat string multiple times
      *
      * @param s     is repeated string
@@ -106,10 +153,26 @@ public final class StringUtil {
     }
 
     public static String requireNotEmpty(final String value) {
-        if (!isNullOrEmpty(value)) {
-            return value;
-        } else {
-            throw new IllegalArgumentException("Value cannot be an empty string or null");
+        if (isNullOrEmpty(value)) {
+            throw new IllegalArgumentException("String cannot be an empty string or null");
         }
+        return value;
+    }
+
+    /**
+     * Partially mask the source string by the mask symbol.
+     *
+     * @param src        the source string
+     * @param maskSymbol the mask symbol
+     * @param beginIndex the beginning index, inclusive
+     * @return the masked string
+     * @throws StringIndexOutOfBoundsException if {@code beginIndex} is negative or larger than the length of the source string
+     */
+    public static String mask(String src, char maskSymbol, int beginIndex) {
+        int length = src.length();
+        if (beginIndex < 0 || length <= beginIndex) {
+            throw new StringIndexOutOfBoundsException(beginIndex);
+        }
+        return src.substring(0, beginIndex) + maskSymbol;
     }
 }

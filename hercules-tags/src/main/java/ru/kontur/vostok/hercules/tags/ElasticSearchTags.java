@@ -18,12 +18,4 @@ public final class ElasticSearchTags {
     public static final TagDescription<Optional<String>> ELK_INDEX_TAG = TagDescriptionBuilder.string("elk-index")
         .optional()
         .build();
-
-    /**
-     * Uses for backward compatibility only. FIXME: Should be removed in upcoming releases.
-     */
-    @Deprecated
-    public static final TagDescription<Optional<String>> ELK_SCOPE_TAG = TagDescriptionBuilder.string("elk-scope")
-        .optional()
-        .build();
 }

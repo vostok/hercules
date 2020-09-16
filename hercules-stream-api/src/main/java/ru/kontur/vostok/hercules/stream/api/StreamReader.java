@@ -6,14 +6,14 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.Meter;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
 import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.util.Maps;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.time.StopwatchUtil;
-import ru.kontur.vostok.hercules.util.validation.LongValidators;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
+import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -30,29 +30,48 @@ import java.util.concurrent.TimeoutException;
 public class StreamReader {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamReader.class);
 
-    private final Properties properties;
-
     private final ConsumerPool<Void, byte[]> consumerPool;
 
-    private final long readTimeoutMs;
+    private final TimeSource time;
 
-    public StreamReader(Properties properties, ConsumerPool<Void, byte[]> consumerPool) {
-        this.properties = properties;
-        this.consumerPool = consumerPool;
+    private final MetricsCollector metricsCollector;
+    private final Meter receivedEventsCountMeter;
+    private final Meter receivedBytesCountMeter;
 
-        readTimeoutMs = Props.READ_TIMEOUT_MS.extract(properties);
+    public StreamReader(Properties properties,
+                        ConsumerPool<Void, byte[]> consumerPool,
+                        MetricsCollector metricsCollector) {
+        this(properties, consumerPool, metricsCollector, TimeSource.SYSTEM);
     }
 
-    public ByteStreamContent read(Stream stream, StreamReadState state, int shardIndex, int shardCount, int take) {
+    StreamReader(Properties properties,
+                 ConsumerPool<Void, byte[]> consumerPool,
+                 MetricsCollector metricsCollector,
+                 TimeSource time) {
+        this.consumerPool = consumerPool;
+
+        this.time = time;
+
+        this.metricsCollector = metricsCollector;
+        this.receivedEventsCountMeter = metricsCollector.meter("receivedEventsCount");
+        this.receivedBytesCountMeter = metricsCollector.meter("receivedBytesCount");
+    }
+
+    public ByteStreamContent read(Stream stream, StreamReadState state, int shardIndex, int shardCount, int take, int timeoutMs) {
+
+        StreamMetricsCollector streamMetricsCollector = new StreamMetricsCollector(metricsCollector, stream.getName());
+
         List<TopicPartition> partitions = StreamUtil.getTopicPartitions(stream, shardIndex, shardCount);
 
-        long elapsedTimeMs = 0L;
-        long remainingTimeMs = readTimeoutMs;
-        final long readStartedMs = System.currentTimeMillis();
+        if (partitions.isEmpty()) {
+            return ByteStreamContent.empty();
+        }
+
+        Timer timer = time.timer(timeoutMs);
 
         Consumer<Void, byte[]> consumer = null;
         try {
-            consumer = consumerPool.acquire(remainingTimeMs, TimeUnit.MILLISECONDS);
+            consumer = consumerPool.acquire(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
 
             Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(partitions);
 
@@ -84,14 +103,22 @@ public class StreamReader {
             consumer.assign(partitionsToRead);
             seekToNextOffsets(consumer, partitionsToRead, nextOffsets);
 
-            elapsedTimeMs = StopwatchUtil.elapsedTime(readStartedMs);
-            remainingTimeMs = StopwatchUtil.remainingTimeOrZero(readTimeoutMs, elapsedTimeMs);
+            List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, timer);
 
-            List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, remainingTimeMs);
+            int sizeOfEvents = 0;
+            for (byte[] event : events) {
+                sizeOfEvents += event.length;
+            }
+
+            receivedBytesCountMeter.mark(sizeOfEvents);
+            streamMetricsCollector.markReceivedBytesCount(sizeOfEvents);
+            receivedEventsCountMeter.mark(events.size());
+            streamMetricsCollector.markReceivedEventsCount(events.size());
 
             return new ByteStreamContent(
                     StreamReadStateUtil.stateFromMap(stream.getName(), nextOffsets),
-                    events.toArray(new byte[0][]));
+                    events.toArray(new byte[0][])
+            );
         } catch (InterruptedException | TimeoutException ex) {
             throw new RuntimeException(ex);
         } finally {
@@ -107,15 +134,15 @@ public class StreamReader {
         }
     }
 
-    private static <K, V> List<V> pollAndUpdateNextOffsets(Consumer<K, V> consumer, Map<TopicPartition, Long> nextOffsets, int take, long timeoutMs) {
+    private static <K, V> List<V> pollAndUpdateNextOffsets(Consumer<K, V> consumer,
+                                                           Map<TopicPartition, Long> nextOffsets,
+                                                           int take,
+                                                           Timer timer) {
         List<V> events = new ArrayList<>(take);
         int count = 0;
 
-        long elapsedTimeMs = 0L;
-        long remainingTimeMs = timeoutMs;
-        final long pollStartedAt = System.currentTimeMillis();
         do {
-            Duration timeout = Duration.ofMillis(remainingTimeMs);
+            Duration timeout = timer.toDuration();
 
             ConsumerRecords<K, V> records = consumer.poll(timeout);
             for (TopicPartition partition : records.partitions()) {
@@ -133,20 +160,9 @@ public class StreamReader {
                     break;
                 }
             }
-
-            elapsedTimeMs = StopwatchUtil.elapsedTime(pollStartedAt);
-            remainingTimeMs = StopwatchUtil.remainingTimeOrZero(timeoutMs, elapsedTimeMs);
         }
-        while ((count < take) && (remainingTimeMs > 0));
+        while ((count < take) && !timer.isExpired());
 
         return events;
-    }
-
-    static class Props {
-        static final PropertyDescription<Long> READ_TIMEOUT_MS =
-                PropertyDescriptions.longProperty("readTimeoutMs").
-                        withDefaultValue(1_000L).
-                        withValidator(LongValidators.positive()).
-                        build();
     }
 }

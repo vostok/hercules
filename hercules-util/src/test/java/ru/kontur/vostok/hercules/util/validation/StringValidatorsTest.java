@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Petr Demenev
@@ -13,24 +14,33 @@ public class StringValidatorsTest {
     public void shouldValidateNotEmptyString() {
         Validator<String> validator = StringValidators.notEmpty();
 
-        assertFalse(validator.validate("string").isPresent());
-        assertEquals("String is empty", validator.validate("").get());
-        assertEquals("String is empty", validator.validate(null).get());
+        assertFalse(validator.validate("string").isError());
+        assertEquals("String is empty", validator.validate("").error());
+        assertEquals("String is empty", validator.validate(null).error());
     }
 
     @Test
     public void shouldValidateMatchesWithPattern() {
         Validator<String> validator = StringValidators.matchesWith("[a-z0-9_]{1,48}");
 
-        assertFalse(validator.validate("string_123").isPresent());
-        assertFalse(validator.validate("this_testing_string_contains_forty_eight_symbols").isPresent());
+        assertFalse(validator.validate("string_123").isError());
+        assertFalse(validator.validate("this_testing_string_contains_forty_eight_symbols").isError());
         assertEquals("String should match the pattern '[a-z0-9_]{1,48}' but was 'a b'",
-                validator.validate("a b").get());
+                validator.validate("a b").error());
         assertEquals("String should match the pattern '[a-z0-9_]{1,48}' but was ''",
-                validator.validate("").get());
+                validator.validate("").error());
         assertEquals("String should match the pattern '[a-z0-9_]{1,48}' "
                         + "but was 'this_testing_string_contains_forty_nine_symbols__'",
-                validator.validate("this_testing_string_contains_forty_nine_symbols__").get());
+                validator.validate("this_testing_string_contains_forty_nine_symbols__").error());
 
+    }
+
+    @Test
+    public void shouldAcceptNonNullValuesOnly() {
+        Validator<String> validator = Validators.notNull();
+
+        assertTrue(validator.validate(null).isError());
+        assertTrue(validator.validate("").isOk());
+        assertTrue(validator.validate("string").isOk());
     }
 }

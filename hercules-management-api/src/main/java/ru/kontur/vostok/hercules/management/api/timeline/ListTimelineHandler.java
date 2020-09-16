@@ -1,22 +1,22 @@
 package ru.kontur.vostok.hercules.management.api.timeline;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.Headers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.undertow.util.HttpResponseContentWriter;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
  * @author Gregory Koshelev
  */
 public class ListTimelineHandler implements HttpHandler {
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ListTimelineHandler.class);
 
     private final TimelineRepository repository;
 
@@ -25,17 +25,18 @@ public class ListTimelineHandler implements HttpHandler {
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        Optional<String> apiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!apiKey.isPresent()) {
-            ResponseUtil.unauthorized(exchange);
+    public void handle(HttpServerRequest request) {
+        List<String> list;
+        try {
+            list = repository.list().stream()
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (CuratorException ex) {
+            LOGGER.error("Curator exception when get children", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
 
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-        List<String> list = repository.list().stream()
-                .sorted()
-                .collect(Collectors.toList());
-        exchange.getResponseSender().send(mapper.writeValueAsString(list));
+        HttpResponseContentWriter.writeJson(list, request);
     }
 }

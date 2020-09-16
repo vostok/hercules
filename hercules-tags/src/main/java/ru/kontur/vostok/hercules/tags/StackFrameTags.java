@@ -43,7 +43,7 @@ public final class StackFrameTags {
     /**
      * Column number
      */
-    public static final TagDescription<Optional<Short>> COLUMN_NUMBER_TAG = TagDescriptionBuilder.shortTag("column")
+    public static final TagDescription<Optional<Integer>> COLUMN_NUMBER_TAG = TagDescriptionBuilder.integer("column")
         .optional()
         .build();
 

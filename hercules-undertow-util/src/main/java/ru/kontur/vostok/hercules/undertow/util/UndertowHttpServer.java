@@ -5,7 +5,10 @@ import io.undertow.server.HttpServerExchange;
 import org.xnio.Options;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.handler.ExceptionHandler;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -22,14 +25,26 @@ public class UndertowHttpServer extends HttpServer {
 
     @Override
     protected void startInternal() {
-        int connectionThreshold = Props.CONNECTION_THRESHOLD.extract(properties);
+        int connectionThreshold = PropertiesUtil.get(Props.CONNECTION_THRESHOLD, properties).get();
+        Parameter<Integer>.ParameterValue ioThreads = PropertiesUtil.get(Props.IO_THREADS, properties);
+        Parameter<Integer>.ParameterValue workerThreads = PropertiesUtil.get(Props.WORKER_THREADS, properties);
 
-        undertow = Undertow.builder().
+        final ExceptionHandler exceptionHandler = new ExceptionHandler(handler);
+
+        Undertow.Builder builder = Undertow.builder().
                 addHttpListener(port, host).
-                setHandler(exchange -> handler.handle(wrap(exchange))).
+                setHandler(exchange -> exceptionHandler.handle(wrap(exchange))).
                 setSocketOption(Options.CONNECTION_HIGH_WATER, connectionThreshold).
-                setSocketOption(Options.CONNECTION_LOW_WATER, connectionThreshold).
-                build();
+                setSocketOption(Options.CONNECTION_LOW_WATER, connectionThreshold);
+
+        if (!ioThreads.isEmpty()) {
+            builder.setIoThreads(ioThreads.get());
+        }
+        if (!workerThreads.isEmpty()) {
+            builder.setWorkerThreads(workerThreads.get());
+        }
+
+        undertow = builder.build();
 
         undertow.start();
     }

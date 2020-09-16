@@ -1,12 +1,7 @@
 package ru.kontur.vostok.hercules.meta.stream;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author Gregory Koshelev
@@ -21,6 +16,7 @@ public abstract class Stream {
     private int partitions;
     private String[] shardingKey;
     private long ttl;
+    private String description;
 
     public String getName() {
         return name;
@@ -48,5 +44,12 @@ public abstract class Stream {
     }
     public void setTtl(long ttl) {
         this.ttl = ttl;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

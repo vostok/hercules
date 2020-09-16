@@ -27,6 +27,7 @@ import ru.kontur.vostok.hercules.sentry.api.model.Organization;
 import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
 import ru.kontur.vostok.hercules.sentry.api.model.Project;
 import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
+import ru.kontur.vostok.hercules.sentry.api.model.ResponseMessage;
 import ru.kontur.vostok.hercules.sentry.api.model.Team;
 import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
 import ru.kontur.vostok.hercules.sentry.sink.ErrorInfo;
@@ -59,6 +60,9 @@ public class SentryApiClient {
     private static final String GET_TEAMS_URL = ORGANIZATIONS_URL + "%s/teams/";
     private static final String CREATE_TEAM_URL = ORGANIZATIONS_URL + "%s/teams/";
     private static final String CREATE_PROJECT_URL = TEAMS_URL + "%s/%s/projects/";
+
+    private static final String CLIENT_API_ERROR = "ClientApiError";
+    private static final String CANNOT_CREATE_JSON = "CannotCreateJSON";
 
     private final ObjectMapper objectMapper;
     private final HttpHost sentryHost;
@@ -145,12 +149,11 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(organizationModel);
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Cannot create JSON from model for organization creation: %s", e.getMessage()));
-            return Result.error(new ErrorInfo( false));
+            LOGGER.error("Cannot create JSON from model for creation of organization '{}'", organization, e);
+            return Result.error(new ErrorInfo(CANNOT_CREATE_JSON, false));
         }
         HttpPost post = new HttpPost(ORGANIZATIONS_URL);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        LOGGER.info(String.format("Creating of new organization '%s' in Sentry", organization));
         return request(post, new TypeReference<OrganizationInfo>() {});
     }
 
@@ -168,12 +171,11 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(teamModel);
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Cannot create JSON from model for team creation: %s", e.getMessage()));
-            return Result.error(new ErrorInfo(false));
+            LOGGER.error("Cannot create JSON from model for creation team '{}'", team, e);
+            return Result.error(new ErrorInfo(CANNOT_CREATE_JSON, false));
         }
         HttpPost post = new HttpPost(String.format(CREATE_TEAM_URL, organization));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        LOGGER.info(String.format("Creating of new team '%s' in Sentry", team));
         return request(post, new TypeReference<TeamInfo>() {});
     }
 
@@ -192,29 +194,33 @@ public class SentryApiClient {
         try {
             body = objectMapper.writeValueAsBytes(projectModel);
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Cannot create JSON from model for project creation: %s", e.getMessage()));
-            return Result.error(new ErrorInfo(false));
+            LOGGER.error("Cannot create JSON from model for creation project '{}'", project, e);
+            return Result.error(new ErrorInfo(CANNOT_CREATE_JSON, false));
         }
         HttpPost post = new HttpPost(String.format(CREATE_PROJECT_URL, organization, team));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        LOGGER.info(String.format("Creating of new project '%s' in Sentry", project));
         return request(post, new TypeReference<ProjectInfo>() {});
     }
 
     private <T> Result<T, ErrorInfo> request(HttpUriRequest request, TypeReference<T> typeReference) {
         try (CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
+            Optional<HttpEntity> entity = Optional.ofNullable(response.getEntity());
             if (isErrorResponse(response)) {
-                return Result.error(new ErrorInfo(extractErrorMessage(response), extractStatusCode(response)));
+                String message = null;
+                if (entity.isPresent()) {
+                    ResponseMessage responseMessage = objectMapper
+                            .readValue(entity.get().getContent(), new TypeReference<ResponseMessage>() {});
+                    message = responseMessage.getDetail();
+                }
+                return Result.error(new ErrorInfo(CLIENT_API_ERROR, extractStatusCode(response), message));
             }
             T value = null;
-            Optional<HttpEntity> entity = Optional.ofNullable(response.getEntity());
             if (entity.isPresent()) {
                 value = objectMapper.readValue(entity.get().getContent(), typeReference);
             }
             return Result.ok(value);
         } catch (Exception e) {
-            LOGGER.error("Error on request: {}", e.getMessage());
-            return Result.error(new ErrorInfo(e.getMessage()));
+            return Result.error(new ErrorInfo(CLIENT_API_ERROR, e.getMessage()));
         }
     }
 
@@ -230,26 +236,30 @@ public class SentryApiClient {
                     request = requestBuilder.build();
                 }
                 try (CloseableHttpResponse response = httpClient.execute(sentryHost, request)) {
+                    Optional<HttpEntity> entity = Optional.ofNullable(response.getEntity());
                     if (isErrorResponse(response)) {
-                        return Result.error(new ErrorInfo(extractErrorMessage(response), extractStatusCode(response)));
+                        String message = null;
+                        if (entity.isPresent()) {
+                            ResponseMessage responseMessage = objectMapper
+                                    .readValue(entity.get().getContent(), new TypeReference<ResponseMessage>() {});
+                            message = responseMessage.getDetail();
+                        }
+                        return Result.error(new ErrorInfo(CLIENT_API_ERROR, extractStatusCode(response), message));
                     }
-                    resultList.addAll(objectMapper.readValue(response.getEntity().getContent(), listTypeReference));
+                    if (entity.isPresent()) {
+                        resultList.addAll(objectMapper.readValue(entity.get().getContent(), listTypeReference));
+                    }
                     nextCursor = getCursorValue(response.getFirstHeader("Link"));
                 }
             } while (nextCursor.isPresent());
             return Result.ok(resultList);
         } catch (Exception e) {
-            LOGGER.error("Error on paged request: {}", e.getMessage());
-            return Result.error(new ErrorInfo(e.getMessage()));
+            return Result.error(new ErrorInfo(CLIENT_API_ERROR, e.getMessage()));
         }
     }
 
     private static boolean isErrorResponse(CloseableHttpResponse response) {
         return 400 <= extractStatusCode(response);
-    }
-
-    private static String extractErrorMessage(CloseableHttpResponse response) {
-        return response.getStatusLine().getReasonPhrase();
     }
 
     private static int extractStatusCode(CloseableHttpResponse response) {

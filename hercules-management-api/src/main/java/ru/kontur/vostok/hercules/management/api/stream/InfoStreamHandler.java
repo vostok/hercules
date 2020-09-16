@@ -1,15 +1,22 @@
 package ru.kontur.vostok.hercules.management.api.stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.Headers;
-import ru.kontur.vostok.hercules.auth.AuthManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.Right;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.MimeTypes;
+import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
+import ru.kontur.vostok.hercules.management.api.QueryParameters;
+import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
+import ru.kontur.vostok.hercules.undertow.util.HttpResponseContentWriter;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.util.Optional;
 
@@ -17,51 +24,55 @@ import java.util.Optional;
  * @author Vladimir Tsypaev
  */
 public class InfoStreamHandler implements HttpHandler {
+    private static Logger LOGGER = LoggerFactory.getLogger(InfoStreamHandler.class);
 
-    private final AuthManager authManager;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final AuthProvider authProvider;
     private final StreamRepository repository;
 
-    public InfoStreamHandler(StreamRepository repository, AuthManager authManager) {
+    public InfoStreamHandler(StreamRepository repository, AuthProvider authProvider) {
         this.repository = repository;
-        this.authManager = authManager;
+        this.authProvider = authProvider;
     }
 
     @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-        Optional<String> optionalApiKey = ExchangeUtil.extractHeaderValue(exchange, "apiKey");
-        if (!optionalApiKey.isPresent()) {
-            ResponseUtil.unauthorized(exchange);
+    public void handle(HttpServerRequest request) {
+        Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        if (streamName.isError()) {
+            request.complete(
+                    HttpStatusCodes.BAD_REQUEST,
+                    MimeTypes.TEXT_PLAIN,
+                    "Parameter " + QueryParameters.STREAM.name() + " error: " + streamName.result().error());
             return;
         }
 
-        Optional<String> optionalStreamName = ExchangeUtil.extractQueryParam(exchange, "stream");
-        if (!optionalStreamName.isPresent()) {
-            ResponseUtil.badRequest(exchange);
-            return;
-        }
-
-        String apiKeyName = optionalApiKey.get();
-        String streamName = optionalStreamName.get();
-
-        AuthResult authResult = authManager.authManage(apiKeyName, streamName);
-
+        AuthResult authResult = authProvider.authAny(request, streamName.get(), Right.READ, Right.MANAGE);
         if (!authResult.isSuccess()) {
             if (authResult.isUnknown()) {
-                ResponseUtil.unauthorized(exchange);
+                request.complete(HttpStatusCodes.UNAUTHORIZED);
                 return;
             }
-            ResponseUtil.forbidden(exchange);
+            request.complete(HttpStatusCodes.FORBIDDEN);
             return;
         }
 
-        Optional<Stream> stream = repository.read(streamName);
-        if (!stream.isPresent()) {
-            ResponseUtil.notFound(exchange);
+        Stream stream;
+        try {
+            Optional<Stream> optionalStream = repository.read(streamName.get());
+            if (!optionalStream.isPresent()) {
+                request.complete(HttpStatusCodes.NOT_FOUND);
+                return;
+            }
+            stream = optionalStream.get();
+        } catch (CuratorException ex) {
+            LOGGER.error("Curator exception when read Stream", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return;
+        } catch (DeserializationException ex) {
+            LOGGER.error("Deserialization exception of Stream", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
 
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-        exchange.getResponseSender().send(mapper.writeValueAsString(stream.get()));
+        HttpResponseContentWriter.writeJson(stream, request);
     }
 }

@@ -5,8 +5,9 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.List;
 import java.util.Properties;
@@ -17,11 +18,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public abstract class Sender {
+public abstract class Sender extends Processor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Sender.class);
-
-    private volatile SenderStatus status = SenderStatus.AVAILABLE;
-    private final Object mutex = new Object();
 
     private final MetricsCollector metricsCollector;
 
@@ -31,13 +29,19 @@ public abstract class Sender {
     /**
      * Sender.
      *
-     * @param properties sender's properties.
+     * @param properties       sender's properties.
      * @param metricsCollector metrics collector
      */
     public Sender(Properties properties, MetricsCollector metricsCollector) {
+        this(properties, metricsCollector, TimeSource.SYSTEM);
+    }
+
+    Sender(Properties properties, MetricsCollector metricsCollector, TimeSource time) {
+        super(time);
+
         this.metricsCollector = metricsCollector;
 
-        this.pingPeriodMs = Props.PING_PERIOD_MS.extract(properties);
+        this.pingPeriodMs = PropertiesUtil.get(Props.PING_PERIOD_MS, properties).get();
         this.executor = Executors.newSingleThreadScheduledExecutor();//TODO: Should provide ThreadFactory
     }
 
@@ -71,63 +75,27 @@ public abstract class Sender {
      * @param events events to be processed
      * @return result of processing
      */
-    public final SenderResult process(List<Event> events) {
+    @Override
+    public final ProcessorResult process(List<Event> events) {
         try {
             int processedEvents = send(events);
-            return SenderResult.ok(processedEvents, events.size() - processedEvents);
+            return ProcessorResult.ok(processedEvents, events.size() - processedEvents);
         } catch (BackendServiceFailedException ex) {
             LOGGER.error("Backend failed with exception", ex);
-            status = SenderStatus.UNAVAILABLE;
-            return SenderResult.fail();
+            disable();
+            return ProcessorResult.fail();
         }
     }
 
-    /**
-     * Return {@code true} if sender is available.
-     *
-     * @return {@code true} if sender is available, {@code false} otherwise
-     */
-    public final boolean isAvailable() {
-        return status == SenderStatus.AVAILABLE;
+    protected final void updateStatus() {
+        status(ping());
     }
 
     /**
-     * Wait for sender's availability
-     *
-     * @param timeoutMs maximum time (in millis) to wait
-     * @return {@code true} if sender is available, {@code false} otherwise
+     * Ping backend to update availability status of the sender. Sender is available by default.
      */
-    public boolean awaitAvailability(long timeoutMs) {
-        if (isAvailable()) {
-            return true;
-        }
-
-        long nanoTime = System.nanoTime();
-        long remainingTimeoutMs;
-        synchronized (mutex) {
-            if (isAvailable()) {
-                return true;
-            }
-            while ((remainingTimeoutMs = timeoutMs - TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nanoTime)) > 0
-                    && !isAvailable()) {
-                try {
-                    mutex.wait(remainingTimeoutMs);
-                } catch (InterruptedException e) {
-                    /* Interruption during shutdown */
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        }
-        return isAvailable();
-
-    }
-
-    /**
-     * Check sender's availability status. Sender is available by default.
-     */
-    protected SenderStatus ping() {
-        return SenderStatus.AVAILABLE;
+    protected ProcessorStatus ping() {
+        return ProcessorStatus.AVAILABLE;
     }
 
     /**
@@ -139,16 +107,10 @@ public abstract class Sender {
      */
     protected abstract int send(List<Event> events) throws BackendServiceFailedException;
 
-    private void updateStatus() {
-        SenderStatus status = ping();
-        synchronized (mutex) {
-            this.status = status;
-            mutex.notifyAll();
-        }
-    }
-
     private static class Props {
-        static final PropertyDescription<Long> PING_PERIOD_MS =
-                PropertyDescriptions.longProperty("pingPeriodMs").withDefaultValue(5_000L).build();
+        static final Parameter<Long> PING_PERIOD_MS =
+                Parameter.longParameter("pingPeriodMs").
+                        withDefault(5_000L).
+                        build();
     }
 }

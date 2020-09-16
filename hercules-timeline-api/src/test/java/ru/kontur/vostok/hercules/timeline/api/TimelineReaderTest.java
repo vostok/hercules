@@ -1,13 +1,16 @@
 package ru.kontur.vostok.hercules.timeline.api;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SimpleStatement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.internal.matchers.Matches;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraConnector;
+import ru.kontur.vostok.hercules.health.Meter;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.protocol.TimelineSliceState;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
@@ -16,11 +19,13 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,7 +44,7 @@ public class TimelineReaderTest {
 
         @Override
         public boolean matches(SimpleStatement argument) {
-            return cqlMatcher.matches(argument.getQueryString());
+            return cqlMatcher.matches(argument.getQuery());
         }
 
         @Override
@@ -58,11 +63,12 @@ public class TimelineReaderTest {
     }
 
     private TimelineReader timelineReader;
-    private Session session = mock(Session.class);
+    private CqlSession session = mock(CqlSession.class);
     private ResultSet resultSet = mock(ResultSet.class);
+    private MetricsCollector metricsCollector = mock(MetricsCollector.class);
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         CassandraConnector connector = mock(CassandraConnector.class);
         when(connector.session()).thenReturn(session);
 
@@ -70,7 +76,12 @@ public class TimelineReaderTest {
 
         when(session.execute(any(SimpleStatement.class))).thenReturn(resultSet);
 
-        timelineReader = new TimelineReader(connector);
+        when(metricsCollector.meter(anyString())).thenReturn(n -> {
+        });
+        when(metricsCollector.timer(anyString())).thenReturn((duration, unit) -> {
+        });
+
+        timelineReader = new TimelineReader(new Properties(), connector, metricsCollector);
     }
 
     @Test

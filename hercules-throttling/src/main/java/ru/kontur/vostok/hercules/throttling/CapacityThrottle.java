@@ -2,32 +2,18 @@ package ru.kontur.vostok.hercules.throttling;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.concurrent.LifoSemaphore;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.util.Properties;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
  */
 public class CapacityThrottle<R, C> implements Throttle<R, C> {
-
-    private static class Props {
-        static final PropertyDescription<Long> CAPACITY = PropertyDescriptions
-                .longProperty(ThrottlingProperties.CAPACITY)
-                .withDefaultValue(ThrottlingDefaults.DEFAULT_CAPACITY)
-                .withValidator(Validators.greaterThan(0L))
-                .build();
-
-        static final PropertyDescription<Long> REQUEST_TIMEOUT_MS = PropertyDescriptions
-                .longProperty(ThrottlingProperties.REQUEST_TIMEOUT)
-                .withDefaultValue(ThrottlingDefaults.DEFAULT_REQUEST_TIMEOUT)
-                .withValidator(Validators.greaterThan(0L))
-                .build();
-    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityThrottle.class);
 
@@ -38,7 +24,7 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
     private final RequestProcessor<R, C> requestProcessor;
     private final ThrottledRequestProcessor<R> throttledRequestProcessor;
 
-    private final Semaphore semaphore;
+    private final LifoSemaphore semaphore;
 
     /**
      * @param properties                configuration properties
@@ -52,14 +38,14 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
             RequestProcessor<R, C> requestProcessor,
             ThrottledRequestProcessor<R> throttledRequestProcessor
     ) {
-        this.capacity = Props.CAPACITY.extract(properties);
-        this.requestTimeout = Props.REQUEST_TIMEOUT_MS.extract(properties);
+        this.capacity = PropertiesUtil.get(Props.CAPACITY, properties).get();
+        this.requestTimeout = PropertiesUtil.get(Props.REQUEST_TIMEOUT_MS, properties).get();
 
         this.weigher = weigher;
         this.requestProcessor = requestProcessor;
         this.throttledRequestProcessor = throttledRequestProcessor;
 
-        this.semaphore = new Semaphore(capacity > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) capacity);
+        this.semaphore = new LifoSemaphore(capacity > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) capacity);
     }
 
     /**
@@ -94,5 +80,27 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
 
     @Override
     public void shutdown(long timeout, TimeUnit unit) {
+    }
+
+    private static class Props {
+        static final Parameter<Long> CAPACITY =
+                Parameter.longParameter(ThrottlingProperties.CAPACITY).
+                        withDefault(ThrottlingDefaults.DEFAULT_CAPACITY).
+                        withValidator(LongValidators.positive()).
+                        build();
+
+        static final Parameter<Long> REQUEST_TIMEOUT_MS =
+                Parameter.longParameter(ThrottlingProperties.REQUEST_TIMEOUT).
+                        withDefault(ThrottlingDefaults.DEFAULT_REQUEST_TIMEOUT).
+                        withValidator(LongValidators.positive()).
+                        build();
+    }
+
+    public long totalCapacity() {
+        return capacity;
+    }
+
+    public long availableCapacity() {
+        return semaphore.availablePermits();
     }
 }

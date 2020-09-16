@@ -6,7 +6,7 @@
     <groupId>ru.kontur.vostok.hercules</groupId>
     <artifactId>hercules</artifactId>
     <packaging>pom</packaging>
-    <version>0.24.0-SNAPSHOT</version>
+    <version>0.42.0-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,12 +14,12 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <hercules.version>0.24.0-SNAPSHOT</hercules.version>
+        <hercules.version>0.42.0-SNAPSHOT</hercules.version>
 
-        <kafka.version>2.2.0</kafka.version>
+        <kafka.version>2.4.0</kafka.version>
         <zookeeper.version>3.4.13</zookeeper.version>
         <curator.version>4.0.1</curator.version>
-        <cassandra-driver.version>3.5.1</cassandra-driver.version>
+        <cassandra-driver.version>4.0.1</cassandra-driver.version>
         <undertow.version>2.0.13.Final</undertow.version>
         <metrics.version>4.0.2</metrics.version>
         <jackson.version>2.9.7</jackson.version>
@@ -30,6 +30,9 @@
         <log4j.version>2.11.0</log4j.version>
         <logback.version>1.2.3</logback.version>
         <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
+        <sentry.version>1.7.27</sentry.version>
+        <lz4.version>1.7.0</lz4.version>
+        <clickhouse.version>0.2.3</clickhouse.version>
     </properties>
 
     <modules>
@@ -69,6 +72,10 @@
         <module>hercules-curator</module>
         <module>hercules-sd</module>
         <module>hercules-application</module>
+        <module>hercules-clickhouse-util</module>
+        <module>hercules-clickhouse-sink</module>
+        <module>hercules-tracing-sink-clickhouse</module>
+        <module>hercules-elastic-adapter</module>
     </modules>
 
     <dependencyManagement>
@@ -163,8 +170,8 @@
 
             <!-- Apache Cassandra driver -->
             <dependency>
-                <groupId>com.datastax.cassandra</groupId>
-                <artifactId>cassandra-driver-core</artifactId>
+                <groupId>com.datastax.oss</groupId>
+                <artifactId>java-driver-core</artifactId>
                 <version>${cassandra-driver.version}</version>
             </dependency>
 
@@ -185,6 +192,12 @@
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-graphite</artifactId>
                 <version>${metrics.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.rabbitmq</groupId>
+                        <artifactId>amqp-client</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Jackson -->
@@ -227,7 +240,21 @@
             <dependency>
                 <groupId>io.sentry</groupId>
                 <artifactId>sentry</artifactId>
-                <version>1.7.22</version>
+                <version>${sentry.version}</version>
+            </dependency>
+
+            <!-- LZ4 -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4.version}</version>
+            </dependency>
+
+            <!-- ClickHouse -->
+            <dependency>
+                <groupId>ru.yandex.clickhouse</groupId>
+                <artifactId>clickhouse-jdbc</artifactId>
+                <version>${clickhouse.version}</version>
             </dependency>
 
             <dependency>
@@ -345,6 +372,16 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-sd</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-clickhouse-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-clickhouse-sink</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 

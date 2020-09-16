@@ -4,6 +4,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.util.bytes.ByteUtil;
@@ -20,9 +21,9 @@ public class EventDeserializer implements Deserializer<Event> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventDeserializer.class);
 
-    private final Set<String> tags;
+    private final Set<TinyString> tags;
 
-    private EventDeserializer(Set<String> tags) {
+    private EventDeserializer(Set<TinyString> tags) {
         this.tags = tags;
     }
 
@@ -37,7 +38,7 @@ public class EventDeserializer implements Deserializer<Event> {
             EventReader reader = EventReader.readTags(tags);
             return reader.read(new Decoder(data));
         } catch (Exception e) {
-            LOGGER.warn("Error on deserialize bytes '{}'", ByteUtil.bytesToHexString(data), e);
+            LOGGER.warn("Error on deserialize bytes '{}'", ByteUtil.toHexString(data), e);
             return null;
         }
     }
@@ -55,7 +56,7 @@ public class EventDeserializer implements Deserializer<Event> {
         return new EventDeserializer(null);
     }
 
-    public static EventDeserializer parseTags(Set<String> tags) {
+    public static EventDeserializer parseTags(Set<TinyString> tags) {
         Objects.requireNonNull(tags);
         return new EventDeserializer(tags);
     }

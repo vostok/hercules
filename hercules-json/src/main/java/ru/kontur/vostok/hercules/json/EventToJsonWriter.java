@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
@@ -9,7 +11,6 @@ import ru.kontur.vostok.hercules.protocol.Vector;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,7 +18,9 @@ import java.util.UUID;
  * EventToJsonWriter
  *
  * @author Kirill Sulim
+ * @deprecated Use {@link EventToJsonFormatter} and {@link DocumentWriter}
  */
+@Deprecated
 public final class EventToJsonWriter {
 
     @FunctionalInterface
@@ -211,10 +214,8 @@ public final class EventToJsonWriter {
 
     public static void writeContainer(JsonGenerator generator, Object value) throws IOException {
         generator.writeStartObject();
-        Iterator<Map.Entry<String, Variant>> iterator = ((Container) value).iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Variant> entry = iterator.next();
-            generator.writeFieldName(entry.getKey());
+        for (Map.Entry<TinyString, Variant> entry : ((Container)value).tags().entrySet()) {
+            generator.writeFieldName(entry.getKey().toString());
             writeVariantValue(generator, entry.getValue());
         }
         generator.writeEndObject();

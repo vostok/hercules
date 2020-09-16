@@ -19,9 +19,9 @@ import ru.kontur.vostok.hercules.client.exceptions.NotFoundException;
 import ru.kontur.vostok.hercules.client.exceptions.UnauthorizedException;
 import ru.kontur.vostok.hercules.protocol.TimelineContent;
 import ru.kontur.vostok.hercules.protocol.TimelineState;
+import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
-import ru.kontur.vostok.hercules.protocol.decoder.SizeOf;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineContentReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineStateWriter;
@@ -30,6 +30,7 @@ import ru.kontur.vostok.hercules.util.throwable.ThrowableUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -134,12 +135,12 @@ public class TimelineApiClient {
                 .addParameter(Parameters.RIGHT_TIME_BOUND, String.valueOf(timeInterval.getTo()))
                 .build());
 
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream(calculateReadStateSize(timelineState.getSliceCount()));
-        STATE_WRITER.write(new Encoder(bytes), timelineState);
+        ByteBuffer buffer = ByteBuffer.allocate(calculateReadStateSize(timelineState.getSliceCount()));
+        STATE_WRITER.write(new Encoder(buffer), timelineState);
 
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setHeader(CommonHeaders.API_KEY, apiKey);
-        httpPost.setEntity(new ByteArrayEntity(bytes.toByteArray()));
+        httpPost.setEntity(new ByteArrayEntity(buffer.array()));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             final Optional<HerculesClientException> exception = HerculesClientExceptionUtil.exceptionFromStatus(
@@ -203,7 +204,7 @@ public class TimelineApiClient {
      * @return read state size in bytes
      */
     private static int calculateReadStateSize(int shardCount) {
-        return SizeOf.INTEGER + shardCount * (SizeOf.INTEGER + SizeOf.LONG + (SizeOf.LONG + SizeOf.UUID));
+        return Type.INTEGER.size + shardCount * (Type.INTEGER.size + Type.LONG.size + (Type.LONG.size + Type.UUID.size));//FIXME: Should be unified (sizeOf)
     }
 
     private static class Resources {

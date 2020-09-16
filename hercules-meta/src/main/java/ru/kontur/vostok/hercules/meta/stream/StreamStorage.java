@@ -9,6 +9,9 @@ import ru.kontur.vostok.hercules.util.functional.Result;
 import java.util.Optional;
 
 /**
+ * Stream storage is read-only caching proxy for {@link Stream} metadata.
+ * FIXME: Should use ZK/Curator watchers to reduce cache invalidation latency
+ *
  * @author Gregory Koshelev
  */
 public class StreamStorage {
@@ -18,10 +21,10 @@ public class StreamStorage {
 
     private final Cache<String, Stream> cache;
 
-    public StreamStorage(StreamRepository repository, long cacheLifetime) {
+    public StreamStorage(StreamRepository repository) {
         this.repository = repository;
 
-        this.cache = new Cache<>(cacheLifetime);
+        this.cache = new Cache<>(10_000 /* FIXME: Workaround for KAFKA-3450 bug */);
     }
 
     /**

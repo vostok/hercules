@@ -3,8 +3,6 @@ package ru.kontur.vostok.hercules.meta.task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
-import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
-import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 
 import java.util.List;
@@ -97,6 +95,13 @@ public abstract class TaskExecutor<T> {
         }
     }
 
+    /**
+     * Execute task and return {@code true} if task should be removed
+     * (task has been processed successfully or no retry is needed).
+     *
+     * @param task task
+     * @return {@code true} if task should be removed, {@code false} if task should be retried
+     */
     protected abstract boolean execute(T task);
 
     /**
@@ -137,7 +142,7 @@ public abstract class TaskExecutor<T> {
         try {
             repository.delete(fullname);
         } catch (CuratorException e) {
-            LOGGER.info("Cannot delete invalid task '" + fullname + "'", e);
+            LOGGER.warn("Cannot delete invalid task '" + fullname + "'", e);
         }
     }
 

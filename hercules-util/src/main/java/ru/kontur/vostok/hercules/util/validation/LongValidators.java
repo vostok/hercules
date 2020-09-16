@@ -1,18 +1,21 @@
 package ru.kontur.vostok.hercules.util.validation;
 
-import java.util.Optional;
-
 /**
  * @author Gregory Koshelev
  */
 public final class LongValidators {
     public static Validator<Long> positive() {
-        return value -> {
-            if (value > 0) {
-                return Optional.empty();
-            }
-            return Optional.of("Value should be positive long but was " + value);
-        };
+        return value ->
+                (value != null && value > 0)
+                        ? ValidationResult.ok()
+                        : ValidationResult.error("Value should be positive long but was " + value);
+    }
+
+    public static Validator<Long> nonNegative() {
+        return value ->
+                (value != null && value >= 0)
+                        ? ValidationResult.ok()
+                        : ValidationResult.error("Value should be non negative long but was " + value);
     }
 
     private LongValidators() {

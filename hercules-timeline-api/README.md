@@ -115,16 +115,17 @@ Events          Count, Event*
 ## Settings
 Application is configured through properties file.
 
-### Apache Cassandra settings
-See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
 
-`cassandra.nodes` - default value: `127.0.0.1`
+`application.port` - server port, default value: `8080`
 
-`cassandra.port` - default value: `9042`
+### Application context settings
+`context.environment` - id of environment
 
-`cassandra.keyspace` - default value: `hercules`
+`context.zone` - id of zone
 
-`cassandra.readTimeoutMs` - default value: `12000`
+`context.instance.id` - id of instance
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -150,17 +151,24 @@ See Apache Curator Config from Apache Curator documentation. Main settings are p
 
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
+### Apache Cassandra settings
+See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
+
+`cassandra.dataCenter` - local Cassandra DC, default value: `datacenter1`
+
+`cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
+
+`cassandra.keyspace` - default value: `hercules`
+
+`cassandra.requestTimeoutMs` - default value: `12000`
+
 ### HTTP Server settings
-`http.server.host` - server host, default value: `"0.0.0.0"`
+`http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
-`http.server.port` - server port
+`http.server.workerThreads` - the number of worker threads. Worker threads are used to process long running requests and perform blocking tasks. Default value is implementation specific.
 
-### Application context settings
-`context.instance.id` - id of instance
-
-`context.environment` - id of environment
-
-`context.zone` - id of zone
+`http.server.rootPath` - base url, default value: `/`
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-timeline-api.jar application.properties=file://path/to/file/application.properties`
@@ -176,10 +184,12 @@ Timeline Api uses Timeline's metadata, Stream's metadata and auth rules from Zoo
 
 ### `application.properties` sample:
 ```properties
-cassandra.nodes=localhost:2181,localhost:2182,localhost:2183
-cassandra.port=9042
-cassandra.keyspace=hercules
-cassandra.readTimeoutMs=12000
+application.host=0.0.0.0
+application.port=6308
+
+context.instance.id=1
+context.environment=dev
+context.zone=default
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000
@@ -188,16 +198,17 @@ curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
 
-
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
 
-http.server.host=0.0.0.0
-http.server.port=6306
+cassandra.dataCenter=datacenter1
+cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
+cassandra.keyspace=hercules
+cassandra.requestTimeoutMs=12000
 
-context.instance.id=1
-context.environment=dev
-context.zone=default
+http.server.ioThreads=8
+http.server.workerThreads=32
+http.server.rootPath=/
 ```

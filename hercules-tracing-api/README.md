@@ -109,25 +109,10 @@ ContentType: application/json
 ## Settings
 Application is configured through properties file.
 
-### HTTP Server settings
-`http.server.host` - server host, default value: `0.0.0.0`
+### Main Application settings
+`application.host` - server host, default value: `0.0.0.0`
 
-`http.server.port` - server port
-
-### Apache Curator settings
-See Curator Config from Apache Curator documentation. Main settings are presented below.
-
-`curator.connectString` - default value: `localhost:2181`
-
-`curator.connectionTimeout` - default value: `10000`
-
-`curator.sessionTimeout` - default value: `30000`
-
-`curator.retryPolicy.baseSleepTime` - default value: `1000`
-
-`curator.retryPolicy.maxRetries` - default value: `5`
-
-`curator.retryPolicy.maxSleepTime` - default value: `8000`
+`application.port` - server port, default value: `8080`
 
 ### Application context settings
 `context.environment` - id of environment
@@ -145,16 +130,51 @@ See Curator Config from Apache Curator documentation. Main settings are presente
 
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
-### Apache Cassandra settings
+### Tracing Reader settings
+`reader.source` - traces source (`CASSANDRA` or `CLICKHOUSE`), default value: `CASSANDRA`
+
+#### Cassandra Tracing Reader settings
+`reader.table` - table name in Cassandra
+
+##### Apache Cassandra settings
 See Apache Cassandra Config from Apache Cassandra documentation. Main settings are presented below.
 
-`cassandra.nodes` - default value: `127.0.0.1`
-                                                  
-`cassandra.port` - default value: `9042`
-                                                  
-`cassandra.keyspace` - default value: `hercules`
-                                                  
-`cassandra.readTimeoutMs` - default value: `12000`
+`reader.cassandra.dataCenter` - local Cassandra DC, default value: `datacenter1`
+
+`reader.cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
+also, default port value is `9042`
+
+`reader.cassandra.keyspace` - keyspace in Cassandra, default value: `hercules`
+
+`reader.cassandra.requestTimeoutMs` - request to Cassandra timeout, default value: `12000`
+
+`reader.cassandra.connectionsPerHostLocal` - connections per local Cassandra node (see Cassandra docs for details), default value: `4`
+
+`reader.cassandra.connectionsPerHostRemote` - connections per remote Cassandra node (see Cassandra docs for details), default value: `2`
+
+`reader.cassandra.maxRequestsPerConnection` - max requests per connection, default value: `1024`
+
+`reader.cassandra.consistencyLevel` - consistency level (see Cassandra docs for details), default value: `QUORUM`
+
+#### ClickHouse Tracing Reader settings
+`reader.table` - table name in ClickHouse
+
+##### ClickHouse settings
+`reader.clickhouse.nodes` - ClickHouse `node:port` comma-separated list,
+default value: `localhost:8123`
+
+`reader.clickhouse.db` - database name in ClickHouse, default value: `default`
+
+`reader.clickhouse.validationIntervalMs` - interval in millis to validate open connections and re-create failed ones, default value: `10000`
+
+`reader.clickhouse.properties` - base scope for ClickHouse connection properties, see JDBC driver docs for details
+
+### Http Server settings
+`http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
+
+`http.server.workerThreads` - the number of worker threads. Worker threads are used to process long running requests and perform blocking tasks. Default value is implementation specific.
+
+`http.server.rootPath` - base url, default value: `/`
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-sentry-sink.jar application.properties=file://path/to/properties/file`
@@ -166,31 +186,30 @@ Table `tracing_spans` for tracing spans should be created.
 
 ### `application.properties` sample:
 ```properties
-http.server.port=6312
-http.server.host=0.0.0.0
+application.host=0.0.0.0
+application.port=6310
 
-curator.connectString=localhost:2181
-curator.connectionTimeout=10000
-curator.sessionTimeout=30000
-curator.retryPolicy.baseSleepTime=1000
-curator.retryPolicy.maxRetries=5
-curator.retryPolicy.maxSleepTime=8000
-
-cassandra.keyspace=test
-cassandra.connectionsPerHostLocal=4
-cassandra.connectionsPerHostRemote=2
-cassandra.maxRequestsPerConnectionLocal=1024
-cassandra.maxRequestsPerConnectionRemote=256
-cassandra.nodes=localhost
-cassandra.port=9042
-cassandra.readTimeout=12000
-
+context.environment=dev
+context.zone=default
 context.instance.id=1
-context.zone=devlocal
-context.environment=production
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
-metrics.graphite.prefix=vostok.hercules
-metrics.period=5
+metrics.graphite.prefix=hercules
+metrics.period=60
+
+reader.source=CASSANDRA
+reader.table=tracing_spans
+reader.cassandra.dataCenter=datacenter1
+reader.cassandra.nodes=localhost:9042,localhost:9043,localhost:9044
+reader.cassandra.keyspace=hercules_traces
+reader.cassandra.requestTimeoutMs=12000
+reader.cassandra.connectionsPerHostLocal=4
+reader.cassandra.connectionsPerHostRemote=2
+reader.cassandra.maxRequestsPerConnection=1024
+reader.cassandra.consistencyLevel=QUORUM
+
+http.server.ioThreads=8
+http.server.workerThreads=32
+http.server.rootPath=/
 ```

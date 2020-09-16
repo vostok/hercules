@@ -1,33 +1,35 @@
 package ru.kontur.vostok.hercules.management.api.rule;
 
-import io.undertow.server.HttpServerExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
+import ru.kontur.vostok.hercules.management.api.QueryParameters;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
-import ru.kontur.vostok.hercules.undertow.util.ExchangeUtil;
-import ru.kontur.vostok.hercules.undertow.util.ResponseUtil;
-
-import java.util.Optional;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 /**
  * @author Gregory Koshelev
  */
 public class SetRuleHandler extends RuleHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SetRuleHandler.class);
+
     public SetRuleHandler(RuleRepository repository) {
         super(repository);
     }
 
     @Override
-    public void process(HttpServerExchange exchange) throws Exception {
-        Optional<String> key = ExchangeUtil.extractQueryParam(exchange, "key");
-        Optional<String> pattern = ExchangeUtil.extractQueryParam(exchange, "pattern");
-        Optional<String> rights = ExchangeUtil.extractQueryParam(exchange, "rights");
+    public void handle(HttpServerRequest request) {
+        Parameter<String>.ParameterValue key = QueryUtil.get(QueryParameters.KEY, request);
+        Parameter<String>.ParameterValue pattern = QueryUtil.get(QueryParameters.PATTERN, request);
+        Parameter<String>.ParameterValue rights = QueryUtil.get(QueryParameters.RIGHTS, request);
 
-        if (!key.isPresent() || !pattern.isPresent() || !rights.isPresent()) {
-            exchange.setStatusCode(400);
-            exchange.endExchange();
+        if (key.isError() || pattern.isError() || rights.isError()) {
+            request.complete(HttpStatusCodes.BAD_REQUEST);
             return;
         }
-
-        //TODO: Validate query parameters
 
         String ruleRead = key.get() + '.' + pattern.get() + '.' + "read";
         String ruleWrite = key.get() + '.' + pattern.get() + '.' + "write";
@@ -35,22 +37,28 @@ public class SetRuleHandler extends RuleHandler {
 
         String mask = rights.get();
 
-        if (mask.charAt(0) == 'r') {
-            repository.create(ruleRead);
-        } else {
-            repository.delete(ruleRead);
-        }
-        if (mask.charAt(1) == 'w') {
-            repository.create(ruleWrite);
-        } else {
-            repository.delete(ruleWrite);
-        }
-        if (mask.charAt(2) == 'm') {
-            repository.create(ruleManage);
-        } else {
-            repository.delete(ruleManage);
+        try {
+            if (mask.charAt(0) == 'r') {
+                repository.create(ruleRead);
+            } else {
+                repository.delete(ruleRead);
+            }
+            if (mask.charAt(1) == 'w') {
+                repository.create(ruleWrite);
+            } else {
+                repository.delete(ruleWrite);
+            }
+            if (mask.charAt(2) == 'm') {
+                repository.create(ruleManage);
+            } else {
+                repository.delete(ruleManage);
+            }
+        } catch (CuratorException ex) {
+            LOGGER.error("Set rule failed with exception", ex);
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return;
         }
 
-        ResponseUtil.ok(exchange);
+        request.complete(HttpStatusCodes.OK);
     }
 }

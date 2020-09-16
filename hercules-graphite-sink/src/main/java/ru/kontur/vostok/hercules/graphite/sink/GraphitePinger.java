@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.graphite.sink;
 
-import ru.kontur.vostok.hercules.sink.SenderStatus;
+import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -14,12 +14,12 @@ public class GraphitePinger {
         this.port = port;
     }
 
-    public SenderStatus ping() {
+    public ProcessorStatus ping() {
         try {
             new Socket(server, port).close();
-            return SenderStatus.AVAILABLE;
+            return ProcessorStatus.AVAILABLE;
         } catch (IOException exception) {
-            return SenderStatus.UNAVAILABLE;
+            return ProcessorStatus.UNAVAILABLE;
         }
     }
 }

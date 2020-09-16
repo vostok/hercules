@@ -14,7 +14,7 @@ public final class Version {
     private static final Version INSTANCE;
 
     static {
-        Properties properties = PropertiesLoader.load("resource://git.properties");
+        Properties properties = PropertiesLoader.load("resource://git.properties", false);
 
         final String version = properties.getProperty("git.build.version", "unknown");
         final String commitId = properties.getProperty("git.commit.id", "unknown");

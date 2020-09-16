@@ -9,11 +9,11 @@ Thus, the name of index in Elastic is defined as follows:
   where  
     `${elk-index}` is the value of the `properties/elk-index` tag,  
     `${date}` is UTC date from timestamp of the event in `YYYY.MM.DD` format.
-2. If `project` tag exists then the index name would be `${project}-${application}-${environment}-${date}`,  
+2. If `project` tag exists then the index name would be `${project}-${environment}-${subproject}-${date}`,  
   where  
     `${project}` is the value of the `properties/project` tag,  
-    `${application}` is the value of the `properties/application` tag,  
     `${environment}` is the value of the `properties/environment` tag,  
+    `${subproject}` is the value of the `properties/subproject` tag,  
     `${date}` is UTC date from timestamp of event in `YYYY.MM.DD` format.  
-    If `application` or `environment` tags are missing theirs value and corresponding hyphen will be skipped.
+    If `subproject` or `environment` tags are missing theirs value and corresponding hyphen will be skipped.
 3. If none of above tags exists ignore event.

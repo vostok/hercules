@@ -1,0 +1,11 @@
+{
+  "test_index": {
+    "stream": "test_stream",
+    "properties": {
+      "properties/project": "test_project"
+    },
+    "indexPath": "properties/elk-index",
+    "timestampFormat": "ISO_DATE_TIME",
+    "mappingFile": "resource://log-event.reverse.mapping"
+  }
+}

@@ -1,20 +1,14 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import ru.kontur.vostok.hercules.kafka.util.processing.ServicePinger;
-import ru.kontur.vostok.hercules.kafka.util.processing.single.AbstractSingleSinkDaemon;
-import ru.kontur.vostok.hercules.kafka.util.processing.single.SingleSender;
-import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.sink.AbstractSinkDaemon;
 
 import java.util.Properties;
-import java.util.UUID;
 
 /**
  * @author Gregory Koshelev
  */
-public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
+public class SentrySinkDaemon extends AbstractSinkDaemon {
 
     /**
      * Main starting point
@@ -24,23 +18,8 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
     }
 
     @Override
-    protected SingleSender<UUID, Event> createSender(Properties sinkProperties) {
-        final String sentryUrl = Props.SENTRY_URL.extract(sinkProperties);
-        final String sentryToken = Props.SENTRY_TOKEN.extract(sinkProperties);
-
-        SentryApiClient sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
-        SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient);
-        return new SentrySyncProcessor(sinkProperties,sentryClientHolder);
-    }
-
-    @Override
-    protected ServicePinger createPinger(Properties sinkProperties) {
-        final String sentryUrl = Props.SENTRY_URL.extract(sinkProperties);
-        final String sentryToken = Props.SENTRY_TOKEN.extract(sinkProperties);
-
-        SentryApiClient sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
-
-        return () -> sentryApiClient.ping().isOk();
+    protected SentrySender createSender(Properties senderProperties, MetricsCollector metricsCollector) {
+        return new SentrySender(senderProperties, metricsCollector);
     }
 
     @Override
@@ -51,15 +30,5 @@ public class SentrySinkDaemon extends AbstractSingleSinkDaemon {
     @Override
     protected String getDaemonId() {
         return "sink.sentry";
-    }
-
-    private static class Props {
-        static final PropertyDescription<String> SENTRY_URL = PropertyDescriptions
-                .stringProperty("sentry.url")
-                .build();
-
-        static final PropertyDescription<String> SENTRY_TOKEN = PropertyDescriptions
-                .stringProperty("sentry.token")
-                .build();
     }
 }

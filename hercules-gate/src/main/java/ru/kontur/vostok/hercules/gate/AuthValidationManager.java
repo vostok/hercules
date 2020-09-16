@@ -4,6 +4,7 @@ import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.meta.auth.validation.Validation;
 import ru.kontur.vostok.hercules.meta.auth.validation.ValidationSerializer;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.util.Maps;
 
 import java.util.Collections;
@@ -22,7 +23,7 @@ public class AuthValidationManager {
     private final AtomicReference<State> state = new AtomicReference<>(State.INIT);
     private final ValidationSerializer validationSerializer = new ValidationSerializer();
     private final AtomicReference<Map<String, Map<String, ContentValidator>>> validators = new AtomicReference<>(new HashMap<>());
-    private final AtomicReference<Map<String, Map<String, Set<String>>>> tags = new AtomicReference<>(new HashMap<>());
+    private final AtomicReference<Map<String, Map<String, Set<TinyString>>>> tags = new AtomicReference<>(new HashMap<>());
 
     private static final ContentValidator EMPTY_VALIDATOR = new ContentValidator(new Validation(null, null, new Filter[0]));
 
@@ -48,14 +49,14 @@ public class AuthValidationManager {
         List<String> children = curatorClient.children("/hercules/auth/validations");
 
         Map<String, Map<String, ContentValidator>> newValidators = new HashMap<>();
-        Map<String, Map<String, Set<String>>> newTags = new HashMap<>();
+        Map<String, Map<String, Set<TinyString>>> newTags = new HashMap<>();
         for (String value : children) {
             Validation validation = validationSerializer.deserialize(value);
 
             Map<String, ContentValidator> streamToValidatorMap = newValidators.computeIfAbsent(validation.getApiKey(), key -> new HashMap<>());
             streamToValidatorMap.put(validation.getStream(), new ContentValidator(validation));
 
-            Map<String, Set<String>> streamToTagsMap = newTags.computeIfAbsent(validation.getApiKey(), key -> new HashMap<>());
+            Map<String, Set<TinyString>> streamToTagsMap = newTags.computeIfAbsent(validation.getApiKey(), key -> new HashMap<>());
             streamToTagsMap.put(validation.getStream(), extractTags(validation));
         }
         validators.set(newValidators);
@@ -66,7 +67,7 @@ public class AuthValidationManager {
         state.set(State.STOPPED);
     }
 
-    public Set<String> getTags(String apiKey, String stream) {
+    public Set<TinyString> getTags(String apiKey, String stream) {
         return tags.get().getOrDefault(apiKey, Collections.emptyMap()).getOrDefault(stream, Collections.emptySet());
     }
 
@@ -74,14 +75,14 @@ public class AuthValidationManager {
         return validators.get().getOrDefault(apiKey, Collections.emptyMap()).getOrDefault(stream, EMPTY_VALIDATOR);
     }
 
-    private static Set<String> extractTags(Validation validation) {
+    private static Set<TinyString> extractTags(Validation validation) {
         Filter[] filters = validation.getFilters();
 
         if (filters == null || filters.length == 0) {
             return Collections.emptySet();
         }
 
-        Set<String> tags = new HashSet<>(Maps.effectiveHashMapCapacity(filters.length));
+        Set<TinyString> tags = new HashSet<>(Maps.effectiveHashMapCapacity(filters.length));
         for (Filter filter : filters) {
             tags.add(filter.getHPath().getRootTag());//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
         }

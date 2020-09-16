@@ -11,7 +11,6 @@ import org.apache.kafka.streams.kstream.Produced;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerde;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventSerializer;
-import ru.kontur.vostok.hercules.kafka.util.serialization.EventStreamPartitioner;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
@@ -19,6 +18,7 @@ import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,11 +41,11 @@ public class StreamSink {
         List<String> topics = Arrays.asList(derived.getStreams());
         final Filter[] filters = derived.getFilters();
 
-        Set<String> tags = new HashSet<>(filters.length + derived.getShardingKey().length);
+        Set<TinyString> tags = new HashSet<>(filters.length + derived.getShardingKey().length);
         for (Filter filter : filters) {
             tags.add(filter.getHPath().getRootTag());//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
         }
-        tags.addAll(Arrays.asList(derived.getShardingKey()));
+        tags.addAll(Arrays.asList(TinyString.toTinyStrings(derived.getShardingKey())));
 
         Predicate<UUID, Event> predicate = (k, event) -> {
             for (Filter filter : filters) {

@@ -21,15 +21,19 @@ StackFrame:
   type?: String # Type where function is declared
   file?: String # File name
   line?: Integer # Line number
-  column?: Short # Column number
+  column?: [Short, Integer] # Column number
 Properties:
-  project?: String
-  application?: String
-  service?: String
-  environment?: String
+  project?: String # Project name
+  subproject?: String # Subproject name 
+  environment?: String # Environment
+  release?: String # Release version of application
+  traceId?: String or UUID # Trace identifier
+  fingerprint?: Vector<String> or String # Labels for grouping in Sentry
+  platform?: String # Platform of application
+  logger?: String # Logger which created the event
 ```
 
-Tags `properties/project`, `properties/application`, `properties/service` and `properties/environment` are [common tags](../../hercules-protocol/doc/common-tags.md).
+Tags `properties/project`, `properties/subproject` and `properties/environment` are [common tags](../../hercules-protocol/doc/common-tags.md).
 
 ## LogEvent usages
 

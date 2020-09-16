@@ -1,18 +1,16 @@
 package ru.kontur.vostok.hercules.sink;
 
-import com.codahale.metrics.Meter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.undertow.util.servers.ApplicationStatusHttpServer;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
+import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;
 import java.util.Properties;
@@ -21,19 +19,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Base implementation of Sink daemon. Uses pool of SimpleSink for concurrent processing.
+ * Base implementation of Sink daemon. Uses pool of SenderSink for concurrent processing.
  *
  * @author Gregory Koshelev
  */
 public abstract class AbstractSinkDaemon {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSinkDaemon.class);
 
-    private Sender sender;
-    private SinkPool sinkPool;
-    private ExecutorService executor;
-    private ApplicationStatusHttpServer applicationStatusHttpServer;
-
     protected MetricsCollector metricsCollector;
+
+    private Sender sender;
+    private ExecutorService executor;
+    private SinkPool sinkPool;
+
+    private DaemonHttpServer daemonHttpServer;
 
     protected void run(String[] args) {
         long start = System.currentTimeMillis();
@@ -42,9 +41,8 @@ public abstract class AbstractSinkDaemon {
         try {
             Map<String, String> parameters = ArgsParser.parse(args);
 
-            Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://applicationProperties"));
+            Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties sinkProperties = PropertiesUtil.ofScope(properties, Scopes.SINK);
@@ -52,41 +50,32 @@ public abstract class AbstractSinkDaemon {
             Properties senderProperties = PropertiesUtil.ofScope(sinkProperties, Scopes.SENDER);
 
             String daemonId = getDaemonId();
-            ApplicationContextHolder.init(getDaemonName(), getDaemonId(), contextProperties);
+
+            Application.run(getDaemonName(), getDaemonId(), args);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
-            CommonMetrics.registerCommonMetrics(
-                    metricsCollector,
-                    Props.THREAD_GROUP_REGEXP.extract(metricsProperties));
-
-            applicationStatusHttpServer = new ApplicationStatusHttpServer(httpServerProperties);
-            applicationStatusHttpServer.start();
+            CommonMetrics.registerCommonMetrics(metricsCollector);
 
             this.sender = createSender(senderProperties, metricsCollector);
             sender.start();
 
-            int poolSize = Props.POOL_SIZE.extract(sinkProperties);
+            int poolSize = PropertiesUtil.get(Props.POOL_SIZE, sinkProperties).get();
             this.executor = Executors.newFixedThreadPool(poolSize);//TODO: Provide custom ThreadFactory
-
-            Meter droppedEventsMeter = metricsCollector.meter("droppedEvents");
-            Meter processedEventsMeter = metricsCollector.meter("processedEvents");
-            Meter rejectedEventsMeter = metricsCollector.meter("rejectedEvents");
-            Meter totalEventsMeter = metricsCollector.meter("totalEvents");
 
             this.sinkPool =
                     new SinkPool(
                             poolSize,
-                            () -> new SimpleSink(
+                            () -> new SenderSink(
                                     executor,
                                     daemonId,
                                     sinkProperties,
                                     sender,
-                                    droppedEventsMeter,
-                                    processedEventsMeter,
-                                    rejectedEventsMeter,
-                                    totalEventsMeter));
+                                    metricsCollector));
             sinkPool.start();
+
+            daemonHttpServer = new DaemonHttpServer(httpServerProperties, metricsCollector);
+            daemonHttpServer.start();
         } catch (Throwable throwable) {
             LOGGER.error("Cannot start application due to error", throwable);
             shutdown();
@@ -119,6 +108,14 @@ public abstract class AbstractSinkDaemon {
         LOGGER.info("Start {} shutdown", getDaemonName());
 
         try {
+            if (daemonHttpServer != null) {
+                daemonHttpServer.stop(5_000, TimeUnit.MILLISECONDS);
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on stopping HTTP Server", t);
+        }
+
+        try {
             if (sinkPool != null) {
                 sinkPool.stop();
             }
@@ -144,14 +141,6 @@ public abstract class AbstractSinkDaemon {
         }
 
         try {
-            if (applicationStatusHttpServer != null) {
-                applicationStatusHttpServer.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping http status server", t);
-        }
-
-        try {
             if (metricsCollector != null) {
                 metricsCollector.stop();
             }
@@ -163,12 +152,9 @@ public abstract class AbstractSinkDaemon {
     }
 
     private static class Props {
-        static final PropertyDescription<Integer> POOL_SIZE =
-                PropertyDescriptions.integerProperty("poolSize").withDefaultValue(1).build();
-
-        static final PropertyDescription<String[]> THREAD_GROUP_REGEXP =
-                PropertyDescriptions.arrayOfStringsProperty("thread.group.regexp").
-                        withDefaultValue(new String[]{}).
+        static final Parameter<Integer> POOL_SIZE =
+                Parameter.integerParameter("poolSize").
+                        withDefault(1).
                         build();
     }
 }

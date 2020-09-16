@@ -3,16 +3,20 @@ package ru.kontur.vostok.hercules.gate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
+import ru.kontur.vostok.hercules.auth.AuthProvider;
+import ru.kontur.vostok.hercules.auth.wrapper.OrdinaryAuthHandlerWrapper;
 import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.configuration.util.PropertiesUtil;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.handler.HandlerWrapper;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
@@ -21,13 +25,13 @@ import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.sd.BeaconService;
 import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
-import ru.kontur.vostok.hercules.throttling.Throttle;
 import ru.kontur.vostok.hercules.undertow.util.DefaultHttpServerRequestWeigher;
 import ru.kontur.vostok.hercules.undertow.util.DefaultThrottledHttpServerRequestProcessor;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
-import ru.kontur.vostok.hercules.util.application.ApplicationContextHolder;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -36,15 +40,16 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class GateApplication {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(GateApplication.class);
 
     private static MetricsCollector metricsCollector;
-    private static HttpServer server;
-    private static EventSender eventSender;
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
     private static AuthValidationManager authValidationManager;
+    private static StreamStorage streamStorage;
+    private static EventSender eventSender;
+    private static EventValidator eventValidator;
+    private static HttpServer server;
     private static BeaconService beaconService;
 
     public static void main(String[] args) {
@@ -57,20 +62,16 @@ public class GateApplication {
 
             Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
 
-            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-            Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
-            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-            Properties contextProperties = PropertiesUtil.ofScope(properties, Scopes.CONTEXT);
+            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+            Properties validationProperties = PropertiesUtil.ofScope(properties, "validation");
+            Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
+            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
-
-            ApplicationContextHolder.init("Hercules Gate", "gate", contextProperties);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
-
-            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()));
 
             curatorClient = new CuratorClient(curatorProperties);
             curatorClient.start();
@@ -80,6 +81,12 @@ public class GateApplication {
 
             authValidationManager = new AuthValidationManager(curatorClient);
             authValidationManager.start();
+
+            StreamRepository streamRepository = new StreamRepository(curatorClient);
+            streamStorage = new StreamStorage(streamRepository);
+
+            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
+            eventValidator = new EventValidator(validationProperties);
 
             server = createHttpServer(httpServerProperties);
             server.start();
@@ -128,19 +135,19 @@ public class GateApplication {
         }
 
         try {
-            if (authManager != null) {
-                authManager.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on auth manager shutdown", t);
-        }
-
-        try {
             if (authValidationManager != null) {
                 authValidationManager.stop();
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping auth validation manager", t);
+        }
+
+        try {
+            if (authManager != null) {
+                authManager.stop();
+            }
+        } catch (Throwable t) {
+            LOGGER.error("Error on auth manager shutdown", t);
         }
 
         try {
@@ -164,25 +171,30 @@ public class GateApplication {
         LOGGER.info("Finished Gateway shutdown for {}  millis", System.currentTimeMillis() - start);
     }
 
-    public static HttpServer createHttpServer(Properties httpServerProperies) {
-        StreamRepository streamRepository = new StreamRepository(curatorClient);
-        StreamStorage streamStorage = new StreamStorage(streamRepository, 30_000L /* TODO: for test usages; It should be moved to configuration */);
+    private static HttpServer createHttpServer(Properties httpServerProperties) {
+        Properties throttlingProperties = PropertiesUtil.ofScope(httpServerProperties, Scopes.THROTTLING);
 
-        Properties throttlingProperties = PropertiesUtil.ofScope(httpServerProperies, Scopes.THROTTLING);
-
-        SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(metricsCollector, eventSender);
-        Throttle<HttpServerRequest, SendContext> throttle = new CapacityThrottle<>(
+        SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(eventSender, eventValidator, metricsCollector);
+        CapacityThrottle<HttpServerRequest, SendContext> throttle = new CapacityThrottle<>(
                 throttlingProperties,
                 new DefaultHttpServerRequestWeigher(),
                 sendRequestProcessor,
                 new DefaultThrottledHttpServerRequestProcessor()
         );
+        metricsCollector.gauge("throttling.totalCapacity", throttle::totalCapacity);
+        metricsCollector.gauge("throttling.availableCapacity", throttle::availableCapacity);
 
-        long maxContentLength = HttpServer.Props.MAX_CONTENT_LENGTH.extract(httpServerProperies);
-        HttpHandler sendAsyncHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, true, maxContentLength);
-        HttpHandler sendHandler = new GateHandler(metricsCollector, authManager, throttle, authValidationManager, streamStorage, false, maxContentLength);
+        long maxContentLength = PropertiesUtil.get(HttpServer.Props.MAX_CONTENT_LENGTH, httpServerProperties).get();
 
-        RouteHandler handler = new InstrumentedRouteHandlerBuilder(metricsCollector).
+        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager);
+        HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
+
+        HttpHandler sendAsyncHandler = authHandlerWrapper.wrap(
+                new GateHandler(authProvider, throttle, authValidationManager, streamStorage, true, maxContentLength, metricsCollector));
+        HttpHandler sendHandler = authHandlerWrapper.wrap(
+                new GateHandler(authProvider, throttle, authValidationManager, streamStorage, false, maxContentLength, metricsCollector));
+
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
                 post("/stream/sendAsync", sendAsyncHandler).
                 post("/stream/send", sendHandler).
                 build();
@@ -190,7 +202,7 @@ public class GateApplication {
         return new UndertowHttpServer(
                 Application.application().getConfig().getHost(),
                 Application.application().getConfig().getPort(),
-                httpServerProperies,
+                httpServerProperties,
                 handler);
     }
 }

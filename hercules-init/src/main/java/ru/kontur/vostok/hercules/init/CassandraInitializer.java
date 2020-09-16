@@ -1,40 +1,40 @@
 package ru.kontur.vostok.hercules.init;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.internal.core.metadata.DefaultEndPoint;
 import ru.kontur.vostok.hercules.cassandra.util.CassandraDefaults;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescription;
-import ru.kontur.vostok.hercules.util.properties.PropertyDescriptions;
-import ru.kontur.vostok.hercules.util.validation.Validators;
+import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Gregory Koshelev
  */
 public class CassandraInitializer {
+    private final String dataCenter;
     private final String[] nodes;
-    private final int port;
     private final String keyspace;
-    private final short replicationFactor;
+    private final int replicationFactor;
 
     public CassandraInitializer(Properties properties) {
-        this.nodes = Props.NODES.extract(properties);
-        this.port = Props.PORT.extract(properties);
-        this.keyspace = Props.KEYSPACE.extract(properties);
-        this.replicationFactor = Props.REPLICATION_FACTOR.extract(properties);
+        this.dataCenter = PropertiesUtil.get(Props.DATA_CENTER, properties).get();
+        this.nodes = PropertiesUtil.get(Props.NODES, properties).get();
+        this.keyspace = PropertiesUtil.get(Props.KEYSPACE, properties).get();
+        this.replicationFactor = PropertiesUtil.get(Props.REPLICATION_FACTOR, properties).get();
     }
 
     public void init() {
-        Cluster.Builder builder = Cluster.builder().addContactPoints(nodes).withPort(port).withoutJMXReporting();
-
-        for (String node : nodes) {
-            builder.addContactPoint(node);
-        }
-
-        try (Cluster cluster = builder.build(); Session session = cluster.connect()) {
+        try (CqlSession session = CqlSession.builder().
+                withLocalDatacenter(dataCenter).
+                addContactEndPoints(
+                        Stream.of(nodes).
+                                map(x -> new DefaultEndPoint(InetSocketAddressUtil.fromString(x, CassandraDefaults.DEFAULT_CASSANDRA_PORT))).
+                                collect(Collectors.toList())).build()) {
             // Create keyspace if it doesn't exist
             session.execute(
                     "CREATE KEYSPACE IF NOT EXISTS " + keyspace +
@@ -47,26 +47,25 @@ public class CassandraInitializer {
     }
 
     private static class Props {
-        static final PropertyDescription<String[]> NODES = PropertyDescriptions
-                .arrayOfStringsProperty("nodes")
-                .withDefaultValue(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS})
-                .build();
+        static final Parameter<String> DATA_CENTER =
+                Parameter.stringParameter("dataCenter").
+                        withDefault(CassandraDefaults.DEFAULT_DATA_CENTER).
+                        build();
 
-        static final PropertyDescription<Integer> PORT = PropertyDescriptions
-                .integerProperty("port")
-                .withDefaultValue(CassandraDefaults.DEFAULT_CASSANDRA_PORT)
-                .withValidator(Validators.portValidator())
-                .build();
+        static final Parameter<String[]> NODES =
+                Parameter.stringArrayParameter("nodes").
+                        withDefault(new String[]{CassandraDefaults.DEFAULT_CASSANDRA_ADDRESS}).
+                        build();
 
-        static final PropertyDescription<String> KEYSPACE = PropertyDescriptions
-                .stringProperty("keyspace")
-                .withDefaultValue(CassandraDefaults.DEFAULT_KEYSPACE)
-                .build();
+        static final Parameter<String> KEYSPACE =
+                Parameter.stringParameter("keyspace").
+                        withDefault(CassandraDefaults.DEFAULT_KEYSPACE).
+                        build();
 
-        static final PropertyDescription<Short> REPLICATION_FACTOR = PropertyDescriptions
-                .shortProperty("replication.factor")
-                .withDefaultValue(CassandraDefaults.DEFAULT_REPLICATION_FACTOR)
-                .withValidator(Validators.greaterThan((short) 0))
-                .build();
+        static final Parameter<Integer> REPLICATION_FACTOR =
+                Parameter.integerParameter("replication.factor").
+                        withDefault(CassandraDefaults.DEFAULT_REPLICATION_FACTOR).
+                        withValidator(IntegerValidators.positive()).
+                        build();
     }
 }

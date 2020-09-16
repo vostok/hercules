@@ -6,7 +6,6 @@ import java.util.UUID;
  * @author Gregory Koshelev
  */
 public class Event {
-
     private final byte[] bytes;
     private final int version;
     private final long timestamp;
@@ -39,5 +38,9 @@ public class Event {
 
     public Container getPayload() {
         return payload;
+    }
+
+    public int sizeOf() {
+        return bytes.length;
     }
 }

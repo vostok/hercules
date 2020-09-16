@@ -6,6 +6,8 @@ package ru.kontur.vostok.hercules.http;
 public final class HttpStatusCodes {
     public static final int OK = 200;
 
+    public static final int MULTI_STATUS = 207;
+
     public static final int BAD_REQUEST = 400;
     public static final int UNAUTHORIZED = 401;
     public static final int FORBIDDEN = 403;
@@ -18,13 +20,17 @@ public final class HttpStatusCodes {
      */
     public static final int LENGTH_REQUIRED = 411;
     /**
-     * Request;s header 'Content-Length' value exceeds a limit
+     * Request's header 'Content-Length' value exceeds the limit
      */
     public static final int REQUEST_ENTITY_TOO_LARGE = 413;
     public static final int URI_TOO_LONG = 414;
     public static final int UNSUPPORTED_MEDIA_TYPE = 415;
     public static final int UNPROCESSABLE_ENTITY = 422;
     public static final int TOO_MANY_REQUESTS = 429;
+    /**
+     * Request cannot be processed properly as client closed it
+     */
+    public static final int CLIENT_CLOSED_REQUEST = 499;
 
     public static final int INTERNAL_SERVER_ERROR = 500;
     public static final int SERVICE_UNAVAILABLE = 503;

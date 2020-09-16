@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.protocol.util;
 
 import ru.kontur.vostok.hercules.protocol.Container;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Vector;
 
@@ -33,6 +34,11 @@ public class TagDescriptionBuilder<T> {
     public static TagDescriptionBuilder<String> string(String name) {
         return new TagDescriptionBuilder<String>(name)
                 .addScalarExtractor(Type.STRING, StandardExtractors::extractString);
+    }
+
+    public static TagDescriptionBuilder<String[]> stringVector(String name) {
+        return new TagDescriptionBuilder<String[]>(name)
+                .addVectorExtractor(Type.STRING, StandardExtractors::extractStringArray);
     }
 
     public static TagDescriptionBuilder<Container[]> containerVector(String name) {
@@ -116,6 +122,6 @@ public class TagDescriptionBuilder<T> {
                 }).apply(v.getValue());
             });
         }
-        return new TagDescription<>(tagName, extractors);
+        return new TagDescription<>(TinyString.of(tagName), extractors);
     }
 }

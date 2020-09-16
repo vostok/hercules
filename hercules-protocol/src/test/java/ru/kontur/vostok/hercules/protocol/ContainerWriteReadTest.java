@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.protocol;
 
+import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.decoder.ContainerReader;
 import ru.kontur.vostok.hercules.protocol.encoder.ContainerWriter;
@@ -13,54 +14,67 @@ public class ContainerWriteReadTest {
     private final WriteReadPipe<Container> pipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readAllTags());
 
     @Test
-    public void shouldReadWriteContainer() throws Exception {
-        Map<String, Variant> variantMap = new HashMap<>();
-        variantMap.put("int-sample", Variant.ofInteger(123));
-        variantMap.put("text-sample", Variant.ofString("Abc еёю"));
+    public void shouldReadWriteContainer() {
+        Container container = Container.builder().
+                tag("int-sample", Variant.ofInteger(123)).
+                tag("text-sample", Variant.ofString("Abc еёю")).
+                build();
 
-        Container container = new Container(variantMap);
         pipe.process(container).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
-    public void shouldReadWriteMaxCountOfVariants() throws Exception {
-        Map<String, Variant> variantMap = new HashMap<>();
+    public void shouldRedefineTagsInContainerBuilder() {
+        Container expected = Container.builder().
+                tag("int", Variant.ofInteger(123)).
+                tag("string", Variant.ofString("Sample")).
+                build();
+
+        Container actual = Container.builder().
+                tag("int", Variant.ofInteger(456)).
+                tag("string", Variant.ofString("Sample")).
+                tag("int", Variant.ofInteger(123)).
+                build();
+
+        Assert.assertEquals(expected.sizeOf(), actual.sizeOf());
+        HerculesProtocolAssert.assertEquals(expected, actual);
+    }
+
+    @Test
+    public void shouldReadWriteMaxCountOfVariants() {
+        Map<TinyString, Variant> variantMap = new HashMap<>();
 
         for (int i = 0; i < Short.MAX_VALUE; ++i) {
-            variantMap.put(String.valueOf(i), Variant.ofInteger(i));
+            variantMap.put(TinyString.of(String.valueOf(i)), Variant.ofInteger(i));
         }
 
-
-        Container container = new Container(variantMap);
+        Container container = Container.of(variantMap);
         pipe.process(container).assertEquals(HerculesProtocolAssert::assertEquals);
     }
 
     @Test
-    public void shouldSkipUnmarkedTags() throws Exception {
-        Map<String, Variant> full = new HashMap<>();
-        full.put("keep", Variant.ofInteger(1));
-        full.put("skip", Variant.ofInteger(2));
-        Container fullContainer = new Container(full);
+    public void shouldSkipUnmarkedTags() {
+        Container fullContainer = Container.builder().
+                tag("keep", Variant.ofInteger(1)).
+                tag("skip", Variant.ofInteger(2)).
+                build();
 
-        Map<String, Variant> filtered = new HashMap<>();
-        filtered.put("keep", Variant.ofInteger(1));
-        Container filteredContainer = new Container(filtered);
+        Container filteredContainer = Container.of("keep", Variant.ofInteger(1));
 
-        WriteReadPipe<Container> filterPipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readTags(Collections.singleton("keep")));
+        WriteReadPipe<Container> filterPipe = WriteReadPipe.init(new ContainerWriter(), ContainerReader.readTags(Collections.singleton(TinyString.of("keep"))));
         Container processed = filterPipe.process(fullContainer).getProcessed();
 
         HerculesProtocolAssert.assertEquals(filteredContainer, processed);
     }
 
     @Test
-    public void shouldReadWriteInnerContainer() throws Exception {
-        Map<String, Variant> innerVariantMap = new HashMap<>();
-        innerVariantMap.put("first", Variant.ofInteger(1));
-        innerVariantMap.put("second", Variant.ofVector(Vector.ofStrings(new String[]{"a", "b", "c"})));
-        Container innerContainer = new Container(innerVariantMap);
+    public void shouldReadWriteInnerContainer() {
+        Container innerContainer = Container.builder().
+                tag("first", Variant.ofInteger(1)).
+                tag("second", Variant.ofVector(Vector.ofStrings("a", "b", "c"))).
+                build();
 
-        Map<String, Variant> variantMap = Collections.singletonMap("inner", Variant.ofContainer(innerContainer));
-        Container container = new Container(variantMap);
+        Container container = Container.of("inner", Variant.ofContainer(innerContainer));
 
         pipe.process(container).assertEquals(HerculesProtocolAssert::assertEquals);
     }

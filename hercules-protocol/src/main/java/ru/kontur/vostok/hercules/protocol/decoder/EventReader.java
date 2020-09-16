@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.protocol.decoder;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.protocol.TinyString;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -38,7 +39,7 @@ public class EventReader implements Reader<Event> {
             return containerReader.read(decoder);
         } else {
             CONTAINER_READER.skip(decoder);
-            return new Container(Collections.emptyMap());
+            return Container.empty();
         }
     }
 
@@ -50,7 +51,7 @@ public class EventReader implements Reader<Event> {
         return new EventReader(ContainerReader.readAllTags());
     }
 
-    public static EventReader readTags(Set<String> tags) {
+    public static EventReader readTags(Set<TinyString> tags) {
         return new EventReader(ContainerReader.readTags(tags));
     }
 }

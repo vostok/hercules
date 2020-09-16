@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.elastic.sink;
 
-import com.codahale.metrics.Meter;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
@@ -10,13 +9,16 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.elastic.sink.index.IndexCreator;
+import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
-import ru.kontur.vostok.hercules.util.text.StringUtil;
+import ru.kontur.vostok.hercules.health.MetricsUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -32,24 +34,24 @@ public class ElasticResponseHandler {
                 0,
                 0,
                 0,
-                Collections.emptySet()
+                Collections.emptyMap()
         );
 
         private final int retryableErrorCount;
         private final int nonRetryableErrorCount;
         private final int unknownErrorCount;
-        private final Set<String> badIds;
+        private final Map<String, ErrorInfo> errorInfoMap;
 
         public Result(
                 int retryableErrorCount,
                 int nonRetryableErrorCount,
                 int unknownErrorCount,
-                Set<String> badIds
+                Map<String, ErrorInfo> errorInfoMap
         ) {
             this.retryableErrorCount = retryableErrorCount;
             this.nonRetryableErrorCount = nonRetryableErrorCount;
             this.unknownErrorCount = unknownErrorCount;
-            this.badIds = badIds;
+            this.errorInfoMap = errorInfoMap;
         }
 
         public int getRetryableErrorCount() {
@@ -64,27 +66,16 @@ public class ElasticResponseHandler {
             return unknownErrorCount;
         }
 
-        public boolean hasRetryableErrors() {
-            return retryableErrorCount != 0;
-        }
-
-        public boolean hasUnknownErrors() {
-            return unknownErrorCount != 0;
-        }
-
         public int getTotalErrors() {
             return retryableErrorCount + nonRetryableErrorCount + unknownErrorCount;
         }
 
-        public Set<String> getBadIds() {
-            return badIds;
+        /**
+         * @return Map of event-id -> error description
+         */
+        public Map<String, ErrorInfo> getErrors() {
+            return errorInfoMap;
         }
-    }
-
-    public enum ErrorType {
-        RETRYABLE,
-        NON_RETRYABLE,
-        UNKNOWN
     }
 
     static final Set<String> RETRYABLE_ERRORS_CODES = new HashSet<>(Arrays.asList(
@@ -226,10 +217,14 @@ public class ElasticResponseHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticResponseHandler.class);
 
-    private static final String METRIC_PREFIX = "bulkResponseHandler.";
+    private static final String METRIC_PREFIX = "bulkResponseHandler";
 
     private static final JsonFactory FACTORY = new JsonFactory();
     private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
+
+    private final Set<String> redefinedExceptions;
+    private final boolean shouldCreateIndexIfAbsent;
+    private final IndexCreator indexCreator;
 
     private final MetricsCollector metricsCollector;
 
@@ -240,21 +235,24 @@ public class ElasticResponseHandler {
     private final Meter unknownErrorsMeter;
 
 
-    public ElasticResponseHandler(final MetricsCollector metricsCollector) {
+    public ElasticResponseHandler(Set<String> redefinedExceptions, boolean shouldCreateIndexIfAbsent, IndexCreator indexCreator, final MetricsCollector metricsCollector) {
+        this.redefinedExceptions = redefinedExceptions;
+        this.shouldCreateIndexIfAbsent = shouldCreateIndexIfAbsent;
+        this.indexCreator = indexCreator;
         this.metricsCollector = metricsCollector;
 
-        this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "retryableErrors");
-        this.nonRetryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "nonRetryableErrors");
-        this.unknownErrorsMeter = metricsCollector.meter(METRIC_PREFIX + "unknownErrors");
+        this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".retryableErrors");
+        this.nonRetryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".nonRetryableErrors");
+        this.unknownErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".unknownErrors");
     }
 
     // TODO: Replace with a good parser
-    public Result process(HttpEntity httpEntity, Set<String> redefinedExceptions) {
+    public Result process(HttpEntity httpEntity) {
         return toUnchecked(() -> {
             int retryableErrorCount = 0;
             int nonRetryableErrorCount = 0;
             int unknownErrorCount = 0;
-            Set<String> badIds = new HashSet<>();
+            Map<String, ErrorInfo> errorInfos = new HashMap<>();
 
             JsonParser parser = FACTORY.createParser(httpEntity.getContent());
 
@@ -279,8 +277,9 @@ public class ElasticResponseHandler {
                 }
                 if ("error".equals(parser.getCurrentName())) {
                     parser.nextToken(); // Skip name
-                    final ErrorType errorType = processError(MAPPER.readTree(parser), currentId, currentIndex, redefinedExceptions);
-                    switch (errorType) {
+                    final ErrorInfo error = processError(MAPPER.readTree(parser), currentId, currentIndex);
+                    errorInfos.put(currentId, error);
+                    switch (error.getType()) {
                         case RETRYABLE:
                             retryableErrorCount++;
                             break;
@@ -289,14 +288,10 @@ public class ElasticResponseHandler {
                             break;
                         case UNKNOWN:
                             unknownErrorCount++;
-                            if (!StringUtil.isNullOrEmpty(currentId)) {
-                                badIds.add(currentId);
-                            }
                             break;
                         default:
-                            throw new RuntimeException(String.format("Unsupported error type '%s'", errorType));
+                            throw new RuntimeException(String.format("Unsupported error type '%s'", error.getType()));
                     }
-
                 }
             }
 
@@ -304,23 +299,22 @@ public class ElasticResponseHandler {
             nonRetryableErrorsMeter.mark(nonRetryableErrorCount);
             unknownErrorsMeter.mark(unknownErrorCount);
 
-            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, badIds);
+            return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, errorInfos);
         });
     }
 
     /**
      * Process error JSON node
      *
-     * @param errorNode JSON node with error data
-     * @param id event id
-     * @param index index
-     * @param redefinedExceptions exceptions for overriding
+     * @param errorNode           JSON node with error data
+     * @param id                  event id
+     * @param index               index
      * @return error type, which determines retryability of the error
      */
-    private ErrorType processError(TreeNode errorNode, String id, String index, Set<String> redefinedExceptions) {
+    private ErrorInfo processError(TreeNode errorNode, String id, String index) {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
-            LOGGER.error("Original error: {}", error);
+            LOGGER.warn("Original error: {}", error);
 
             final String type = Optional.ofNullable(error.get("type"))
                     .map(JsonNode::asText)
@@ -334,26 +328,36 @@ public class ElasticResponseHandler {
             //TODO: Build "caused by" trace
 
             errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
-            if (redefinedExceptions.contains(type)){
-                LOGGER.error("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                return ErrorType.NON_RETRYABLE;
+            if (shouldCreateIndexIfAbsent && "index_not_found_exception".equals(type)) {
+                LOGGER.info("Index " + index + " not found, will create");
+                if (indexCreator.create(index)) {
+                    LOGGER.info("Index " + index + " has been created, will retry indexing");
+                } else {
+                    LOGGER.warn("Cannot create index " + index + ", will retry anyway");
+                }
+                return new ErrorInfo(ErrorType.RETRYABLE, error.toString());
+            }
+            if (redefinedExceptions.contains(type)) {
+                LOGGER.warn("Retryable error which will be regarded as non-retryable: index={}, id={}, type={}, reason={}", index, id, type, reason);
+                return new ErrorInfo(ErrorType.NON_RETRYABLE, error.toString());
             } else if (RETRYABLE_ERRORS_CODES.contains(type)) {
-                LOGGER.error("Retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                return ErrorType.RETRYABLE;
+                LOGGER.warn("Retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
+                return new ErrorInfo(ErrorType.RETRYABLE, error.toString());
             } else if (NON_RETRYABLE_ERRORS_CODES.contains(type)) {
-                LOGGER.error("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type,reason);
-                return ErrorType.NON_RETRYABLE;
+                LOGGER.warn("Non retryable error: index={}, id={}, type={}, reason={}", index, id, type, reason);
+                return new ErrorInfo(ErrorType.NON_RETRYABLE, error.toString());
             } else {
                 LOGGER.warn("Unknown error: index={}, id={}, type={}, reason={}", index, id, type, reason);
-                return ErrorType.UNKNOWN;
+                return new ErrorInfo(ErrorType.UNKNOWN, error.toString());
             }
         } else {
-            LOGGER.error("Error node is not object note, cannot parse");
-            return ErrorType.NON_RETRYABLE;
+            String errorMessage = "Error node is not object node, cannot parse";
+            LOGGER.warn(errorMessage);
+            return new ErrorInfo(ErrorType.NON_RETRYABLE, errorMessage);
         }
     }
 
     private Meter createMeter(final String errorType) {
-        return metricsCollector.meter(METRIC_PREFIX + "errorTypes." + GraphiteMetricsUtil.sanitizeMetricName(errorType));
+        return metricsCollector.meter(METRIC_PREFIX + ".errorTypes." + MetricsUtil.sanitizeMetricName(errorType));
     }
 }

@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.sink;
 
+import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
 public final class ConsumerUtil {
     private static final String GROUP_ID_TEMPLATE = "hercules.%s.%s";
 
+    @NotNull
     public static String toGroupId(String application, List<PatternMatcher> patternMatchers) {
         return String.format(GROUP_ID_TEMPLATE, application, PatternMatcher.toString(patternMatchers))
                 .replaceAll("\\s+", "-");

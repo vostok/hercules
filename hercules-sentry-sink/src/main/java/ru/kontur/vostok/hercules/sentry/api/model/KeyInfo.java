@@ -12,12 +12,21 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class KeyInfo {
 
     private DsnInfo dsn;
+    private boolean isActive;
 
     public DsnInfo getDsn() {
         return dsn;
     }
 
+    public boolean isActive() {
+        return isActive;
+    }
+
     public void setDsn(DsnInfo dsn) {
         this.dsn = dsn;
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
     }
 }

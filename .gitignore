@@ -4,4 +4,7 @@ target
 # IDE specific resources
 *.iml
 .idea
+*.log
 
+# OS specific files
+.DS_store

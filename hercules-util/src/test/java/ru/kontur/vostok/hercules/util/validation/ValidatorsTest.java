@@ -2,43 +2,26 @@ package ru.kontur.vostok.hercules.util.validation;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+/**
+ * @author Gregory Koshelev
+ */
 public class ValidatorsTest {
-
     @Test
-    public void shouldValidateGreaterThanRestriction() throws Exception {
-        Validator<Integer> validator = Validators.greaterThan(0);
+    public void shouldAcceptAnyValues() {
+        Validator<Integer> validator = Validators.any();
 
-        assertFalse(validator.validate(1).isPresent());
-        assertEquals("Value must be greater than '0' but was '0'", validator.validate(0).get());
-        assertEquals("Value must be greater than '0' but was '-1'", validator.validate(-1).get());
-    }
+        ValidationResult nullIsValid = validator.validate(null);
+        assertTrue(nullIsValid.isOk());
 
-    @Test
-    public void shouldValidateGreaterOrEqualsRestriction() throws Exception {
-        Validator<Integer> validator = Validators.greaterOrEquals(0);
+        ValidationResult zeroIsValid = validator.validate(0);
+        assertTrue(zeroIsValid.isOk());
 
-        assertFalse(validator.validate(1).isPresent());
-        assertFalse(validator.validate(0).isPresent());
-        assertEquals("Value must be greater or equals '0' but was '-1'", validator.validate(-1).get());
-    }
-    @Test
-    public void shouldValidateLesserThanRestriction() throws Exception {
-        Validator<Integer> validator = Validators.lesserThan(0);
+        ValidationResult positiveIdValid = validator.validate(42);
+        assertTrue(positiveIdValid.isOk());
 
-        assertEquals("Value must be lesser than '0' but was '1'", validator.validate(1).get());
-        assertEquals("Value must be lesser than '0' but was '0'", validator.validate(0).get());
-        assertFalse(validator.validate(-1).isPresent());
-    }
-
-    @Test
-    public void shouldValidateLesserOrEqualsRestriction() throws Exception {
-        Validator<Integer> validator = Validators.lesserOrEquals(0);
-
-        assertEquals("Value must be lesser or equals '0' but was '1'", validator.validate(1).get());
-        assertFalse(validator.validate(0).isPresent());
-        assertFalse(validator.validate(-1).isPresent());
+        ValidationResult negativeIsValid = validator.validate(-42);
+        assertTrue(negativeIsValid.isOk());
     }
 }

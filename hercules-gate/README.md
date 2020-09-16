@@ -54,13 +54,27 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with write access to the stream is specified. Required.
+`apiKey`  
+The API Key with write access to the stream is specified.  
+*Required*
 
-`ContentType: application/octet-stream`
+`Content-Type: application/octet-stream`  
+*Required*
+
+`Content-Length`  
+*Required*
+
+`Content-Encoding: lz4`  
+If LZ4-compression is used.  
+*Optional*
+
+`Original-Content-Length`  
+If `Content-Encoding` is used. Value MUST equal original content length (before compression) and must be lesser than `100 * 10^6 bytes`.   
+*Optional (required if `Content-Encoding` is used)*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
 **Request body:**
 
@@ -82,6 +96,10 @@ Count		Integer
 `404` - the stream not found.
 
 `413` - request entity too large.
+
+`415` - unsupported `Content-Encoding`.
+
+`503` - the gate is overloaded and request has been throttled.
 
 ### Send Async
 
@@ -93,13 +111,27 @@ Count		Integer
 
 **Request headers**
 
-`apiKey` - the API Key with write access to the stream is specified. Required.
+`apiKey`  
+The API Key with write access to the stream is specified.  
+*Required*
 
-`ContentType: application/octet-stream`
+`Content-Type: application/octet-stream`  
+*Required*
+
+`Content-Length`  
+*Required*
+
+`Content-Encoding: lz4`  
+If LZ4-compression is used.  
+*Optional*
+
+`Original-Content-Length`  
+If `Content-Encoding` is used. Value MUST equal original content length (before compression) and cannot be greater than `100 * 10^6 bytes`.  
+*Optional (required if `Content-Encoding` is used)*
 
 **Query parameters:**
 
-`stream` - the name of stream. Required.
+`stream` - the name of stream. *Required*
 
 **Request body:**
 
@@ -121,6 +153,10 @@ Count		Integer
 `404` - the stream not found.
 
 `413` - request entity too large.
+
+`415` - unsupported `Content-Encoding`.
+
+`503` - the gate is overloaded and request has been throttled.
 
 ## Settings
 Application is configured through properties file.
@@ -141,6 +177,10 @@ HTTP Server binds on host:port are defined in Main Application settings.
 
 `http.server.throttling.requestTimeout` - timeout for request, which capacity throttling more then permissible, default value: `5000`
 
+### Validation settings
+
+`validation.max.event.size` - max size of Hercules event, value must be consistent with broker setting `max.message.bytes`, default value: `500000`
+
 ### Kafka Producer settings
 See Producer's Config from Apache Kafka documentation. Main settings are presented below.
 
@@ -157,6 +197,8 @@ See Producer's Config from Apache Kafka documentation. Main settings are present
 `producer.retries`
 
 `producer.retry.backoff.ms`
+
+`producer.metric.reporters`
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -216,6 +258,8 @@ http.server.connection.threshold=100000
 http.server.throttling.capacity=1073741824
 http.server.throttling.requestTimeout=10000
 
+validation.max.event.size=500000
+
 producer.bootstrap.servers=localhost:9092
 producer.acks=all
 producer.batch.size=65536
@@ -223,6 +267,7 @@ producer.linger.ms=1
 producer.buffer.memory=335544320
 producer.retries=4
 producer.retry.backoff.ms=250
+producer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000

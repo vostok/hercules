@@ -7,6 +7,7 @@ public final class Scopes {
     public static final String ZOOKEEPER = "zk";
     public static final String KAFKA = "kafka";
     public static final String CASSANDRA = "cassandra";
+    public static final String CLICKHOUSE = "clickhouse";
 
     public static final String CURATOR = "curator";
 
@@ -29,6 +30,8 @@ public final class Scopes {
     public static final String SENDER = "sender";
 
     public static final String SERVICE_DISCOVERY = "sd";
+
+    public static final String LEPROSERY = "leprosery";
 
     private Scopes() {
         /* static class */
