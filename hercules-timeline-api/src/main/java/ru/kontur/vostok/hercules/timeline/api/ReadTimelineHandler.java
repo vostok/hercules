@@ -19,7 +19,7 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.TimelineStateReader;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.TimelineByteContentWriter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.nio.ByteBuffer;
@@ -58,7 +58,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<String> timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
+        Parameter<String>.ParameterValue timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
         if (!timelineName.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -77,7 +77,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
+        Parameter<Integer>.ParameterValue shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
         if (!shardIndex.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -86,7 +86,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
+        Parameter<Integer>.ParameterValue shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
         if (!shardCount.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -103,7 +103,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> take = QueryUtil.get(QueryParameters.TAKE, request);
+        Parameter<Integer>.ParameterValue take = QueryUtil.get(QueryParameters.TAKE, request);
         if (!take.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -112,7 +112,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Long> from = QueryUtil.get(QueryParameters.FROM, request);
+        Parameter<Long>.ParameterValue from = QueryUtil.get(QueryParameters.FROM, request);
         if (!from.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -121,7 +121,7 @@ public class ReadTimelineHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Long> to = QueryUtil.get(QueryParameters.TO, request);
+        Parameter<Long>.ParameterValue to = QueryUtil.get(QueryParameters.TO, request);
         if (!to.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,

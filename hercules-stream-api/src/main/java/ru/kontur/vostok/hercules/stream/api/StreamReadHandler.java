@@ -24,7 +24,7 @@ import ru.kontur.vostok.hercules.util.ByteBufferPool;
 import ru.kontur.vostok.hercules.util.collection.ArrayUtil;
 import ru.kontur.vostok.hercules.util.compression.Compressor;
 import ru.kontur.vostok.hercules.util.compression.Lz4Compressor;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
@@ -59,7 +59,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (!streamName.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -78,7 +78,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
+        Parameter<Integer>.ParameterValue shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
         if (!shardIndex.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -87,7 +87,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
+        Parameter<Integer>.ParameterValue shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
         if (!shardCount.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -104,7 +104,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> take = QueryUtil.get(QueryParameters.TAKE, request);
+        Parameter<Integer>.ParameterValue take = QueryUtil.get(QueryParameters.TAKE, request);
         if (!take.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -131,7 +131,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> timeoutMs = QueryUtil.get(QueryParameters.TIMEOUT_MS, request);
+        Parameter<Integer>.ParameterValue timeoutMs = QueryUtil.get(QueryParameters.TIMEOUT_MS, request);
         if (!timeoutMs.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,

@@ -20,7 +20,7 @@ import ru.kontur.vostok.hercules.protocol.StreamReadState;
 import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
 import ru.kontur.vostok.hercules.protocol.encoder.StreamReadStateWriter;
 import ru.kontur.vostok.hercules.util.ByteBufferPool;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -51,7 +51,7 @@ public class SeekToEndHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (!streamName.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -70,7 +70,7 @@ public class SeekToEndHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
+        Parameter<Integer>.ParameterValue shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
         if (!shardIndex.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -79,7 +79,7 @@ public class SeekToEndHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
+        Parameter<Integer>.ParameterValue shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
         if (!shardCount.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,

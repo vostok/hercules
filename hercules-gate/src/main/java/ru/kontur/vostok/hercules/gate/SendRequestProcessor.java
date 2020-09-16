@@ -23,7 +23,6 @@ import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
 import ru.kontur.vostok.hercules.util.ByteBufferPool;
 import ru.kontur.vostok.hercules.util.compression.Lz4Decompressor;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -88,7 +87,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                     if (contentEncoding == null) {
                                         buffer = ByteBuffer.wrap(bytes);
                                     } else if (ContentEncodings.LZ4.equals(contentEncoding)) {
-                                        ParameterValue<Integer> originalContentLength =
+                                        Parameter<Integer>.ParameterValue originalContentLength =
                                                 HeaderUtil.get(ORIGINAL_CONTENT_LENGTH, request);
                                         if (originalContentLength.isError()) {
                                             tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);

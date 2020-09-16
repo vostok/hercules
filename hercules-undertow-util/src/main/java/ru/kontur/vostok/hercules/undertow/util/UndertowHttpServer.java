@@ -7,7 +7,7 @@ import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.handler.ExceptionHandler;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
@@ -26,8 +26,8 @@ public class UndertowHttpServer extends HttpServer {
     @Override
     protected void startInternal() {
         int connectionThreshold = PropertiesUtil.get(Props.CONNECTION_THRESHOLD, properties).get();
-        ParameterValue<Integer> ioThreads = PropertiesUtil.get(Props.IO_THREADS, properties);
-        ParameterValue<Integer> workerThreads = PropertiesUtil.get(Props.WORKER_THREADS, properties);
+        Parameter<Integer>.ParameterValue ioThreads = PropertiesUtil.get(Props.IO_THREADS, properties);
+        Parameter<Integer>.ParameterValue workerThreads = PropertiesUtil.get(Props.WORKER_THREADS, properties);
 
         final ExceptionHandler exceptionHandler = new ExceptionHandler(handler);
 
