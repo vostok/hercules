@@ -2,7 +2,7 @@
 
 ```yaml
 AnnotationEvent:
-  message: String
+  description: String
   tags: Vector<AnnotationTag>
 
 AnnotationTag:
