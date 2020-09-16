@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.meta.auth.blacklist;
 
+import org.apache.zookeeper.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
@@ -29,7 +30,14 @@ public class Blacklist {
     public Blacklist(CuratorClient curatorClient, RenewableTaskScheduler scheduler) {
         this.curatorClient = curatorClient;
         this.updateTask = scheduler.task(this::update, 60_000, false);
-        this.latchWatcher = new LatchWatcher(event -> updateTask.renew());
+        this.latchWatcher = new LatchWatcher(event -> {
+            if (event.getType() == Watcher.Event.EventType.None) {
+                // We are only interested in the data changes
+                //TODO: Process ZK reconnection separately by using CuratorFramework.getConnectionStateListenable()
+                return;
+            }
+            updateTask.renew();
+        });
     }
 
     public boolean contains(String apiKey) {
