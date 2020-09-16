@@ -4,7 +4,8 @@ Management API provides following methods:
 * Streams:
   * Create / delete / change Streams using [Stream Manager](../hercules-stream-manager/README.md);
   * Show all streams;
-  * Get info about stream.
+  * Get info about stream;
+  * Change ttl, description and partition count of stream.
   
 * Timelines:
   * Create / delete / change Timelines using [Timeline Manager](../hercules-timeline-manager/README.md);
@@ -261,6 +262,42 @@ The API Key with manage access to the stream.
 **Response codes:**
 
 `200` - successfully change ttl of stream.
+
+`400` - bad request.
+
+`401` - management rules for this apiKey is absent.
+
+`403` - forbidden for this API-key.
+
+`404` - source stream not found.
+
+### Change description of stream
+
+**Description:** The method to change description of stream.
+
+**Method:** `POST`
+
+**URL:** `/streams/changeDescription`
+
+**Request headers**
+
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Required*
+
+**Query parameters:**
+
+`stream` - the name of stream. *Required*
+
+`newDescription` - new description of stream. *Required*
+
+`async` - if presented, request will be processed asynchronously. *Optional*
+
+`timeoutMs` - request timeout in milliseconds should be in range `[1000, 30000]`, default value: `15000` ms
+
+**Response codes:**
+
+`200` - successfully change description of stream.
 
 `400` - bad request.
 

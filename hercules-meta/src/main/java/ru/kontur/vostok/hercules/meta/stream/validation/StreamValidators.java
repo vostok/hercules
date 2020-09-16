@@ -1,63 +1,47 @@
 package ru.kontur.vostok.hercules.meta.stream.validation;
 
-import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
-import ru.kontur.vostok.hercules.util.throwable.NotImplementedException;
-import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 
 /**
- * TODO: Should be rewritten (broken style, misleading naming, confusing code)
  *
  * @author Petr Demenev
  */
 public final class StreamValidators {
-    private static final String regex = "[a-z0-9_]{1,48}";
 
-    private static final Validator<String> nameValidator = StringValidators.matchesWith(regex);
-    private static final Validator<Integer> partitionValidator = IntegerValidators.positive();
-    private static final Validator<Long> ttlValidator = LongValidators.positive();
-    private static final Validator<String> DESCRIPTION_VALIDATOR =
-            (x) -> (x == null || x.length() < 1_000)
+    public static final Validator<String> DESCRIPTION_VALIDATOR =
+            (desc) -> (desc == null || desc.length() < 1_000)
                     ? ValidationResult.ok()
-                    : ValidationResult.error("String exceeds length limit 1000");
+                    : ValidationResult.error("The length of description has exceeded the limit of 1000");
 
-    private static final Validator<BaseStream> baseStreamValidator = baseStreamValidator();
-    private static final Validator<DerivedStream> derivedStreamValidator = derivedStreamValidator();
+    public static final Validator<Integer> PARTITION_VALIDATOR =
+            (partition) -> (partition > 0 && partition <= 48)
+                    ? ValidationResult.ok()
+                    : ValidationResult.error("Value should be >0 and <=48");
 
-    /**
-     * @return stream validator
-     */
-    public static Validator<Stream> streamValidatorForHandler() {
-        return stream -> {
-            if (stream instanceof BaseStream) {
-                return baseStreamValidator.validate((BaseStream) stream);
-            } else if (stream instanceof DerivedStream) {
-                return derivedStreamValidator.validate((DerivedStream) stream);
-            }
-            throw new NotImplementedException(String.format(
-                    "Unknown stream type '%s'", stream.getClass().getCanonicalName()
-            ));
-        };
-    }
+    public static final Validator<Long> TTL_VALIDATOR = LongValidators.positive();
+
+    public static final Validator<String> NAME_VALIDATOR = StringValidators.matchesWith("[a-z0-9_]{1,48}");
+
+    public static final Validator<Stream> STREAM_VALIDATOR = streamValidator();
 
     private static <T extends Stream> Validator<T> streamValidator() {
         return stream -> {
-            ValidationResult result = nameValidator.validate(stream.getName());
+            ValidationResult result = NAME_VALIDATOR.validate(stream.getName());
             if (result.isError()) {
                 return ValidationResult.error("Name is invalid: " + result.error());
             }
 
-            result = partitionValidator.validate(stream.getPartitions());
+            result = PARTITION_VALIDATOR.validate(stream.getPartitions());
             if (result.isError()) {
                 return ValidationResult.error("Partition is invalid: " + result.error());
             }
 
-            result = ttlValidator.validate(stream.getTtl());
+            result = TTL_VALIDATOR.validate(stream.getTtl());
             if (result.isError()) {
                 return ValidationResult.error("Ttl is invalid: " + result.error());
             }
@@ -67,37 +51,15 @@ public final class StreamValidators {
                 return ValidationResult.error("Description is invalid: " + result.error());
             }
 
-            return ValidationResult.ok();
-        };
-    }
-
-    private static Validator<BaseStream> baseStreamValidator() {
-        return streamValidator();
-    }
-
-    private static Validator<DerivedStream> derivedStreamValidator() {
-        final Validator<DerivedStream> streamValidator = streamValidator();
-        final Validator<DerivedStream> baseStreamNamesValidator = baseStreamNamesValidator();
-
-        return stream -> {
-            ValidationResult result = streamValidator.validate(stream);
-            if (result.isError()) {
-                return result;
-            }
-
-            result = baseStreamNamesValidator.validate(stream);
-            return result;
-        };
-    }
-
-    private static Validator<DerivedStream> baseStreamNamesValidator() {
-        return stream -> {
-            for (String streamName : stream.getStreams()) {
-                final ValidationResult result = nameValidator.validate(streamName);
-                if (result.isError()) {
-                    return ValidationResult.error("One of source streams is invalid: " + result.error());
+            if (stream instanceof DerivedStream){
+                for (String streamName : ((DerivedStream) stream).getStreams()) {
+                    result = NAME_VALIDATOR.validate(streamName);
+                    if (result.isError()) {
+                        return ValidationResult.error("One of source streams is invalid: " + result.error());
+                    }
                 }
             }
+
             return ValidationResult.ok();
         };
     }

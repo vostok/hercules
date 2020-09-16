@@ -162,6 +162,37 @@ paths:
           $ref: '#/responses/forbidden'
         '404':
           $ref: '#/responses/notFoundSourceStream'
+  /streams/changeDescription:
+    post:
+      tags:
+        - stream
+      summary: Change stream description
+      description: Change stream description
+      operationId: changeStreamDescription
+      parameters:
+        - $ref: '#/parameters/apiKey'
+        - name: stream
+          in: query
+          description: Stream name
+          required: true
+          type: string
+          pattern: '[a-z0-9_]{1,48}'
+        - name: newDescription
+          in: query
+          description: New description
+          required: true
+          type: string
+      responses:
+        '200':
+          $ref: '#/responses/success'
+        '400':
+          $ref: '#/responses/badRequest'
+        '401':
+          $ref: '#/responses/managementRulesIsAbsent'
+        '403':
+          $ref: '#/responses/forbidden'
+        '404':
+          $ref: '#/responses/notFoundSourceStream'
   /streams/info:
     get:
       tags:
@@ -474,6 +505,8 @@ definitions:
           type: string
       ttl:
         type: integer
+      description:
+        type: string
       streams:
         type: array
         description: sources stream names

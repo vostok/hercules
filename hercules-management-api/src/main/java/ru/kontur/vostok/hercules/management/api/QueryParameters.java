@@ -1,10 +1,9 @@
 package ru.kontur.vostok.hercules.management.api;
 
+import ru.kontur.vostok.hercules.meta.stream.validation.StreamValidators;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
-import ru.kontur.vostok.hercules.util.validation.LongValidators;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
-import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
 /**
  * @author Gregory Koshelev
@@ -32,18 +31,19 @@ public final class QueryParameters {
     public static Parameter<Long> NEW_TTL =
             Parameter.longParameter("newTtl").
                     required().
-                    withValidator(LongValidators.positive()).
+                    withValidator(StreamValidators.TTL_VALIDATOR).
+                    build();
+
+    public static Parameter<String> NEW_DESCRIPTION =
+            Parameter.stringParameter("newDescription").
+                    required().
+                    withValidator(StreamValidators.DESCRIPTION_VALIDATOR).
                     build();
 
     public static Parameter<Integer> NEW_PARTITIONS =
             Parameter.integerParameter("newPartitions").
                     required().
-                    withValidator(
-                            value ->
-                                    (value > 0 && value <= 48)
-                                            ? ValidationResult.ok()
-                                            : ValidationResult.error("Value should be >0 and <=48")
-                    ).
+                    withValidator(StreamValidators.PARTITION_VALIDATOR).
                     build();
 
     public static Parameter<String> KEY =

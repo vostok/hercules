@@ -7,5 +7,6 @@ public enum StreamTaskType {
     CREATE,
     INCREASE_PARTITIONS,
     DELETE,
-    CHANGE_TTL;
+    CHANGE_TTL,
+    CHANGE_DESCRIPTION;
 }

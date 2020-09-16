@@ -55,6 +55,7 @@ public class StreamTaskExecutor extends TaskExecutor<StreamTask> {
         processors.put(StreamTaskType.DELETE, this::delete);
         processors.put(StreamTaskType.INCREASE_PARTITIONS, this::increasePartitions);
         processors.put(StreamTaskType.CHANGE_TTL, this::changeTtl);
+        processors.put(StreamTaskType.CHANGE_DESCRIPTION, this::tryUpdateStream);
         this.processors = processors;
     }
 

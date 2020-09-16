@@ -22,6 +22,7 @@ import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
 import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
+import ru.kontur.vostok.hercules.management.api.stream.ChangeStreamDescriptionHandler;
 import ru.kontur.vostok.hercules.management.api.stream.ChangeStreamTtlHandler;
 import ru.kontur.vostok.hercules.management.api.stream.CreateStreamHandler;
 import ru.kontur.vostok.hercules.management.api.stream.DeleteStreamHandler;
@@ -183,6 +184,8 @@ public class ManagementApiApplication {
                 new DeleteStreamHandler(authProvider, streamTaskQueue, streamRepository));
         HttpHandler changeStreamTtlHandler = authHandlerWrapper.wrap(
                 new ChangeStreamTtlHandler(authProvider, streamTaskQueue, streamRepository));
+        HttpHandler changeStreamDescriptionHandler = authHandlerWrapper.wrap(
+                new ChangeStreamDescriptionHandler(authProvider, streamTaskQueue, streamRepository));
         HttpHandler increasePartitionsStreamHandler = authHandlerWrapper.wrap(
                 new IncreasePartitionsStreamHandler(authProvider, streamTaskQueue, streamRepository));
         HttpHandler listStreamHandler = authHandlerWrapper.wrap(
@@ -212,6 +215,7 @@ public class ManagementApiApplication {
                 post("/streams/create", createStreamHandler).
                 post("/streams/delete", deleteStreamHandler).
                 post("/streams/changeTtl", changeStreamTtlHandler).
+                post("/streams/changeDescription", changeStreamDescriptionHandler).
                 post("/streams/increasePartitions", increasePartitionsStreamHandler).
                 get("/streams/list", listStreamHandler).
                 get("/streams/info", infoStreamHandler).
