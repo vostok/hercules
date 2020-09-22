@@ -16,6 +16,7 @@ import java.util.Objects;
  *
  * @author Kirill Sulim
  */
+@Deprecated
 public final class EventToJsonConverter {
 
     private static final JsonFactory FACTORY = new JsonFactory();

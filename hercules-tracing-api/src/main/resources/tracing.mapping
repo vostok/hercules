@@ -1,0 +1,2 @@
+combine beginTimestampUtc,beginTimestampUtcOffset to beginTimestamp using ru.kontur.vostok.hercules.json.format.combiner.IsoDateTimeCombiner
+combine endTimestampUtc,endTimestampUtcOffset to endTimestamp using ru.kontur.vostok.hercules.json.format.combiner.IsoDateTimeCombiner

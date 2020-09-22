@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
+import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -28,6 +29,7 @@ public class TracingApiApplication {
 
     private static MetricsCollector metricsCollector;
     private static TracingReader tracingReader;
+    private static EventToJsonFormatter eventFormatter;
     private static HttpServer server;
 
     public static void main(String[] args) {
@@ -49,6 +51,8 @@ public class TracingApiApplication {
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
             tracingReader = TracingReader.createTracingReader(readerProperties);
+
+            eventFormatter = new EventToJsonFormatter(PropertiesUtil.ofScope(properties, "tracing.format"));
 
             server = createHttpServer(httpServerProperties);
             server.start();
@@ -98,7 +102,7 @@ public class TracingApiApplication {
 
     private static HttpServer createHttpServer(Properties httpServerProperties) {
         RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
-                get("/trace", new GetTraceHandler(tracingReader)).
+                get("/trace", new GetTraceHandler(tracingReader, eventFormatter)).
                 build();
 
         return new UndertowHttpServer(
