@@ -130,6 +130,13 @@ Application is configured through properties file.
 
 `metrics.period` - the period with which metrics are sent to graphite, default value: `60`
 
+### Tracing format settings
+
+`tracing.format.timestamp.enable` - set value `false` (should not use event timestamp as field)
+
+`tracing.format.file` - path to the mapping file. Can use `resource://tracing.mapping`.
+See [MappingLoader](../hercules-json/src/main/java/ru/kontur/vostok/hercules/json/format/MappingLoader.java) for details, required
+
 ### Tracing Reader settings
 `reader.source` - traces source (`CASSANDRA` or `CLICKHOUSE`), default value: `CASSANDRA`
 
@@ -197,6 +204,9 @@ metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
 metrics.graphite.prefix=hercules
 metrics.period=60
+
+tracing.format.timestamp.enable=false
+tracing.format.file=resource://tracing.mapping
 
 reader.source=CASSANDRA
 reader.table=tracing_spans
