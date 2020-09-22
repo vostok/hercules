@@ -1,52 +1,94 @@
 package ru.kontur.vostok.hercules.meta.stream.validation;
 
+import org.junit.Assert;
 import org.junit.Test;
-
 import ru.kontur.vostok.hercules.meta.stream.BaseStream;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.validation.Validator;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 public class StreamValidatorsTest {
 
     @Test
-    public void shouldValidateBaseStream() {
+    public void shouldValidateStreamName() {
         Stream stream = new BaseStream();
-        stream.setName("test_t1_1");
+        stream.setName("stream&");
         stream.setPartitions(1);
         stream.setTtl(86400000);
-        Validator<Stream> validator = StreamValidators.streamValidatorForHandler();
+        Validator<Stream> validator = StreamValidators.STREAM_VALIDATOR;
 
-        assertFalse(validator.validate(stream).isError());
+        Assert.assertFalse(validator.validate(stream).isOk());
     }
 
     @Test
-    public void shouldReturnErrorOnInvalidBaseStream() {
+    public void shouldValidateStreamPartition() {
         Stream stream = new BaseStream();
-        stream.setName("test_t1_1");
-        stream.setPartitions(0);
+        stream.setName("stream");
+        stream.setPartitions(50);
         stream.setTtl(86400000);
-        Validator<Stream> validator = StreamValidators.streamValidatorForHandler();
+        Validator<Stream> validator = StreamValidators.STREAM_VALIDATOR;
 
-        assertEquals("Partition is invalid: Value should be positive integer but was 0",
-                validator.validate(stream).error());
+        Assert.assertFalse(validator.validate(stream).isOk());
+    }
+
+    @Test
+    public void shouldValidateStreamTtl() {
+        Stream stream = new BaseStream();
+        stream.setName("stream");
+        stream.setPartitions(1);
+        stream.setTtl(-1);
+        Validator<Stream> validator = StreamValidators.STREAM_VALIDATOR;
+
+        Assert.assertFalse(validator.validate(stream).isOk());
+    }
+
+    @Test
+    public void shouldValidateStreamDescription() {
+        Stream stream = new BaseStream();
+        stream.setName("stream");
+        stream.setPartitions(1);
+        stream.setTtl(86400000);
+        stream.setDescription(StringUtil.repeat(' ', 1001));
+        Validator<Stream> validator = StreamValidators.STREAM_VALIDATOR;
+
+        Assert.assertFalse(validator.validate(stream).isOk());
     }
 
     @Test
     public void shouldValidateDerivedStream() {
         DerivedStream stream = new DerivedStream();
-        stream.setName("test_t1_1");
+        stream.setName("stream");
         stream.setPartitions(1);
         stream.setTtl(86400000);
-        String[] streams = {"test_t1_2", "TEST_t1_3"};
+        String[] streams = {"stream1?", "stream2?"};
         stream.setStreams(streams);
-        Validator<Stream> validator = StreamValidators.streamValidatorForHandler();
+        Validator<Stream> validator = StreamValidators.STREAM_VALIDATOR;
 
-        assertEquals("One of source streams is invalid: "
-                        + "String should match the pattern '[a-z0-9_]{1,48}' but was 'TEST_t1_3'",
-                validator.validate(stream).error());
+        Assert.assertFalse(validator.validate(stream).isOk());
+    }
+
+    @Test
+    public void shouldBeCorrectDerivedStream() {
+        DerivedStream stream = new DerivedStream();
+        stream.setName("stream");
+        stream.setPartitions(1);
+        stream.setTtl(86400000);
+        String[] streams = {"stream1", "stream2"};
+        stream.setStreams(streams);
+        Validator<Stream> validator = StreamValidators.STREAM_VALIDATOR;
+
+        Assert.assertTrue(validator.validate(stream).isOk());
+    }
+
+    @Test
+    public void shouldBeCorrectBaseStream() {
+        Stream stream = new BaseStream();
+        stream.setName("stream");
+        stream.setPartitions(1);
+        stream.setTtl(86400000);
+        Validator<Stream> validator = StreamValidators.STREAM_VALIDATOR;
+
+        Assert.assertTrue(validator.validate(stream).isOk());
     }
 }
