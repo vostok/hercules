@@ -1,9 +1,11 @@
 package ru.kontur.vostok.hercules.auth;
 
+import org.apache.zookeeper.Watcher;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
+import ru.kontur.vostok.hercules.curator.LatchWatcher;
 import ru.kontur.vostok.hercules.meta.auth.blacklist.Blacklist;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.concurrent.RenewableTask;
@@ -22,6 +24,8 @@ public final class AuthManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthManager.class);
 
+    private static final String PATH = "/hercules/auth/rules";
+
     private final CuratorClient curatorClient;
 
     private final RenewableTaskScheduler scheduler;
@@ -33,6 +37,7 @@ public final class AuthManager {
     private final Blacklist blacklist;
 
     private final RenewableTask updateTask;
+    private final LatchWatcher latchWatcher;
 
     public AuthManager(CuratorClient curatorClient) {
         this.curatorClient = curatorClient;
@@ -42,6 +47,14 @@ public final class AuthManager {
         this.blacklist = new Blacklist(curatorClient, scheduler);
 
         this.updateTask = scheduler.task(this::update, 60_000, false);
+        this.latchWatcher = new LatchWatcher(event -> {
+            if (event.getType() == Watcher.Event.EventType.None) {
+                // We are only interested in the data changes
+                //TODO: Process ZK reconnection separately by using CuratorFramework.getConnectionStateListenable()
+                return;
+            }
+            updateTask.renew();
+        });
     }
 
     public void start() throws Exception {
@@ -96,7 +109,7 @@ public final class AuthManager {
     private void update() {
         List<String> rules;
         try {
-            rules = curatorClient.children("/hercules/auth/rules");
+            rules = latchWatcher.latch() ? curatorClient.children(PATH, latchWatcher) : curatorClient.children(PATH);
         } catch (Exception e) {
             LOGGER.error("Error on getting rules", e);
             return;
