@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.health;
 
 import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.graphite.Graphite;
@@ -72,7 +71,7 @@ public class MetricsCollector {
     /**
      * Get throughput meter by the name
      *
-     * @param name is the name of the metric
+     * @param name the name of the metric
      * @return requested meter
      */
     public Meter meter(String name) {
@@ -80,19 +79,9 @@ public class MetricsCollector {
     }
 
     /**
-     * Get counter by the name
-     *
-     * @param name is the name of the counter
-     * @return requested counter
-     */
-    public Counter counter(String name) {
-        return new CounterImpl(registry.counter(name));
-    }
-
-    /**
      * Get timer by the name
      *
-     * @param name is the name of the timer
+     * @param name the name of the timer
      * @return requested timer
      */
     public Timer timer(String name) {
@@ -100,11 +89,31 @@ public class MetricsCollector {
     }
 
     /**
+     * Get counter by the name
+     *
+     * @param name the name of the counter
+     * @return requested counter
+     */
+    public Counter counter(String name) {
+        return new CounterImpl(registry.counter(name));
+    }
+
+    /**
+     * Get histogram by the name
+     *
+     * @param name the name of the histogram
+     * @return requested histogram
+     */
+    public Histogram histogram(String name) {
+        return new HistogramImpl(registry.histogram(name));
+    }
+
+    /**
      * Register metric by the name with custom function
      *
-     * @param name     is the name of the metric
-     * @param supplier is the custom function to provide metric's values
-     * @param <T>      is the metric's value type (ordinarily Integer or Long)
+     * @param name     the name of the metric
+     * @param supplier the custom function to provide metric's values
+     * @param <T>      the metric's value type (ordinarily Integer or Long)
      */
     public <T> void gauge(String name, Supplier<T> supplier) {
         registry.register(name, (Gauge<T>) supplier::get);
@@ -113,21 +122,11 @@ public class MetricsCollector {
     /**
      * Removes the metric with the given name
      *
-     * @param name is the name of the metric
+     * @param name the name of the metric
      * @return whether or not the metric was removed
      */
     public boolean remove(String name) {
         return registry.remove(name);
-    }
-
-    /**
-     * Get histogram by the name
-     *
-     * @param name is the name of the histogram
-     * @return requested histogram
-     */
-    public Histogram histogram(String name) {
-        return registry.histogram(name);
     }
 
     /**
@@ -191,7 +190,7 @@ public class MetricsCollector {
     public static class TimerImpl implements Timer {
         private final com.codahale.metrics.Timer timer;
 
-        public TimerImpl(com.codahale.metrics.Timer timer) {
+        TimerImpl(com.codahale.metrics.Timer timer) {
             this.timer = timer;
         }
 
@@ -207,7 +206,7 @@ public class MetricsCollector {
     public static class CounterImpl implements Counter {
         private final com.codahale.metrics.Counter counter;
 
-        public CounterImpl(com.codahale.metrics.Counter counter) {
+        CounterImpl(com.codahale.metrics.Counter counter) {
             this.counter = counter;
         }
 
@@ -219,6 +218,27 @@ public class MetricsCollector {
         @Override
         public void decrement(long value) {
             counter.dec(value);
+        }
+    }
+
+    /**
+     * @author Gregory Koshelev
+     */
+    public static class HistogramImpl implements Histogram {
+        private final com.codahale.metrics.Histogram histogram;
+
+        HistogramImpl(com.codahale.metrics.Histogram histogram) {
+            this.histogram = histogram;
+        }
+
+        @Override
+        public void update(int value) {
+            histogram.update(value);
+        }
+
+        @Override
+        public void update(long value) {
+            histogram.update(value);
         }
     }
 }
