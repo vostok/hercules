@@ -5,7 +5,7 @@ package ru.kontur.vostok.hercules.health;
  *
  * @author Gregory Koshelev
  */
-public interface Counter {
+public interface Counter extends Metric {
     /**
      * Increment by value.
      *

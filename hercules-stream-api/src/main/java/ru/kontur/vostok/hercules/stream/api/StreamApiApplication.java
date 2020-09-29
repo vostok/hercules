@@ -148,7 +148,7 @@ public class StreamApiApplication {
         HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
 
         HttpHandler readStreamHandler = authHandlerWrapper.wrap(
-                new StreamReadHandler(authProvider, repository, streamReader));
+                new StreamReadHandler(authProvider, repository, streamReader, metricsCollector));
         HttpHandler seekToEndHandler = authHandlerWrapper.wrap(
                 new SeekToEndHandler(authProvider, repository, consumerPool));
 
