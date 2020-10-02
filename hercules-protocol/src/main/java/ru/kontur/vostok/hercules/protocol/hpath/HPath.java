@@ -100,7 +100,7 @@ public class HPath {
     }
 
     public static HPath fromPath(@NotNull String path) {
-        if (path.isEmpty()) {
+        if (path.isEmpty() || "/".equals(path)) {
             return empty();
         }
         return new HPath(path, pathToTags(path));
