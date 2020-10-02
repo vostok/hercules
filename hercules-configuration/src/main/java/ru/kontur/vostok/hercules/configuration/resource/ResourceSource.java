@@ -18,7 +18,7 @@ public class ResourceSource implements Source {
         InputStream in = ResourceSource.class.getClassLoader().getResourceAsStream(
                 sourcePath.substring("resource://".length()));
         if (in == null) {
-            throw new IllegalArgumentException("Properties file not found");
+            throw new IllegalArgumentException("File not found");
         }
         return in;
     }

@@ -20,7 +20,7 @@ public class FileSource implements Source {
         try {
             return new FileInputStream(sourcePath.substring("file://".length()));
         } catch (FileNotFoundException ex) {
-            throw new IllegalArgumentException("Properties file not found", ex);
+            throw new IllegalArgumentException("File not found", ex);
         }
     }
 }
