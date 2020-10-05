@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -145,4 +146,57 @@ public class EventToJsonFormatterTest {
                 stream.toString(StandardCharsets.UTF_8.name())
         );
     }
+
+    @Test
+    public void shouldProjectContainer() throws IOException {
+        Event event = EventBuilder.create(0, "11203800-63fd-11e8-83e2-3a587d902000").
+                tag("description", Variant.ofString("This is the (almost) annotation")).
+                tag("tags", Variant.ofContainer(
+                        Container.builder().tag("key", Variant.ofString("environment")).tag("value", Variant.ofString("staging")).build())).
+                build();
+
+        Properties properties = new Properties();
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "false");
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://project.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DocumentWriter.writeTo(stream, formatter.format(event));
+
+        assertEquals("{" +
+                        "\"environment\":\"staging\"," +
+                        "\"description\":\"This is the (almost) annotation\"" +
+                        "}",
+                stream.toString(StandardCharsets.UTF_8.name())
+        );
+
+    }
+
+    @Test
+    public void shouldProjectVectorOfContainers() throws IOException {
+        Event event = EventBuilder.create(0, "11203800-63fd-11e8-83e2-3a587d902000").
+                tag("description", Variant.ofString("This is the annotation")).
+                tag("tags", Variant.ofVector(Vector.ofContainers(
+                        Container.builder().tag("key", Variant.ofString("environment")).tag("value", Variant.ofString("staging")).build(),
+                        Container.builder().tag("key", Variant.ofString("hostname")).tag("value", Variant.ofString("localhost")).build()))).
+                build();
+
+        Properties properties = new Properties();
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "false");
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://project.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DocumentWriter.writeTo(stream, formatter.format(event));
+
+        assertEquals("{" +
+                        "\"environment\":\"staging\"," +
+                        "\"hostname\":\"localhost\"," +
+                        "\"description\":\"This is the annotation\"" +
+                        "}",
+                stream.toString(StandardCharsets.UTF_8.name())
+        );
+
+    }
+
 }

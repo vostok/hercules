@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
+import ru.kontur.vostok.hercules.health.Histogram;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
@@ -23,7 +24,6 @@ import ru.kontur.vostok.hercules.throttling.ThrottleCallback;
 import ru.kontur.vostok.hercules.util.ByteBufferPool;
 import ru.kontur.vostok.hercules.util.compression.Lz4Decompressor;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -51,10 +51,13 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
     private final EventValidator eventValidator;
     private final Lz4Decompressor lz4Decompressor = new Lz4Decompressor();
 
-    private final Timer readEventsDurationMsTimer;
+    private final Timer recvTimeMsTimer;
+    private final Timer decompressionTimeMsTimer;
+    private final Timer processingTimeMsTimer;
     private final Meter sentEventsMeter;
     private final Meter lostEventsMeter;
-    private final Timer decompressionTimeMsTimer;
+    private final Histogram recvEventsHistogram;
+    private final Histogram eventSizeHistogram;
 
     public SendRequestProcessor(EventSender eventSender, EventValidator eventValidator, MetricsCollector metricsCollector) {
         this(eventSender, eventValidator, metricsCollector, TimeSource.SYSTEM);
@@ -65,20 +68,23 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
         this.eventValidator = eventValidator;
         this.time = time;
 
-        this.readEventsDurationMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".readEventsDurationMs");
+        this.recvTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".recvTimeMs");
+        this.decompressionTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".decompressionTimeMs");
+        this.processingTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".processingTimeMs");
         this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sentEvents");
         this.lostEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".lostEvents");
-        this.decompressionTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".decompressionTimeMs");
+        this.recvEventsHistogram = metricsCollector.histogram(this.getClass().getSimpleName() + ".recvEvents");
+        this.eventSizeHistogram = metricsCollector.histogram(this.getClass().getSimpleName() + ".eventSize");
     }
 
     @Override
     public void processAsync(HttpServerRequest request, SendContext context, ThrottleCallback callback) {
         try {
-            final long readEventsStartedAt = time.milliseconds();
+            final long recvStartedAtMs = time.milliseconds();
             request.readBodyAsync(
                     (r, bytes) -> request.dispatchAsync(
                             () -> {
-                                readEventsDurationMsTimer.update(time.milliseconds() - readEventsStartedAt);
+                                recvTimeMsTimer.update(time.milliseconds() - recvStartedAtMs);
 
                                 ByteBuffer buffer = null;
                                 try {
@@ -88,7 +94,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                     if (contentEncoding == null) {
                                         buffer = ByteBuffer.wrap(bytes);
                                     } else if (ContentEncodings.LZ4.equals(contentEncoding)) {
-                                        ParameterValue<Integer> originalContentLength =
+                                        Parameter<Integer>.ParameterValue originalContentLength =
                                                 HeaderUtil.get(ORIGINAL_CONTENT_LENGTH, request);
                                         if (originalContentLength.isError()) {
                                             tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);
@@ -104,7 +110,9 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                         return;
                                     }
 
-                                    process(request, buffer, context, callback);
+                                    try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(processingTimeMsTimer, TimeUnit.MILLISECONDS, time)) {
+                                        process(request, buffer, context, callback);
+                                    }
                                 } catch (RuntimeException ex) {
                                     tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);
                                     LOGGER.error("Cannot process request due to exception", ex);
@@ -148,10 +156,12 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
     private void send(HttpServerRequest request, ReaderIterator<Event> reader, SendContext context, ThrottleCallback callback) {
         AtomicInteger pendingEvents = new AtomicInteger(reader.getTotal());
         AtomicBoolean processed = new AtomicBoolean(false);
+        recvEventsHistogram.update(reader.getTotal());
         while (reader.hasNext()) {
             Event event;
             try {
                 event = reader.next();
+                eventSizeHistogram.update(event.sizeOf());
                 if (!eventValidator.validate(event)) {
                     if (processed.compareAndSet(false, true)) {
                         tryComplete(request, HttpStatusCodes.BAD_REQUEST, callback);
@@ -193,7 +203,7 @@ public class SendRequestProcessor implements RequestProcessor<HttpServerRequest,
                                 callback.call();
                             }
                         }
-                        sentEventsMeter.mark(1);
+                        sentEventsMeter.mark();
                     },
                     () -> {
                         if (processed.compareAndSet(false, true)) {

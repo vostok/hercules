@@ -1,8 +1,10 @@
 package ru.kontur.vostok.hercules.util.parameter;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import ru.kontur.vostok.hercules.util.parameter.parsing.Parser;
 import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
+import ru.kontur.vostok.hercules.util.parameter.parsing.ParsingResult;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 import ru.kontur.vostok.hercules.util.validation.Validators;
@@ -15,16 +17,19 @@ import ru.kontur.vostok.hercules.util.validation.Validators;
  * @author Gregory Koshelev
  */
 public class Parameter<T> {
+    private final ParameterValue empty = new ParameterValue(null, ValidationResult.ok());
+    private final ParameterValue missed = new ParameterValue(null, ValidationResult.missed());
+
     private final String name;
     private final ParameterType type;
-    private final ParameterValue<T> defaultValue;
+    private final ParameterValue defaultValue;
     private final Parser<T> parser;
     private final Validator<T> validator;
 
-    private Parameter(String name, ParameterType type, ParameterValue<T> defaultValue, @NotNull Parser<T> parser, Validator<T> validator) {
+    private Parameter(String name, ParameterType type, T defaultValue, @NotNull Parser<T> parser, Validator<T> validator) {
         this.name = name;
         this.type = type;
-        this.defaultValue = defaultValue;
+        this.defaultValue = defaultValue != null ? of(defaultValue) : empty();
         this.parser = parser;
         this.validator = validator;
     }
@@ -35,30 +40,31 @@ public class Parameter<T> {
      * @param string the string
      * @return extracted value
      */
-    public ParameterValue<T> from(String string) {
-        ParameterValue<T> parsed = parser.parse(string);
+    public ParameterValue from(String string) {
+        ParsingResult<T> parsed = parser.parse(string);
 
-        if (!parsed.isOk()) {
-            return parsed;
+        if (parsed.hasError()) {
+            return invalid(parsed.error());
         }
 
         if (parsed.isEmpty()) {
             if (type == ParameterType.OPTIONAL) {
-                return parsed;
+                return empty();
             }
 
             if (type == ParameterType.REQUIRED) {
-                return ParameterValue.missed();
+                return missed();
             }
 
             return defaultValue;
         }
 
-        ValidationResult result = validator.validate(parsed.get());
+        T value = parsed.get();
+        ValidationResult result = validator.validate(value);
         if (result.isOk()) {
-            return parsed;
+            return of(value);
         }
-        return ParameterValue.invalid(result);
+        return invalid(result);
     }
 
     /**
@@ -68,6 +74,59 @@ public class Parameter<T> {
      */
     public String name() {
         return name;
+    }
+
+    /**
+     * Builds valid parameter's value.
+     *
+     * @param value the value
+     * @return valid parameter's value
+     */
+    @NotNull
+    private ParameterValue of(@NotNull T value) {
+        return new ParameterValue(value, ValidationResult.ok());
+    }
+
+    /**
+     * Builds invalid parameter's value.
+     *
+     * @param result the validation result
+     * @return invalid parameter's value
+     */
+    @NotNull
+    private ParameterValue invalid(@NotNull ValidationResult result) {
+        return new ParameterValue(null, result);
+    }
+
+    /**
+     * Builds invalid parameter's value.
+     *
+     * @param error the validation error
+     * @return invalid parameter's value
+     */
+    @NotNull
+    private ParameterValue invalid(@Nullable String error) {
+        return new ParameterValue(null, ValidationResult.error(error != null ? error : "unknown"));
+    }
+
+    /**
+     * Returns valid empty parameter's value.
+     *
+     * @return valid parameter's value
+     */
+    @NotNull
+    private ParameterValue empty() {
+        return empty;
+    }
+
+    /**
+     * Returns missed parameter's value.
+     *
+     * @return invalid parameter's value
+     */
+    @NotNull
+    private ParameterValue missed() {
+        return missed;
     }
 
     /**
@@ -165,10 +224,11 @@ public class Parameter<T> {
     }
 
     public static class ParameterBuilder<T> {
-        private String name;
+        private final String name;
+        private final Parser<T> parser;
+
         private ParameterType type = ParameterType.OPTIONAL;
         private T defaultValue = null;
-        private Parser<T> parser;
         private Validator<T> validator = Validators.any();
 
         private ParameterBuilder(String name, Parser<T> parser) {
@@ -226,7 +286,7 @@ public class Parameter<T> {
                 }
             }
 
-            return new Parameter<>(name, type, defaultValue != null ? ParameterValue.of(defaultValue) : ParameterValue.empty(), parser, validator);
+            return new Parameter<>(name, type, defaultValue, parser, validator);
         }
     }
 
@@ -269,6 +329,98 @@ public class Parameter<T> {
     public static class EnumParameterBuilder<E extends Enum<E>> extends ParameterBuilder<E> {
         private EnumParameterBuilder(String name, Class<E> enumType) {
             super(name, Parsers.forEnum(enumType));
+        }
+    }
+
+    /**
+     * The value of {@link Parameter}
+     *
+     * @author Gregory Koshelev
+     */
+    public class ParameterValue {
+        private final T value;
+        private final ValidationResult result;
+
+        private ParameterValue(T value, ValidationResult result) {
+            this.value = value;
+            this.result = result;
+        }
+
+        /**
+         * Returns valid non null value. Otherwise throws exception.
+         *
+         * @return the value of type {@link T}
+         * @throws IllegalStateException if value is empty
+         * @throws IllegalStateException if value is invalid
+         */
+        @NotNull
+        public T get() {
+            if (isEmpty()) {
+                throw new IllegalStateException("Value for parameter '" + name + "' is empty");
+            }
+
+            if (result.isOk()) {
+                return value;
+            }
+
+            throw new IllegalStateException("Value for parameter '" + name + "' is invalid: " + result.error());
+        }
+
+        /**
+         * Returns non null value if it exists or {@code other} if {@link ParameterValue#isEmpty()}. Otherwise throws exception.
+         *
+         * @param other the other value to return if {@link ParameterValue#isEmpty()}
+         * @return the value of type {@link T}
+         * @throws IllegalStateException if value is invalid
+         */
+        @Nullable
+        public T orEmpty(@Nullable T other) {
+            if (isEmpty()) {
+                return other;
+            }
+
+            if (isOk()) {
+                return value;
+            }
+
+            throw new IllegalStateException("Value for parameter '" + name + "' is invalid: " + result.error());
+        }
+
+        /**
+         * Returns validation result.
+         *
+         * @return validation result
+         */
+        @NotNull
+        public ValidationResult result() {
+            return result;
+        }
+
+        /**
+         * Returns {@code true} if value is valid.
+         *
+         * @return {@code true} if value is valid
+         */
+        public boolean isOk() {
+            return result.isOk();
+        }
+
+        /**
+         * Returns {@code true} if value is invalid.
+         *
+         * @return {@code true} if value is invalid
+         */
+        public boolean isError() {
+            return result.isError();
+        }
+
+        /**
+         * Returns {@code true} if value is empty and it is acceptable.
+         *
+         * @return {@code true} if value is empty and it is acceptable
+         */
+        public boolean isEmpty() {
+            return this == empty;
         }
     }
 }

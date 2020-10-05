@@ -1,0 +1,5 @@
+# Project annotation tags to fields (key -> value)
+project tags to / with key and value using ru.kontur.vostok.hercules.json.format.transformer.ScalarToStringTransformer
+
+# Join all annotation tags with a comma as separator
+transform tags to tags using ru.kontur.vostok.hercules.elastic.sink.format.GrafanaAnnotationTagsTransformer

@@ -57,7 +57,7 @@ Each tag definition should be a valid HPath. Tag is optional if HPath ends with 
 `sink.sender.elastic.format.timestamp.format` - timestamp field format is compatible with `java.time.format.DateTimeFormatter`,
 default value: `yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX`
 
-`sink.sender.elastic.format.file` - path to the mapping file. Can use `resource://log-event.mapping` if sink processes logs. See `ru.kontur.vostok.hercules.json.mapping.MappingLoader` for details, required
+`sink.sender.elastic.format.file` - path to the mapping file. Can use `resource://log-event.mapping` if sink processes logs. See [MappingLoader](../hercules-json/src/main/java/ru/kontur/vostok/hercules/json/format/MappingLoader.java) for details, required
 
 ##### Elastic Client settings
 `sink.sender.elastic.client.hosts` - list of elastic hosts

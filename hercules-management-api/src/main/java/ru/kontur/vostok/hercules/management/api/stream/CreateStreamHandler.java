@@ -21,7 +21,6 @@ import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
-import ru.kontur.vostok.hercules.util.validation.Validator;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 public class CreateStreamHandler implements HttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateStreamHandler.class);
-    private static final Validator<Stream> STREAM_VALIDATOR = StreamValidators.streamValidatorForHandler();
 
     private final AuthProvider authProvider;
     private final TaskQueue<StreamTask> taskQueue;
@@ -64,7 +62,7 @@ public class CreateStreamHandler implements HttpHandler {
                     stream.setShardingKey(new String[0]);
                 }
 
-                ValidationResult validationResult = STREAM_VALIDATOR.validate(stream);
+                ValidationResult validationResult = StreamValidators.STREAM_VALIDATOR.validate(stream);
                 if (validationResult.isError()) {
                     LOGGER.warn(validationResult.error());
                     r.complete(HttpStatusCodes.BAD_REQUEST);

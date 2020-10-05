@@ -5,6 +5,10 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
+import ru.kontur.vostok.hercules.health.Histogram;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.http.ContentEncodings;
 import ru.kontur.vostok.hercules.http.header.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -24,16 +28,17 @@ import ru.kontur.vostok.hercules.util.ByteBufferPool;
 import ru.kontur.vostok.hercules.util.collection.ArrayUtil;
 import ru.kontur.vostok.hercules.util.compression.Compressor;
 import ru.kontur.vostok.hercules.util.compression.Lz4Compressor;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
  */
 public class StreamReadHandler implements HttpHandler {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamReadHandler.class);
 
     private static final StreamReadStateReader STATE_READER = new StreamReadStateReader();
@@ -45,10 +50,22 @@ public class StreamReadHandler implements HttpHandler {
     private final StreamReader streamReader;
     private final StreamRepository streamRepository;
 
-    public StreamReadHandler(AuthProvider authProvider, StreamRepository streamRepository, StreamReader streamReader) {
+    private final Timer compressionTimeMsTimer;
+    private final Timer sendTimeMsTimer;
+    private final Histogram responseSizeBytesHistogram;
+
+    public StreamReadHandler(
+            AuthProvider authProvider,
+            StreamRepository streamRepository,
+            StreamReader streamReader,
+            MetricsCollector metricsCollector) {
         this.authProvider = authProvider;
         this.streamRepository = streamRepository;
         this.streamReader = streamReader;
+
+        this.compressionTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".compressionTimeMs");
+        this.sendTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".sendTimeMs");
+        this.responseSizeBytesHistogram = metricsCollector.histogram(this.getClass().getSimpleName() + ".responseSizeBytes");
     }
 
     @Override
@@ -59,7 +76,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (!streamName.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -78,7 +95,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
+        Parameter<Integer>.ParameterValue shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
         if (!shardIndex.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -87,7 +104,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
+        Parameter<Integer>.ParameterValue shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
         if (!shardCount.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -104,7 +121,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> take = QueryUtil.get(QueryParameters.TAKE, request);
+        Parameter<Integer>.ParameterValue take = QueryUtil.get(QueryParameters.TAKE, request);
         if (!take.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -131,7 +148,7 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> timeoutMs = QueryUtil.get(QueryParameters.TIMEOUT_MS, request);
+        Parameter<Integer>.ParameterValue timeoutMs = QueryUtil.get(QueryParameters.TIMEOUT_MS, request);
         if (!timeoutMs.isOk()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -163,7 +180,9 @@ public class StreamReadHandler implements HttpHandler {
                                 if (ArrayUtil.contains(request.getHeaders(HttpHeaders.ACCEPT_ENCODING), ContentEncodings.LZ4)) {
                                     int requiredCapacity = compressor.maxCompressedLength(buffer.remaining());
                                     ByteBuffer compressed = ByteBufferPool.acquire(requiredCapacity);
-                                    compressor.compress(buffer, compressed);
+                                    try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(compressionTimeMsTimer, TimeUnit.MILLISECONDS)) {
+                                        compressor.compress(buffer, compressed);
+                                    }
                                     ByteBufferPool.release(buffer);
                                     buffer = compressed;
 
@@ -190,17 +209,21 @@ public class StreamReadHandler implements HttpHandler {
      * @param buffer  the data buffer
      */
     private void send(HttpServerRequest request, ByteBuffer buffer) {
+        final long sendStartedAtMs = TimeSource.SYSTEM.milliseconds();
+        responseSizeBytesHistogram.update(buffer.remaining());
         request.getResponse().setContentLength(buffer.remaining());
         request.getResponse().send(
                 buffer,
                 req -> {
                     request.complete();
                     ByteBufferPool.release(buffer);
+                    sendTimeMsTimer.update(TimeSource.SYSTEM.milliseconds() - sendStartedAtMs);
                 },
                 (req, exception) -> {
                     LOGGER.error("Error when send response", exception);
                     request.complete();
                     ByteBufferPool.release(buffer);
+                    sendTimeMsTimer.update(TimeSource.SYSTEM.milliseconds() - sendStartedAtMs);
                 });
     }
 }

@@ -49,7 +49,7 @@ public class ZkSource implements Source {
                 throw new IllegalStateException("Cannot read properties due to zk/curator exception", ex);
             }
             if (!readResult.isSuccess()) {
-                throw new IllegalArgumentException("Properties not found");
+                throw new IllegalArgumentException("File not found");
             }
             Optional<byte[]> data = readResult.getData();
             return new ByteArrayInputStream(data.get());

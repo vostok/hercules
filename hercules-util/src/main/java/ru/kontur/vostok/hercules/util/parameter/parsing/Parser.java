@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.util.parameter.parsing;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 
 /**
  * Parse string to value of type {@link T}
@@ -18,5 +17,5 @@ public interface Parser<T> {
      * @return parsed value
      */
     @NotNull
-    ParameterValue<T> parse(@Nullable String value);
+    ParsingResult<T> parse(@Nullable String value);
 }

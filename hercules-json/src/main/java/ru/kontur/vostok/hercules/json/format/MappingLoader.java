@@ -39,10 +39,17 @@ import java.util.stream.Stream;
  *       paths should be a valid non-empty {@link HPath} (even for {@code destinationPath} in JSON-document),
  *   <li><b>move</b> mapping should be in form
  *       {@code "move <sourcePath>/* to <destinationPath>/*[ except <exceptedTag1>,<exceptedTag2>,...]"},<br>
- *       source and destinations paths can be empty (should be {@code "*"} in this case),
- *       excepted tags are optional: list of tags which should not move to destination path,
+ *       source and destination paths can be empty (should be {@code "*"} in this case),
+ *       excepted tags are optional: list of tags which should not move to the destination path,
  *   <li><b>combine</b> mapping should be in form
- *       {@code "combine <sourcePath1>,<sourcePath2>[,...] to <destinationPath> using <combinerClass>"}.
+ *       {@code "combine <sourcePath1>,<sourcePath2>[,...] to <destinationPath> using <combinerClass>"},
+ *   <li><b>project</b> mapping should be in form
+ *       {@code "project <sourcePath> to <destinationPath> with <key>[ using <transformerClass>] and <value>[ using <transformerClass>]"},
+ *       source and destination paths should be a valid {@link HPath},
+ *       also, the destination path can be empty (refers to root {@code "/"}),
+ *       key is the tag with field name,
+ *       value is the tag with field value,
+ *       {@link Transformer} is optional since {@link Transformer#PLAIN} is used by default.
  * </ul>
  * <p>
  * Sample:
@@ -59,7 +66,7 @@ import java.util.stream.Stream;
  * @author Gregory Koshelev
  */
 public class MappingLoader {
-    private static final Pattern PATH_REGEXP = Pattern.compile("[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*");
+    private static final Pattern PATH_REGEXP = Pattern.compile("/|([a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*)");
     private static final Pattern PATH_WITH_STAR_REGEXP = Pattern.compile("(\\*)|(([a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*)/\\*)");
 
     /**
@@ -79,19 +86,26 @@ public class MappingLoader {
                     continue;
                 }
 
-                String[] segments = line.split(" ");
-                switch (segments[0]) {
-                    case "transform":
-                        loadTransformMapper(segments, lineNumber, mappers, mappableTags);
-                        break;
-                    case "move":
-                        loadMoveMapper(segments, lineNumber, mappers, mappableTags);
-                        break;
-                    case "combine":
-                        loadCombineMapper(segments, lineNumber, mappers, mappableTags);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unsupported mapper " + segments[0]);
+                try {
+                    DslParser dsl = new DslParser(line);
+                    switch (dsl.type()) {
+                        case "transform":
+                            loadTransformMapper(dsl, mappers, mappableTags);
+                            break;
+                        case "move":
+                            loadMoveMapper(dsl, mappers, mappableTags);
+                            break;
+                        case "combine":
+                            loadCombineMapper(dsl, mappers, mappableTags);
+                            break;
+                        case "project":
+                            loadProjectMapper(dsl, mappers, mappableTags);
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unsupported mapper " + dsl.type());
+                    }
+                } catch (Exception ex) {
+                    throw new IllegalArgumentException("Invalid input at line " + lineNumber, ex);
                 }
             }
         } catch (IOException ex) {
@@ -100,105 +114,201 @@ public class MappingLoader {
         return new Mapping(mappers, mappableTags);
     }
 
-    private static void loadTransformMapper(String[] segments, int lineNumber, List<Mapper> mappers, HTree<Boolean> mappableTags) {
-        boolean withTransformer = (segments.length == 6);
+    /**
+     * {@code "transform <sourcePath> to <destinationPath>[ using <transformerClass>]"}
+     */
+    private static void loadTransformMapper(DslParser dsl, List<Mapper> mappers, HTree<Boolean> mappableTags) {
+        dsl.require("transform");
 
-        if ((segments.length != 4 && !withTransformer) || !"to".equals(segments[2])) {
-            throw new IllegalArgumentException("Unexpected form of the transform mapper, line: " + lineNumber);
-        }
-        if (withTransformer && !"using".equals(segments[4])) {
-            throw new IllegalArgumentException("Unknown token '" + segments[4] + "', line: " + lineNumber);
-        }
-
-        String source = segments[1];
-        String destination = segments[3];
-        String transformerClass = withTransformer ? segments[5] : "";
-
-        Matcher sourceMatcher = PATH_REGEXP.matcher(source);
-        if (!sourceMatcher.matches()) {
-            throw new IllegalArgumentException("Invalid source path '" + source + "', line: " + lineNumber);
-        }
-
-        Matcher destinationMatcher = PATH_REGEXP.matcher(destination);
-        if (!destinationMatcher.matches()) {
-            throw new IllegalArgumentException("Invalid destination path '" + destination + "'");
-        }
-
-        Transformer transformer = withTransformer
-                ? Transformer.fromClass(transformerClass)
-                : Transformer.PLAIN;
-
+        String source = path(dsl);
         HPath sourcePath = HPath.fromPath(source);
+
+        dsl.require("to");
+
+        String destination = path(dsl);
+
+        Transformer transformer = dsl.check("using")
+                ? Transformer.fromClass(dsl.token())
+                : Transformer.PLAIN;
 
         mappers.add(new TransformMapper(sourcePath, destination, transformer));
         mappableTags.put(sourcePath, Boolean.TRUE);
     }
 
-    private static void loadMoveMapper(String[] segments, int lineNumber, List<Mapper> mappers, HTree<Boolean> mappableTags) {
-        boolean withExceptedTags = (segments.length == 6);
+    /**
+     * {@code "move <sourcePath>/* to <destinationPath>/*[ except <exceptedTag1>,<exceptedTag2>,...]"}
+     */
+    private static void loadMoveMapper(DslParser dsl, List<Mapper> mappers, HTree<Boolean> mappableTags) {
+        dsl.require("move");
 
-        if ((segments.length != 4 && !withExceptedTags)  || !"to".equals(segments[2]) || !segments[1].endsWith("*") || !segments[3].endsWith("*")) {
-            throw new IllegalArgumentException("Unexpected form of the move mapper, line: " + lineNumber);
-        }
-        if (withExceptedTags && !"except".equals(segments[4])) {
-            throw new IllegalArgumentException("Unknown token '" + segments[4] + "', line: " + lineNumber);
-        }
-
-        String source = segments[1];
-        String destination = segments[3];
-        String exceptedTagsRaw = withExceptedTags ? segments[5] : "";
-
+        String source = dsl.token();
         Matcher sourceMatcher = PATH_WITH_STAR_REGEXP.matcher(source);
         if (!sourceMatcher.matches()) {
-            throw new IllegalArgumentException("Invalid source path '" + source + "', line: " + lineNumber);
+            throw new IllegalArgumentException("Invalid source path '" + source + "'");
         }
         String filteredSource = sourceMatcher.group(3);
+        HPath sourcePath = filteredSource != null ? HPath.fromPath(filteredSource) : HPath.empty();
 
+        dsl.require("to");
+
+        String destination = dsl.token();
         Matcher destinationMatcher = PATH_WITH_STAR_REGEXP.matcher(destination);
         if (!destinationMatcher.matches()) {
             throw new IllegalArgumentException("Invalid destination path '" + destination + "'");
         }
         String filteredDestination = destinationMatcher.group(3);
 
-        Set<TinyString> exceptedTags = withExceptedTags
-                ? Stream.of(exceptedTagsRaw.split(",")).map(TinyString::of).collect(Collectors.toSet())
+        Set<TinyString> exceptedTags = dsl.check("except")
+                ? Stream.of(dsl.token().split(",")).map(TinyString::of).collect(Collectors.toSet())
                 : Collections.emptySet();
-
-        HPath sourcePath = filteredSource != null ? HPath.fromPath(filteredSource) : HPath.empty();
 
         mappers.add(new MoveMapper(sourcePath, filteredDestination != null ? filteredDestination : "", exceptedTags));
         mappableTags.put(sourcePath, Boolean.TRUE);
     }
 
-    private static void loadCombineMapper(String[] segments, int lineNumber, List<Mapper> mappers, HTree<Boolean> mappableTags) {
-        if (segments.length != 6 || !"to".equals(segments[2]) || !"using".equals(segments[4])) {
-            throw new IllegalArgumentException("Unexpected form of the combine mapper, line: " + lineNumber);
-        }
+    /**
+     * {@code "combine <sourcePath1>,<sourcePath2>[,...] to <destinationPath> using <combinerClass>"}
+     */
+    private static void loadCombineMapper(DslParser dsl, List<Mapper> mappers, HTree<Boolean> mappableTags) {
+        dsl.require("combine");
 
-        String sourcesRaw = segments[1];
-        String destination = segments[3];
-        String combinerClass = segments[5];
-
-        String[] sources = sourcesRaw.split(",");
-        for (String source : sources) {
-            Matcher sourceMatcher = PATH_REGEXP.matcher(source);
-            if (!sourceMatcher.matches()) {
-                throw new IllegalArgumentException("Invalid source path '" + source + "', line: " + lineNumber);
-            }
-        }
-
-        Matcher destinationMatcher = PATH_REGEXP.matcher(destination);
-        if (!destinationMatcher.matches()) {
-            throw new IllegalArgumentException("Invalid destination path '" + destination + "'");
-        }
-
-        Combiner combiner = Combiner.fromClass(combinerClass);
-
+        String[] sources = paths(dsl);
         List<HPath> sourcePaths = Stream.of(sources).map(HPath::fromPath).collect(Collectors.toList());
+
+        dsl.require("to");
+
+        String destination = path(dsl);
+
+        dsl.require("using");
+
+        Combiner combiner = Combiner.fromClass(dsl.token());
 
         mappers.add(new CombineMapper(sourcePaths, destination, combiner));
         for (HPath sourcePath : sourcePaths) {
             mappableTags.put(sourcePath, Boolean.TRUE);
+        }
+    }
+
+    /**
+     * {@code "project <sourcePath> to <destinationPath> with <key>[ using <transformerClass>] and <value>[ using <transformerClass>]"}
+     */
+    private static void loadProjectMapper(DslParser dsl, List<Mapper> mappers, HTree<Boolean> mappableTags) {
+        dsl.require("project");
+
+        String source = path(dsl);
+        HPath sourcePath = HPath.fromPath(source);
+
+        dsl.require("to");
+
+        String destination = path(dsl);
+
+        dsl.require("with");
+
+        String keyTag = dsl.token();
+
+        Transformer keyTransformer = dsl.check("using")
+                ? Transformer.fromClass(dsl.token())
+                : Transformer.PLAIN;
+
+        dsl.require("and");
+
+        String valueTag = dsl.token();
+
+        Transformer valueTransformer = dsl.check("using")
+                ? Transformer.fromClass(dsl.token())
+                : Transformer.PLAIN;
+
+        mappers.add(
+                new ProjectMapper(
+                        sourcePath,
+                        destination,
+                        TinyString.of(keyTag), keyTransformer,
+                        TinyString.of(valueTag), valueTransformer));
+        mappableTags.put(sourcePath, Boolean.TRUE);
+    }
+
+    private static String path(DslParser reader) {
+        String token = reader.token();
+        requirePath(token);
+        return token;
+    }
+
+    private static String[] paths(DslParser reader) {
+        String token = reader.token();
+        String[] paths = token.split(",");
+        for (String path : paths) {
+            requirePath(path);
+        }
+        return paths;
+    }
+
+    private static void requirePath(String path) {
+        if (!PATH_REGEXP.matcher(path).matches()) {
+            throw new IllegalArgumentException("Invalid path '" + path);
+        }
+    }
+
+    /**
+     * The mapping DSL parser
+     */
+    private static class DslParser {
+        private final String[] tokens;
+        private int position;
+
+        DslParser(String mapping) {
+            this.tokens = mapping.split(" ");
+        }
+
+        /**
+         * Return the mapping type which is a first token.
+         *
+         * @return the mapping type
+         */
+        private String type() {
+            return tokens[0];
+        }
+
+        /**
+         * Return a token.
+         * <p>
+         * Sequential calls of this method return tokens one by one.
+         *
+         * @return a token
+         * @throws IllegalArgumentException if there are no more tokens
+         */
+        private String token() {
+            if (position >= tokens.length) {
+                throw new IllegalArgumentException("Unexpected end of line");
+            }
+            return tokens[position++];
+        }
+
+        /**
+         * Check if a token exists and equals to the specified one.
+         * <p>
+         * In case of success {@link #token()} will return a next token.
+         *
+         * @param token the expected token
+         * @return {@code true} if the expected token is present, otherwise {@code false}
+         */
+        private boolean check(String token) {
+            boolean result = position < tokens.length && token.equals(tokens[position]);
+            if (result) {
+                position++;
+            }
+            return result;
+        }
+
+        /**
+         * Require {@link #token()} to return the specified token.
+         *
+         * @param token the expected token
+         * @throws IllegalArgumentException if the expected token does not exist
+         */
+        private void require(String token) {
+            if (!check(token)) {
+                throw new IllegalArgumentException("Expects token '" + token + "'");
+            }
         }
     }
 }

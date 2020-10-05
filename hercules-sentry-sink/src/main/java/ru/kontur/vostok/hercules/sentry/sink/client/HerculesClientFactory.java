@@ -18,7 +18,6 @@ import io.sentry.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -51,7 +50,7 @@ public class HerculesClientFactory extends DefaultSentryClientFactory {
         connectionTimeoutDefaultMs = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, senderProperties).get();
         readTimeoutDefaultMs = PropertiesUtil.get(Props.READ_TIMEOUT_MS, senderProperties).get();
 
-        ParameterValue<String> rewritingUrlParam = PropertiesUtil.get(Props.SENTRY_REWRITING_URL, senderProperties);
+        Parameter<String>.ParameterValue rewritingUrlParam = PropertiesUtil.get(Props.SENTRY_REWRITING_URL, senderProperties);
         if (!rewritingUrlParam.isEmpty()) {
             try {
                 rewritingUri = new URI(rewritingUrlParam.get());

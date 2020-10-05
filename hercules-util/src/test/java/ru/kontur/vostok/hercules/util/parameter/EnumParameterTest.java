@@ -13,17 +13,17 @@ public class EnumParameterTest {
     public void optionalEnumParameterTest() {
         Parameter<ParameterType> enumParameter = Parameter.enumParameter("optional", ParameterType.class).build();
 
-        ParameterValue<ParameterType> validValue = enumParameter.from("OPTIONAL");
+        Parameter<ParameterType>.ParameterValue validValue = enumParameter.from("OPTIONAL");
         assertTrue(validValue.isOk());
         assertEquals(ParameterType.OPTIONAL, validValue.get());
 
-        ParameterValue<ParameterType> invalidValue = enumParameter.from("optional");
+        Parameter<ParameterType>.ParameterValue invalidValue = enumParameter.from("optional");
         assertTrue(invalidValue.isError());
 
-        ParameterValue<ParameterType> emptyValueFromEmptyString = enumParameter.from("");
+        Parameter<ParameterType>.ParameterValue emptyValueFromEmptyString = enumParameter.from("");
         assertTrue(emptyValueFromEmptyString.isEmpty());
 
-        ParameterValue<ParameterType> emptyValueFromNullString = enumParameter.from(null);
+        Parameter<ParameterType>.ParameterValue emptyValueFromNullString = enumParameter.from(null);
         assertTrue(emptyValueFromNullString.isEmpty());
     }
 
@@ -31,17 +31,17 @@ public class EnumParameterTest {
     public void requiredEnumParameterTest() {
         Parameter<ParameterType> enumParameter = Parameter.enumParameter("required", ParameterType.class).required().build();
 
-        ParameterValue<ParameterType> validValue = enumParameter.from("REQUIRED");
+        Parameter<ParameterType>.ParameterValue validValue = enumParameter.from("REQUIRED");
         assertTrue(validValue.isOk());
         assertEquals(ParameterType.REQUIRED, validValue.get());
 
-        ParameterValue<ParameterType> invalidValue = enumParameter.from("required");
+        Parameter<ParameterType>.ParameterValue invalidValue = enumParameter.from("required");
         assertTrue(invalidValue.isError());
 
-        ParameterValue<ParameterType> invalidValueFromNullString = enumParameter.from(null);
+        Parameter<ParameterType>.ParameterValue invalidValueFromNullString = enumParameter.from(null);
         assertTrue(invalidValueFromNullString.isError());
 
-        ParameterValue<ParameterType> invalidValueFromEmptyString = enumParameter.from("");
+        Parameter<ParameterType>.ParameterValue invalidValueFromEmptyString = enumParameter.from("");
         assertTrue(invalidValueFromEmptyString.isError());
     }
 
@@ -52,18 +52,18 @@ public class EnumParameterTest {
                         withDefault(ParameterType.DEFAULT).
                         build();
 
-        ParameterValue<ParameterType> validValue = enumParameter.from("REQUIRED");
+        Parameter<ParameterType>.ParameterValue validValue = enumParameter.from("REQUIRED");
         assertTrue(validValue.isOk());
         assertEquals(ParameterType.REQUIRED, validValue.get());
 
-        ParameterValue<ParameterType> invalidValue = enumParameter.from("default");
+        Parameter<ParameterType>.ParameterValue invalidValue = enumParameter.from("default");
         assertTrue(invalidValue.isError());
 
-        ParameterValue<ParameterType> defaultValueFromNullString = enumParameter.from(null);
+        Parameter<ParameterType>.ParameterValue defaultValueFromNullString = enumParameter.from(null);
         assertTrue(defaultValueFromNullString.isOk());
         assertEquals(ParameterType.DEFAULT, defaultValueFromNullString.get());
 
-        ParameterValue<ParameterType> defaultValueFromEmptyString = enumParameter.from("");
+        Parameter<ParameterType>.ParameterValue defaultValueFromEmptyString = enumParameter.from("");
         assertTrue(defaultValueFromEmptyString.isOk());
         assertEquals(ParameterType.DEFAULT, defaultValueFromEmptyString.get());
     }

@@ -19,7 +19,7 @@ import ru.kontur.vostok.hercules.meta.task.TaskFuture;
 import ru.kontur.vostok.hercules.meta.task.TaskQueue;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTask;
 import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskType;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +42,7 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (streamName.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
@@ -61,7 +61,7 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
             return;
         }
 
-        ParameterValue<Integer> newPartitions = QueryUtil.get(QueryParameters.NEW_PARTITIONS, request);
+        Parameter<Integer>.ParameterValue newPartitions = QueryUtil.get(QueryParameters.NEW_PARTITIONS, request);
         if (newPartitions.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,

@@ -16,7 +16,7 @@ import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.undertow.util.HttpResponseContentWriter;
-import ru.kontur.vostok.hercules.util.parameter.ParameterValue;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.util.Optional;
 
@@ -36,7 +36,7 @@ public class InfoStreamHandler implements HttpHandler {
 
     @Override
     public void handle(HttpServerRequest request) {
-        ParameterValue<String> streamName = QueryUtil.get(QueryParameters.STREAM, request);
+        Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (streamName.isError()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
