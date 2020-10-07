@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -23,7 +24,7 @@ public class Topology<T> implements Iterable<T> {
     public Topology(T[] topology) {
         Object[] array = new Object[topology.length];
         System.arraycopy(topology, 0, array, 0, topology.length);
-        this.state = new State(array);
+        this.state = initiateState(array);
     }
 
     /**
@@ -59,7 +60,7 @@ public class Topology<T> implements Iterable<T> {
             Object[] newArray = new Object[newSize];
             System.arraycopy(array, 0, newArray, 0, array.length);
             newArray[newSize - 1] = element;
-            state = new State(newArray);
+            state = initiateState(newArray);
         } finally {
             lock.unlock();
         }
@@ -95,7 +96,7 @@ public class Topology<T> implements Iterable<T> {
                 System.arraycopy(array, index + 1, newArray, index, newSize - index);
             }
 
-            state = new State(newArray);
+            state = initiateState(newArray);
             return true;
         } finally {
             lock.unlock();
@@ -122,6 +123,18 @@ public class Topology<T> implements Iterable<T> {
         return (List<T>) Arrays.asList(state.array);
     }
 
+    /**
+     * Initiate a state of the topology.
+     * <p>
+     * Inheritors should override to provide an another topology iteration algorithm.
+     *
+     * @param array an object array holds topology elements
+     * @return the state
+     */
+    protected State initiateState(Object[] array) {
+        return new GlobalState(array);
+    }
+
     private final class TopologyIterator implements Iterator<T> {
 
         @Override
@@ -136,12 +149,10 @@ public class Topology<T> implements Iterable<T> {
         }
     }
 
-    private static final class State {
+    protected static abstract class State {
         private final Object[] array;
 
-        private AtomicInteger it = new AtomicInteger(0);
-
-        private State(Object[] array) {
+        protected State(Object[] array) {
             this.array = array;
         }
 
@@ -149,13 +160,34 @@ public class Topology<T> implements Iterable<T> {
             if (array.length == 0) {
                 throw new TopologyIsEmptyException("Topology is empty");
             }
-            return array[(it.getAndIncrement() & 0x7FFFFFFF) % array.length];
+            return array[(seed() & 0x7FFFFFFF) % array.length];
         }
 
         public boolean isEmpty() {
             return array.length == 0;
         }
 
+        /**
+         * Return a value which determines next element in the topology.
+         *
+         * @return a value which determines next element in the topology
+         */
+        protected abstract int seed();
+    }
+
+    private static final class GlobalState extends State {
+        // Start an iteration with a random element when the topology changes.
+        // It provides the better balancing across the topology.
+        private final AtomicInteger it = new AtomicInteger(ThreadLocalRandom.current().nextInt());
+
+        private GlobalState(Object[] array) {
+            super(array);
+        }
+
+        @Override
+        protected int seed() {
+            return it.getAndIncrement();
+        }
     }
 
     /**

@@ -58,7 +58,6 @@ public abstract class Processor {
             }
         }
         return isAvailable();
-
     }
 
     public abstract ProcessorResult process(List<Event> events);

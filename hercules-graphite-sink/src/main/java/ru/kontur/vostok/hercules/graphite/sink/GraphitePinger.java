@@ -5,6 +5,7 @@ import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import java.io.IOException;
 import java.net.Socket;
 
+@Deprecated
 public class GraphitePinger {
     private final String server;
     private final int port;

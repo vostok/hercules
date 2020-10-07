@@ -13,7 +13,7 @@ public class GraphiteSinkDaemon extends AbstractSinkDaemon {
 
     @Override
     protected Sender createSender(Properties properties, MetricsCollector metricsCollector) {
-        return new GraphiteEventSender(properties, metricsCollector);
+        return new GraphiteSender(properties, metricsCollector);
     }
 
     @Override
