@@ -25,7 +25,7 @@ public class StreamValidatorsTest {
     public void shouldValidateStreamPartition() {
         Stream stream = new BaseStream();
         stream.setName("stream");
-        stream.setPartitions(50);
+        stream.setPartitions(100);
         stream.setTtl(86400000);
         Validator<Stream> validator = StreamValidators.STREAM_VALIDATOR;
 

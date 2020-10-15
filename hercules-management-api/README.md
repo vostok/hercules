@@ -215,7 +215,7 @@ The API Key with manage access to the stream.
 
 `stream` - the name of stream. *Required*
 
-`newPartitions` - new count of partitions in stream. *Required*
+`newPartitions` - new count of partitions in the stream. The value should be in range `(<current partition count>, 100)`. *Required*
 
 `async` - if presented, request will be processed asynchronously. *Optional*
 
@@ -223,7 +223,7 @@ The API Key with manage access to the stream.
 
 **Response codes:**
 
-`200` - successfully increase count of partition in stream.
+`200` - successfully increase count of partition in the stream.
 
 `400` - bad request.
 
@@ -233,7 +233,7 @@ The API Key with manage access to the stream.
 
 `404` - source stream not found.
 
-`409` - conflict. New partition count less then old.
+`409` - conflict. New partition count is less than or equal to the old value.
 
 ### Change TTL of stream
 

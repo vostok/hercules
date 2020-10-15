@@ -40,7 +40,7 @@ public class EventPublisherFactory {
             LAZY_INSTANCE = new Lazy<>(() -> createPublisher(properties));
 
             PROJECT = PropertiesUtil.get(Props.PROJECT, properties).get();
-            SUBPROJECT = PropertiesUtil.get(Props.SUBPROJECT, properties).get();
+            SUBPROJECT = PropertiesUtil.get(Props.SUBPROJECT, properties).orEmpty(null);
             ENVIRONMENT = PropertiesUtil.get(Props.ENVIRONMENT, properties).get();
         } catch (IOException e) {
             throw new RuntimeException(e);
