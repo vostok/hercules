@@ -73,7 +73,7 @@ public class GraphiteSender extends Sender {
         return connector.isReady() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
     }
 
-    void send(List<GraphiteMetricData> metrics, int attempts) throws EndpointException, IOException {
+    private void send(List<GraphiteMetricData> metrics, int attempts) throws EndpointException, IOException {
         IOException lastException;
 
         int attemptsLeft = attempts;

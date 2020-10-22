@@ -98,6 +98,10 @@ public class Endpoint {
         return frozen = frozen && (frozenToMs >= time.milliseconds());
     }
 
+    public int leasedConnections() {
+        return leasedConnections.get();
+    }
+
     private Connection leaseConnection() throws EndpointException {
         int currentLeasedConnections;
 
@@ -114,6 +118,7 @@ public class Endpoint {
         }
 
         if (verifyFrozen()) {
+            leasedConnections.decrementAndGet();
             return null;
         }
 
