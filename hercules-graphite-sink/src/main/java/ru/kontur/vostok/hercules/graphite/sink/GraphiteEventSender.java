@@ -24,6 +24,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated use {@link GraphiteSender} instead
+ */
+@Deprecated
 public class GraphiteEventSender extends Sender {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteEventSender.class);
 

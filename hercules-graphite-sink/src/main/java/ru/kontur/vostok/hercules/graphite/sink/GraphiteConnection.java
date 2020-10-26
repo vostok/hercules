@@ -15,7 +15,10 @@ import java.util.Locale;
 
 /**
  * Not thread-safe, expected to be used exclusively by one thread at any given moment.
+ *
+ * @deprecated see {@link GraphiteConnector}
  */
+@Deprecated
 public class GraphiteConnection implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteConnection.class);
 
