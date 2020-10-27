@@ -30,7 +30,8 @@ Application is configured through properties file.
 
 `sink.sender.retryLimit` - maximum attempts count when sending metrics to Graphite, default value: `3`
 
-`sink.sender.graphite.tags.enable` - sending metrics with tags, default value: `false`
+`sink.sender.graphite.tags.enable` - sending metrics with tags, default value: `false`.
+If there is no tag with the name `subproject` among the tags, then it will be created with the default value: `default`.
 
 #### Graphite connector settings
 `sink.sender.graphite.connector.local.connection.limit.per.endpoint` - maximum connections per local endpoint, default value: `3`

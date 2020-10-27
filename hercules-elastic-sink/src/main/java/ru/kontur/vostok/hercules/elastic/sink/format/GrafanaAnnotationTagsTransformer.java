@@ -40,6 +40,14 @@ public class GrafanaAnnotationTagsTransformer implements Transformer {
             sb.append(GraphiteMetricsUtil.sanitizeMetricName(new String((byte[]) v.getValue(), StandardCharsets.UTF_8)));
             sb.append(',');
         }
+
+        //TODO delete when found a better way to work with optional tags in Grafana
+        String tags = sb.toString();
+        if (!tags.startsWith("subproject=") && !tags.contains(",subproject=") &&
+                (tags.startsWith("project=") || tags.contains(",project="))) {
+            sb.append("subproject=default");
+        }
+
         return sb.toString();
     }
 }

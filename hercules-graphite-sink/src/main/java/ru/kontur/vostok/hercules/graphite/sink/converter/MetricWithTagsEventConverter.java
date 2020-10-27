@@ -37,6 +37,12 @@ public class MetricWithTagsEventConverter implements MetricConverter {
             tags.append(";").append(key).append("=").append(value);
         }
 
+        //TODO delete when found a better way to work with optional tags in Grafana
+        String strTags = tags.toString();
+        if (!strTags.contains(";subproject=") && strTags.contains(";project=")) {
+            tags.append(";subproject=default");
+        }
+
         String name = metricName + tags;
         long timestamp = TimeUtil.unixTicksToUnixTime(event.getTimestamp());
         double value = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_VALUE_TAG).get();
