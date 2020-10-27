@@ -36,4 +36,12 @@ public class UuidUtilTest {
     public void shouldThrowExceptionForInvalidString() {
         UuidUtil.fromString("0123456789abcdef");
     }
+
+    @Test
+    public void shouldConvertUuidToStringWithoutHyphens() {
+        Assert.assertEquals(
+                "0123456789abcdef01230123456789ab",
+                UuidUtil.getUuidWithoutHyphens(UUID.fromString("01234567-89ab-cdef-0123-0123456789ab"))
+        );
+    }
 }

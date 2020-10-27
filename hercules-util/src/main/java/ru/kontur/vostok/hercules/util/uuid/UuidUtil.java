@@ -41,6 +41,10 @@ public class UuidUtil {
         }
     }
 
+    public static String getUuidWithoutHyphens(UUID uuid) {
+        return uuid.toString().replaceAll("-","");
+    }
+
     private UuidUtil(){
         /* static class */
     }
