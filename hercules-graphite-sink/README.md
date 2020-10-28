@@ -82,6 +82,14 @@ PERMIT value.*
 
 `http.server.workerThreads` - the number of worker threads. Default value: `1`.
 
+## Additional information
+If setting `sink.sender.graphite.tags.enable` is `true`, then tag `subproject` will be created 
+with the default value: `null`, under the following conditions:
+1. `project` tag exists;
+2. `subproject` tag does not exist.
+
+This workaround allows to use the optional `subproject` tag in Grafana.
+
 ## Command line
 `java $JAVA_OPTS -jar hercules-graphite-sink.jar application.properties=file://path/to/file/application.properties`
 

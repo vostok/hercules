@@ -28,6 +28,9 @@ public class GrafanaAnnotationTagsTransformer implements Transformer {
         if (vector.getType() != Type.CONTAINER) {
             return null;
         }
+
+        boolean isProjectTagAdded = false;
+        boolean isSubprojectTagAdded = false;
         StringBuilder sb = new StringBuilder();
         for (Container container : (Container[]) vector.getValue()) {
             Variant k = container.get(KEY);
@@ -35,11 +38,27 @@ public class GrafanaAnnotationTagsTransformer implements Transformer {
             if (k == null || k.getType() != Type.STRING || v == null || v.getType() != Type.STRING) {
                 continue;
             }
-            sb.append(GraphiteMetricsUtil.sanitizeMetricName(new String((byte[]) k.getValue(), StandardCharsets.UTF_8)));
+
+            String tagKey = new String((byte[]) k.getValue(), StandardCharsets.UTF_8);
+            String tagValue = new String((byte[]) v.getValue(), StandardCharsets.UTF_8);
+            if (tagKey.equals("project")) {
+                isProjectTagAdded = true;
+            }
+            if (tagValue.equals("subproject")) {
+                isSubprojectTagAdded = true;
+            }
+
+            sb.append(GraphiteMetricsUtil.sanitizeMetricName(tagKey));
             sb.append('=');
-            sb.append(GraphiteMetricsUtil.sanitizeMetricName(new String((byte[]) v.getValue(), StandardCharsets.UTF_8)));
+            sb.append(GraphiteMetricsUtil.sanitizeMetricName(tagValue));
             sb.append(',');
         }
+
+        //FIXME delete subproject tag adding when found a better way to work with optional tags in Grafana
+        if (isProjectTagAdded && !isSubprojectTagAdded) {
+            sb.append("subproject=null");
+        }
+
         return sb.toString();
     }
 }
