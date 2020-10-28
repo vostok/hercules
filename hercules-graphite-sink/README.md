@@ -30,8 +30,7 @@ Application is configured through properties file.
 
 `sink.sender.retryLimit` - maximum attempts count when sending metrics to Graphite, default value: `3`
 
-`sink.sender.graphite.tags.enable` - sending metrics with tags, default value: `false`.
-If there is no tag with the name `subproject` among the tags, then it will be created with the default value: `default`.
+`sink.sender.graphite.tags.enable` - sending metrics with tags, default value: `false`
 
 #### Graphite connector settings
 `sink.sender.graphite.connector.local.connection.limit.per.endpoint` - maximum connections per local endpoint, default value: `3`
@@ -82,6 +81,14 @@ PERMIT value.*
 `http.server.ioThreads` - the number of IO threads. Default value: `1`.
 
 `http.server.workerThreads` - the number of worker threads. Default value: `1`.
+
+## Additional information
+If setting `sink.sender.graphite.tags.enable` is `true`, then tag `subproject` will be created 
+with the default value: `null`, under the following conditions:
+1. `project` tag exists;
+2. `subproject` tag does not exist.
+
+This workaround allows to use the optional `subproject` tag in Grafana.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-graphite-sink.jar application.properties=file://path/to/file/application.properties`

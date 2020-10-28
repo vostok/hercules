@@ -20,8 +20,9 @@ public class MetricWithTagsEventConverter implements MetricConverter {
     @Override
     public GraphiteMetricData convert(Event event) {
         String metricName = "unknown";
+        boolean isProjectTagAdded = false;
+        boolean isSubprojectTagAdded = false;
         StringBuilder tags = new StringBuilder();
-
         Container[] tagsVector = ContainerUtil.extract(event.getPayload(), MetricsTags.TAGS_VECTOR_TAG).get();
         for (Container tag : tagsVector) {
             String key = GraphiteMetricsUtil.sanitizeMetricName(
@@ -29,6 +30,12 @@ public class MetricWithTagsEventConverter implements MetricConverter {
             String value = GraphiteMetricsUtil.sanitizeMetricName(
                     ContainerUtil.extract(tag, MetricsTags.TAG_VALUE_TAG).orElse("null"));
 
+            if (key.equals("project")) {
+                isProjectTagAdded = true;
+            }
+            if (key.equals("subproject")) {
+                isSubprojectTagAdded = true;
+            }
             if (key.equals("_name")) {
                 metricName = value;
                 continue;
@@ -37,10 +44,9 @@ public class MetricWithTagsEventConverter implements MetricConverter {
             tags.append(";").append(key).append("=").append(value);
         }
 
-        //TODO delete when found a better way to work with optional tags in Grafana
-        String strTags = tags.toString();
-        if (!strTags.contains(";subproject=") && strTags.contains(";project=")) {
-            tags.append(";subproject=default");
+        //FIXME delete subproject tag adding when found a better way to work with optional tags in Grafana
+        if (isProjectTagAdded && !isSubprojectTagAdded) {
+            tags.append(";subproject=null");
         }
 
         String name = metricName + tags;
