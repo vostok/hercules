@@ -11,7 +11,10 @@ import java.util.Collection;
  * It is thread-safe and can be safely used a singleton.
  * Underlying TCP connections are pooled and reused.
  * It also employs a simple retry policy configured by attempts count in constructor.
+ *
+ * @deprecated use {@link GraphiteConnector} instead
  */
+@Deprecated
 public class GraphiteClient implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteClient.class);
 

@@ -5,7 +5,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Thread-safe, though assumes non-concurrent usage of returned connections.
  * Broken connections are not expected to be released back into pool.
+ *
+ * @deprecated see {@link GraphiteConnector}
  */
+@Deprecated
 public class GraphiteConnectionPool implements AutoCloseable {
     private final String server;
     private final int port;
