@@ -5,8 +5,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 
 import java.io.IOException;
@@ -15,13 +13,9 @@ import java.util.Collections;
 /**
  * @author Gregory Koshelev
  */
-public class IlmIndexCreator implements IndexCreator {
-    private static Logger LOGGER = LoggerFactory.getLogger(IlmIndexCreator.class);
-
-    private final RestClient restClient;
-
+public class IlmIndexCreator extends IndexCreator {
     public IlmIndexCreator(RestClient restClient) {
-        this.restClient = restClient;
+        super(restClient);
     }
 
     @Override
@@ -63,7 +57,7 @@ public class IlmIndexCreator implements IndexCreator {
                             Collections.emptyMap(),
                             body);
             //TODO: Process response body in case of error
-            return response.getStatusLine().getStatusCode() == HttpStatusCodes.OK;
+            return HttpStatusCodes.isSuccess(response.getStatusLine().getStatusCode());
         } catch (IOException ex) {
             LOGGER.warn("Cannot create index due to exception", ex);
             return false;
@@ -104,7 +98,7 @@ public class IlmIndexCreator implements IndexCreator {
                             Collections.emptyMap(),
                             body);
             //TODO: Process response body in case of error
-            return response.getStatusLine().getStatusCode() == HttpStatusCodes.OK;
+            return HttpStatusCodes.isSuccess(response.getStatusLine().getStatusCode());
         } catch (IOException ex) {
             LOGGER.warn("Cannot create index due to exception", ex);
             return false;

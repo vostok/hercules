@@ -41,6 +41,16 @@ public final class HttpStatusCodes {
     public static final int SERVICE_UNAVAILABLE = 503;
     public static final int GATEWAY_TIMEOUT = 504;
 
+    /**
+     * Check if the HTTP status code is {@code 2xx}.
+     *
+     * @param code the HTTP status code
+     * @return {@code true} if the code is {@code 2xx}, otherwise return {@code false}
+     */
+    public static boolean isSuccess(int code) {
+        return 300 > code && code >= 200;
+    }
+
     private HttpStatusCodes() {
         /* static class */
     }

@@ -335,6 +335,7 @@ public class ElasticResponseHandler {
                 } else {
                     LOGGER.warn("Cannot create index " + index + ", will retry anyway");
                 }
+                indexCreator.waitForIndexReadiness(index);
                 return new ErrorInfo(ErrorType.RETRYABLE, error.toString());
             }
             if (redefinedExceptions.contains(type)) {
