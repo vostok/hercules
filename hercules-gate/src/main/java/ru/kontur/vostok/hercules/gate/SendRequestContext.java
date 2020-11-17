@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * @author Gregory Koshelev
  */
-public class SendContext {
+public class SendRequestContext {
     private final boolean async;
     private final String topic;
     private final Set<TinyString> tags;
@@ -16,14 +16,13 @@ public class SendContext {
     private final ShardingKey shardingKey;
     private final ContentValidator validator;
 
-    public SendContext(
+    public SendRequestContext(
             boolean async,
             String topic,
             Set<TinyString> tags,
             int partitions,
             ShardingKey shardingKey,
-            ContentValidator validator
-    ) {
+            ContentValidator validator) {
         this.async = async;
         this.topic = topic;
         this.tags = tags;

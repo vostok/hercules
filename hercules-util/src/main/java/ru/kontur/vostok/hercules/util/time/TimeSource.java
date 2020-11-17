@@ -40,4 +40,10 @@ public interface TimeSource {
     default Timer timer(long timeoutMs) {
         return new Timer(this, timeoutMs);
     }
+
+    default long measureMs(Runnable r) {
+        long startedAtMs = milliseconds();
+        r.run();
+        return milliseconds() - startedAtMs;
+    }
 }
