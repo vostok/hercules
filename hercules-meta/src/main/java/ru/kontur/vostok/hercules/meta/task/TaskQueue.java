@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.serialization.SerializationException;
+import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -23,7 +24,8 @@ public class TaskQueue<T> {
     private final TaskRepository<T> repository;
     private final long delayMs;
 
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(); // TODO: provide custom Thread Factory;
+    private final ScheduledExecutorService executor =
+            Executors.newSingleThreadScheduledExecutor(ThreadFactories.newNamedThreadFactory("task-queue", false));
 
     public TaskQueue(TaskRepository<T> repository, long delayMs) {
         this.repository = repository;

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
+import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +24,8 @@ public abstract class TaskExecutor<T> {
 
     //TODO: Must be used for latency optimization
     private final Object mutex = new Object();
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService =
+            Executors.newSingleThreadExecutor(ThreadFactories.newNamedThreadFactory("task-executor", false));
 
     private final TaskRepository<T> repository;
     private final long pollTimeoutMillis;

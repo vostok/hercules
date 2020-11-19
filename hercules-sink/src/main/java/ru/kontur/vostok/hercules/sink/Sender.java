@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -42,7 +43,7 @@ public abstract class Sender extends Processor {
         this.metricsCollector = metricsCollector;
 
         this.pingPeriodMs = PropertiesUtil.get(Props.PING_PERIOD_MS, properties).get();
-        this.executor = Executors.newSingleThreadScheduledExecutor();//TODO: Should provide ThreadFactory
+        this.executor = Executors.newSingleThreadScheduledExecutor(ThreadFactories.newDaemonNamedThreadFactory("sender-ping"));
     }
 
     /**
