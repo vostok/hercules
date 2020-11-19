@@ -61,7 +61,7 @@ public class SendRequestProcessor {
         this.eventSender = eventSender;
         this.eventValidator = eventValidator;
         this.time = time;
-        this.metrics = new SendRequestMetrics(metricsCollector, time);
+        this.metrics = new SendRequestMetrics(metricsCollector);
 
         this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sentEvents");
         this.lostEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".lostEvents");
@@ -163,8 +163,8 @@ public class SendRequestProcessor {
         private final HttpServerRequest request;
         private final SendRequestContext context;
 
-        private volatile long requestTimestamp = Long.MAX_VALUE;
-        private volatile long recvTimestamp = Long.MAX_VALUE;
+        private volatile long receivingStartedAtMs = Long.MAX_VALUE;
+        private volatile long receivingEndedAtMs = Long.MAX_VALUE;
         private volatile long decompressionTimeMs;
         private volatile long processingTimestamp = Long.MAX_VALUE;
         private volatile long completionTimestamp = Long.MAX_VALUE;
@@ -180,11 +180,11 @@ public class SendRequestProcessor {
          * @param callback completion callback
          */
         public void processAsync(Callback callback) {
-            requestTimestamp = time.milliseconds();
+            receivingStartedAtMs = time.milliseconds();
             try {
                 request.readBodyAsync(
                         (r, bytes) -> r.dispatchAsync(() -> {
-                            recvTimestamp = time.milliseconds();
+                            receivingEndedAtMs = time.milliseconds();
 
                             ByteBuffer buffer = null;
                             try {
@@ -221,6 +221,8 @@ public class SendRequestProcessor {
                             }
                         }),
                         (r, exception) -> {
+                            receivingEndedAtMs = time.milliseconds();
+
                             tryComplete(exception.getStatusCodeOrDefault(HttpStatusCodes.INTERNAL_SERVER_ERROR), callback);
                             LOGGER.error("Request body was read with exception", exception);
                         });
@@ -253,7 +255,7 @@ public class SendRequestProcessor {
         }
 
         public long receivingTimeMs() {
-            return Math.max(recvTimestamp - requestTimestamp, 0L);
+            return Math.max(receivingEndedAtMs - receivingStartedAtMs, 0L);
         }
 
         public long decompressionTimeMs() {
