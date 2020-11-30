@@ -46,4 +46,36 @@ public class AnnotationEventFormatAndWriteTest {
                 stream.toString(StandardCharsets.UTF_8.name())
         );
     }
+
+    /**
+     * FIXME: delete this test with a workaround in the GrafanaAnnotationTagsTransformer
+     *
+     * @throws IOException should never happen
+     */
+    @Test
+    public void shouldAddNullSubprojectIfProjectIsDefined() throws IOException {
+        Event event = EventBuilder.create(0, "11203800-63fd-11e8-83e2-3a587d902000").
+                tag("description", Variant.ofString("This is the annotation")).
+                tag("tags", Variant.ofVector(Vector.ofContainers(
+                        Container.builder().tag("key", Variant.ofString("environment")).tag("value", Variant.ofString("staging")).build(),
+                        Container.builder().tag("key", Variant.ofString("project")).tag("value", Variant.ofString("test")).build()))).
+                build();
+
+        Properties properties = new Properties();
+        properties.setProperty("file", "resource://annotation-event.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DocumentWriter.writeTo(stream, formatter.format(event));
+
+        assertEquals("{" +
+                        "\"@timestamp\":\"1970-01-01T00:00:00.000000000Z\"," +
+                        "\"environment\":\"staging\"," +
+                        "\"project\":\"test\"," +
+                        "\"tags\":\"environment=staging,project=test,subproject=null\"," +
+                        "\"description\":\"This is the annotation\"" +
+                        "}",
+                stream.toString(StandardCharsets.UTF_8.name())
+        );
+    }
 }
