@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.sink.Sink;
+import ru.kontur.vostok.hercules.sink.Subscription;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 
 import java.util.Arrays;
@@ -33,7 +34,7 @@ public class TimelineSink extends Sink {
                 TimelineUtil.timelineToApplicationId(timeline),
                 properties,
                 sender,
-                Stream.of(timeline.getStreams()).map(PatternMatcher::new).collect(Collectors.toList()),
+                new Subscription(Stream.of(timeline.getStreams()).map(PatternMatcher::new).collect(Collectors.toList())),
                 fromTimeline(timeline),
                 metricsCollector);
     }

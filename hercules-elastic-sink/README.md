@@ -11,21 +11,7 @@ Application is configured through properties file.
 
 ### Sink settings
 #### Common settings
-`sink.poolSize` - number of threads are reading from Apache Kafka, default value: `1`
-
-`sink.pollTimeoutMs` - poll duration when read from Apache Kafka, default value: `6000`
-
-`sink.batchSize` - size of batch with Log Events, default value: `1000`
-
-`sink.pattern` - pattern of streams are subscribed by consumers 
-
-`sink.consumer.bootstrap.servers` - list of Apache Kafka hosts
-
-`sink.consumer.max.partition.fetch.bytes` - max batch size for reading from one partition
-
-`sink.consumer.max.poll.interval.ms` - time, after which Apache Kafka will exclude the consumer from group if it doesn't poll or commit
-
-`sink.consumer.metric.reporters` - a list of classes to use as metrics reporters
+See Hercules Sink [docs](../hercules-sink/README.md).
 
 #### Filter settings
 `sink.filter.list` - list of filter classes (inheritors of the `ru.kontur.vostok.hercules.sink.filter.EventFilter` class).
