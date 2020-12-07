@@ -9,15 +9,12 @@ import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.sink.Sink;
 import ru.kontur.vostok.hercules.sink.Subscription;
-import ru.kontur.vostok.hercules.util.PatternMatcher;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Gregory Koshelev
@@ -34,7 +31,7 @@ public class TimelineSink extends Sink {
                 TimelineUtil.timelineToApplicationId(timeline),
                 properties,
                 sender,
-                new Subscription(Stream.of(timeline.getStreams()).map(PatternMatcher::new).collect(Collectors.toList())),
+                Subscription.builder().include(timeline.getStreams()).build(),
                 fromTimeline(timeline),
                 metricsCollector);
     }

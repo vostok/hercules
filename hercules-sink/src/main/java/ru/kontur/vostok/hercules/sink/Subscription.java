@@ -37,7 +37,7 @@ public class Subscription {
     }
 
     public String toGroupId(String application) {
-        return ConsumerUtil.toGroupId(application, patternMatchers).replaceAll("\\s+", "-");
+        return ConsumerUtil.toGroupId(application, patternMatchers);
     }
 
     @Override
