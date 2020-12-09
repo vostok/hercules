@@ -16,8 +16,8 @@ public class RenewableTaskScheduler {
 
     private final ScheduledExecutorService executor;
 
-    public RenewableTaskScheduler(int threadPoolSize) {
-        executor = Executors.newScheduledThreadPool(threadPoolSize);
+    public RenewableTaskScheduler(String name, int threadPoolSize) {
+        executor = Executors.newScheduledThreadPool(threadPoolSize, ThreadFactories.newNamedThreadFactory(name, false));
     }
 
     /**

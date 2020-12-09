@@ -52,7 +52,7 @@ public class BeaconService {
         this.properties = properties;
         this.curatorClient = curatorClient;
 
-        this.executor = Executors.newSingleThreadScheduledExecutor(ThreadFactories.newNamedThreadFactory("beacon"));
+        this.executor = Executors.newSingleThreadScheduledExecutor(ThreadFactories.newDaemonNamedThreadFactory("beacon"));
     }
 
     /**

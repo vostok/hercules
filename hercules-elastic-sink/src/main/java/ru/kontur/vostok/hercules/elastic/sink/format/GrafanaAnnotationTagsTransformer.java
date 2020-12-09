@@ -44,7 +44,7 @@ public class GrafanaAnnotationTagsTransformer implements Transformer {
             if (tagKey.equals("project")) {
                 isProjectTagAdded = true;
             }
-            if (tagValue.equals("subproject")) {
+            if (tagKey.equals("subproject")) {
                 isSubprojectTagAdded = true;
             }
 

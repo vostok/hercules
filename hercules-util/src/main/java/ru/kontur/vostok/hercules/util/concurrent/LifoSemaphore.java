@@ -39,7 +39,7 @@ public class LifoSemaphore {
      * @param amount the amount of permits
      * @return {@code true} if permits are acquired or {@code false} otherwise
      */
-    public boolean tryAcquire(int amount) {
+    public boolean tryAcquire(long amount) {
         checkPermits(amount);
 
         for (; ; ) {
@@ -63,7 +63,7 @@ public class LifoSemaphore {
      * @return {@code true} if permits are acquired or {@code false} otherwise
      * @throws InterruptedException if thread was interrupted
      */
-    public boolean tryAcquire(int amount, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean tryAcquire(long amount, long timeout, TimeUnit unit) throws InterruptedException {
         checkPermits(amount);
 
         // Fast path: acquire permits without waiting
@@ -103,7 +103,7 @@ public class LifoSemaphore {
      *
      * @param amount the amount of permits
      */
-    public void release(int amount) {
+    public void release(long amount) {
         checkPermits(amount);
 
         for (; ; ) {
@@ -177,7 +177,7 @@ public class LifoSemaphore {
      * @param amount the amount of permits
      * @throws IllegalArgumentException if amount is negative
      */
-    private static void checkPermits(int amount) {
+    private static void checkPermits(long amount) {
         if (amount < 0) {
             throw new IllegalArgumentException();
         }

@@ -62,7 +62,7 @@ public class ClickHouseConnector {
         long validationIntervalMs = PropertiesUtil.get(Props.VALIDATION_INTERVAL_MS, properties).get();
 
         this.executor = Executors.newSingleThreadScheduledExecutor(
-                ThreadFactories.newNamedThreadFactory("clickhouse-connector-validation"));
+                ThreadFactories.newDaemonNamedThreadFactory("clickhouse-connector-validation"));
         this.executor.scheduleAtFixedRate(this::validate, validationIntervalMs, validationIntervalMs, TimeUnit.MILLISECONDS);
     }
 

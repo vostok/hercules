@@ -14,7 +14,7 @@ public class DefaultThrottledHttpServerRequestProcessor implements ThrottledRequ
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultThrottledHttpServerRequestProcessor.class);
 
     @Override
-    public void processAsync(HttpServerRequest request, ThrottledBy throttledBy) {
+    public void process(HttpServerRequest request, ThrottledBy throttledBy) {
         LOGGER.warn("Throttle request by " + throttledBy);
         request.complete(HttpStatusCodes.SERVICE_UNAVAILABLE);
     }
