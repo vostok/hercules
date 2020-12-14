@@ -5,12 +5,6 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
-import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
-import ru.kontur.vostok.hercules.health.Histogram;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.health.Timer;
-import ru.kontur.vostok.hercules.http.ContentEncodings;
-import ru.kontur.vostok.hercules.http.header.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
@@ -19,21 +13,9 @@ import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
-import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
-import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
-import ru.kontur.vostok.hercules.protocol.decoder.StreamReadStateReader;
-import ru.kontur.vostok.hercules.protocol.encoder.ByteStreamContentWriter;
-import ru.kontur.vostok.hercules.protocol.encoder.Encoder;
-import ru.kontur.vostok.hercules.util.ByteBufferPool;
-import ru.kontur.vostok.hercules.util.collection.ArrayUtil;
-import ru.kontur.vostok.hercules.util.compression.Compressor;
-import ru.kontur.vostok.hercules.util.compression.Lz4Compressor;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
-import ru.kontur.vostok.hercules.util.time.TimeSource;
 
-import java.nio.ByteBuffer;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
@@ -41,31 +23,17 @@ import java.util.concurrent.TimeUnit;
 public class StreamReadHandler implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamReadHandler.class);
 
-    private static final StreamReadStateReader STATE_READER = new StreamReadStateReader();
-    private static final ByteStreamContentWriter CONTENT_WRITER = new ByteStreamContentWriter();
-
-    private final Compressor compressor = new Lz4Compressor();
-
     private final AuthProvider authProvider;
-    private final StreamReader streamReader;
+    private final StreamReadRequestProcessor processor;
     private final StreamRepository streamRepository;
-
-    private final Timer compressionTimeMsTimer;
-    private final Timer sendTimeMsTimer;
-    private final Histogram responseSizeBytesHistogram;
 
     public StreamReadHandler(
             AuthProvider authProvider,
             StreamRepository streamRepository,
-            StreamReader streamReader,
-            MetricsCollector metricsCollector) {
+            StreamReadRequestProcessor processor) {
         this.authProvider = authProvider;
         this.streamRepository = streamRepository;
-        this.streamReader = streamReader;
-
-        this.compressionTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".compressionTimeMs");
-        this.sendTimeMsTimer = metricsCollector.timer(this.getClass().getSimpleName() + ".sendTimeMs");
-        this.responseSizeBytesHistogram = metricsCollector.histogram(this.getClass().getSimpleName() + ".responseSizeBytes");
+        this.processor = processor;
     }
 
     @Override
@@ -157,73 +125,6 @@ public class StreamReadHandler implements HttpHandler {
             return;
         }
 
-        request.readBodyAsync(
-                (r, bytes) -> request.dispatchAsync(
-                        () -> {
-                            try {
-                                ByteStreamContent streamContent = streamReader.read(
-                                        stream,
-                                        STATE_READER.read(new Decoder(bytes)),
-                                        shardIndex.get(),
-                                        shardCount.get(),
-                                        take.get(),
-                                        timeoutMs.get());
-
-                                request.getResponse().setContentType(MimeTypes.APPLICATION_OCTET_STREAM);
-
-                                ByteBuffer buffer = ByteBufferPool.acquire(streamContent.sizeOf());
-                                Encoder encoder = new Encoder(buffer);
-                                CONTENT_WRITER.write(encoder, streamContent);
-                                buffer.flip();
-
-                                // FIXME: Should be replaced with generic solution to support multiple compression algorithms
-                                if (ArrayUtil.contains(request.getHeaders(HttpHeaders.ACCEPT_ENCODING), ContentEncodings.LZ4)) {
-                                    int requiredCapacity = compressor.maxCompressedLength(buffer.remaining());
-                                    ByteBuffer compressed = ByteBufferPool.acquire(requiredCapacity);
-                                    try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(compressionTimeMsTimer, TimeUnit.MILLISECONDS)) {
-                                        compressor.compress(buffer, compressed);
-                                    }
-                                    ByteBufferPool.release(buffer);
-                                    buffer = compressed;
-
-                                    request.getResponse().setHeader(HttpHeaders.CONTENT_ENCODING, ContentEncodings.LZ4);
-                                    request.getResponse().setHeader(HttpHeaders.ORIGINAL_CONTENT_LENGTH, String.valueOf(streamContent.sizeOf()));
-                                }
-
-                                send(request, buffer);
-                            } catch (IllegalArgumentException e) {
-                                request.complete(HttpStatusCodes.BAD_REQUEST);
-                            } catch (Exception e) {
-                                LOGGER.error("Error on processing request", e);
-                                request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
-                            }
-                        }));
-    }
-
-    /**
-     * Send data to the client.
-     * <p>
-     * Note, {@link ByteBuffer buffer} will be released to {@link ByteBufferPool} after request completion.
-     *
-     * @param request the request
-     * @param buffer  the data buffer
-     */
-    private void send(HttpServerRequest request, ByteBuffer buffer) {
-        final long sendStartedAtMs = TimeSource.SYSTEM.milliseconds();
-        responseSizeBytesHistogram.update(buffer.remaining());
-        request.getResponse().setContentLength(buffer.remaining());
-        request.getResponse().send(
-                buffer,
-                req -> {
-                    request.complete();
-                    ByteBufferPool.release(buffer);
-                    sendTimeMsTimer.update(TimeSource.SYSTEM.milliseconds() - sendStartedAtMs);
-                },
-                (req, exception) -> {
-                    LOGGER.error("Error when send response", exception);
-                    request.complete();
-                    ByteBufferPool.release(buffer);
-                    sendTimeMsTimer.update(TimeSource.SYSTEM.milliseconds() - sendStartedAtMs);
-                });
+        processor.processAsync(request, stream, shardIndex.get(), shardCount.get(), take.get(), timeoutMs.get());
     }
 }

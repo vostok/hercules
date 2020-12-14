@@ -11,7 +11,7 @@ import java.time.Duration;
  */
 public class Timer {
     private final TimeSource time;
-    private long timeoutMs;
+    private final long timeoutMs;
     private long startedAtMs;
 
     Timer(TimeSource time, long timeoutMs) {
@@ -22,6 +22,15 @@ public class Timer {
 
     public Timer(long timeoutMs) {
         this(TimeSource.SYSTEM, timeoutMs);
+    }
+
+    /**
+     * Returns timer's timeout in millis
+     *
+     * @return timeout in millis
+     */
+    public long timeoutMs() {
+        return timeoutMs;
     }
 
     /**

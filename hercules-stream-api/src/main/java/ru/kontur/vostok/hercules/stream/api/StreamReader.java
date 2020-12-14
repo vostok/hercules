@@ -4,8 +4,6 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
@@ -27,8 +25,6 @@ import java.util.concurrent.TimeoutException;
  * @author Gregory Koshelev
  */
 public class StreamReader {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StreamReader.class);
-
     private final ConsumerPool<Void, byte[]> consumerPool;
     private final TimeSource time;
     private final StreamReaderMetrics metrics;
@@ -60,11 +56,10 @@ public class StreamReader {
         Consumer<Void, byte[]> consumer = null;
         try {
             consumer = consumerPool.acquire(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
+            metrics.updateWaitConsumer(timer.elapsedTimeMs());
 
             Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(partitions);
-
             Map<TopicPartition, Long> requestedOffsets = StreamReadStateUtil.stateToMap(stream.getName(), state);
-
             // New offsets for new StreamReadState
             Map<TopicPartition, Long> nextOffsets = new HashMap<>(Maps.effectiveHashMapCapacity(partitions.size()));
             List<TopicPartition> partitionsToRead = new ArrayList<>(partitions.size());
