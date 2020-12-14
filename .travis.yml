@@ -15,8 +15,7 @@ deploy:
       tags: true
   - provider: script
     skip_cleanup: true
-    script:
-      - make services_images
+    script: make
     on:
       tags: true
 notifications:

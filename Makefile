@@ -16,10 +16,16 @@ SERVICES := hercules-gate \
 	    hercules-graphite-sink \
 	    hercules-elastic-adapter
 
-.PHONY: services_images
-services_images:
+
+.PHONY: all build_images push_images
+all: build_images push_images
+
+build_images:
 	for service in $(SERVICES) ; do \
 		docker build --build-arg VERSION=$(VERSION) --build-arg SERVICENAME=$$service -t vstk/$$service:$(VERSION) -f Dockerfile . ; \
-		docker push vstk/$$service:$(VERSION) ; \
 	done
 
+push_images:
+	for service in $(SERVICES) ; do \
+		docker push vstk/$$service:$(VERSION) ; \
+	done
