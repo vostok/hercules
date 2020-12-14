@@ -2,10 +2,10 @@
 
 # Vostok Hercules
 Vostok Hercules is an open-source distributed system
-based on Apache Kafka and used for reliable processing
-of a telemetry like logs, metrics and distributed traces.
+based on Apache Kafka and used for reliable delivery of telemetry data from microservices
+to storage and analytics engines.
 
-Vostok Hercules is developed by Kontur as a part of Vostok project —
+Vostok Hercules is developed by [Kontur](https://github.com/skbkontur) as a part of Vostok project —
 an ecosystem for easy and fast development of microservices primarily using .NET Core / C#.
 
 Vostok Hercules provides abstractions for application code
@@ -16,35 +16,40 @@ Vostok Hercules provides out of the box 4 telemetry types:
 * distributed traces,
 * annotations.
 
-Also, Vostok Hercules supports a processing of custom types
-* via [Stream API](hercules-stream-api/README.md) or [Timeline API](hercules-timeline-api/README.md),
-* via one of provided Sinks (e.g. see [Elastic Sink](hercules-elastic-sink/README.md)).
-
 ## Telemetry types
 Telemetry is an event which has a timestamp and tags.
 Set of tags depends on a [telemetry type](doc/event-schema/README.md).
 
 ### Logs
-Vostok Hercules delivers logs to ElasticSearch and errors to Sentry.
+Vostok Hercules delivers logs to ElasticSearch.
+Also, logs with level `ERROR` or `FATAL` are delivered to [Sentry](https://github.com/getsentry/sentry).
 See supported [log event schema](doc/event-schema/log-event-schema.md) for details.
 
 ### Metrics
 Vostok Hercules delivers metrics to Graphite, [Moira](https://github.com/moira-alert)
 or any other tool which supports Graphite format.
-Metrics can be in the classic Graphite format
+Metrics can be in [the plaintext format](https://graphite.readthedocs.io/en/stable/feeding-carbon.html#the-plaintext-protocol),
 when a metric name consists of several components joined by a dot
 or in the modern [tagged format](https://graphite.readthedocs.io/en/stable/tags.html).
 See supported [metric event schema](doc/event-schema/metric-event-schema.md) for details.
 
 ### Distributed traces
-Vostok Hercules delivers distributed traces to ClickHouse / Contrails.
-[Contrails](https://github.com/vostok/contrails.web) is a tool for tree span analysis.
+Vostok Hercules stores distributed traces into ClickHouse.
+To analyze traces use [Contrails](https://github.com/vostok/contrails.web) web interface.
+Contrails is a tool for tree span analysis.
 See supported [trace span schema](doc/event-schema/trace-span-schema.md) for details.
 
 ### Annotations
 Annotation marks point on graphs in Grafana and Kibana.
 Vostok Hercules delivers annotations to ElasticSearch.
 See supported [annotation event schema](doc/event-schema/annotation-event-schema.md) for details.
+
+### Other telemetry
+Vostok Hercules supports an extendable processing of telemetry events and custom telemetry types as well.
+Hercules can be extended by one of the following ways:
+* Use one of provided Sinks (e.g. see [Elastic Sink](hercules-elastic-sink/README.md)),
+* Write an integration via universal HTTP [Stream API](hercules-stream-api/README.md) or [Timeline API](hercules-timeline-api/README.md) in any language you prefer,
+* Write a new Sink in Java.
 
 ## System Design
 ![System Design](system-design.png)
