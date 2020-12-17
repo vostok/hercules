@@ -5,14 +5,15 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerializer;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -21,22 +22,21 @@ import java.util.concurrent.TimeUnit;
  * @author Gregory Koshelev
  */
 public class EventSender {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(EventSender.class);
 
     private final KafkaProducer<UUID, byte[]> producer;
     private final Partitioner partitioner;
 
-    public EventSender(Map<String, Object> config, Partitioner partitioner) {
-        this.producer = new KafkaProducer<>(config, new UuidSerializer(), new ByteArraySerializer());
-        this.partitioner = partitioner;
-    }
+    private final EventSenderMetrics metrics;
 
     public EventSender(Properties properties, Partitioner partitioner, MetricsCollector metricsCollector) {
-        properties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
-        this.producer = new KafkaProducer<>(properties, new UuidSerializer(), new ByteArraySerializer());
+        Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
+        producerProperties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
+        this.producer = new KafkaProducer<>(producerProperties, new UuidSerializer(), new ByteArraySerializer());
 
         this.partitioner = partitioner;
+
+        this.metrics = new EventSenderMetrics(metricsCollector);
     }
 
     public void send(Event event, UUID eventId, String topic, int partitions, ShardingKey shardingKey, Callback callback, Callback errorCallback) {
@@ -50,12 +50,15 @@ public class EventSender {
                         eventId,
                         event.getBytes()
                 );
+        metrics.updateSent(event);
         producer.send(record, (metadata, exception) -> {
             if (exception == null) {
+                metrics.markDelivered();
                 if (callback != null) {
                     callback.call();
                 }
             } else {
+                metrics.markFailed();
                 if (errorCallback != null) {
                     errorCallback.call();
                 }

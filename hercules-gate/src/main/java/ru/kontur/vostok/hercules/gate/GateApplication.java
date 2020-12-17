@@ -50,6 +50,7 @@ public class GateApplication {
     private static StreamStorage streamStorage;
     private static EventSender eventSender;
     private static EventValidator eventValidator;
+    private static SendRequestProcessor sendRequestProcessor;
     private static HttpServer server;
     private static BeaconService beaconService;
 
@@ -66,7 +67,8 @@ public class GateApplication {
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties validationProperties = PropertiesUtil.ofScope(properties, "validation");
-            Properties producerProperties = PropertiesUtil.ofScope(properties, Scopes.PRODUCER);
+            Properties eventSenderProperties = PropertiesUtil.ofScope(properties, "gate.event.sender");
+            Properties sendRequestProcessorProperties = PropertiesUtil.ofScope(properties, "gate.send.request.processor");
             Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
             Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
 
@@ -86,8 +88,10 @@ public class GateApplication {
             StreamRepository streamRepository = new StreamRepository(curatorClient);
             streamStorage = new StreamStorage(streamRepository);
 
-            eventSender = new EventSender(producerProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
+            eventSender = new EventSender(eventSenderProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
             eventValidator = new EventValidator(validationProperties);
+
+            sendRequestProcessor = new SendRequestProcessor(sendRequestProcessorProperties, eventSender, eventValidator, metricsCollector);
 
             server = createHttpServer(httpServerProperties);
             server.start();
@@ -175,7 +179,6 @@ public class GateApplication {
     private static HttpServer createHttpServer(Properties httpServerProperties) {
         Properties throttlingProperties = PropertiesUtil.ofScope(httpServerProperties, Scopes.THROTTLING);
 
-        SendRequestProcessor sendRequestProcessor = new SendRequestProcessor(eventSender, eventValidator, metricsCollector);
         CapacityThrottle<HttpServerRequest> throttle = new CapacityThrottle<>(
                 throttlingProperties,
                 new DefaultHttpServerRequestWeigher());
