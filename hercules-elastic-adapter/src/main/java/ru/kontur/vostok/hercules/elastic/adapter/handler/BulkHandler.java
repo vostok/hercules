@@ -88,8 +88,12 @@ public class BulkHandler implements HttpHandler {
 
         for (Map.Entry<String, List<Event>> batch : events.entrySet()) {
             GateStatus status = gateSender.send(batch.getValue(), false, batch.getKey());
-            if (status != GateStatus.OK) {
-                //TODO: should retry the request or send 503 back
+            if (status == GateStatus.GATE_UNAVAILABLE) {
+                LOGGER.warn("Gate is unavailable: didn't send " + batch.getValue().size() + " events to the stream " + batch.getKey());
+                tryComplete(request, HttpStatusCodes.SERVICE_UNAVAILABLE);
+            } else if (status == GateStatus.BAD_REQUEST) {
+                LOGGER.error("Got bad request from Gate while sending events to the stream " + batch.getKey());
+                tryComplete(request, HttpStatusCodes.INTERNAL_SERVER_ERROR);
             }
         }
 

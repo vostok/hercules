@@ -14,6 +14,7 @@ import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -73,6 +74,7 @@ public class IndexHandler implements HttpHandler {
     private void process(HttpServerRequest request, byte[] data, String index) {
         Document document = DocumentReader.read(data);
         if (document == null) {
+            LOGGER.info("No document parsed from input");
             tryComplete(request, HttpStatusCodes.BAD_REQUEST);
             return;
         }
@@ -90,6 +92,7 @@ public class IndexHandler implements HttpHandler {
             GateStatus status = gateSender.send(Collections.singletonList(event), false, stream);
             tryComplete(request, status);
         } else {
+            LOGGER.info("Invalid document with timestamp " + TimeUtil.unixTicksToDateTime(event.getTimestamp()));
             tryComplete(request, HttpStatusCodes.BAD_REQUEST);
         }
     }

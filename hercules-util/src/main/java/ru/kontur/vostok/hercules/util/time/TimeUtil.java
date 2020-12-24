@@ -1,9 +1,9 @@
 package ru.kontur.vostok.hercules.util.time;
 
-import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Locale;
@@ -43,16 +43,17 @@ public class TimeUtil {
     private static final long NANOS_IN_TICK = 100L;
 
     /**
-     * GREGORIAN_EPOCH is offset from 1970-01-01T00:00:00.000Z to 1582-01-01T00:00:00.000Z in 100ns ticks. Epoch determines time-point to start Time Traps
+     * GREGORIAN_EPOCH is offset from 1970-01-01T00:00:00.000Z to 1582-01-01T00:00:00.000Z in 100ns ticks.
+     * Epoch determines time-point to start Time Traps
      */
-    public static final long GREGORIAN_EPOCH = makeEpoch();// -122192928000000000L
+    public static final long GREGORIAN_EPOCH = makeGregorianEpoch();// -122192928000000000L
 
     /**
      * UNIX_EPOCH starts from 1970-01-01T00:00:00.000Z.
      */
     public static final long UNIX_EPOCH = 0;
 
-    private static long makeEpoch() {
+    private static long makeGregorianEpoch() {
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT-0"));
         calendar.set(Calendar.YEAR, 1582);
         calendar.set(Calendar.MONTH, Calendar.OCTOBER);
@@ -191,6 +192,16 @@ public class TimeUtil {
      */
     public static long dateTimeToUnixTicks(ZonedDateTime dateTime) {
         return dateTime.toEpochSecond() * TICKS_IN_SEC + dateTime.getNano() / NANOS_IN_TICK;
+    }
+
+    /**
+     * Convert Unix ticks (Unix timestamp in 100ns ticks) to ZonedDateTime with UTC time zone
+     *
+     * @param ticks Unix ticks
+     * @return ZonedDateTime
+     */
+    public static ZonedDateTime unixTicksToDateTime(long ticks) {
+        return ZonedDateTime.ofInstant(unixTicksToInstant(ticks), ZoneOffset.UTC);
     }
 
     private static final ThreadLocal<DecimalFormat> FORMAT =
