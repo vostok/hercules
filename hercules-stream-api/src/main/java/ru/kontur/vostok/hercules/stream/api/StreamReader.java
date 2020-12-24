@@ -4,9 +4,6 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.protocol.ByteStreamContent;
@@ -28,15 +25,9 @@ import java.util.concurrent.TimeoutException;
  * @author Gregory Koshelev
  */
 public class StreamReader {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StreamReader.class);
-
     private final ConsumerPool<Void, byte[]> consumerPool;
-
     private final TimeSource time;
-
-    private final MetricsCollector metricsCollector;
-    private final Meter receivedEventsCountMeter;
-    private final Meter receivedBytesCountMeter;
+    private final StreamReaderMetrics metrics;
 
     public StreamReader(Properties properties,
                         ConsumerPool<Void, byte[]> consumerPool,
@@ -49,18 +40,11 @@ public class StreamReader {
                  MetricsCollector metricsCollector,
                  TimeSource time) {
         this.consumerPool = consumerPool;
-
         this.time = time;
-
-        this.metricsCollector = metricsCollector;
-        this.receivedEventsCountMeter = metricsCollector.meter("receivedEventsCount");
-        this.receivedBytesCountMeter = metricsCollector.meter("receivedBytesCount");
+        this.metrics = new StreamReaderMetrics(metricsCollector);
     }
 
     public ByteStreamContent read(Stream stream, StreamReadState state, int shardIndex, int shardCount, int take, int timeoutMs) {
-
-        StreamMetricsCollector streamMetricsCollector = new StreamMetricsCollector(metricsCollector, stream.getName());
-
         List<TopicPartition> partitions = StreamUtil.getTopicPartitions(stream, shardIndex, shardCount);
 
         if (partitions.isEmpty()) {
@@ -72,11 +56,10 @@ public class StreamReader {
         Consumer<Void, byte[]> consumer = null;
         try {
             consumer = consumerPool.acquire(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
+            metrics.updateWaitConsumer(timer.elapsedTimeMs());
 
             Map<TopicPartition, Long> beginningOffsets = consumer.beginningOffsets(partitions);
-
             Map<TopicPartition, Long> requestedOffsets = StreamReadStateUtil.stateToMap(stream.getName(), state);
-
             // New offsets for new StreamReadState
             Map<TopicPartition, Long> nextOffsets = new HashMap<>(Maps.effectiveHashMapCapacity(partitions.size()));
             List<TopicPartition> partitionsToRead = new ArrayList<>(partitions.size());
@@ -105,15 +88,7 @@ public class StreamReader {
 
             List<byte[]> events = pollAndUpdateNextOffsets(consumer, nextOffsets, take, timer);
 
-            int sizeOfEvents = 0;
-            for (byte[] event : events) {
-                sizeOfEvents += event.length;
-            }
-
-            receivedBytesCountMeter.mark(sizeOfEvents);
-            streamMetricsCollector.markReceivedBytesCount(sizeOfEvents);
-            receivedEventsCountMeter.mark(events.size());
-            streamMetricsCollector.markReceivedEventsCount(events.size());
+            metrics.update(stream.getName(), events);
 
             return new ByteStreamContent(
                     StreamReadStateUtil.stateFromMap(stream.getName(), nextOffsets),

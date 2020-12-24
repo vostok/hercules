@@ -39,6 +39,7 @@ public class StreamApiApplication {
     private static AuthManager authManager;
     private static ConsumerPool<Void, byte[]> consumerPool;
     private static StreamReader streamReader;
+    private static StreamReadRequestProcessor streamReadRequestProcessor;
     private static HttpServer server;
 
     public static void main(String[] args) {
@@ -75,6 +76,11 @@ public class StreamApiApplication {
             streamReader = new StreamReader(
                     PropertiesUtil.ofScope(properties, "stream.api.reader"),
                     consumerPool,
+                    metricsCollector);
+
+            streamReadRequestProcessor = new StreamReadRequestProcessor(
+                    PropertiesUtil.ofScope(properties, "stream.api.stream.read.request.processor"),
+                    streamReader,
                     metricsCollector);
 
             server = createHttpServer(httpServerProperties);
@@ -148,7 +154,7 @@ public class StreamApiApplication {
         HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
 
         HttpHandler readStreamHandler = authHandlerWrapper.wrap(
-                new StreamReadHandler(authProvider, repository, streamReader, metricsCollector));
+                new StreamReadHandler(authProvider, repository, streamReadRequestProcessor));
         HttpHandler seekToEndHandler = authHandlerWrapper.wrap(
                 new SeekToEndHandler(authProvider, repository, consumerPool));
 
