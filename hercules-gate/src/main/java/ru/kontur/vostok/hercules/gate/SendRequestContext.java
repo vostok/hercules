@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.gate;
 
+import ru.kontur.vostok.hercules.meta.stream.Stream;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 
@@ -9,49 +10,53 @@ import java.util.Set;
  * @author Gregory Koshelev
  */
 public class SendRequestContext {
+    private final long requestTimestampMs;
     private final boolean async;
-    private final String topic;
+    private final Stream stream;
     private final Set<TinyString> tags;
-    private final int partitions;
     private final ShardingKey shardingKey;
     private final ContentValidator validator;
 
     public SendRequestContext(
+            long requestTimestampMs,
             boolean async,
-            String topic,
+            Stream stream,
             Set<TinyString> tags,
-            int partitions,
             ShardingKey shardingKey,
             ContentValidator validator) {
+        this.requestTimestampMs = requestTimestampMs;
         this.async = async;
-        this.topic = topic;
+        this.stream = stream;
         this.tags = tags;
-        this.partitions = partitions;
         this.shardingKey = shardingKey;
         this.validator = validator;
+    }
+
+    public long requestTimestampMs() {
+        return requestTimestampMs;
     }
 
     public boolean isAsync() {
         return async;
     }
 
-    public String getTopic() {
-        return topic;
+    public String topic() {
+        return stream.getName();
     }
 
-    public Set<TinyString> getTags() {
+    public Set<TinyString> tags() {
         return tags;
     }
 
-    public int getPartitions() {
-        return partitions;
+    public int partitions() {
+        return stream.getPartitions();
     }
 
-    public ShardingKey getShardingKey() {
+    public ShardingKey shardingKey() {
         return shardingKey;
     }
 
-    public ContentValidator getValidator() {
+    public ContentValidator validator() {
         return validator;
     }
 }

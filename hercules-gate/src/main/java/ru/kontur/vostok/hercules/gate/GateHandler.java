@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.gate;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
-import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -46,8 +45,6 @@ public class GateHandler implements HttpHandler {
 
     private final TimeSource time;
 
-    private final Meter requestMeter;
-    private final Meter requestSizeMeter;
     private final Timer requestThrottleDurationMsTimer;
 
     public GateHandler(
@@ -96,19 +93,13 @@ public class GateHandler implements HttpHandler {
 
         this.time = time;
 
-        if (async) {
-            this.requestMeter = metricsCollector.meter("gateHandlerAsyncRequests");
-            this.requestSizeMeter = metricsCollector.meter("gateHandlerAsyncRequestSizeBytes");
-        } else {
-            this.requestMeter = metricsCollector.meter("gateHandlerSyncRequests");
-            this.requestSizeMeter = metricsCollector.meter("gateHandlerSyncRequestSizeBytes");
-        }
+        //TODO: Move throttling duration metric to Throttle
         this.requestThrottleDurationMsTimer = metricsCollector.timer("requestThrottleDurationMs");
     }
 
     @Override
     public void handle(HttpServerRequest request) {
-        requestMeter.mark(1);
+        final long requestTimestampMs = time.milliseconds();
 
         Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (streamName.isError()) {
@@ -141,8 +132,6 @@ public class GateHandler implements HttpHandler {
             return;
         }
 
-        requestSizeMeter.mark(contentLength);
-
         Optional<Stream> optionalBaseStream = streamStorage.read(stream);
         if (!optionalBaseStream.isPresent()) {
             request.complete(HttpStatusCodes.NOT_FOUND);
@@ -157,8 +146,6 @@ public class GateHandler implements HttpHandler {
         Set<TinyString> tagsToValidate = authValidationManager.getTags(apiKey, stream);
 
         ShardingKey shardingKey = ShardingKey.fromKeyPaths(baseStream.getShardingKey());
-        int partitions = baseStream.getPartitions();
-        String topic = baseStream.getName();
 
         Set<TinyString> tags = new HashSet<>(Maps.effectiveHashMapCapacity(shardingKey.size() + tagsToValidate.size()));
         Arrays.stream(shardingKey.getKeys()).map(HPath::getRootTag).forEach(tags::add);//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
@@ -176,7 +163,8 @@ public class GateHandler implements HttpHandler {
             return;
         }
 
-        SendRequestContext context = new SendRequestContext(async, topic, tags, partitions, shardingKey, validator);
+        SendRequestContext context =
+                new SendRequestContext(requestTimestampMs, async, baseStream, tags, shardingKey, validator);
         sendRequestProcessor.processAsync(request, context, () -> throttle.release(throttleResult));
     }
 

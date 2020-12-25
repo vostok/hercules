@@ -3,9 +3,8 @@ package ru.kontur.vostok.hercules.gate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
-import ru.kontur.vostok.hercules.health.Histogram;
-import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.ContentEncodings;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -20,11 +19,13 @@ import ru.kontur.vostok.hercules.protocol.decoder.exceptions.InvalidDataExceptio
 import ru.kontur.vostok.hercules.util.ByteBufferPool;
 import ru.kontur.vostok.hercules.util.compression.Lz4Decompressor;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.nio.ByteBuffer;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,126 +49,38 @@ public class SendRequestProcessor {
 
     private final SendRequestMetrics metrics;
 
-    private final Meter sentEventsMeter;
-    private final Meter lostEventsMeter;
-    private final Histogram recvEventsHistogram;
-    private final Histogram eventSizeHistogram;
-
-    public SendRequestProcessor(EventSender eventSender, EventValidator eventValidator, MetricsCollector metricsCollector) {
-        this(eventSender, eventValidator, metricsCollector, TimeSource.SYSTEM);
+    public SendRequestProcessor(Properties properties, EventSender eventSender, EventValidator eventValidator, MetricsCollector metricsCollector) {
+        this(properties, eventSender, eventValidator, metricsCollector, TimeSource.SYSTEM);
     }
 
-    SendRequestProcessor(EventSender eventSender, EventValidator eventValidator, MetricsCollector metricsCollector, TimeSource time) {
+    SendRequestProcessor(Properties properties, EventSender eventSender, EventValidator eventValidator, MetricsCollector metricsCollector, TimeSource time) {
         this.eventSender = eventSender;
         this.eventValidator = eventValidator;
         this.time = time;
-        this.metrics = new SendRequestMetrics(metricsCollector);
-
-        this.sentEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".sentEvents");
-        this.lostEventsMeter = metricsCollector.meter(this.getClass().getSimpleName() + ".lostEvents");
-        this.recvEventsHistogram = metricsCollector.histogram(this.getClass().getSimpleName() + ".recvEvents");
-        this.eventSizeHistogram = metricsCollector.histogram(this.getClass().getSimpleName() + ".eventSize");
+        this.metrics = new SendRequestMetrics(PropertiesUtil.ofScope(properties, Scopes.METRICS), metricsCollector);
     }
 
     public void processAsync(HttpServerRequest request, SendRequestContext context, Callback callback) {
         new SendRequest(request, context).processAsync(callback);
     }
 
-    private void sendAsync(SendRequest request, ByteBuffer buffer, Callback callback) {
-        ReaderIterator<Event> reader;
-        try {
-            reader = new ReaderIterator<>(new Decoder(buffer), EventReader.readTags(request.context.getTags()));
-        } catch (InvalidDataException ex) {
-            request.tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
-            LOGGER.error("Request is malformed", ex);
-            return;
-        }
-        if (reader.getTotal() == 0) {
-            request.tryComplete(HttpStatusCodes.OK, callback);
-            return;
-        }
-
-        AtomicInteger pendingEvents = new AtomicInteger(reader.getTotal());
-        AtomicBoolean processed = new AtomicBoolean(false);
-        recvEventsHistogram.update(reader.getTotal());
-        while (reader.hasNext()) {
-            Event event;
-            try {
-                event = reader.next();
-                eventSizeHistogram.update(event.sizeOf());
-                if (!eventValidator.validate(event)) {
-                    if (processed.compareAndSet(false, true)) {
-                        request.tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
-                    }
-                    //TODO: Metrics are coming!
-                    LOGGER.warn("Invalid event data");
-                    return;
-                }
-            } catch (Exception ex) {
-                if (processed.compareAndSet(false, true)) {
-                    request.tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
-                }
-                LOGGER.error("Exception on validation event", ex);
-                //TODO: Metrics are coming!
-                return;
-            }
-            if (!request.validator().validate(event)) {
-                //TODO: should to log filtered events
-                if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
-                    if (!request.isAsync()) {
-                        request.tryComplete(HttpStatusCodes.OK, callback);
-                    } else {
-                        callback.call();
-                    }
-                }
-                continue;
-            }
-            eventSender.send(
-                    event,
-                    event.getUuid(),//TODO: Think hard about this!
-                    request.context.getTopic(),
-                    request.context.getPartitions(),
-                    request.context.getShardingKey(),
-                    () -> {
-                        if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
-                            if (!request.isAsync()) {
-                                request.tryComplete(HttpStatusCodes.OK, callback);
-                            } else {
-                                callback.call();
-                            }
-                        }
-                        sentEventsMeter.mark();
-                    },
-                    () -> {
-                        if (processed.compareAndSet(false, true)) {
-                            if (!request.isAsync()) {
-                                request.tryComplete(HttpStatusCodes.INTERNAL_SERVER_ERROR, callback);
-                            } else {
-                                callback.call();
-                            }
-                        }
-                        lostEventsMeter.mark();
-                    }
-            );
-        }
-        if (request.isAsync()) {
-            request.tryComplete(HttpStatusCodes.OK, Callback.empty());
-        }
-    }
-
-    /**
-     * @author Gregory Koshelev
-     */
     public class SendRequest {
 
         private final HttpServerRequest request;
         private final SendRequestContext context;
 
         private volatile long receivingStartedAtMs = Long.MAX_VALUE;
-        private volatile long receivingEndedAtMs = Long.MAX_VALUE;
+        private volatile long receivingEndedAtMs;
         private volatile long decompressionTimeMs;
-        private volatile long processingTimestamp = Long.MAX_VALUE;
-        private volatile long completionTimestamp = Long.MAX_VALUE;
+        private volatile long sendingEventsStartedAtMs = Long.MAX_VALUE;
+        private volatile long sendingEventsEndedAtMs;
+
+        private volatile long requestCompletionTimestampMs;
+
+        private volatile int requestCompressedSizeBytes;
+        private volatile int requestUncompressedSizeBytes;
+
+        private volatile int totalEvents;
 
         public SendRequest(HttpServerRequest request, SendRequestContext context) {
             this.request = request;
@@ -185,6 +98,7 @@ public class SendRequestProcessor {
                 request.readBodyAsync(
                         (r, bytes) -> r.dispatchAsync(() -> {
                             receivingEndedAtMs = time.milliseconds();
+                            requestUncompressedSizeBytes = requestCompressedSizeBytes = bytes.length;
 
                             ByteBuffer buffer = null;
                             try {
@@ -198,17 +112,17 @@ public class SendRequestProcessor {
                                             HeaderUtil.get(ORIGINAL_CONTENT_LENGTH, request);
                                     if (originalContentLength.isError()) {
                                         tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
-                                        LOGGER.warn("Request has header Content-Encoding, but there is no valid Original-Content-Length");
+                                        LOGGER.warn("Request has header Content-Encoding, but there is no valid Original-Content-Length: " + originalContentLength.result().error());
                                         return;
                                     }
+                                    requestUncompressedSizeBytes = originalContentLength.get();
                                     buffer = decompressLz4(bytes, originalContentLength.get());
                                 } else {
                                     tryComplete(HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE, callback);
                                     return;
                                 }
 
-                                processingTimestamp = time.milliseconds();
-                                sendAsync(this, buffer, callback);
+                                sendEvents(buffer, callback);
                             } catch (RuntimeException ex) {
                                 tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
                                 LOGGER.error("Cannot process request due to exception", ex);
@@ -234,9 +148,91 @@ public class SendRequestProcessor {
             }
         }
 
+        private void sendEvents(ByteBuffer buffer, Callback callback) {
+            ReaderIterator<Event> reader;
+            try {
+                reader = new ReaderIterator<>(new Decoder(buffer), EventReader.readTags(context.tags()));
+            } catch (InvalidDataException ex) {
+                tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
+                LOGGER.error("Request is malformed", ex);
+                return;
+            }
+
+            if (reader.getTotal() == 0) {
+                tryComplete(HttpStatusCodes.OK, callback);
+                return;
+            }
+
+            AtomicInteger pendingEvents = new AtomicInteger(reader.getTotal());
+            AtomicBoolean processed = new AtomicBoolean(false);
+            totalEvents = reader.getTotal();
+            sendingEventsStartedAtMs = time.milliseconds();
+            while (reader.hasNext()) {
+                Event event;
+                try {
+                    event = reader.next();
+                    if (!eventValidator.validate(event)) {
+                        if (processed.compareAndSet(false, true)) {
+                            tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
+                        }
+                        //TODO: Metrics are coming!
+                        LOGGER.warn("Invalid event data");
+                        return;
+                    }
+                } catch (Exception ex) {
+                    if (processed.compareAndSet(false, true)) {
+                        tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
+                    }
+                    LOGGER.error("Exception on validation event", ex);
+                    //TODO: Metrics are coming!
+                    return;
+                }
+                if (!context.validator().validate(event)) {
+                    //TODO: should to log filtered events
+                    if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
+                        if (!isAsync()) {
+                            tryComplete(HttpStatusCodes.OK, callback);
+                        } else {
+                            callback.call();
+                        }
+                    }
+                    continue;
+                }
+                eventSender.send(
+                        event,
+                        event.getUuid(),//TODO: Think hard about this!
+                        context.topic(),
+                        context.partitions(),
+                        context.shardingKey(),
+                        () -> {
+                            if (pendingEvents.decrementAndGet() == 0 && processed.compareAndSet(false, true)) {
+                                if (!isAsync()) {
+                                    tryComplete(HttpStatusCodes.OK, callback);
+                                } else {
+                                    callback.call();
+                                }
+                            }
+                        },
+                        () -> {
+                            if (processed.compareAndSet(false, true)) {
+                                if (!isAsync()) {
+                                    tryComplete(HttpStatusCodes.INTERNAL_SERVER_ERROR, callback);
+                                } else {
+                                    callback.call();
+                                }
+                            }
+                        }
+                );
+            }
+            sendingEventsEndedAtMs = time.milliseconds();
+            if (isAsync()) {
+                tryComplete(HttpStatusCodes.OK, Callback.empty());
+            }
+        }
+
         public void tryComplete(int code, Callback callback) {
             try {
-                completionTimestamp = time.milliseconds();
+                requestCompletionTimestampMs = time.milliseconds();
                 request.complete(code);
             } catch (Exception ex) {
                 LOGGER.error("Error on request completion", ex);
@@ -250,10 +246,6 @@ public class SendRequestProcessor {
             return context.isAsync();
         }
 
-        public ContentValidator validator() {
-            return context.getValidator();
-        }
-
         public long receivingTimeMs() {
             return Math.max(receivingEndedAtMs - receivingStartedAtMs, 0L);
         }
@@ -262,8 +254,24 @@ public class SendRequestProcessor {
             return decompressionTimeMs;
         }
 
+        public long sendingEventsTimeMs() {
+            return Math.max(sendingEventsEndedAtMs - sendingEventsStartedAtMs, 0L);
+        }
+
         public long processingTimeMs() {
-            return Math.max(completionTimestamp - processingTimestamp, 0L);
+            return Math.max(requestCompletionTimestampMs - context.requestTimestampMs(), 0L);
+        }
+
+        public int requestCompressedSizeBytes() {
+            return requestCompressedSizeBytes;
+        }
+
+        public int requestUncompressedSizeBytes() {
+            return requestUncompressedSizeBytes;
+        }
+
+        public int totalEvents() {
+            return totalEvents;
         }
 
         private ByteBuffer decompressLz4(byte[] bytes, int originalContentLength) {
@@ -282,7 +290,7 @@ public class SendRequestProcessor {
         }
 
         private void initMDC() {
-            MDC.put("stream", context.getTopic());
+            MDC.put("stream", context.topic());
             MDC.put("apiKey", getProtectedApiKey());
         }
 
