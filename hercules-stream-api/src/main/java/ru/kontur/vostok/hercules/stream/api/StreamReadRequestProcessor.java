@@ -131,17 +131,18 @@ public class StreamReadRequestProcessor {
             // FIXME: Should be replaced with generic solution to support multiple compression algorithms
             if (ArrayUtil.contains(request.getHeaders(HttpHeaders.ACCEPT_ENCODING), ContentEncodings.LZ4)) {
                 ByteBuffer compressed = compressLz4(buffer);
+                compressedSizeBytes = compressed.remaining();
                 ByteBufferPool.release(buffer);
                 buffer = compressed;
 
                 request.getResponse().setHeader(HttpHeaders.CONTENT_ENCODING, ContentEncodings.LZ4);
-                request.getResponse().setHeader(HttpHeaders.ORIGINAL_CONTENT_LENGTH, String.valueOf(buffer.limit()));
+                request.getResponse().setHeader(HttpHeaders.ORIGINAL_CONTENT_LENGTH, String.valueOf(uncompressedSizeBytes));
             }
 
             final ByteBuffer bufferToSend = buffer;
 
             sendingStartedAtMs = TimeSource.SYSTEM.milliseconds();
-            request.getResponse().setContentLength(buffer.remaining());
+            request.getResponse().setContentLength(compressedSizeBytes);
             request.getResponse().send(
                     buffer,
                     req -> {
