@@ -181,24 +181,36 @@ HTTP Server binds on host:port are defined in Main Application settings.
 
 `validation.max.event.size` - max size of Hercules event, value must be consistent with broker setting `max.message.bytes`, default value: `500000`
 
-### Kafka Producer settings
+### Event sender settings
+
+#### Kafka Producer settings
+Producer settings have base scope `gate.event.sender.producer`.
 See Producer's Config from Apache Kafka documentation. Main settings are presented below.
 
-`producer.bootstrap.servers`
+`gate.event.sender.producer.bootstrap.servers`
 
-`producer.acks`
+`gate.event.sender.producer.acks`
 
-`producer.batch.size`
+`gate.event.sender.producer.batch.size`
 
-`producer.linger.ms`
+`gate.event.sender.producer.linger.ms`
 
-`producer.buffer.memory`
+`gate.event.sender.producer.buffer.memory`
 
-`producer.retries`
+`gate.event.sender.producer.retries`
 
-`producer.retry.backoff.ms`
+`gate.event.sender.producer.retry.backoff.ms`
 
-`producer.metric.reporters`
+`gate.event.sender.producer.metric.reporters`
+
+### Send request processor settings
+#### Sampling metrics settings
+Gate supports sampling metrics.
+Settings for them have base scope `gate.send.request.processor.metrics.sampling`.
+
+`gate.send.request.processor.metrics.sampling.enable` - enable sampling metrics if `true`. Default value: `false`.
+
+`gate.send.request.processor.metrics.sampling.request.data.size.bytes` - sample requests if request data size in bytes is less or equal to this value. Default value: `1048576`.
 
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
@@ -260,14 +272,17 @@ http.server.throttling.requestTimeout=10000
 
 validation.max.event.size=500000
 
-producer.bootstrap.servers=localhost:9092
-producer.acks=all
-producer.batch.size=65536
-producer.linger.ms=1
-producer.buffer.memory=335544320
-producer.retries=4
-producer.retry.backoff.ms=250
-producer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
+gate.event.sender.producer.bootstrap.servers=localhost:9092
+gate.event.sender.producer.acks=all
+gate.event.sender.producer.batch.size=65536
+gate.event.sender.producer.linger.ms=1
+gate.event.sender.producer.buffer.memory=335544320
+gate.event.sender.producer.retries=4
+gate.event.sender.producer.retry.backoff.ms=250
+gate.event.sender.producer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
+
+gate.send.request.processor.metrics.sampling.enable=true
+gate.send.request.processor.metrics.sampling.request.data.size.bytes=1048576
 
 curator.connectString=localhost:2181
 curator.connectionTimeout=10000

@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
+import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -51,7 +52,10 @@ public class GateClient implements Closeable {
     private final BlockingQueue<GreyListTopologyElement> greyList;
     private final Topology<String> whiteList;
     private final int greyListElementsRecoveryTimeMs;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService scheduler =
+            Executors.newScheduledThreadPool(
+                    1,
+                    ThreadFactories.newNamedThreadFactory("gate-client-topology-updater", false));
 
     public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList) {
 

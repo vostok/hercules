@@ -34,8 +34,7 @@ public class ConsumerPool<K, V> {
 
     private final int size;
     private final Properties consumerProperties;
-
-    private ArrayBlockingQueue<Consumer<K, V>> consumers;
+    private final ArrayBlockingQueue<Consumer<K, V>> consumers;
 
     public ConsumerPool(Properties properties, Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer,
                         MetricsCollector metricsCollector) {

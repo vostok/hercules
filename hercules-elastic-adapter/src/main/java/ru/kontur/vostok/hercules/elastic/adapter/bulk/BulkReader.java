@@ -17,9 +17,10 @@ public final class BulkReader {
     private static final byte NEW_LINE = '\n';
 
     /**
-     * Read index requests from input bulk data.
+     * Read index requests from the input bulk data.
      * <p>
-     * Index requests are connected through new line. Each index request consists of index action {@link IndexAction} and document as follows:
+     * Index requests are connected through a new line.
+     * Each index request consists of an index action {@link IndexAction} and a document as follows:
      * <pre>
      *     {"index": {"_index": "<index>", "_type": "<type>"}}\n  // first index action
      *     {"field1: "value1", ...}\n                             // first document
@@ -27,12 +28,12 @@ public final class BulkReader {
      *     {"field2: "value2", ...}\n                             // second document
      *     ...                                                    // and so on
      * </pre>
-     * If no index is specified in index action, then use default index.
-     * Also, use default document type if no document type is provided.
+     * If no index is specified in the index action, then use the default index.
+     * Also, use the default document type if no document type is provided.
      *
-     * @param data         input data
-     * @param defaultIndex default index name
-     * @param defaultType  default document type
+     * @param data         the input data
+     * @param defaultIndex the default index name
+     * @param defaultType  the default document type
      * @return iterator
      */
     public static Iterator<IndexRequest> read(byte[] data, String defaultIndex, String defaultType) {

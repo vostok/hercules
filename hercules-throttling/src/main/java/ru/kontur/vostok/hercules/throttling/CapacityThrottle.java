@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public class CapacityThrottle<R, C> implements Throttle<R, C> {
+public class CapacityThrottle<R> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityThrottle.class);
 
@@ -21,65 +21,52 @@ public class CapacityThrottle<R, C> implements Throttle<R, C> {
     private final long requestTimeout;
 
     private final RequestWeigher<R> weigher;
-    private final RequestProcessor<R, C> requestProcessor;
-    private final ThrottledRequestProcessor<R> throttledRequestProcessor;
 
     private final LifoSemaphore semaphore;
 
     /**
-     * @param properties                configuration properties
-     * @param weigher                   request's weigher to weigh resources are used to process request
-     * @param requestProcessor          processes requests
-     * @param throttledRequestProcessor processes throttled (discarded by some reasons) requests
+     * @param properties configuration properties
+     * @param weigher    request's weigher to weigh resources are used to process request
      */
     public CapacityThrottle(
             Properties properties,
-            RequestWeigher<R> weigher,
-            RequestProcessor<R, C> requestProcessor,
-            ThrottledRequestProcessor<R> throttledRequestProcessor
-    ) {
+            RequestWeigher<R> weigher) {
         this.capacity = PropertiesUtil.get(Props.CAPACITY, properties).get();
         this.requestTimeout = PropertiesUtil.get(Props.REQUEST_TIMEOUT_MS, properties).get();
 
         this.weigher = weigher;
-        this.requestProcessor = requestProcessor;
-        this.throttledRequestProcessor = throttledRequestProcessor;
 
-        this.semaphore = new LifoSemaphore(capacity > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) capacity);
+        this.semaphore = new LifoSemaphore(capacity);
     }
 
     /**
-     * Asynchronously throttle request
+     * Throttle a request
      *
-     * @param request to be throttled
-     * @param context is additional request's data
+     * @param request a request
      */
-    @Override
-    public void throttleAsync(R request, C context) {
+    public ThrottleResult throttle(R request) {
         int weight = weigher.weigh(request);
         if (weight < 0) {
             throw new IllegalStateException("Request is invalid");
         }
         if (semaphore.tryAcquire(weight)) {
-            requestProcessor.processAsync(request, context, () -> semaphore.release(weight));
-            return;
+            return ThrottleResult.passed(weight);
         }
         boolean acquired;
         try {
             acquired = semaphore.tryAcquire(weight, requestTimeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            throttledRequestProcessor.processAsync(request, ThrottledBy.INTERRUPTION);
-            return;
+            return ThrottleResult.interrupted();
         }
         if (acquired) {
-            requestProcessor.processAsync(request, context, () -> semaphore.release(weight));
+            return ThrottleResult.passed(weight);
         } else {
-            throttledRequestProcessor.processAsync(request, ThrottledBy.EXPIRATION);
+            return ThrottleResult.expired();
         }
     }
 
-    @Override
-    public void shutdown(long timeout, TimeUnit unit) {
+    public void release(ThrottleResult result) {
+        semaphore.release(result.capacity());
     }
 
     private static class Props {

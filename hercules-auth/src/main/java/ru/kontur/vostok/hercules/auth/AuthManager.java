@@ -42,7 +42,7 @@ public final class AuthManager {
     public AuthManager(CuratorClient curatorClient) {
         this.curatorClient = curatorClient;
 
-        this.scheduler = new RenewableTaskScheduler(1);
+        this.scheduler = new RenewableTaskScheduler("auth-manager", 1);
 
         this.blacklist = new Blacklist(curatorClient, scheduler);
 

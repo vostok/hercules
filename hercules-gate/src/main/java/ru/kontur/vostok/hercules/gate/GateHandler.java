@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.gate;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
-import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -16,7 +15,10 @@ import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
-import ru.kontur.vostok.hercules.throttling.Throttle;
+import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
+import ru.kontur.vostok.hercules.throttling.ThrottleResult;
+import ru.kontur.vostok.hercules.throttling.ThrottledBy;
+import ru.kontur.vostok.hercules.throttling.ThrottledRequestProcessor;
 import ru.kontur.vostok.hercules.util.Maps;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -32,7 +34,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class GateHandler implements HttpHandler {
     private final AuthProvider authProvider;
-    private final Throttle<HttpServerRequest, SendContext> throttle;
+    private final CapacityThrottle<HttpServerRequest> throttle;
+    private final ThrottledRequestProcessor<HttpServerRequest> throttledRequestProcessor;
+    private final SendRequestProcessor sendRequestProcessor;
     private final StreamStorage streamStorage;
     private final AuthValidationManager authValidationManager;
 
@@ -41,13 +45,13 @@ public class GateHandler implements HttpHandler {
 
     private final TimeSource time;
 
-    private final Meter requestMeter;
-    private final Meter requestSizeMeter;
     private final Timer requestThrottleDurationMsTimer;
 
     public GateHandler(
             AuthProvider authProvider,
-            Throttle<HttpServerRequest, SendContext> throttle,
+            CapacityThrottle<HttpServerRequest> throttle,
+            ThrottledRequestProcessor<HttpServerRequest> throttledRequestProcessor,
+            SendRequestProcessor sendRequestProcessor,
             AuthValidationManager authValidationManager,
             StreamStorage streamStorage,
             boolean async,
@@ -56,6 +60,8 @@ public class GateHandler implements HttpHandler {
         this(
                 authProvider,
                 throttle,
+                throttledRequestProcessor,
+                sendRequestProcessor,
                 authValidationManager,
                 streamStorage,
                 async,
@@ -66,16 +72,19 @@ public class GateHandler implements HttpHandler {
 
     GateHandler(
             AuthProvider authProvider,
-            Throttle<HttpServerRequest, SendContext> throttle,
+            CapacityThrottle<HttpServerRequest> throttle,
+            ThrottledRequestProcessor<HttpServerRequest> throttledRequestProcessor,
+            SendRequestProcessor sendRequestProcessor,
             AuthValidationManager authValidationManager,
             StreamStorage streamStorage,
             boolean async,
             long maxContentLength,
             MetricsCollector metricsCollector,
             TimeSource time) {
-
         this.authProvider = authProvider;
         this.throttle = throttle;
+        this.throttledRequestProcessor = throttledRequestProcessor;
+        this.sendRequestProcessor = sendRequestProcessor;
         this.authValidationManager = authValidationManager;
         this.streamStorage = streamStorage;
 
@@ -84,19 +93,13 @@ public class GateHandler implements HttpHandler {
 
         this.time = time;
 
-        if (async) {
-            this.requestMeter = metricsCollector.meter("gateHandlerAsyncRequests");
-            this.requestSizeMeter = metricsCollector.meter("gateHandlerAsyncRequestSizeBytes");
-        } else {
-            this.requestMeter = metricsCollector.meter("gateHandlerSyncRequests");
-            this.requestSizeMeter = metricsCollector.meter("gateHandlerSyncRequestSizeBytes");
-        }
+        //TODO: Move throttling duration metric to Throttle
         this.requestThrottleDurationMsTimer = metricsCollector.timer("requestThrottleDurationMs");
     }
 
     @Override
     public void handle(HttpServerRequest request) {
-        requestMeter.mark(1);
+        final long requestTimestampMs = time.milliseconds();
 
         Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
         if (streamName.isError()) {
@@ -129,8 +132,6 @@ public class GateHandler implements HttpHandler {
             return;
         }
 
-        requestSizeMeter.mark(contentLength);
-
         Optional<Stream> optionalBaseStream = streamStorage.read(stream);
         if (!optionalBaseStream.isPresent()) {
             request.complete(HttpStatusCodes.NOT_FOUND);
@@ -145,8 +146,6 @@ public class GateHandler implements HttpHandler {
         Set<TinyString> tagsToValidate = authValidationManager.getTags(apiKey, stream);
 
         ShardingKey shardingKey = ShardingKey.fromKeyPaths(baseStream.getShardingKey());
-        int partitions = baseStream.getPartitions();
-        String topic = baseStream.getName();
 
         Set<TinyString> tags = new HashSet<>(Maps.effectiveHashMapCapacity(shardingKey.size() + tagsToValidate.size()));
         Arrays.stream(shardingKey.getKeys()).map(HPath::getRootTag).forEach(tags::add);//TODO: Should be revised (do not parse all the tag tree if the only tag chain is needed)
@@ -154,10 +153,19 @@ public class GateHandler implements HttpHandler {
 
         ContentValidator validator = authValidationManager.validator(apiKey, stream);
 
-        SendContext context = new SendContext(async, topic, tags, partitions, shardingKey, validator);
+        final ThrottleResult throttleResult;
         try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(requestThrottleDurationMsTimer, TimeUnit.MILLISECONDS, time)) {
-            throttle.throttleAsync(request, context);
+            throttleResult = this.throttle.throttle(request);
         }
+
+        if (throttleResult.reason() != ThrottledBy.NONE) {
+            throttledRequestProcessor.process(request, throttleResult.reason());
+            return;
+        }
+
+        SendRequestContext context =
+                new SendRequestContext(requestTimestampMs, async, baseStream, tags, shardingKey, validator);
+        sendRequestProcessor.processAsync(request, context, () -> throttle.release(throttleResult));
     }
 
     private static class QueryParameters {

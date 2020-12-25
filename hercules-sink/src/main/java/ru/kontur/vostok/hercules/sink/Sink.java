@@ -18,7 +18,6 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidDeserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.filter.EventFilter;
-import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -67,10 +66,10 @@ public class Sink {
             String applicationId,
             Properties properties,
             Processor processor,
-            List<PatternMatcher> patternMatchers,
+            Subscription subscription,
             EventDeserializer deserializer,
             MetricsCollector metricsCollector) {
-        this(executor, applicationId, properties, processor, patternMatchers, deserializer, metricsCollector, TimeSource.SYSTEM);
+        this(executor, applicationId, properties, processor, subscription, deserializer, metricsCollector, TimeSource.SYSTEM);
     }
 
     Sink(
@@ -78,7 +77,7 @@ public class Sink {
             String applicationId,
             Properties properties,
             Processor processor,
-            List<PatternMatcher> patternMatchers,
+            Subscription subscription,
             EventDeserializer deserializer,
             MetricsCollector metricsCollector,
             TimeSource time) {
@@ -93,9 +92,9 @@ public class Sink {
 
         String consumerGroupId =
                 PropertiesUtil.get(Props.GROUP_ID, properties).
-                        orEmpty(ConsumerUtil.toGroupId(applicationId, patternMatchers));
+                        orEmpty(subscription.toGroupId(applicationId));
 
-        this.pattern = PatternMatcher.matcherListToRegexp(patternMatchers);
+        this.pattern = subscription.toPattern();
 
         Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);

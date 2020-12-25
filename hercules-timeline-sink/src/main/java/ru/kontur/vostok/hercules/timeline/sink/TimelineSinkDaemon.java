@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.partitioner.RandomPartitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.sink.SinkPool;
 import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
+import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -96,7 +97,7 @@ public class TimelineSinkDaemon {
             sender.start();
 
             int poolSize = PropertiesUtil.get(Props.POOL_SIZE, sinkProperties).get();
-            executor = Executors.newFixedThreadPool(poolSize);//TODO: Provide custom ThreadFactory
+            executor = Executors.newFixedThreadPool(poolSize, ThreadFactories.newNamedThreadFactory("sink", false));
 
             sinkPool =
                     new SinkPool(

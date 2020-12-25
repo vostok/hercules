@@ -235,6 +235,16 @@ See the list of supported config properties in Apache Kafka documentation. Main 
 
 `stream.api.pool.consumer.metric.reporters` - a list of classes to use as metrics reporters
 
+#### Stream API metrics settings
+Stream API supports sampling metrics of a stream reading.
+Settings for them have base scope `stream.api.stream.read.request.processor.metrics.sampling`.
+
+`stream.api.stream.read.request.processor.metrics.sampling.enable` - enable sampling metrics if `true`. Default value: `false`.
+
+`stream.api.stream.read.request.processor.metrics.sampling.timeout.ms` - sample requests if `timeoutMs` query parameter is less or equal to this value. Default value: `1000`.
+
+`stream.api.stream.read.request.processor.metrics.sampling.response.data.size.bytes` - sample requests if response data size in bytes is less or equal to this value. Default value: `10485760`.
+
 ## Command line
 `java $JAVA_OPTS -jar hercules-stream-api.jar application.properties=file://path/to/file/application.properties`
 
@@ -276,4 +286,8 @@ stream.api.pool.size=4
 stream.api.pool.consumer.bootstrap.servers=localhost:9092
 stream.api.pool.consumer.max.poll.records=10000
 stream.api.pool.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
+
+stream.api.stream.read.request.processor.metrics.sampling.enable=true
+stream.api.stream.read.request.processor.metrics.sampling.timeout.ms=1000
+stream.api.stream.read.request.processor.metrics.sampling.response.data.size.bytes=10485760
 ```
