@@ -243,7 +243,7 @@ Settings for them have base scope `stream.api.stream.read.request.processor.metr
 
 `stream.api.stream.read.request.processor.metrics.sampling.timeout.ms` - sample requests if `timeoutMs` query parameter is less or equal to this value. Default value: `1000`.
 
-`stream.api.stream.read.request.processor.metrics.sampling.response.data.size.bytes` - sample requests if response data size in bytes is less or equal to this value. Default value: `1048576`.
+`stream.api.stream.read.request.processor.metrics.sampling.response.data.size.bytes` - sample requests if response data size in bytes is less or equal to this value. Default value: `10485760`.
 
 ## Command line
 `java $JAVA_OPTS -jar hercules-stream-api.jar application.properties=file://path/to/file/application.properties`
@@ -289,5 +289,5 @@ stream.api.pool.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.m
 
 stream.api.stream.read.request.processor.metrics.sampling.enable=true
 stream.api.stream.read.request.processor.metrics.sampling.timeout.ms=1000
-stream.api.stream.read.request.processor.metrics.sampling.response.data.size.bytes=1048576
+stream.api.stream.read.request.processor.metrics.sampling.response.data.size.bytes=10485760
 ```

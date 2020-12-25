@@ -102,7 +102,7 @@ public class StreamReadRequestMetrics {
 
         static Parameter<Integer> SAMPLING_RESPONSE_DATA_SIZE_BYTES =
                 Parameter.integerParameter("sampling.response.data.size.bytes").
-                        withDefault(1_048_576).// 1024 * 1024 (1 MB)
+                        withDefault(10_485_760).// 10 * 1024 * 1024 (10 MB)
                         withValidator(IntegerValidators.positive()).
                         build();
     }
