@@ -2,6 +2,8 @@ package ru.kontur.vostok.hercules.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -22,6 +24,8 @@ import java.util.Map;
  * @author Gregory Koshelev
  */
 public final class DocumentReader {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentReader.class);
+
     private static final ObjectReader DOCUMENT_READER;
 
     static {
@@ -64,8 +68,8 @@ public final class DocumentReader {
     public static Document read(byte[] data, int offset, int length) {
         try {
             return Document.of(DOCUMENT_READER.readValue(data, offset, length));
-        } catch (IOException e) {
-            //TODO: May be process exception?
+        } catch (IOException ex) {
+            LOGGER.warn("Malformed input", ex);
             return null;
         }
     }
