@@ -138,13 +138,13 @@ public abstract class TaskExecutor<T> {
     /**
      * Delete invalid task from task list. All possible exceptions are ignored.
      *
-     * @param fullname the full name of invalid task
+     * @param fullName the full name of invalid task
      */
-    private void cleanInvalidTask(String fullname) {
+    private void cleanInvalidTask(String fullName) {
         try {
-            repository.delete(fullname);
+            repository.delete(fullName);
         } catch (CuratorException e) {
-            LOGGER.warn("Cannot delete invalid task '" + fullname + "'", e);
+            LOGGER.warn("Cannot delete invalid task '" + fullName + "'", e);
         }
     }
 
@@ -163,7 +163,14 @@ public abstract class TaskExecutor<T> {
      * ProtoTask represent tasks's fullName and sequenceId
      */
     private static final class ProtoTask implements Comparable<ProtoTask> {
+        /**
+         * The full name of the zk node (including path to the root)
+         */
         private final String fullName;
+        /**
+         * The sequence id of the zk node which is a signed 32-bit integer
+         * where {@link Integer#MIN_VALUE} follows by {@link Integer#MAX_VALUE}.
+         */
         private final Integer sequenceId;
 
         public ProtoTask(String fullName, Integer sequenceId) {
@@ -171,9 +178,36 @@ public abstract class TaskExecutor<T> {
             this.sequenceId = sequenceId;
         }
 
+        /**
+         * Compares this task with the specified task for order.
+         * <p>
+         * Since sequence id rotates, sequence ids are compared as follows:
+         * <ul>
+         *     <li>{@code x > y} if {@code (x - y) > 0},</li>
+         *     <li>{@code x = y} if {@code (x - y) mod 2^31 = 0},</li>
+         *     <li>{@code x < y} if {@code (x - y) < 0}.</li>
+         * </ul>
+         * <p>
+         * Note: {@code x} and {code y} are treated as equal if {@code x - y = -2^31}.
+         * There is an assumption that task queue contains at most {@link Integer#MAX_VALUE} elements.
+         * <p>
+         * Samples:
+         * <pre>
+         * x = 42, y = 42 -> x - y = 0 -> x = y
+         * x = 5, y = 10 -> x - y = -5 -> x < y
+         * x = 0, y = -1 -> x - y = 1 -> x > y
+         * x = 2^31 - 1, y = -2^31 -> x - y = -1 (due to int overflow) -> x < y
+         * x = 0, y = -2^31 -> x - y = -2^31 (and 0 by mod 2^31) -> x = y
+         * </pre>
+         *
+         * @param o the specified task to be compared
+         * @return a negative integer, zero, or a positive integer
+         * as this task is less than, equal to, or greater than the specified task.
+         */
         @Override
         public int compareTo(ProtoTask o) {
-            return sequenceId.compareTo(o.sequenceId);
+            int result = sequenceId - o.sequenceId;
+            return (result != Integer.MIN_VALUE) ? result : 0;
         }
     }
 }
