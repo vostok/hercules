@@ -124,7 +124,7 @@ public abstract class TaskExecutor<T> {
             }
 
             try {
-                Integer sequenceId = Integer.valueOf(task.substring(delimiterPosition + TaskConstants.SEQUENCE_DELIMITER.length()));
+                int sequenceId = Integer.parseInt(task.substring(delimiterPosition + TaskConstants.SEQUENCE_DELIMITER.length()));
                 protoTasks.add(new ProtoTask(task, sequenceId));
             } catch (NumberFormatException ex) {
                 /* Never possible by hercules modules. Threat as self-healing */
@@ -171,9 +171,9 @@ public abstract class TaskExecutor<T> {
          * The sequence id of the zk node which is a signed 32-bit integer
          * where {@link Integer#MIN_VALUE} follows by {@link Integer#MAX_VALUE}.
          */
-        private final Integer sequenceId;
+        private final int sequenceId;
 
-        public ProtoTask(String fullName, Integer sequenceId) {
+        public ProtoTask(String fullName, int sequenceId) {
             this.fullName = fullName;
             this.sequenceId = sequenceId;
         }
@@ -188,7 +188,7 @@ public abstract class TaskExecutor<T> {
          *     <li>{@code x < y} if {@code (x - y) < 0}.</li>
          * </ul>
          * <p>
-         * Note: {@code x} and {code y} are treated as equal if {@code x - y = -2^31}.
+         * Note: {@code x} and {@code y} are treated as equal if {@code x - y = -2^31}.
          * There is an assumption that task queue contains at most {@link Integer#MAX_VALUE} elements.
          * <p>
          * Samples:
