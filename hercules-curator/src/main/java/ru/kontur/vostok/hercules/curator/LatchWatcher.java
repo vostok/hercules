@@ -29,7 +29,19 @@ public class LatchWatcher implements CuratorWatcher {
     }
 
     /**
-     * Reopen the watcher's latch and call underlying watcher.
+     * Release the watcher's latch.
+     * <p>
+     * The latch must be released if the watcher was applied but operation thrown an exception
+     * Otherwise the applied watcher will no longer be called.
+     *
+     * @return {@code true} if it was successfully released
+     */
+    public boolean release() {
+        return latched.compareAndSet(true, false);
+    }
+
+    /**
+     * Release the watcher's latch and call underlying watcher.
      *
      * @param event the event
      * @throws Exception the exception is thrown by underlying watcher
