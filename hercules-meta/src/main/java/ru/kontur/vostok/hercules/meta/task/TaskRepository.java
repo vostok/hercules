@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.meta.task;
 
+import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.zookeeper.CreateMode;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
@@ -72,6 +73,10 @@ public class TaskRepository<T> {
 
     public List<String> list() throws Exception {
         return curatorClient.children(zPrefix);
+    }
+
+    public List<String> list(CuratorWatcher watcher) throws Exception {
+        return curatorClient.children(zPrefix, watcher);
     }
 
     public DeletionResult delete(String fullName) throws CuratorUnknownException, CuratorInternalException {
