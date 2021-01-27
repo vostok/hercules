@@ -2,14 +2,15 @@ package ru.kontur.vostok.hercules.sentry.sink;
 
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
+import io.sentry.connection.TooManyRequestsException;
 import io.sentry.dsn.InvalidDsnException;
 import io.sentry.event.Event.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.health.Timer;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -46,9 +47,10 @@ public class SentrySyncProcessor {
     private final ScheduledExecutorService executor;
     private final SentryEventConverter eventConverter;
     private final MetricsCollector metricsCollector;
-    private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Meter> throttledBySentryEventsMeterMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Meter> errorTypesMeterMap = new ConcurrentHashMap<>();
 
     private final SentryThrottlingService throttlingService;
 
@@ -124,7 +126,7 @@ public class SentrySyncProcessor {
                 .update(processingTimeMs, TimeUnit.MILLISECONDS);
         if (processed) {
             processedEventsMeterMap
-                    .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "processedEventCount"))
+                    .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "processedEvents"))
                     .mark();
         }
 
@@ -154,16 +156,7 @@ public class SentrySyncProcessor {
                 return true;
             }
             processErrorInfo = result.getError();
-
-            String metricName = processErrorInfo.getType();
-            int code = processErrorInfo.getCode();
-            if (code > 0) {
-                metricName += "_" + code;
-            }
-            errorTypesMeterMap
-                    .computeIfAbsent(metricName, m -> createMeter(m, organization, sentryProject))
-                    .mark();
-
+            markError(processErrorInfo, organization, sentryProject);
             if (processErrorInfo.isRetryable() == null) {
                 throw new BackendServiceFailedException();
             }
@@ -215,6 +208,12 @@ public class SentrySyncProcessor {
         try {
             sentryClientResult.get().sendEvent(sentryEvent);
             return Result.ok();
+        } catch (TooManyRequestsException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("TooManyRequestsException. Organization '" + organization + "', project '" + sentryProject +
+                        "'. Waiting time: " + e.getRecommendedLockdownTime() + " ms");
+            }
+            processErrorInfo = new ErrorInfo("TooManyRequestsException", e.getResponseCode());
         } catch (InvalidDsnException e) {
             LOGGER.error("InvalidDsnException", e);
             processErrorInfo = new ErrorInfo("InvalidDSN", false);
@@ -236,17 +235,30 @@ public class SentrySyncProcessor {
         return Result.error(processErrorInfo);
     }
 
+    private void markError(ErrorInfo errorInfo, String organization, String sentryProject) {
+        String prefix = makePrefix(organization, sentryProject);
+        int code = errorInfo.getCode();
+        if (code == HttpStatusCodes.TOO_MANY_REQUESTS) {
+            throttledBySentryEventsMeterMap
+                    .computeIfAbsent(prefix, p -> metricsCollector.meter(p + "throttledBySentryEvents"))
+                    .mark();
+            return;
+        }
+        String errorType = errorInfo.getType();
+        if (code > 0) {
+            errorType += "_" + code;
+        }
+        errorTypesMeterMap
+                .computeIfAbsent(prefix + "errorTypes." + errorType, metricsCollector::meter)
+                .mark();
+    }
+
     private String sanitizeName(String name) {
         return FORBIDDEN_CHARS_PATTERN.matcher(name.toLowerCase()).replaceAll("_");
     }
 
     private String makePrefix(final String organization, final String project) {
         return "byOrgsAndProjects." + organization + "." + project + ".";
-    }
-
-    private Meter createMeter(String errorType, final String organization, final String project) {
-        String prefix = makePrefix(organization, project);
-        return metricsCollector.meter(prefix + "errorTypes." + MetricsUtil.sanitizeMetricName(errorType));
     }
 
     public void stop() {
