@@ -66,7 +66,7 @@ public class SentryThrottlingService {
             Meter rejectedEventMeter =
                     rejectedEventMeterMap.computeIfAbsent(
                             organization,
-                            org -> metricsCollector.meter(MetricsUtil.toMetricPath("rateLimit", "organization", org, "rejectedEvent")));
+                            org -> metricsCollector.meter(MetricsUtil.toMetricPath("rateLimit", "organization", org, "rejectedEvents")));
             rejectedEventMeter.mark();
         }
         return result;
