@@ -193,6 +193,7 @@ public class Endpoint {
             try {
                 writer.flush();
             } catch (IOException ex) {
+                broken = true;
                 LOGGER.warn("Got I/O exception", ex);
             } finally {
                 releaseConnection(this);
