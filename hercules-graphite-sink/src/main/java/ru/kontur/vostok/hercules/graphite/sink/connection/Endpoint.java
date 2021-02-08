@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -31,6 +32,7 @@ public class Endpoint {
 
     private final InetSocketAddress address;
     private final int connectionLimit;
+    private final int socketTimeoutMs;
     private final TimeSource time;
 
     private final ConcurrentLinkedQueue<Connection> connections = new ConcurrentLinkedQueue<>();
@@ -39,9 +41,14 @@ public class Endpoint {
     private volatile boolean frozen;
     private volatile long frozenToMs;
 
-    public Endpoint(InetSocketAddress address, int connectionLimit, TimeSource time) {
+    public Endpoint(
+            InetSocketAddress address,
+            int connectionLimit,
+            int socketTimeoutMs,
+            TimeSource time) {
         this.address = address;
         this.connectionLimit = connectionLimit;
+        this.socketTimeoutMs = socketTimeoutMs;
         this.time = time;
 
         this.frozen = false;
@@ -153,7 +160,11 @@ public class Endpoint {
         private boolean broken;
 
         private Connection() throws IOException {
-            this.socket = new Socket(address.getHostName(), address.getPort());
+            this.socket = new Socket(Proxy.NO_PROXY);
+            // There is no reason to call #setSoTimeout since SO_TIMEOUT is only used on read from socket.
+            socket.connect(address, socketTimeoutMs);
+            socket.setKeepAlive(true);
+
             this.writer =
                     new BufferedWriter(
                             new OutputStreamWriter(
