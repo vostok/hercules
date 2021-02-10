@@ -63,7 +63,6 @@ public class SentrySyncProcessor {
         this.eventConverter = eventConverter;
         this.metricsCollector = metricsCollector;
 
-        this.sentryClientHolder.update();
         long clientsUpdatePeriodMs = PropertiesUtil.get(Props.CLIENTS_UPDATE_PERIOD_MS, sinkProperties).get();
         this.executor = Executors.newSingleThreadScheduledExecutor(
                 ThreadFactories.newDaemonNamedThreadFactory("sentry-clients-update"));
