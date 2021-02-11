@@ -33,17 +33,21 @@ Application is configured through properties file.
 `sink.sender.graphite.tags.enable` - sending metrics with tags, default value: `false`
 
 #### Graphite connector settings
+`sink.sender.graphite.connector.local.endpoints` - list of local Graphite endpoints in form `host:port`, required
+
+`sink.sender.graphite.connector.local.frozen.time.ms` - time to freeze a local endpoint in milliseconds, default value : `30 000`
+
 `sink.sender.graphite.connector.local.connection.limit.per.endpoint` - maximum connections per local endpoint, default value: `3`
 
-`sink.sender.graphite.connector.local.frozen.time.ms` - time to freeze local endpoint in milliseconds, default value : `30 000`
+`sink.sender.graphite.connector.local.socket.timeout.ms` - timeout in milliseconds to create TCP-connection with a local endpoint, default value: `2 000`
 
-`sink.sender.graphite.connector.local.endpoints` - list of local Graphite endpoints in form `host:port`, required
+`sink.sender.graphite.connector.remote.endpoints` - list of remote Graphite endpoints in form `host:port`, optional
+
+`sink.sender.graphite.connector.remote.frozen.time.ms` - time to freeze a remote endpoint in milliseconds, default value : `30 000`
 
 `sink.sender.graphite.connector.remote.connection.limit.per.endpoint` - maximum connections per remote endpoint, default value: `3`
 
-`sink.sender.graphite.connector.remote.frozen.time.ms` - time to freeze remote endpoint in milliseconds, default value : `30 000`
-
-`sink.sender.graphite.connector.remote.endpoints` - list of remote Graphite endpoints in form `host:port`, optional
+`sink.sender.graphite.connector.remote.socket.timeout.ms` - timeout in milliseconds to create TCP-connection with a remote endpoint, default value: `2 000`
 
 ### Filters settings
 
@@ -120,9 +124,10 @@ sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.Grap
 sink.sender.retryLimit=3
 sink.sender.pingPeriodMs=30000
 sink.sender.graphite.tags.enable=false
-sink.sender.graphite.connector.local.connection.limit.per.endpoint=3
-sink.sender.graphite.connector.local.frozen.time.ms=30000
 sink.sender.graphite.connector.local.endpoints=localhost:2003
+sink.sender.graphite.connector.local.frozen.time.ms=30000
+sink.sender.graphite.connector.local.connection.limit.per.endpoint=3
+sink.sender.graphite.connector.local.socket.timeout.ms=2000
 sink.sender.graphite.connector.remote.endpoints=
 
 sink.filter.list=ru.kontur.vostok.hercules.graphite.sink.filter.MetricEventFilter,ru.kontur.vostok.hercules.graphite.sink.filter.MetricAclEventFilter

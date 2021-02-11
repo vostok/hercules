@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 import java.util.Properties;
@@ -25,16 +26,17 @@ public class EndpointPool {
     private final Topology<Endpoint> topology;
 
     public EndpointPool(Properties properties, TimeSource time) {
-        int connectionLimitPerEndpoint = PropertiesUtil.get(Props.CONNECTION_LIMIT_PER_ENDPOINT, properties).get();
-
         this.frozenTimeMs = PropertiesUtil.get(Props.FROZEN_TIME_MS, properties).get();
 
+        int connectionLimitPerEndpoint = PropertiesUtil.get(Props.CONNECTION_LIMIT_PER_ENDPOINT, properties).get();
+        int socketTimeoutMs = PropertiesUtil.get(Props.SOCKET_TIMEOUT_MS, properties).get();
         Endpoint[] endpoints =
                 Stream.of(PropertiesUtil.get(Props.ENDPOINTS, properties).orEmpty(new String[0])).
                         map(hostAndPort ->
                                 new Endpoint(
                                         InetSocketAddressUtil.fromString(hostAndPort, 2003),
                                         connectionLimitPerEndpoint,
+                                        socketTimeoutMs,
                                         time)).
                         toArray(Endpoint[]::new);
         this.topology = new ThreadLocalTopology<>(endpoints);
@@ -95,15 +97,21 @@ public class EndpointPool {
     }
 
     private static class Props {
+        static final Parameter<Long> FROZEN_TIME_MS =
+                Parameter.longParameter("frozen.time.ms").
+                        withDefault(30_000L).
+                        withValidator(LongValidators.positive()).
+                        build();
+
         static final Parameter<Integer> CONNECTION_LIMIT_PER_ENDPOINT =
                 Parameter.integerParameter("connection.limit.per.endpoint").
                         withDefault(3).
                         build();
 
-        static final Parameter<Long> FROZEN_TIME_MS =
-                Parameter.longParameter("frozen.time.ms").
-                        withDefault(30_000L).
-                        withValidator(LongValidators.positive()).
+        static final Parameter<Integer> SOCKET_TIMEOUT_MS =
+                Parameter.integerParameter("socket.timeout.ms").
+                        withDefault(2_000).
+                        withValidator(IntegerValidators.nonNegative()).
                         build();
 
         static final Parameter<String[]> ENDPOINTS =
