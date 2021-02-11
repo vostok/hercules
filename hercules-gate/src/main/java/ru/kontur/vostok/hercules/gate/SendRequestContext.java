@@ -40,7 +40,7 @@ public class SendRequestContext {
         return async;
     }
 
-    public String topic() {
+    public String stream() {
         return stream.getName();
     }
 
