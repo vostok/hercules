@@ -3,6 +3,8 @@ package ru.kontur.vostok.hercules.elastic.sink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.elastic.sink.error.ElasticError;
+import ru.kontur.vostok.hercules.elastic.sink.error.ErrorGroup;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
 import ru.kontur.vostok.hercules.health.Meter;
@@ -15,6 +17,7 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.util.Maps;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -151,13 +154,12 @@ public class ElasticSender extends Sender {
                 result.getTotalErrors()
         );
 
-        Map<String, ValidationResult> errorsMap = new HashMap<>(result.getErrors().size());
-        for (Map.Entry<String, ErrorInfo> entry : result.getErrors().entrySet()) {
-            String eventId = entry.getKey();
-            ErrorInfo errorInfo = entry.getValue();
-            ErrorType type = errorInfo.getType();
-            if (type.equals(ErrorType.NON_RETRYABLE) || (type.equals(ErrorType.UNKNOWN) && !retryOnUnknownErrors)) {
-                errorsMap.put(eventId, ValidationResult.error(errorInfo.getError()));
+        Map<String, ValidationResult> errorsMap = new HashMap<>(Maps.effectiveHashMapCapacity(result.getErrors().size()));
+        for (ElasticError error : result.getErrors()) {
+            String eventId = error.documentId();
+            ErrorGroup group = error.group();
+            if (ErrorGroup.NON_RETRYABLE.equals(group) || (ErrorGroup.UNKNOWN.equals(group) && !retryOnUnknownErrors)) {
+                errorsMap.put(eventId, ValidationResult.error(error.details()));
             }
         }
         return errorsMap;

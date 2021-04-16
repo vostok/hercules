@@ -10,12 +10,17 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Gregory Koshelev
  */
 public class SendRequestMetrics {
     private static final String METRICS_SCOPE = SendRequestMetrics.class.getSimpleName();
+
+    private final ConcurrentHashMap<String, StreamMetrics> streamMetrics = new ConcurrentHashMap<>();
+
+    private final MetricsCollector metricsCollector;
 
     private final boolean samplingEnabled;
     private final int samplingRequestDataSizeBytes;
@@ -37,6 +42,8 @@ public class SendRequestMetrics {
     private Timer sampledSyncProcessingTimeMsTimer;
 
     public SendRequestMetrics(Properties properties, MetricsCollector metricsCollector) {
+        this.metricsCollector = metricsCollector;
+
         this.samplingEnabled = PropertiesUtil.get(Props.SAMPLING_ENABLE, properties).get();
         this.samplingRequestDataSizeBytes = PropertiesUtil.get(Props.SAMPLING_REQUEST_DATA_SIZE_BYTES, properties).get();
 
@@ -82,6 +89,39 @@ public class SendRequestMetrics {
             } else {
                 sampledSyncProcessingTimeMsTimer.update(request.processingTimeMs());
             }
+        }
+
+        //TODO: Should protect from overflow by removing "old" (in sense of LRU cache) streams
+        streamMetrics.computeIfAbsent(request.stream(), stream -> new StreamMetrics(stream, metricsCollector)).update(request);
+    }
+
+    /**
+     * Per stream metrics
+     */
+    private static class StreamMetrics {
+        private static final String METRICS_SCOPE =
+                MetricsUtil.toMetricPath(SendRequestMetrics.METRICS_SCOPE, StreamMetrics.class.getSimpleName());
+
+        private final Timer asyncProcessingTimeMsTimer;
+        private final Timer syncProcessingTimeMsTimer;
+
+        private final Histogram requestUncompressedSizeBytesHistogram;
+
+        StreamMetrics(String stream, MetricsCollector metricsCollector) {
+            this.asyncProcessingTimeMsTimer = metricsCollector.timer(MetricsUtil.toMetricPath(METRICS_SCOPE, stream, "asyncProcessingTimeMs"));
+            this.syncProcessingTimeMsTimer = metricsCollector.timer(MetricsUtil.toMetricPath(METRICS_SCOPE, stream, "syncProcessingTimeMs"));
+
+            this.requestUncompressedSizeBytesHistogram = metricsCollector.histogram(MetricsUtil.toMetricPath(METRICS_SCOPE, stream, "requestUncompressedSizeBytes"));
+        }
+
+        void update(SendRequestProcessor.SendRequest request) {
+            if (request.isAsync()) {
+                asyncProcessingTimeMsTimer.update(request.processingTimeMs());
+            } else {
+                syncProcessingTimeMsTimer.update(request.processingTimeMs());
+            }
+
+            requestUncompressedSizeBytesHistogram.update(request.requestUncompressedSizeBytes());
         }
     }
 

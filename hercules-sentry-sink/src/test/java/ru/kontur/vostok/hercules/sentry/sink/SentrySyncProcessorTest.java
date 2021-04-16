@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.sentry.sink;
 
 import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
+import io.sentry.connection.TooManyRequestsException;
 import io.sentry.dsn.InvalidDsnException;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -186,6 +187,17 @@ public class SentrySyncProcessorTest {
     }
 
     @Test
+    public void shouldReturnFalseWhenHappensTooManyRequestsExceptionOfSending() throws BackendServiceFailedException {
+        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryClientMock));
+        doThrow(new TooManyRequestsException("TooManyRequestsException", new Exception(), 60000L, 429))
+                .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        boolean result = sentrySyncProcessor.process(EVENT);
+
+        assertFalse(result);
+    }
+
+    @Test
     public void shouldReturnFalseWhenHappensInvalidDsnExceptionOfSending() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
@@ -208,7 +220,7 @@ public class SentrySyncProcessorTest {
     }
 
     @Test(expected = BackendServiceFailedException.class)
-    public void shouldThrowExceptionWhenHappensConnectionExceptionWithRetryableCode() throws BackendServiceFailedException {
+    public void shouldThrowExceptionWhenHappensExceptionWithRetryableCode() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(new ConnectionException("ConnectionException", new Exception(), null, 401))
@@ -219,7 +231,7 @@ public class SentrySyncProcessorTest {
 
 
     @Test
-    public void shouldRetryWhenHappensConnectionExceptionWithRetryableCode() {
+    public void shouldRetryWhenHappensExceptionWithRetryableCode() {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(new ConnectionException("ConnectionException", new Exception(), null, 401))
@@ -234,7 +246,7 @@ public class SentrySyncProcessorTest {
     }
 
     @Test
-    public void shouldReturnFalseWhenHappensConnectionExceptionWithNonRetryableCode() throws BackendServiceFailedException {
+    public void shouldReturnFalseWhenHappensConnectionException() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(new ConnectionException("ConnectionException", new Exception(), null, 400))
@@ -245,7 +257,7 @@ public class SentrySyncProcessorTest {
     }
 
     @Test
-    public void shouldNotRetryWhenHappensConnectionExceptionWithNonRetryableCode() throws BackendServiceFailedException {
+    public void shouldNotRetryWhenHappensExceptionWithNonRetryableCode() throws BackendServiceFailedException {
         when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.ok(sentryClientMock));
         doThrow(new ConnectionException("ConnectionException", new Exception(), null, 400))

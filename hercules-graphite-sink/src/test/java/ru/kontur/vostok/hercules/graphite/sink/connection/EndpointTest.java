@@ -19,14 +19,19 @@ public class EndpointTest {
                 new Endpoint(
                         InetSocketAddressUtil.fromString("127.0.0.1", 2003),
                         3,
+                        2_000,
                         time);
 
         assertEquals(0, endpoint.leasedConnections());
 
         endpoint.freeze(10_000);
 
-        Channel channel = endpoint.channel();
-        assertNull(channel);
+        assertNull(endpoint.channel());
+        assertEquals(0, endpoint.leasedConnections());
+
+        time.sleep(1_000);
+
+        assertNull(endpoint.channel());
         assertEquals(0, endpoint.leasedConnections());
     }
 }

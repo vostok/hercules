@@ -201,7 +201,7 @@ public class SendRequestProcessor {
                 eventSender.send(
                         event,
                         event.getUuid(),//TODO: Think hard about this!
-                        context.topic(),
+                        context.stream(),
                         context.partitions(),
                         context.shardingKey(),
                         () -> {
@@ -274,6 +274,10 @@ public class SendRequestProcessor {
             return totalEvents;
         }
 
+        public String stream() {
+            return context.stream();
+        }
+
         private ByteBuffer decompressLz4(byte[] bytes, int originalContentLength) {
             ByteBuffer buffer = ByteBufferPool.acquire(originalContentLength);
             decompressionTimeMs = TimeSource.SYSTEM.measureMs(() -> lz4Decompressor.decompress(bytes, buffer));
@@ -290,7 +294,7 @@ public class SendRequestProcessor {
         }
 
         private void initMDC() {
-            MDC.put("stream", context.topic());
+            MDC.put("stream", stream());
             MDC.put("apiKey", getProtectedApiKey());
         }
 
