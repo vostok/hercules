@@ -43,8 +43,8 @@ public class ElasticEventFormatAndWriteTest {
                         "\"@timestamp\":\"1970-01-01T00:00:00.000000000Z\"," +
                         "\"someKey\":\"some value\"," +
                         "\"stackTrace\":\"com.example.test.exceptions.ExceptionClass: Some error of ExceptionClass happened\\n" +
-                        "at com.example.test.SomeModule.function(SomeModule.java:100:12)\\n" +
-                        "at com.example.test.AnotherModule.function(AnotherModule.java:200:13)\"," +
+                        "    at com.example.test.SomeModule.function(SomeModule.java:100:12)\\n" +
+                        "    at com.example.test.AnotherModule.function(AnotherModule.java:200:13)\"," +
                         "\"message\":\"Test message\"" +
                         "}",
                 stream.toString(StandardCharsets.UTF_8.name())
