@@ -9,7 +9,6 @@ import ru.kontur.vostok.hercules.tags.StackFrameTags;
  * @author Vladimir Tsypaev
  */
 public final class StackTraceCreator {
-    private static final String BASE_INDENT = "    ";
 
     public static String createStackTrace(Container exception) {
         return createStackTrace(exception, "");
@@ -40,7 +39,7 @@ public final class StackTraceCreator {
     private static void writeStackFrames(String indent, StringBuilder stackTrace, Container[] stackFrames) {
         for (Container stackFrame : stackFrames) {
             ContainerUtil.extract(stackFrame, StackFrameTags.TYPE_TAG)
-                    .ifPresent(type -> stackTrace.append("\n").append(indent).append(BASE_INDENT).append("at ").append(type));
+                    .ifPresent(type -> stackTrace.append("\n").append(indent).append("    ").append("at ").append(type));
 
             ContainerUtil.extract(stackFrame, StackFrameTags.FUNCTION_TAG)
                     .ifPresent(function -> stackTrace.append(".").append(function));
@@ -62,9 +61,9 @@ public final class StackTraceCreator {
 
     private static void writeInnerExceptions(String indent, StringBuilder stackTrace, Container[] innerExceptions) {
         for (Container container : innerExceptions) {
-            String innerIndent = indent + BASE_INDENT;
-            stackTrace.append("\n").append(innerIndent).append("Caused by: ");
-            stackTrace.append(createStackTrace(container, innerIndent));
+            String levelIndent = indent + "  ";
+            stackTrace.append("\n").append(levelIndent).append("Caused by: ");
+            stackTrace.append(createStackTrace(container, levelIndent));
         }
     }
 

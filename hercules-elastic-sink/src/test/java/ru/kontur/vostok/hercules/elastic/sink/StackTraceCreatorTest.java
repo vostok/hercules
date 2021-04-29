@@ -19,12 +19,12 @@ public class StackTraceCreatorTest {
                 "com.example.test.exceptions.ExceptionClass: Some error of ExceptionClass happened\n" +
                 "    at com.example.test.SomeModule.function(SomeModule.java:100:12)\n" +
                 "    at com.example.test.AnotherModule.function(AnotherModule.java:200:13)\n" +
-                "    Caused by: com.example.test.exceptions.FirstInnerExceptionClass: Some error of FirstInnerExceptionClass happened\n" +
-                "        at com.example.test.SomeModule.function(SomeModule.java:100:12)\n" +
-                "        at com.example.test.AnotherModule.function(AnotherModule.java:200:13)\n" +
-                "    Caused by: com.example.test.exceptions.SecondInnerExceptionClass: Some error of SecondInnerExceptionClass happened\n" +
-                "        at com.example.test.SomeModule.function(SomeModule.java:100:12)\n" +
-                "        at com.example.test.AnotherModule.function(AnotherModule.java:200:13)";
+                "  Caused by: com.example.test.exceptions.FirstInnerExceptionClass: Some error of FirstInnerExceptionClass happened\n" +
+                "      at com.example.test.SomeModule.function(SomeModule.java:100:12)\n" +
+                "      at com.example.test.AnotherModule.function(AnotherModule.java:200:13)\n" +
+                "  Caused by: com.example.test.exceptions.SecondInnerExceptionClass: Some error of SecondInnerExceptionClass happened\n" +
+                "      at com.example.test.SomeModule.function(SomeModule.java:100:12)\n" +
+                "      at com.example.test.AnotherModule.function(AnotherModule.java:200:13)";
         Assert.assertEquals(expected, StackTraceCreator.createStackTrace(createException()));
     }
 
