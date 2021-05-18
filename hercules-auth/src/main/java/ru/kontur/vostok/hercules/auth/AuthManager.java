@@ -10,6 +10,9 @@ import ru.kontur.vostok.hercules.meta.auth.blacklist.Blacklist;
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.concurrent.RenewableTask;
 import ru.kontur.vostok.hercules.util.concurrent.RenewableTaskScheduler;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
+import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author Gregory Koshelev
  */
-public final class AuthManager {
+public final class AuthManager implements Lifecycle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthManager.class);
 
@@ -57,16 +60,24 @@ public final class AuthManager {
         });
     }
 
-    public void start() throws Exception {
+    public void start() {
         blacklist.start();
 
         updateTask.renew();
     }
 
+    /**
+     * @deprecated use {@link #stop(long, TimeUnit)} instead
+     */
     public void stop() {
-        blacklist.stop();
+        stop(5_000, TimeUnit.MILLISECONDS);
+    }
+
+    public boolean stop(long timeout, TimeUnit unit) {
+        Timer timer = TimeSource.SYSTEM.timer(unit.toMillis(timeout));//FIXME: better use TimeSource is passed via constructor
+        boolean result = blacklist.stop(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
         updateTask.disable();
-        scheduler.shutdown(5_000, TimeUnit.MILLISECONDS);
+        return result && scheduler.stop(timer.remainingTimeMs(), unit);
     }
 
     /**

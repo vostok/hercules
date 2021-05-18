@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public abstract class Sender extends Processor {
+public abstract class Sender extends Processor implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(Sender.class);
 
     private final MetricsCollector metricsCollector;

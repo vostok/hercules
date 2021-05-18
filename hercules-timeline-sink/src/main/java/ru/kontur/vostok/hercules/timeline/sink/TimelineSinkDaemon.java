@@ -135,7 +135,7 @@ public class TimelineSinkDaemon {
 
         try {
             if (sinkPool != null) {
-                sinkPool.stop();
+                sinkPool.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping sink pool", t);

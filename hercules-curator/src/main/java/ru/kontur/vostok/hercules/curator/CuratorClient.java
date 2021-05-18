@@ -17,6 +17,7 @@ import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.curator.result.DeletionResult;
 import ru.kontur.vostok.hercules.curator.result.ReadResult;
 import ru.kontur.vostok.hercules.curator.result.UpdateResult;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -25,12 +26,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
  * @author Gregory Koshelev
  */
-public class CuratorClient {
+public class CuratorClient implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(CuratorClient.class);
 
     private final CuratorFramework curatorFramework;
@@ -43,8 +45,17 @@ public class CuratorClient {
         curatorFramework.start();
     }
 
+    /**
+     * @deprecated use {@link #stop(long, TimeUnit)} instead
+     */
+    @Deprecated
     public void stop() {
+        stop(0, TimeUnit.MILLISECONDS);
+    }
+
+    public boolean stop(long timeout, TimeUnit unit) {
         curatorFramework.close();
+        return true;
     }
 
     public ReadResult read(String path) throws CuratorInternalException, CuratorUnknownException {

@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.http;
 
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author Gregory Koshelev
  */
-public abstract class HttpServer {
+public abstract class HttpServer implements Lifecycle {
     private final AtomicReference<HttpServerState> state = new AtomicReference<>(HttpServerState.INIT);
 
     protected final String host;

@@ -16,6 +16,7 @@ import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUnitUtil;
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Gregory Koshelev
  */
-public class BeaconService {
+public class BeaconService implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(BeaconService.class);
 
     private final Properties properties;

@@ -5,9 +5,10 @@ package ru.kontur.vostok.hercules.application;
  */
 public enum ApplicationState {
     INIT(0),
-    STARTING(1),
-    RUNNING(2),
-    STOPPED(3);
+    STARTING(10),
+    RUNNING(20),
+    STOPPING(30),
+    STOPPED(40);
 
     private final int order;
 

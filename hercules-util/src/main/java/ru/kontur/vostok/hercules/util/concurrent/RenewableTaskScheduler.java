@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.util.concurrent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.util.lifecycle.Stoppable;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -10,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public class RenewableTaskScheduler {
+public class RenewableTaskScheduler implements Stoppable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RenewableTaskScheduler.class);
 
@@ -38,12 +39,14 @@ public class RenewableTaskScheduler {
         return task;
     }
 
-    public void shutdown(long timeout, TimeUnit unit) {
+    public boolean stop(long timeout, TimeUnit unit) {
         executor.shutdown();
         try {
-            boolean terminated = executor.awaitTermination(timeout, unit);//TODO: Log unsuccessful termination
+            return executor.awaitTermination(timeout, unit);
         } catch (InterruptedException e) {
             LOGGER.warn("Shutdown interrupted", e);
+            Thread.currentThread().interrupt();
+            return false;
         }
     }
 }

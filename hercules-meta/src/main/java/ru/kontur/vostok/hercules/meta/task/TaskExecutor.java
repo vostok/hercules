@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.curator.LatchWatcher;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author Gregory Koshelev
  */
-public abstract class TaskExecutor<T> {
+public abstract class TaskExecutor<T> implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskExecutor.class);
 
     private volatile boolean running = false;

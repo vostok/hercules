@@ -9,12 +9,14 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.DurationUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
+import ru.kontur.vostok.hercules.util.time.Timer;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * @author Gregory Koshelev
  */
-public class ConsumerPool<K, V> {
+public class ConsumerPool<K, V> implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerPool.class);
 
     private final Deserializer<K> keyDeserializer;
@@ -75,12 +77,12 @@ public class ConsumerPool<K, V> {
         consumers.offer(consumer);
     }
 
-    public void stop(long timeout, TimeUnit unit) {
+    public boolean stop(long timeout, TimeUnit unit) {
         List<Consumer<K, V>> list = new ArrayList<>(size);
         int count = consumers.drainTo(list, size);
         LOGGER.info("Closing " + count + " of " + size + " consumers");
 
-        Duration duration = DurationUtil.of(timeout, unit);//TODO: Should use (timeout - elapsed time) on each iteration
+        Timer timer = TimeSource.SYSTEM.timer(unit.toMillis(timeout));//FIXME: better use TimeSource is passed via constructor
         for (Consumer<K, V> consumer : list) {
             try {
                 consumer.wakeup();
@@ -89,11 +91,13 @@ public class ConsumerPool<K, V> {
             }
 
             try {
-                consumer.close(duration);
+                consumer.close(DurationUtil.from(timer));
             } catch (Exception ex) {
                 LOGGER.warn("Exception on close", ex);
             }
         }
+
+        return true;
     }
 
     private Consumer<K, V> create() {

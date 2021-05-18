@@ -12,6 +12,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerializer;
 import ru.kontur.vostok.hercules.partitioner.Partitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.lifecycle.Stoppable;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public class EventSender {
+public class EventSender implements Stoppable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventSender.class);
 
     private final KafkaProducer<UUID, byte[]> producer;
@@ -69,7 +70,8 @@ public class EventSender {
         });
     }
 
-    public void stop(long timeout, TimeUnit timeUnit) {
+    public boolean stop(long timeout, TimeUnit timeUnit) {
         producer.close(timeout, timeUnit);
+        return true;
     }
 }
