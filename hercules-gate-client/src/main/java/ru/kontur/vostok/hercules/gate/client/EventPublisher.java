@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
 import ru.kontur.vostok.hercules.protocol.CommonConstants;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.ArrayValidators;
@@ -27,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Daniil Zhenikhov
  */
-public class EventPublisher {
+public class EventPublisher implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventPublisher.class);
 
     private final Object monitor = new Object();
@@ -63,6 +64,7 @@ public class EventPublisher {
         registerAll(queues);
     }
 
+    @Override
     public void start() {
         for (Map.Entry<String, EventQueue> entry : queueMap.entrySet()) {
             startQueueWorker(entry.getValue());
@@ -135,20 +137,27 @@ public class EventPublisher {
      * Stop executing of event publisher. Waits <code>timeoutMillis</code> milliseconds to send a portion of unhandled events
      *
      * @param timeoutMillis milliseconds for waiting before event publisher stop
+     * @deprecated use {@link #stop(long, TimeUnit)} instead
      */
     public void stop(long timeoutMillis) {
+        stop(timeoutMillis, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
         executor.shutdown();
 
-        if (timeoutMillis > 0) {
+        if (timeout > 0) {
             for (EventQueue eventQueue : queueMap.values()) {
                 long nanos = System.nanoTime();
-                while (TimeUnit.MILLISECONDS.toNanos(timeoutMillis) > System.nanoTime() - nanos && process(eventQueue) > 0) {
+                while (unit.toNanos(timeout) > System.nanoTime() - nanos && process(eventQueue) > 0) {
                     /* Empty */
                 }
             }
         }
 
         gateClient.close();
+        return true;
     }
 
     /**

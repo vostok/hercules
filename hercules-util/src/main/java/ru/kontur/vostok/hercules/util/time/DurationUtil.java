@@ -11,6 +11,10 @@ public final class DurationUtil {
         return Duration.ofNanos(unit.toNanos(duration));
     }
 
+    public static Duration from(Timer timer) {
+        return Duration.ofMillis(timer.remainingTimeMs());
+    }
+
     private DurationUtil() {
         /* static class */
     }

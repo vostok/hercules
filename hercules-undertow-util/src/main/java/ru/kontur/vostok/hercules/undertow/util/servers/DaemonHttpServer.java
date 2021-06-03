@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public class DaemonHttpServer {
+public class DaemonHttpServer implements Lifecycle {
     private final UndertowHttpServer httpServer;
 
     public DaemonHttpServer(Properties properties, MetricsCollector metricsCollector) {
@@ -30,12 +31,14 @@ public class DaemonHttpServer {
                 handler);
     }
 
+    @Override
     public void start() {
         httpServer.start();
     }
 
-    public void stop(long timeout, TimeUnit unit) {
-        httpServer.stop(timeout, unit);
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
+        return httpServer.stop(timeout, unit);
     }
 
     protected Properties override(Properties properties) {
