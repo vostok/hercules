@@ -59,6 +59,7 @@ public class BeaconService implements Lifecycle {
     /**
      * Start beacon's registration
      */
+    @Override
     public void start() {
         long periodMs = PropertiesUtil.get(Props.PERIOD_MS, properties).get();
 
@@ -108,6 +109,7 @@ public class BeaconService implements Lifecycle {
      * @param unit    the unit of time
      * @return {@code true} if successfully stopped, {@code false} otherwise
      */
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         boolean disabled = false;
         boolean unregistered = false;

@@ -70,6 +70,7 @@ public class EventSender implements Stoppable {
         });
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit timeUnit) {
         producer.close(timeout, timeUnit);
         return true;

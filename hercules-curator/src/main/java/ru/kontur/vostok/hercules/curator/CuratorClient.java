@@ -41,6 +41,7 @@ public class CuratorClient implements Lifecycle {
         this.curatorFramework = build(properties);
     }
 
+    @Override
     public void start() {
         curatorFramework.start();
     }
@@ -53,6 +54,7 @@ public class CuratorClient implements Lifecycle {
         stop(0, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         curatorFramework.close();
         return true;

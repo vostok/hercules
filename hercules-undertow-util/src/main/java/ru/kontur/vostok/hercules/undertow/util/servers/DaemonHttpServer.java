@@ -31,10 +31,12 @@ public class DaemonHttpServer implements Lifecycle {
                 handler);
     }
 
+    @Override
     public void start() {
         httpServer.start();
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         return httpServer.stop(timeout, unit);
     }

@@ -120,6 +120,7 @@ public class Sink implements Lifecycle {
     /**
      * Start sink.
      */
+    @Override
     public final void start() {
         running = true;
 

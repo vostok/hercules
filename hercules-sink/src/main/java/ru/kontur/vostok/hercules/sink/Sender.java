@@ -50,6 +50,7 @@ public abstract class Sender extends Processor implements Lifecycle {
     /**
      * Start sender. Activate periodical update availability status.
      */
+    @Override
     public void start() {
         executor.scheduleAtFixedRate(this::updateStatus, pingPeriodMs, pingPeriodMs, TimeUnit.MILLISECONDS);
         metricsCollector.gauge("status", () -> isAvailable() ? 0 : 1);
@@ -62,6 +63,7 @@ public abstract class Sender extends Processor implements Lifecycle {
      * @param unit    time unit of the timeout
      * @return {@code true} if sender stopped normally, {@code false} if the timeout elapsed or the current thread was interrupted
      */
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         executor.shutdown();
         try {

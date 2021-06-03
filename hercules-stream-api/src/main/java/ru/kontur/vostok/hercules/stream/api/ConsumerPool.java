@@ -54,6 +54,7 @@ public class ConsumerPool<K, V> implements Lifecycle {
         consumers = new ArrayBlockingQueue<>(size);
     }
 
+    @Override
     public void start() {
         for (int i = 0; i < size; i++) {
             consumers.offer(create());
@@ -77,12 +78,14 @@ public class ConsumerPool<K, V> implements Lifecycle {
         consumers.offer(consumer);
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         List<Consumer<K, V>> list = new ArrayList<>(size);
         int count = consumers.drainTo(list, size);
         LOGGER.info("Closing " + count + " of " + size + " consumers");
 
         Timer timer = TimeSource.SYSTEM.timer(unit.toMillis(timeout));//FIXME: better use TimeSource is passed via constructor
+        boolean stopped = true;
         for (Consumer<K, V> consumer : list) {
             try {
                 consumer.wakeup();
@@ -93,11 +96,12 @@ public class ConsumerPool<K, V> implements Lifecycle {
             try {
                 consumer.close(DurationUtil.from(timer));
             } catch (Exception ex) {
+                stopped = false;
                 LOGGER.warn("Exception on close", ex);
             }
         }
 
-        return true;
+        return stopped;
     }
 
     private Consumer<K, V> create() {

@@ -29,10 +29,12 @@ public class SinkPool implements Lifecycle {
         this.sinks = createSinks(poolSize, sinkSupplier);
     }
 
+    @Override
     public void start() {
         sinks.forEach(Sink::start);
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         Timer timer = TimeSource.SYSTEM.timer(unit.toMillis(timeout));//FIXME: better use TimeSource is passed via constructor
 

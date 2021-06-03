@@ -33,6 +33,7 @@ public class AuthValidationManager implements Lifecycle {
         this.curatorClient = curatorClient;
     }
 
+    @Override
     public void start() {
         if (!state.compareAndSet(State.INIT, State.STARTING)) {
             throw new IllegalStateException("Invalid state of content validator");
@@ -77,6 +78,7 @@ public class AuthValidationManager implements Lifecycle {
         stop(0, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         state.set(State.STOPPED);
         return true;

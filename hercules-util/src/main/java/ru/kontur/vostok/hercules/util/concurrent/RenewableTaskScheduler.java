@@ -39,6 +39,7 @@ public class RenewableTaskScheduler implements Stoppable {
         return task;
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         executor.shutdown();
         try {

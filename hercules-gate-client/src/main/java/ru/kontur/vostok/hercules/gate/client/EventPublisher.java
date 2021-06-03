@@ -64,6 +64,7 @@ public class EventPublisher implements Lifecycle {
         registerAll(queues);
     }
 
+    @Override
     public void start() {
         for (Map.Entry<String, EventQueue> entry : queueMap.entrySet()) {
             startQueueWorker(entry.getValue());
@@ -142,6 +143,7 @@ public class EventPublisher implements Lifecycle {
         stop(timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         executor.shutdown();
 

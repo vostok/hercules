@@ -49,6 +49,7 @@ public class Blacklist implements Lifecycle {
         return apiKeys.get().containsKey(apiKey);
     }
 
+    @Override
     public void start() {
         if (!state.compareAndSet(State.INIT, State.STARTING)) {
             throw new IllegalStateException("Invalid state of blacklist");
@@ -59,6 +60,7 @@ public class Blacklist implements Lifecycle {
         state.set(State.RUNNING);
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         state.set(State.STOPPED);
         updateTask.disable();

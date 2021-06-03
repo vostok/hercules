@@ -50,6 +50,7 @@ public abstract class TaskExecutor<T> implements Lifecycle {
         });
     }
 
+    @Override
     public void start() {
         running = true;
         executorService.submit(() -> {
@@ -60,6 +61,7 @@ public abstract class TaskExecutor<T> implements Lifecycle {
         });
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         running = false;
         try {

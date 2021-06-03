@@ -93,7 +93,7 @@ public class Application {
         changeState(ApplicationState.STARTING, ApplicationState.RUNNING);
     }
 
-    public static void shutdown() {
+    private static void shutdown() {
         long start = System.currentTimeMillis();
 
         LOGGER.info("Started {} application shutdown process", application.applicationName);
@@ -175,7 +175,7 @@ public class Application {
          *
          * @param component the component
          * @param <T>       implements {@link Lifecycle}
-         * @return
+         * @return the component
          * @see #register(Stoppable)
          */
         public <T extends Lifecycle> T register(T component) {
@@ -190,9 +190,9 @@ public class Application {
          * Registered component will properly stopped on application shutdown in an appropriate moment.
          * Components are stopped in LIFO fashion.
          *
-         * @param component
+         * @param component the component
          * @param <T>       implements {@link Stoppable}
-         * @return
+         * @return the component
          * @see #register(Lifecycle)
          */
         public <T extends Stoppable> T register(T component) {
@@ -216,17 +216,6 @@ public class Application {
         }
 
         /**
-         * Since the component doesn't need special processing on shutdown, then method is no-op.
-         *
-         * @param component the component
-         * @param <T>       is any class
-         * @return the component
-         */
-        public <T> T register(T component) {
-            return component;
-        }
-
-        /**
          * Stop components one-by-one in LIFO fashion.
          * <p>
          * The method is package-private to avoid possible bugs when it is called externally.
@@ -240,7 +229,11 @@ public class Application {
             boolean stopped = true;
             for (Stoppable component : components) {
                 try {
-                    stopped = component.stop(timer.remainingTimeMs(), TimeUnit.MILLISECONDS) && stopped;
+                    boolean result = component.stop(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
+                    if (!result) {
+                        LOGGER.warn("Component " + component.getClass() + " has not been stopped properly");
+                    }
+                    stopped = stopped && result;
                 } catch (Throwable t) {
                     LOGGER.error("Error on stopping " + component.getClass(), t);
                     stopped = false;

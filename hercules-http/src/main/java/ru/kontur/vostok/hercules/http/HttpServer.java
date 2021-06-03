@@ -30,6 +30,7 @@ public abstract class HttpServer implements Lifecycle {
         this.handler = handler;
     }
 
+    @Override
     public final void start() {
         if (!state.compareAndSet(HttpServerState.INIT, HttpServerState.STARTING)) {
             throw new IllegalStateException("Expect INIT state of Http server");
@@ -42,6 +43,7 @@ public abstract class HttpServer implements Lifecycle {
         }
     }
 
+    @Override
     public final boolean stop(long timeout, TimeUnit unit) {
         if (!state.compareAndSet(HttpServerState.RUNNING, HttpServerState.STOPPING)) {
             throw new IllegalStateException("Expect RUNNING state of Http server");

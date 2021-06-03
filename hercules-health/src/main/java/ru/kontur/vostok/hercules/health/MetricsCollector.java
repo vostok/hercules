@@ -58,6 +58,7 @@ public class MetricsCollector implements Lifecycle {
     /**
      * Start to report metrics to the Graphite
      */
+    @Override
     public void start() {
         graphiteReporter.start(period, TimeUnit.SECONDS);
     }
@@ -65,6 +66,7 @@ public class MetricsCollector implements Lifecycle {
     /**
      * Stop to report metrics to the Graphite
      */
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         graphiteReporter.stop();
         return true;//FIXME: Replace with CompletableFuture + orTimeout when migrate to Java 11.

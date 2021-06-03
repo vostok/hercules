@@ -76,10 +76,12 @@ public class StreamSink implements Lifecycle {
         kafkaStreams = new KafkaStreams(builder.build(), config);
     }
 
+    @Override
     public void start() {
         kafkaStreams.start();
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit timeUnit) {
         kafkaStreams.close(timeout, timeUnit);
         return true;

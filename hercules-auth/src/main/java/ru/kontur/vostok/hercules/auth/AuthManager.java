@@ -60,6 +60,7 @@ public final class AuthManager implements Lifecycle {
         });
     }
 
+    @Override
     public void start() {
         blacklist.start();
 
@@ -73,6 +74,7 @@ public final class AuthManager implements Lifecycle {
         stop(5_000, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         Timer timer = TimeSource.SYSTEM.timer(unit.toMillis(timeout));//FIXME: better use TimeSource is passed via constructor
         boolean result = blacklist.stop(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
