@@ -54,11 +54,15 @@ class ElasticClient {
         final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, properties).get();
         final int connectionRequestTimeout = PropertiesUtil.get(Props.CONNECTION_REQUEST_TIMEOUT_MS, properties).get();
         final int socketTimeout = PropertiesUtil.get(Props.SOCKET_TIMEOUT_MS, properties).get();
+
+        final ElasticAuth auth = new ElasticAuth(PropertiesUtil.ofScope(properties, "auth"));
+
         this.restClient = RestClient.builder(hosts)
                 .setMaxRetryTimeoutMillis(retryTimeoutMs)
                 .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder
                         .setMaxConnTotal(maxConnections)
                         .setMaxConnPerRoute(maxConnectionsPerRoute)
+                        .setDefaultCredentialsProvider(auth.credentialsProvider())
                 )
                 .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
                         .setConnectTimeout(connectionTimeout)
