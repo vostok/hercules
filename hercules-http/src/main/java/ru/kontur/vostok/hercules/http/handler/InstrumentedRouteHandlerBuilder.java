@@ -1,14 +1,10 @@
-package ru.kontur.vostok.hercules.undertow.util.handlers;
+package ru.kontur.vostok.hercules.http.handler;
 
 import ru.kontur.vostok.hercules.health.HttpMetric;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.http.HttpMethod;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
-import ru.kontur.vostok.hercules.http.handler.AboutHandler;
-import ru.kontur.vostok.hercules.http.handler.HttpHandler;
-import ru.kontur.vostok.hercules.http.handler.PingHandler;
-import ru.kontur.vostok.hercules.http.handler.RouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.Properties;
@@ -31,6 +27,7 @@ public class InstrumentedRouteHandlerBuilder extends RouteHandlerBuilder {
 
         get("/ping", new PingHandler());
         get("/about", new AboutHandler());
+        get("/status", new StatusHandler());
     }
 
     @Override
