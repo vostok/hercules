@@ -27,7 +27,7 @@ import ru.kontur.vostok.hercules.throttling.ThrottledRequestProcessor;
 import ru.kontur.vostok.hercules.undertow.util.DefaultHttpServerRequestWeigher;
 import ru.kontur.vostok.hercules.undertow.util.DefaultThrottledHttpServerRequestProcessor;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
-import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
+import ru.kontur.vostok.hercules.http.handler.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Collections;

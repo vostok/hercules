@@ -15,8 +15,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
-import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
-import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.http.handler.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Map;

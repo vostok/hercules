@@ -12,10 +12,14 @@ import java.util.Properties;
 public class ApplicationConfig {
     private final String host;
     private final int port;
+    private final int shutdownTimeoutMs;
+    private final int shutdownGracePeriodMs;
 
     public ApplicationConfig(Properties properties) {
         host = PropertiesUtil.get(Props.HOST, properties).get();
         port = PropertiesUtil.get(Props.PORT, properties).get();
+        shutdownTimeoutMs = PropertiesUtil.get(Props.SHUTDOWN_TIMEOUT_MS, properties).get();
+        shutdownGracePeriodMs = PropertiesUtil.get(Props.SHUTDOWN_GRACE_PERIOD_MS, properties).get();
     }
 
     public String getHost() {
@@ -24,6 +28,14 @@ public class ApplicationConfig {
 
     public int getPort() {
         return port;
+    }
+
+    public int getShutdownTimeoutMs() {
+        return shutdownTimeoutMs;
+    }
+
+    public int getShutdownGracePeriodMs() {
+        return shutdownGracePeriodMs;
     }
 
     private static class Props {
@@ -38,5 +50,16 @@ public class ApplicationConfig {
                         withValidator(IntegerValidators.portValidator()).
                         build();
 
+        static final Parameter<Integer> SHUTDOWN_TIMEOUT_MS =
+                Parameter.integerParameter("shutdown.timeout.ms").
+                        withDefault(ApplicationConfigDefaults.DEFAULT_SHUTDOWN_TIMEOUT_MS).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
+
+        static final Parameter<Integer> SHUTDOWN_GRACE_PERIOD_MS =
+                Parameter.integerParameter("shutdown.grace.period.ms").
+                        withDefault(ApplicationConfigDefaults.DEFAULT_SHUTDOWN_GRACE_PERIOD_MS).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
     }
 }

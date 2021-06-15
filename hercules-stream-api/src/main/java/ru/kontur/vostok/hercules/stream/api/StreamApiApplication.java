@@ -21,7 +21,7 @@ import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.kafka.util.serialization.VoidDeserializer;
 import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
-import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
+import ru.kontur.vostok.hercules.http.handler.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Collections;

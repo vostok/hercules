@@ -99,7 +99,9 @@ public class Application {
         LOGGER.info("Started {} application shutdown process", application.applicationName);
         changeState(ApplicationState.STOPPING);
 
-        boolean stopped = container.stop(5_000, TimeUnit.MILLISECONDS);
+        TimeSource.SYSTEM.sleep(application.config.getShutdownGracePeriodMs());
+
+        boolean stopped = container.stop(application.config.getShutdownTimeoutMs(), TimeUnit.MILLISECONDS);
 
         LOGGER.info(
                 "Finished {} shutdown for {} millis with status {}",
@@ -131,6 +133,10 @@ public class Application {
 
     public ApplicationConfig getConfig() {
         return config;
+    }
+
+    public ApplicationState state() {
+        return state.get();
     }
 
     private static void expectState(ApplicationState expected) {

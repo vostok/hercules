@@ -15,7 +15,9 @@ Gate is used to transmit events from clients to Apache Kafka.
 
 **Response codes:**
 
-`200` - successfully ping.
+| Code  | Description                                                          |
+|-------|----------------------------------------------------------------------|
+| `200` | Successfully ping.                                                   |
 
 ### About
 
@@ -27,7 +29,9 @@ Gate is used to transmit events from clients to Apache Kafka.
 
 **Response codes:**
 
-`200` - successfully getting service information.
+| Code  | Description                                                          |
+|-------|----------------------------------------------------------------------|
+| `200` | Successfully getting service information.                            |
 
 **Response body:**
 
@@ -43,6 +47,23 @@ zone - datacenter in which instance is located
 hostName - server host name
 instanceId - instance identifier
 ```
+
+### Status
+
+**Description:** Readiness probe of the service.
+
+**Method:** `GET`
+
+**URL:** `/status`
+
+**Response codes:**
+
+| Code  | Description                                                          |
+|-------|----------------------------------------------------------------------|
+| `200` | The service is ready to accept new requests.                         |
+| `410` | The service should not accept new requests since it is shutting down.|
+| `503` | The service is initializing.                                         |
+
 
 ### Send
 
@@ -85,21 +106,16 @@ Count		Integer
 
 **Response codes:**
 
-`200` - successfully send data into stream.
-
-`400` - bad request.
-
-`401` - write rules for this apiKey is absent.
-
-`403` - the stream cannot be accessed with provided API key.
-
-`404` - the stream not found.
-
-`413` - request entity too large.
-
-`415` - unsupported `Content-Encoding`.
-
-`503` - the gate is overloaded and request has been throttled.
+| Code  | Description                                                          |
+|-------|----------------------------------------------------------------------|
+| `200` | Successfully send data into stream.                                  |
+| `400` | Bad request.                                                         |
+| `401` | Write rules for this apiKey is absent.                               |
+| `403` | The stream cannot be accessed with provided API key.                 |
+| `404` | The stream is not found.                                             |
+| `413` | Request body is too large.                                           |
+| `415` | Unsupported `Content-Encoding`.                                      |
+| `503` | The gate is overloaded and request has been throttled.               |
 
 ### Send Async
 
@@ -142,21 +158,16 @@ Count		Integer
 
 **Response codes:**
 
-`200` - successfully send data into stream.
-
-`400` - bad request.
-
-`401` - write rules for this apiKey is absent.
-
-`403` - the stream cannot be accessed with provided API key.
-
-`404` - the stream not found.
-
-`413` - request entity too large.
-
-`415` - unsupported `Content-Encoding`.
-
-`503` - the gate is overloaded and request has been throttled.
+| Code  | Description                                                          |
+|-------|----------------------------------------------------------------------|
+| `200` | Successfully send data into stream.                                  |
+| `400` | Bad request.                                                         |
+| `401` | Write rules for this apiKey is absent.                               |
+| `403` | The stream cannot be accessed with provided API key.                 |
+| `404` | The stream is not found.                                             |
+| `413` | Request body is too large.                                           |
+| `415` | Unsupported `Content-Encoding`.                                      |
+| `503` | The gate is overloaded and request has been throttled.               |
 
 ## Settings
 Application is configured through properties file.
@@ -166,8 +177,12 @@ Application is configured through properties file.
 
 `application.port` - server port, default value: `8080`
 
+`application.shutdown.timeout.ms` - timeout to stop all application components, default value: `5000` ms
+
+`application.shutdown.grace.period.ms` - period before stopping application components, default value: `0` ms
+
 ### HTTP Server settings
-HTTP Server binds on host:port are defined in Main Application settings.
+HTTP Server binds on `<host>:<port>` are defined in Main Application settings.
 
 `http.server.maxContentLength` - max Content-Length in POST-request
 
@@ -264,6 +279,8 @@ Gate uses Stream's metadata and auth rules from ZooKeeper. Thus, ZK should be co
 ```properties
 application.host=0.0.0.0
 application.port=6306
+application.shutdown.timeout.ms=5000
+application.shutdown.grace.period.ms=0
 
 http.server.maxContentLength=25165824
 http.server.connection.threshold=100000
