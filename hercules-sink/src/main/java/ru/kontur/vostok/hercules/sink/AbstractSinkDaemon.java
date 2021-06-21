@@ -118,7 +118,7 @@ public abstract class AbstractSinkDaemon {
 
         try {
             if (sinkPool != null) {
-                sinkPool.stop();
+                sinkPool.stop(5_000, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping Sink pool", t);

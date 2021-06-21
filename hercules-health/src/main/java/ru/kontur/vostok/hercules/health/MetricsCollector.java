@@ -7,6 +7,7 @@ import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.application.ApplicationContext;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
@@ -19,7 +20,7 @@ import java.util.function.Supplier;
 /**
  * @author Gregory Koshelev
  */
-public class MetricsCollector {
+public class MetricsCollector implements Lifecycle {
     private MetricRegistry registry = new MetricRegistry();
 
     private final long period;
@@ -57,6 +58,7 @@ public class MetricsCollector {
     /**
      * Start to report metrics to the Graphite
      */
+    @Override
     public void start() {
         graphiteReporter.start(period, TimeUnit.SECONDS);
     }
@@ -64,8 +66,18 @@ public class MetricsCollector {
     /**
      * Stop to report metrics to the Graphite
      */
-    public void stop() {
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
         graphiteReporter.stop();
+        return true;//FIXME: Replace with CompletableFuture + orTimeout when migrate to Java 11.
+    }
+
+    /**
+     * @deprecated use {@link #stop(long, TimeUnit)} instead
+     */
+    @Deprecated
+    public void stop() {
+        stop(0, TimeUnit.MILLISECONDS);
     }
 
     /**

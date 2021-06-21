@@ -7,9 +7,7 @@ import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.wrapper.OrdinaryAuthHandlerWrapper;
-import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
@@ -29,13 +27,11 @@ import ru.kontur.vostok.hercules.throttling.ThrottledRequestProcessor;
 import ru.kontur.vostok.hercules.undertow.util.DefaultHttpServerRequestWeigher;
 import ru.kontur.vostok.hercules.undertow.util.DefaultThrottledHttpServerRequestProcessor;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
-import ru.kontur.vostok.hercules.undertow.util.handlers.InstrumentedRouteHandlerBuilder;
+import ru.kontur.vostok.hercules.http.handler.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Gregory Koshelev
@@ -55,125 +51,36 @@ public class GateApplication {
     private static BeaconService beaconService;
 
     public static void main(String[] args) {
-        long start = System.currentTimeMillis();
+        Application.run("Hercules Gate", "gate", args, (properties, container) -> {
+                Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
+                Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
+                Properties validationProperties = PropertiesUtil.ofScope(properties, "validation");
+                Properties eventSenderProperties = PropertiesUtil.ofScope(properties, "gate.event.sender");
+                Properties sendRequestProcessorProperties = PropertiesUtil.ofScope(properties, "gate.send.request.processor");
+                Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+                Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
 
-        try {
-            Application.run("Hercules Gate", "gate", args);
+                metricsCollector = container.register(new MetricsCollector(metricsProperties));
+                CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            Map<String, String> parameters = ArgsParser.parse(args);
+                curatorClient = container.register(new CuratorClient(curatorProperties));
 
-            Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
+                authManager = container.register(new AuthManager(curatorClient));
 
-            Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
-            Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
-            Properties validationProperties = PropertiesUtil.ofScope(properties, "validation");
-            Properties eventSenderProperties = PropertiesUtil.ofScope(properties, "gate.event.sender");
-            Properties sendRequestProcessorProperties = PropertiesUtil.ofScope(properties, "gate.send.request.processor");
-            Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
-            Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
+                authValidationManager = container.register(new AuthValidationManager(curatorClient));
 
-            metricsCollector = new MetricsCollector(metricsProperties);
-            metricsCollector.start();
-            CommonMetrics.registerCommonMetrics(metricsCollector);
+                streamStorage = new StreamStorage(new StreamRepository(curatorClient));
 
-            curatorClient = new CuratorClient(curatorProperties);
-            curatorClient.start();
+                eventSender = container.register(new EventSender(eventSenderProperties, new HashPartitioner(new NaiveHasher()), metricsCollector));
 
-            authManager = new AuthManager(curatorClient);
-            authManager.start();
+                eventValidator = new EventValidator(validationProperties);
 
-            authValidationManager = new AuthValidationManager(curatorClient);
-            authValidationManager.start();
+                sendRequestProcessor = new SendRequestProcessor(sendRequestProcessorProperties, eventSender, eventValidator, metricsCollector);
 
-            StreamRepository streamRepository = new StreamRepository(curatorClient);
-            streamStorage = new StreamStorage(streamRepository);
+                server = container.register(createHttpServer(httpServerProperties));
 
-            eventSender = new EventSender(eventSenderProperties, new HashPartitioner(new NaiveHasher()), metricsCollector);
-            eventValidator = new EventValidator(validationProperties);
-
-            sendRequestProcessor = new SendRequestProcessor(sendRequestProcessorProperties, eventSender, eventValidator, metricsCollector);
-
-            server = createHttpServer(httpServerProperties);
-            server.start();
-
-            beaconService = new BeaconService(sdProperties, curatorClient);
-            beaconService.start();
-        } catch (Throwable t) {
-            LOGGER.error("Cannot start application due to", t);
-            shutdown();
-            return;
-        }
-
-        Runtime.getRuntime().addShutdownHook(new Thread(GateApplication::shutdown));
-
-        LOGGER.info("Gateway started for {} millis", System.currentTimeMillis() - start);
-    }
-
-    private static void shutdown() {
-        long start = System.currentTimeMillis();
-
-        LOGGER.info("Started Gateway shutdown");
-        try {
-            if (beaconService != null) {
-                beaconService.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on beacon service shutdown", t);
-        }
-
-        try {
-            if (server != null) {
-                server.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on http server shutdown", t);
-            //TODO: Process error
-        }
-
-        try {
-            if (eventSender != null) {
-                eventSender.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on event sender shutdown", t);
-            //TODO: Process error
-        }
-
-        try {
-            if (authValidationManager != null) {
-                authValidationManager.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on stopping auth validation manager", t);
-        }
-
-        try {
-            if (authManager != null) {
-                authManager.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on auth manager shutdown", t);
-        }
-
-        try {
-            if (curatorClient != null) {
-                curatorClient.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on curator client shutdown", t);
-            //TODO: Process error
-        }
-
-        try {
-            if (metricsCollector != null) {
-                metricsCollector.stop();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error on metrics collector shutdown", t);
-            //TODO: Process error
-        }
-
-        LOGGER.info("Finished Gateway shutdown for {}  millis", System.currentTimeMillis() - start);
+                beaconService = container.register(new BeaconService(sdProperties, curatorClient));
+            });
     }
 
     private static HttpServer createHttpServer(Properties httpServerProperties) {

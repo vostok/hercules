@@ -19,6 +19,12 @@ public final class HttpStatusCodes {
     public static final int REQUEST_TIMEOUT = 408;
     public static final int CONFLICT = 409;
     /**
+     * Resource is unavailable anymore.
+     * <p>
+     * This code may be used for HTTP readiness probe to indicate that service should not accept new requests.
+     */
+    public static final int GONE = 410;
+    /**
      * Request's header 'Content-Length' should be provided
      */
     public static final int LENGTH_REQUIRED = 411;

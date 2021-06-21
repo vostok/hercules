@@ -7,15 +7,17 @@ import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.curator.LatchWatcher;
 import ru.kontur.vostok.hercules.util.concurrent.RenewableTask;
 import ru.kontur.vostok.hercules.util.concurrent.RenewableTaskScheduler;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Gregory Koshelev
  */
-public class Blacklist {
+public class Blacklist implements Lifecycle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Blacklist.class);
 
@@ -47,6 +49,7 @@ public class Blacklist {
         return apiKeys.get().containsKey(apiKey);
     }
 
+    @Override
     public void start() {
         if (!state.compareAndSet(State.INIT, State.STARTING)) {
             throw new IllegalStateException("Invalid state of blacklist");
@@ -57,9 +60,11 @@ public class Blacklist {
         state.set(State.RUNNING);
     }
 
-    public void stop() {
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
         state.set(State.STOPPED);
         updateTask.disable();
+        return true;
     }
 
     private void update() {

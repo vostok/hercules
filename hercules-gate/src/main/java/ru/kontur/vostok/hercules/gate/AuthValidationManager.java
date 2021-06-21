@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.meta.auth.validation.ValidationSerializer;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.util.Maps;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,12 +14,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Gregory Koshelev
  */
-public class AuthValidationManager {
+public class AuthValidationManager implements Lifecycle {
     private final CuratorClient curatorClient;
     private final AtomicReference<State> state = new AtomicReference<>(State.INIT);
     private final ValidationSerializer validationSerializer = new ValidationSerializer();
@@ -31,12 +33,17 @@ public class AuthValidationManager {
         this.curatorClient = curatorClient;
     }
 
-    public void start() throws Exception {
+    @Override
+    public void start() {
         if (!state.compareAndSet(State.INIT, State.STARTING)) {
             throw new IllegalStateException("Invalid state of content validator");
         }
 
-        update();
+        try {
+            update();//TODO: should update validations on changes (see Blacklist or AuthManager)
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to start due to exception", ex);
+        }
 
         state.set(State.RUNNING);
     }
@@ -63,8 +70,18 @@ public class AuthValidationManager {
         tags.set(newTags);
     }
 
+    /**
+     * @deprecated use {@link #stop(long, TimeUnit)} instead
+     */
+    @Deprecated
     public void stop() {
+        stop(0, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
         state.set(State.STOPPED);
+        return true;
     }
 
     public Set<TinyString> getTags(String apiKey, String stream) {

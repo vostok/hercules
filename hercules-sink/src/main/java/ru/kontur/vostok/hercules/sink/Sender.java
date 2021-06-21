@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public abstract class Sender extends Processor {
+public abstract class Sender extends Processor implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(Sender.class);
 
     private final MetricsCollector metricsCollector;
@@ -49,6 +50,7 @@ public abstract class Sender extends Processor {
     /**
      * Start sender. Activate periodical update availability status.
      */
+    @Override
     public void start() {
         executor.scheduleAtFixedRate(this::updateStatus, pingPeriodMs, pingPeriodMs, TimeUnit.MILLISECONDS);
         metricsCollector.gauge("status", () -> isAvailable() ? 0 : 1);
@@ -61,6 +63,7 @@ public abstract class Sender extends Processor {
      * @param unit    time unit of the timeout
      * @return {@code true} if sender stopped normally, {@code false} if the timeout elapsed or the current thread was interrupted
      */
+    @Override
     public boolean stop(long timeout, TimeUnit unit) {
         executor.shutdown();
         try {

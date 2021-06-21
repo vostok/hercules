@@ -18,6 +18,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidDeserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.filter.EventFilter;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -31,12 +32,13 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
  * @author Gregory Koshelev
  */
-public class Sink {
+public class Sink implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(Sink.class);
 
     private volatile boolean running = false;
@@ -118,6 +120,7 @@ public class Sink {
     /**
      * Start sink.
      */
+    @Override
     public final void start() {
         running = true;
 
@@ -127,7 +130,8 @@ public class Sink {
     /**
      * Stop Sink.
      */
-    public final void stop() {
+    @Override
+    public final boolean stop(long timeout, TimeUnit unit) {
         running = false;
 
         try {
@@ -143,6 +147,7 @@ public class Sink {
         }
 
         postStop();
+        return true;
     }
 
     /**

@@ -65,6 +65,12 @@ default value: `yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX`
 `sink.sender.elastic.client.index.creation.enable` - should create index in case of `index_not_found_exception`, default value: `false`
   
 `sink.sender.elastic.client.compression.gzip.enable` - flag for enable gzip compression when sending to Elastic, default value: `false`
+
+`sink.sender.elastic.client.auth.type` - Elastic client authentication type `BASIC` or `NONE` if authentication isn't used, default value: `NONE`
+
+`sink.sender.elastic.client.auth.basic.username` - username for basic authentication
+
+`sink.sender.elastic.client.auth.basic.password` - password for basic authentication
  
 ##### Leprosery settings
 `sink.sender.leprosery.enable` - flag for enable resending non-retryable error, default value: `false`

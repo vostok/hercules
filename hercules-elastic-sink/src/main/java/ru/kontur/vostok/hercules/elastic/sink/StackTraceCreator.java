@@ -17,7 +17,7 @@ public final class StackTraceCreator {
     private static String createStackTrace(Container exception, String indent) {
         StringBuilder stackTrace = new StringBuilder();
 
-        writeExceptionInfo(indent, stackTrace, exception);
+        writeExceptionInfo(stackTrace, exception);
 
         ContainerUtil.extract(exception, ExceptionTags.STACK_FRAMES)
                 .ifPresent(stackFrames -> writeStackFrames(indent, stackTrace, stackFrames));
@@ -28,9 +28,9 @@ public final class StackTraceCreator {
         return stackTrace.toString();
     }
 
-    private static void writeExceptionInfo(String indent, StringBuilder stackTrace, Container exception) {
+    private static void writeExceptionInfo(StringBuilder stackTrace, Container exception) {
         ContainerUtil.extract(exception, ExceptionTags.TYPE_TAG)
-                .ifPresent(s -> stackTrace.append(indent).append(s).append(": "));
+                .ifPresent(s -> stackTrace.append(s).append(": "));
 
         ContainerUtil.extract(exception, ExceptionTags.MESSAGE_TAG)
                 .ifPresent(stackTrace::append);
@@ -39,7 +39,7 @@ public final class StackTraceCreator {
     private static void writeStackFrames(String indent, StringBuilder stackTrace, Container[] stackFrames) {
         for (Container stackFrame : stackFrames) {
             ContainerUtil.extract(stackFrame, StackFrameTags.TYPE_TAG)
-                    .ifPresent(type -> stackTrace.append("\n").append(indent).append("at ").append(type));
+                    .ifPresent(type -> stackTrace.append("\n").append(indent).append("    at ").append(type));
 
             ContainerUtil.extract(stackFrame, StackFrameTags.FUNCTION_TAG)
                     .ifPresent(function -> stackTrace.append(".").append(function));
@@ -61,8 +61,9 @@ public final class StackTraceCreator {
 
     private static void writeInnerExceptions(String indent, StringBuilder stackTrace, Container[] innerExceptions) {
         for (Container container : innerExceptions) {
-            stackTrace.append("\n").append(indent).append("Caused by:").append("\n");
-            stackTrace.append(createStackTrace(container, indent + "  "));
+            String levelIndent = indent + "  ";
+            stackTrace.append("\n").append(levelIndent).append("Caused by: ");
+            stackTrace.append(createStackTrace(container, levelIndent));
         }
     }
 

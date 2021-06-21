@@ -12,6 +12,18 @@ public final class ApplicationConfigDefaults {
      * Default port of HTTP-server
      */
     public static final int DEFAULT_PORT = 8080;
+    /**
+     * Default shutdown timeout in millis.
+     * <p>
+     * Timeout to stop all application components.
+     */
+    public static final int DEFAULT_SHUTDOWN_TIMEOUT_MS = 5_000;
+    /**
+     * Default shutdown grace period in millis.
+     * <p>
+     * Period before stopping application components.
+     */
+    public static final int DEFAULT_SHUTDOWN_GRACE_PERIOD_MS = 0;
 
     private ApplicationConfigDefaults() {
         /* static class */

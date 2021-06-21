@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.http;
 
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author Gregory Koshelev
  */
-public abstract class HttpServer {
+public abstract class HttpServer implements Lifecycle {
     private final AtomicReference<HttpServerState> state = new AtomicReference<>(HttpServerState.INIT);
 
     protected final String host;
@@ -29,6 +30,7 @@ public abstract class HttpServer {
         this.handler = handler;
     }
 
+    @Override
     public final void start() {
         if (!state.compareAndSet(HttpServerState.INIT, HttpServerState.STARTING)) {
             throw new IllegalStateException("Expect INIT state of Http server");
@@ -41,6 +43,7 @@ public abstract class HttpServer {
         }
     }
 
+    @Override
     public final boolean stop(long timeout, TimeUnit unit) {
         if (!state.compareAndSet(HttpServerState.RUNNING, HttpServerState.STOPPING)) {
             throw new IllegalStateException("Expect RUNNING state of Http server");

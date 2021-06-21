@@ -19,6 +19,7 @@ import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
+import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Gregory Koshelev
  */
-public class StreamSink {
+public class StreamSink implements Lifecycle {
     private final KafkaStreams kafkaStreams;
 
     public StreamSink(Properties properties, DerivedStream derived) {
@@ -75,11 +76,14 @@ public class StreamSink {
         kafkaStreams = new KafkaStreams(builder.build(), config);
     }
 
+    @Override
     public void start() {
         kafkaStreams.start();
     }
 
-    public void stop(long timeout, TimeUnit timeUnit) {
+    @Override
+    public boolean stop(long timeout, TimeUnit timeUnit) {
         kafkaStreams.close(timeout, timeUnit);
+        return true;
     }
 }
