@@ -59,11 +59,7 @@ public class ReadTimelineHandler implements HttpHandler {
         }
 
         Parameter<String>.ParameterValue timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
-        if (!timelineName.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.TIMELINE.name() + " error: " + timelineName.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, timelineName)) {
             return;
         }
 
@@ -78,20 +74,12 @@ public class ReadTimelineHandler implements HttpHandler {
         }
 
         Parameter<Integer>.ParameterValue shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
-        if (!shardIndex.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.SHARD_INDEX.name() + " error: " + shardIndex.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, shardIndex)) {
             return;
         }
 
         Parameter<Integer>.ParameterValue shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
-        if (!shardCount.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.SHARD_COUNT.name() + " error: " + shardCount.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, shardCount)) {
             return;
         }
 
@@ -104,29 +92,17 @@ public class ReadTimelineHandler implements HttpHandler {
         }
 
         Parameter<Integer>.ParameterValue take = QueryUtil.get(QueryParameters.TAKE, request);
-        if (!take.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.TAKE.name() + " error: " + take.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, take)) {
             return;
         }
 
         Parameter<Long>.ParameterValue from = QueryUtil.get(QueryParameters.FROM, request);
-        if (!from.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.FROM.name() + " error: " + from.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, from)) {
             return;
         }
 
         Parameter<Long>.ParameterValue to = QueryUtil.get(QueryParameters.TO, request);
-        if (!to.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.TO.name() + " error: " + to.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, to)) {
             return;
         }
 

@@ -52,11 +52,7 @@ public class SeekToEndHandler implements HttpHandler {
     @Override
     public void handle(HttpServerRequest request) {
         Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
-        if (!streamName.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.STREAM.name() + " error: " + streamName.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, streamName)) {
             return;
         }
 
@@ -71,20 +67,12 @@ public class SeekToEndHandler implements HttpHandler {
         }
 
         Parameter<Integer>.ParameterValue shardIndex = QueryUtil.get(QueryParameters.SHARD_INDEX, request);
-        if (!shardIndex.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.SHARD_INDEX.name() + " error: " + shardIndex.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, shardIndex)) {
             return;
         }
 
         Parameter<Integer>.ParameterValue shardCount = QueryUtil.get(QueryParameters.SHARD_COUNT, request);
-        if (!shardCount.isOk()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.SHARD_COUNT.name() + " error: " + shardCount.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, shardCount)) {
             return;
         }
 

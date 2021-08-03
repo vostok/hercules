@@ -8,7 +8,6 @@ import ru.kontur.vostok.hercules.auth.Right;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
-import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.QueryParameters;
@@ -37,11 +36,7 @@ public class InfoStreamHandler implements HttpHandler {
     @Override
     public void handle(HttpServerRequest request) {
         Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
-        if (streamName.isError()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.STREAM.name() + " error: " + streamName.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, streamName)) {
             return;
         }
 
