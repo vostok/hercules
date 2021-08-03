@@ -100,7 +100,7 @@ public class SendRequestMetrics {
      */
     private static class StreamMetrics {
         private static final String METRICS_SCOPE =
-                MetricsUtil.toMetricPath(SendRequestMetrics.METRICS_SCOPE, StreamMetrics.class.getSimpleName());
+                MetricsUtil.toMetricPathWithPrefix(SendRequestMetrics.METRICS_SCOPE, StreamMetrics.class.getSimpleName());
 
         private final Timer asyncProcessingTimeMsTimer;
         private final Timer syncProcessingTimeMsTimer;
@@ -108,10 +108,10 @@ public class SendRequestMetrics {
         private final Histogram requestUncompressedSizeBytesHistogram;
 
         StreamMetrics(String stream, MetricsCollector metricsCollector) {
-            this.asyncProcessingTimeMsTimer = metricsCollector.timer(MetricsUtil.toMetricPath(METRICS_SCOPE, stream, "asyncProcessingTimeMs"));
-            this.syncProcessingTimeMsTimer = metricsCollector.timer(MetricsUtil.toMetricPath(METRICS_SCOPE, stream, "syncProcessingTimeMs"));
+            this.asyncProcessingTimeMsTimer = metricsCollector.timer(MetricsUtil.toMetricPathWithPrefix(METRICS_SCOPE, stream, "asyncProcessingTimeMs"));
+            this.syncProcessingTimeMsTimer = metricsCollector.timer(MetricsUtil.toMetricPathWithPrefix(METRICS_SCOPE, stream, "syncProcessingTimeMs"));
 
-            this.requestUncompressedSizeBytesHistogram = metricsCollector.histogram(MetricsUtil.toMetricPath(METRICS_SCOPE, stream, "requestUncompressedSizeBytes"));
+            this.requestUncompressedSizeBytesHistogram = metricsCollector.histogram(MetricsUtil.toMetricPathWithPrefix(METRICS_SCOPE, stream, "requestUncompressedSizeBytes"));
         }
 
         void update(SendRequestProcessor.SendRequest request) {
