@@ -23,11 +23,17 @@ public class SetRuleHandler extends RuleHandler {
     @Override
     public void handle(HttpServerRequest request) {
         Parameter<String>.ParameterValue key = QueryUtil.get(QueryParameters.KEY, request);
-        Parameter<String>.ParameterValue pattern = QueryUtil.get(QueryParameters.PATTERN, request);
-        Parameter<String>.ParameterValue rights = QueryUtil.get(QueryParameters.RIGHTS, request);
+        if (QueryUtil.tryCompleteRequestIfError(request, key)) {
+            return;
+        }
 
-        if (key.isError() || pattern.isError() || rights.isError()) {
-            request.complete(HttpStatusCodes.BAD_REQUEST);
+        Parameter<String>.ParameterValue pattern = QueryUtil.get(QueryParameters.PATTERN, request);
+        if (QueryUtil.tryCompleteRequestIfError(request, pattern)) {
+            return;
+        }
+
+        Parameter<String>.ParameterValue rights = QueryUtil.get(QueryParameters.RIGHTS, request);
+        if (QueryUtil.tryCompleteRequestIfError(request, rights)) {
             return;
         }
 
