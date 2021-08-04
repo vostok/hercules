@@ -102,8 +102,7 @@ public class GateHandler implements HttpHandler {
         final long requestTimestampMs = time.milliseconds();
 
         Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
-        if (streamName.isError()) {
-            request.complete(HttpStatusCodes.BAD_REQUEST);
+        if (QueryUtil.tryCompleteRequestIfError(request, streamName)) {
             return;
         }
         String stream = streamName.get();

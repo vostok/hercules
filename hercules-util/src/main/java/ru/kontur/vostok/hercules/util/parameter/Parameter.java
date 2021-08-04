@@ -422,5 +422,14 @@ public class Parameter<T> {
         public boolean isEmpty() {
             return this == empty;
         }
+
+        /**
+         * Returns the parameter.
+         *
+         * @return the parameter
+         */
+        public Parameter<T> parameter() {
+            return Parameter.this;
+        }
     }
 }

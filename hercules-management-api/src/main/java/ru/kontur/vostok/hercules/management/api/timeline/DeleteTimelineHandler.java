@@ -7,7 +7,6 @@ import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
-import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.HttpAsyncApiHelper;
@@ -41,11 +40,7 @@ public class DeleteTimelineHandler implements HttpHandler {
     @Override
     public void handle(HttpServerRequest request) {
         Parameter<String>.ParameterValue timelineName = QueryUtil.get(QueryParameters.TIMELINE, request);
-        if (timelineName.isError()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.TIMELINE.name() + " error: " + timelineName.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, timelineName)) {
             return;
         }
 

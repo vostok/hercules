@@ -36,38 +36,22 @@ public class GetTraceHandler implements HttpHandler {
     @Override
     public void handle(HttpServerRequest request) {
         Parameter<UUID>.ParameterValue traceId = QueryUtil.get(QueryParameters.TRACE_ID, request);
-        if (traceId.isError()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.TRACE_ID.name() + " error: " + traceId.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, traceId)) {
             return;
         }
 
         Parameter<UUID>.ParameterValue parentSpanId = QueryUtil.get(QueryParameters.PARENT_SPAN_ID, request);
-        if (parentSpanId.isError()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.PARENT_SPAN_ID.name() + " error: " + parentSpanId.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, parentSpanId)) {
             return;
         }
 
         Parameter<Integer>.ParameterValue limit = QueryUtil.get(QueryParameters.LIMIT, request);
-        if (limit.isError()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.LIMIT.name() + " error: " + limit.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, limit)) {
             return;
         }
 
         Parameter<String>.ParameterValue pagingState = QueryUtil.get(QueryParameters.PAGING_STATE, request);
-        if (pagingState.isError()) {
-            request.complete(
-                    HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Parameter " + QueryParameters.PAGING_STATE.name() + " error: " + limit.result().error());
+        if (QueryUtil.tryCompleteRequestIfError(request, pagingState)) {
             return;
         }
 
