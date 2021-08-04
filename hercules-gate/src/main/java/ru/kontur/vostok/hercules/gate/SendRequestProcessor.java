@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.gate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -285,7 +286,7 @@ public class SendRequestProcessor {
         }
 
         private String getProtectedApiKey() {
-            String apiKey = request.getHeader("apiKey");
+            String apiKey = AuthUtil.getApiKey(request);
             int pos = apiKey.lastIndexOf('_') + 1;
             if (pos > 0) {
                 return StringUtil.mask(apiKey, '*', pos);

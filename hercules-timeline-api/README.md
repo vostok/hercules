@@ -54,7 +54,14 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` - the API Key with read access to the timeline is specified. Required.
+`Authorization`  
+Value should be with prefix "Hercules apiKey ".  
+The API Key with read access to the timeline is specified.  
+*Required*
+
+`apiKey`  
+The API Key with read access to the timeline is specified.  
+*Deprecated:* use header `Authorization` instead.
 
 `ContentType: application/octet-stream`
 

@@ -53,9 +53,14 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey`  
+`Authorization`  
+Value should be with prefix "Hercules apiKey ".  
 The API Key with read access to the stream is specified.  
 *Required*
+
+`apiKey`  
+The API Key with read access to the stream is specified.  
+*Deprecated:* use header `Authorization` instead.
 
 `Content-Type: application/octet-stream`  
 *Required*
@@ -134,7 +139,14 @@ Events          Count, Event*
 
 **Request headers**
 
-`apiKey` - the API Key with read access to the stream is specified. Required.
+`Authorization`  
+Value should be with prefix "Hercules apiKey ".  
+The API Key with read access to the stream is specified.  
+*Required*
+
+`apiKey`  
+The API Key with read access to the stream is specified.  
+*Deprecated:* use header `Authorization` instead.
 
 `ContentType: application/octet-stream`
 

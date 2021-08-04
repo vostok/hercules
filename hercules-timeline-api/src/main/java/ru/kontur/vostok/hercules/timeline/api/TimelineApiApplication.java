@@ -146,7 +146,7 @@ public class TimelineApiApplication {
     private static HttpServer createHttpServer(Properties httpServerProperties) {
         TimelineRepository repository = new TimelineRepository(curatorClient);
 
-        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager);
+        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager, metricsCollector);
         HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
 
         HttpHandler readTimelineHandler = authHandlerWrapper.wrap(
