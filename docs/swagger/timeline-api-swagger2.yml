@@ -105,10 +105,10 @@ definitions:
         type: string
 parameters:
   apiKey:
-    name: apiKey
+    name: Authorization
     in: header
     type: string
-    pattern: '^\d{3}-\d{2}-\d{4}$'
+    pattern: '^Hercules apiKey .+'
     required: true
     description: API key for authorization
   contentType:

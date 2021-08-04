@@ -5,6 +5,7 @@ package ru.kontur.vostok.hercules.http.header;
  */
 public final class HttpHeaders {
     public static final String ACCEPT_ENCODING = "Accept-Encoding";
+    public static final String AUTHORIZATION = "Authorization";
     public static final String CONTENT_ENCODING = "Content-Encoding";
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String CONTENT_TYPE = "Content-Type";

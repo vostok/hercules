@@ -96,7 +96,7 @@ public class GateApplication {
 
         long maxContentLength = PropertiesUtil.get(HttpServer.Props.MAX_CONTENT_LENGTH, httpServerProperties).get();
 
-        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager);
+        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager, metricsCollector);
         HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
 
         HttpHandler sendAsyncHandler = authHandlerWrapper.wrap(

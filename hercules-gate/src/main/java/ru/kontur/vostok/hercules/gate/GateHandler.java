@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.gate;
 
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
@@ -117,8 +118,7 @@ public class GateHandler implements HttpHandler {
             request.complete(HttpStatusCodes.FORBIDDEN);
             return;
         }
-
-        String apiKey = request.getHeader("apiKey");
+        String apiKey = AuthUtil.getApiKey(request);
         // Check content length
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
