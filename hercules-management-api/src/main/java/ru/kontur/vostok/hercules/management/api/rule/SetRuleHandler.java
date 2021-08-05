@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.management.api.QueryParameters;
 import ru.kontur.vostok.hercules.meta.auth.rule.RuleRepository;
+import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 /**
@@ -27,7 +28,7 @@ public class SetRuleHandler extends RuleHandler {
             return;
         }
 
-        Parameter<String>.ParameterValue pattern = QueryUtil.get(QueryParameters.PATTERN, request);
+        Parameter<PatternMatcher>.ParameterValue pattern = QueryUtil.get(QueryParameters.PATTERN, request);
         if (QueryUtil.tryCompleteRequestIfError(request, pattern)) {
             return;
         }
