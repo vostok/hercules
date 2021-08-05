@@ -1,7 +1,11 @@
 package ru.kontur.vostok.hercules.util.properties;
 
+import ru.kontur.vostok.hercules.util.ClassUtil;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -54,5 +58,97 @@ public final class PropertiesUtil {
 
     private PropertiesUtil() {
         /* static class */
+    }
+
+    /**
+     * Build list of parentClass instances from properties.
+     * <p>
+     * Properties for each class are defined under scope {@code N}, where {@code N} is position in the property {@code list}.
+     * <p>
+     * The property {@code N.class} should be defined with N - full class name.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * 0.class=ru.kontur.vostok.hercules.sink.filter.BlacklistEventFilter
+     * 0.props.paths=properties/project,properties/environment
+     * 0.props.patterns=my_project:testing,my_project:staging
+     *
+     * 1.class=ru.kontur.vostok.hercules.sink.filter.WhitelistEventFilter
+     * 1.props.paths=properties/project,properties/environment
+     * 1.props.patterns=my_project:production
+     * }</pre>
+     * Here, there are two classes are defined.
+     *
+     * @param properties  properties for classes
+     * @param parentClass class type for building.
+     *                    Notes:
+     *                    The property {@code class} should be inheritor from parentClass
+     *                    and implement constructor with Properties param
+     *                    if properties for class are defined under scope {@code props}
+     * @return list of parentClass instances
+     */
+    public static <T> List<T> createClassInstanceList(Properties properties, Class<T> parentClass) {
+        Integer[] indexes = properties.keySet().stream()
+                .map(key -> ((String) key).split("\\.")[0])
+                .filter(segment -> segment.matches("^\\d+$"))
+                .map(Integer::parseInt)
+                .distinct()
+                .sorted()
+                .toArray(Integer[]::new);
+
+        if (indexes.length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<T> instances = new ArrayList<>(indexes.length);
+        for (int i : indexes) {
+            Properties subProperties = PropertiesUtil.ofScope(properties, Integer.toString(i));
+            instances.add(createClassInstance(subProperties, parentClass));
+        }
+        return instances;
+    }
+
+    /**
+     * Build parentClass instance from properties.
+     * <p>
+     * The property {@code class} should be defined with full class name.
+     * <p>
+     * Properties for class are defined under scope {@code props}
+     * <p>
+     * Example:
+     * <pre>{@code
+     * class=ru.kontur.vostok.hercules.sink.filter.BlacklistEventFilter
+     * props.paths=properties/project,properties/environment
+     * props.patterns=my_project:testing,my_project:staging
+     * }</pre>
+     *
+     * @param properties  properties for class
+     * @param parentClass class type for building.
+     *                    Notes:
+     *                    The property {@code class} should be inheritor from parentClass
+     *                    and implement constructor with Properties param
+     *                    if properties for class are defined under scope {@code props}
+     * @return parentClass instance
+     */
+    public static <T> T createClassInstance(Properties properties, Class<T> parentClass) {
+        String className = PropertiesUtil.get(Props.CLASS, properties).get();
+        Properties classProperties = PropertiesUtil.ofScope(properties, "props");
+
+        if (classProperties.isEmpty()) {
+            return ClassUtil.fromClass(className, parentClass);
+        } else {
+            return ClassUtil.fromClass(
+                    className,
+                    parentClass,
+                    new Class<?>[]{Properties.class},
+                    new Object[]{classProperties});
+        }
+    }
+
+    private static class Props {
+        static final Parameter<String> CLASS =
+                Parameter.stringParameter("class").
+                        required().
+                        build();
     }
 }
