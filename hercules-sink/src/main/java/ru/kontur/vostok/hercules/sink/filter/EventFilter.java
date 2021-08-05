@@ -54,6 +54,6 @@ public abstract class EventFilter {
      * @return list of filters
      */
     public static List<EventFilter> from(Properties properties) {
-        return PropertiesUtil.listFromProperties(properties, EventFilter.class);
+        return PropertiesUtil.createClassInstanceList(properties, EventFilter.class);
     }
 }

@@ -30,7 +30,7 @@ public class PropertiesUtilTest {
     }
 
     @Test
-    public void listFromProperties() throws Exception {
+    public void shouldCreateInstanceListFromProperties() {
         final Properties properties = new Properties();
         properties.put("0.class", TestClass.class.getName());
         properties.put("0.props.a", "1");
@@ -39,7 +39,7 @@ public class PropertiesUtilTest {
         properties.put("1.props.a", "2");
         properties.put("1.props.b", "false");
 
-        List<TestClass> list = PropertiesUtil.listFromProperties(properties, TestClass.class);
+        List<TestClass> list = PropertiesUtil.createClassInstanceList(properties, TestClass.class);
 
         assertEquals(1, list.get(0).a);
         assertTrue(list.get(0).b);
@@ -48,32 +48,32 @@ public class PropertiesUtilTest {
     }
 
     @Test
-    public void fromProperties() throws Exception {
+    public void shouldCreateSingleInstanceFromProperties() {
         final Properties properties = new Properties();
         properties.put("class", TestClass.class.getName());
         properties.put("props.a", "1");
         properties.put("props.b", "true");
 
-        TestClass instance = PropertiesUtil.fromProperties(properties, TestClass.class);
+        TestClass instance = PropertiesUtil.createClassInstance(properties, TestClass.class);
 
         assertEquals(1, instance.a);
         assertTrue(instance.b);
     }
 
     @Test
-    public void fromEmptyProperties() throws Exception {
+    public void shouldCreateSingleInstanceFromEmptyProperties() {
         final Properties properties = new Properties();
         properties.put("class", TestClass.class.getName());
 
-        TestClass instance = PropertiesUtil.fromProperties(properties, TestClass.class);
+        TestClass instance = PropertiesUtil.createClassInstance(properties, TestClass.class);
 
         assertEquals(3, instance.a);
         assertTrue(instance.b);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void fromWrongProperties() throws Exception {
-        PropertiesUtil.fromProperties(new Properties(), TestClass.class);
+    public void shouldThrowExceptionWhenWrongProperties() {
+        PropertiesUtil.createClassInstance(new Properties(), TestClass.class);
     }
 
     public static class TestClass {

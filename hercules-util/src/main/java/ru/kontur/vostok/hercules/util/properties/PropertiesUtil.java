@@ -63,9 +63,9 @@ public final class PropertiesUtil {
     /**
      * Build list of parentClass instances from properties.
      * <p>
-     * The property {@code N.class} should be defined with N - full class name.
-     * <p>
      * Properties for each class are defined under scope {@code N}, where {@code N} is position in the property {@code list}.
+     * <p>
+     * The property {@code N.class} should be defined with N - full class name.
      * <p>
      * Example:
      * <pre>{@code
@@ -87,7 +87,7 @@ public final class PropertiesUtil {
      *                    if properties for class are defined under scope {@code props}
      * @return list of parentClass instances
      */
-    public static <T> List<T> listFromProperties(Properties properties, Class<T> parentClass) {
+    public static <T> List<T> createClassInstanceList(Properties properties, Class<T> parentClass) {
         Integer[] indexes = properties.keySet().stream()
                 .map(key -> ((String) key).split("\\.")[0])
                 .filter(segment -> segment.matches("^\\d+$"))
@@ -103,7 +103,7 @@ public final class PropertiesUtil {
         List<T> instances = new ArrayList<>(indexes.length);
         for (int i : indexes) {
             Properties subProperties = PropertiesUtil.ofScope(properties, Integer.toString(i));
-            instances.add(fromProperties(subProperties, parentClass));
+            instances.add(createClassInstance(subProperties, parentClass));
         }
         return instances;
     }
@@ -121,7 +121,7 @@ public final class PropertiesUtil {
      * props.paths=properties/project,properties/environment
      * props.patterns=my_project:testing,my_project:staging
      * }</pre>
-     *      *
+     *
      * @param properties  properties for class
      * @param parentClass class type for building.
      *                    Notes:
@@ -130,7 +130,7 @@ public final class PropertiesUtil {
      *                    if properties for class are defined under scope {@code props}
      * @return parentClass instance
      */
-    public static <T> T fromProperties(Properties properties, Class<T> parentClass) {
+    public static <T> T createClassInstance(Properties properties, Class<T> parentClass) {
         String className = PropertiesUtil.get(Props.CLASS, properties).get();
         Properties classProperties = PropertiesUtil.ofScope(properties, "props");
 
