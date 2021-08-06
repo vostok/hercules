@@ -78,9 +78,14 @@ instanceId - instance identifier
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
 The API Key with manage access to the stream.  
 *Required*
+
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Deprecated:* use header `Authorization` instead.
 
 `Content-Type: application/json`  
 *Required*
@@ -138,9 +143,14 @@ Request body contains JSON-object with following properties:
 
 **Request headers**
 
-`apiKey` or `masterApiKey`    
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
 The API Key with manage access to the stream.  
 *Required*
+
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the stream.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -172,9 +182,14 @@ The API Key with manage access to the stream.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
-Any valid API Key.  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
+Any valid API key.  
 *Required*
+
+`apiKey` or `masterApiKey`    
+Any valid API Key.  
+*Deprecated:* use header `Authorization` instead.
 
 **Response headers:**
 
@@ -207,9 +222,14 @@ Any valid API Key.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
 The API Key with manage access to the stream.  
 *Required*
+
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the stream.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -245,9 +265,14 @@ The API Key with manage access to the stream.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
 The API Key with manage access to the stream.  
 *Required*
+
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the stream.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -281,9 +306,14 @@ The API Key with manage access to the stream.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
-The API Key with manage access to the stream.  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
+The API Key with manage access to the stream.
 *Required*
+
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the stream.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -317,9 +347,14 @@ The API Key with manage access to the stream.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
 The API Key with manage access to the stream.  
 *Required*
+
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the stream.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -365,9 +400,14 @@ The API Key with manage access to the stream.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
-The API Key with manage access to the stream.  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
+The API Key with manage access to the stream.   
 *Required*
+
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the stream.  
+*Deprecated:* use header `Authorization` instead.
 
 `Content-Type: application/json`  
 *Required*
@@ -431,9 +471,14 @@ Request body contains JSON-object with following properties:
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
 The API Key with manage access to the timeline.  
 *Required*
+
+`apiKey` or `masterApiKey`    
+The API Key with manage access to the timeline.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -465,9 +510,14 @@ The API Key with manage access to the timeline.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
-Any valid API Key.  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
+Any valid API key.  
 *Required*
+
+`apiKey` or `masterApiKey`  
+Any valid API key.  
+*Deprecated:* use header `Authorization` instead.
 
 **Response headers:**
 
@@ -500,9 +550,14 @@ Any valid API Key.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
 The API Key with manage access to the stream.  
 *Required*
+
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the stream.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -536,9 +591,14 @@ The API Key with manage access to the stream.
 
 **Request headers**
 
-`apiKey` or `masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules apiKey " or "Hercules masterApiKey ".  
 The API Key with manage access to the timeline.  
 *Required*
+
+`apiKey` or `masterApiKey`  
+The API Key with manage access to the timeline.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -588,9 +648,14 @@ The API Key with manage access to the timeline.
 
 **Request headers**
 
-`masterApiKey`
+`Authorization`  
+Value should be with prefix "Hercules masterApiKey ".  
 The API key for rules management.  
 *Required*
+
+`masterApiKey`  
+The API key for rules management.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -622,9 +687,14 @@ Available values : ---, r--, -w-, --m, rw-, r-m, -wm, rwm.
 
 **Request headers**
 
-`masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules masterApiKey ".  
 The API key for rules management.  
 *Required*
+
+`masterApiKey`  
+The API key for rules management.  
+*Deprecated:* use header `Authorization` instead.
 
 **Response headers:**
 
@@ -659,9 +729,14 @@ The API key for rules management.
 
 **Request headers**
 
-`masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules masterApiKey ".  
 The API key for rules management.  
 *Required*
+
+`masterApiKey`  
+The API key for rules management.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -685,9 +760,14 @@ The API key for rules management.
 
 **Request headers**
 
-`masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules masterApiKey ".  
 The API key for rules management.  
 *Required*
+
+`masterApiKey`  
+The API key for rules management.  
+*Deprecated:* use header `Authorization` instead.
 
 **Query parameters:**
 
@@ -711,9 +791,14 @@ The API key for rules management.
 
 **Request headers**
 
-`masterApiKey`  
+`Authorization`  
+Value should be with prefix "Hercules masterApiKey ".  
 The API key for rules management.  
 *Required*
+
+`masterApiKey`  
+The API key for rules management.  
+*Deprecated:* use header `Authorization` instead.
 
 **Response headers:**
 

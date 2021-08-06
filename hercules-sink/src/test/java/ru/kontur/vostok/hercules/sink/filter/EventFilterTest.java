@@ -18,9 +18,10 @@ public class EventFilterTest {
     @Test
     public void shouldInitializeListOfFiltersFromProperties() {
         Properties properties = new Properties();
-        properties.setProperty("list", "ru.kontur.vostok.hercules.sink.filter.SwitcherEventFilter,ru.kontur.vostok.hercules.sink.filter.SwitcherEventFilter");
-        properties.setProperty("0.on", "false");
-        properties.setProperty("1.on", "true");
+        properties.setProperty("0.class", "ru.kontur.vostok.hercules.sink.filter.SwitcherEventFilter");
+        properties.setProperty("1.class", "ru.kontur.vostok.hercules.sink.filter.SwitcherEventFilter");
+        properties.setProperty("0.props.on", "false");
+        properties.setProperty("1.props.on", "true");
 
         List<EventFilter> filters = EventFilter.from(properties);
         Assert.assertEquals(2, filters.size());
@@ -28,7 +29,6 @@ public class EventFilterTest {
         Assert.assertEquals(SwitcherEventFilter.class, filters.get(1).getClass());
 
         Event event = getEventBuilder().build();
-
         SwitcherEventFilter switcher = (SwitcherEventFilter) filters.get(0);
         /* Switcher '0' is off as property 'on' is false */
         Assert.assertFalse(switcher.test(event));

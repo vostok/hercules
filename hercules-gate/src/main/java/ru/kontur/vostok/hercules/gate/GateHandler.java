@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.gate;
 
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
@@ -102,8 +103,7 @@ public class GateHandler implements HttpHandler {
         final long requestTimestampMs = time.milliseconds();
 
         Parameter<String>.ParameterValue streamName = QueryUtil.get(QueryParameters.STREAM, request);
-        if (streamName.isError()) {
-            request.complete(HttpStatusCodes.BAD_REQUEST);
+        if (QueryUtil.tryCompleteRequestIfError(request, streamName)) {
             return;
         }
         String stream = streamName.get();
@@ -117,8 +117,7 @@ public class GateHandler implements HttpHandler {
             request.complete(HttpStatusCodes.FORBIDDEN);
             return;
         }
-
-        String apiKey = request.getHeader("apiKey");
+        String apiKey = AuthUtil.getApiKey(request);
         // Check content length
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {

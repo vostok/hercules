@@ -150,7 +150,7 @@ public class StreamApiApplication {
     private static HttpServer createHttpServer(Properties httpServerProperties) {
         StreamRepository repository = new StreamRepository(curatorClient);
 
-        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager);
+        AuthProvider authProvider = new AuthProvider(new AdminAuthManager(Collections.emptySet()), authManager, metricsCollector);
         HandlerWrapper authHandlerWrapper = new OrdinaryAuthHandlerWrapper(authProvider);
 
         HttpHandler readStreamHandler = authHandlerWrapper.wrap(

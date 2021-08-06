@@ -23,8 +23,7 @@ public class AddBlacklistHandler extends BlacklistHandler {
     @Override
     public void handle(HttpServerRequest request) {
         Parameter<String>.ParameterValue key = QueryUtil.get(QueryParameters.KEY, request);
-        if (key.isError()) {
-            request.complete(HttpStatusCodes.BAD_REQUEST);
+        if (QueryUtil.tryCompleteRequestIfError(request, key)) {
             return;
         }
 

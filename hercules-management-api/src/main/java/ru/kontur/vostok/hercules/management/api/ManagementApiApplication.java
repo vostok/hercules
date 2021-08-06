@@ -174,7 +174,7 @@ public class ManagementApiApplication {
         BlacklistRepository blacklistRepository = new BlacklistRepository(curatorClient);
         RuleRepository ruleRepository = new RuleRepository(curatorClient);
 
-        AuthProvider authProvider = new AuthProvider(adminAuthManager, authManager);
+        AuthProvider authProvider = new AuthProvider(adminAuthManager, authManager, metricsCollector);
         AdminAuthHandlerWrapper adminAuthHandlerWrapper = new AdminAuthHandlerWrapper(authProvider);
         AuthHandlerWrapper authHandlerWrapper = new AuthHandlerWrapper(authProvider);
 

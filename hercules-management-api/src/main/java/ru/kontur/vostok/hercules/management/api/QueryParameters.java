@@ -1,7 +1,9 @@
 package ru.kontur.vostok.hercules.management.api;
 
 import ru.kontur.vostok.hercules.meta.stream.validation.StreamValidators;
+import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.StringValidators;
 
@@ -52,14 +54,15 @@ public final class QueryParameters {
                     withValidator(StringValidators.matchesWith("^[a-z0-9_]*[a-f0-9]{32}$")).
                     build();
 
-    public static Parameter<String> PATTERN =
-            Parameter.stringParameter("pattern").
-                    required().//TODO: Add validation on pattern format
+    public static Parameter<PatternMatcher> PATTERN =
+            Parameter.parameter("pattern", Parsers.fromFunction(PatternMatcher::new)).
+                    required().
                     build();
 
     public static Parameter<String> RIGHTS =
             Parameter.stringParameter("rights").
-                    required().//TODO: Add validation on rights format
+                    required().
+                    withValidator(StringValidators.matchesWith("(r|-)(w|-)(m|-)")).
                     build();
 
     private QueryParameters() {

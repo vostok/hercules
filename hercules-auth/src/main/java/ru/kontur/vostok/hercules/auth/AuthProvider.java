@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.auth;
 
+import ru.kontur.vostok.hercules.health.Counter;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
@@ -13,10 +15,19 @@ public class AuthProvider {
 
     private final AdminAuthManager adminAuthManager;
     private final AuthManager authManager;
+    private final MetricsCollector metricsCollector;
 
-    public AuthProvider(AdminAuthManager adminAuthManager, AuthManager authManager) {
+    private final Counter apiKeyRequestCounter;
+    private final Counter masterApiKeyRequestCounter;
+
+    public AuthProvider(AdminAuthManager adminAuthManager, AuthManager authManager, MetricsCollector metricsCollector) {
         this.adminAuthManager = adminAuthManager;
         this.authManager = authManager;
+
+        this.metricsCollector = metricsCollector;
+
+        this.apiKeyRequestCounter = this.metricsCollector.counter("apiKeyRequestCount");
+        this.masterApiKeyRequestCounter = this.metricsCollector.counter("masterApiKeyRequestCount");
     }
 
     /**
@@ -29,7 +40,14 @@ public class AuthProvider {
      * @return {@code true} if authenticate successfully, or {@code false} otherwise
      */
     public boolean authenticateMaster(HttpServerRequest request) {
-        String masterApiKey = request.getHeader("masterApiKey");
+        //FIXME: Replace with AuthUtil.getMasterApiKey(request) after migration to the Authorization header
+        String masterApiKey = AuthUtil.getAuthHeaderValueByPrefix(request, "Hercules masterApiKey ");
+        if (masterApiKey == null) {
+            masterApiKey = request.getHeader("masterApiKey");
+            if (!StringUtil.isNullOrEmpty(masterApiKey)) {
+                masterApiKeyRequestCounter.increment();
+            }
+        }
         boolean hasAuthenticated = !StringUtil.isNullOrEmpty(masterApiKey) && adminAuthManager.auth(masterApiKey).isSuccess();
         request.putContext(AUTH_CONTEXT, hasAuthenticated ? AuthContext.master(masterApiKey) : AuthContext.notAuthenticated());
         return hasAuthenticated;
@@ -45,7 +63,14 @@ public class AuthProvider {
      * @return {@code true} if authenticate successfully, or {@code false} otherwise
      */
     public boolean authenticateOrdinary(HttpServerRequest request) {
-        String apiKey = request.getHeader("apiKey");
+        //FIXME: Replace with AuthUtil.getApiKey(request) after migration to the Authorization header
+        String apiKey = AuthUtil.getAuthHeaderValueByPrefix(request, "Hercules apiKey ");
+        if (apiKey == null) {
+            apiKey = request.getHeader("apiKey");
+            if (!StringUtil.isNullOrEmpty(apiKey)) {
+                apiKeyRequestCounter.increment();
+            }
+        }
         boolean hasAuthenticated = !StringUtil.isNullOrEmpty(apiKey) && authManager.hasApiKey(apiKey);
         request.putContext(AUTH_CONTEXT, hasAuthenticated ? AuthContext.ordinary(apiKey) : AuthContext.notAuthenticated());
         return hasAuthenticated;
