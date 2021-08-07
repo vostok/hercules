@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -70,12 +71,7 @@ public class CreateStreamHandler implements HttpHandler {
                 }
 
                 AuthResult authResult = authProvider.authManage(r, stream.getName());
-                if (!authResult.isSuccess()) {
-                    if (authResult.isUnknown()) {
-                        r.complete(HttpStatusCodes.UNAUTHORIZED);
-                        return;
-                    }
-                    r.complete(HttpStatusCodes.FORBIDDEN);
+                if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
                     return;
                 }
 

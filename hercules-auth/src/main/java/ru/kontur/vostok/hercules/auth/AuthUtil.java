@@ -1,6 +1,8 @@
 package ru.kontur.vostok.hercules.auth;
 
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
+import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.header.HttpHeaders;
 
 /**
@@ -45,6 +47,28 @@ public final class AuthUtil {
             }
         }
         return authValue;
+    }
+
+    /**
+     * Try to complete the HTTP request with either {@code 401 Bad Request} status if api key is unknown
+     * or {@code 403 Forbidden} status if api key doesn't have necessary rights.
+     * <p>
+     * An authResult error message is used to make a response message.
+     *
+     * @param request    the HTTP request
+     * @param authResult the authorization result
+     * @return {@code true} if request has been completed due to unsuccessful authorization, otherwise {@code false}
+     */
+    public static boolean tryCompleteRequestIfUnsuccessfulAuth(HttpServerRequest request, AuthResult authResult) {
+        if (!authResult.isSuccess()) {
+            if (authResult.isUnknown()) {
+                request.complete(HttpStatusCodes.UNAUTHORIZED, ContentTypes.TEXT_PLAIN_UTF_8, authResult.getMessage());
+                return true;
+            }
+            request.complete(HttpStatusCodes.FORBIDDEN, ContentTypes.TEXT_PLAIN_UTF_8, authResult.getMessage());
+            return true;
+        }
+        return false;
     }
 
     private AuthUtil() {

@@ -109,12 +109,7 @@ public class GateHandler implements HttpHandler {
         String stream = streamName.get();
 
         AuthResult authResult = authProvider.authWrite(request, stream);
-        if (!authResult.isSuccess()) {
-            if (authResult.isUnknown()) {
-                request.complete(HttpStatusCodes.UNAUTHORIZED);
-                return;
-            }
-            request.complete(HttpStatusCodes.FORBIDDEN);
+        if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
             return;
         }
         String apiKey = AuthUtil.getApiKey(request);
