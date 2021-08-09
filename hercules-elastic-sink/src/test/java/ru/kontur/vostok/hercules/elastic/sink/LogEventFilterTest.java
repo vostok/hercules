@@ -6,8 +6,10 @@ import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.sink.filter.EventFilter;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -124,5 +126,15 @@ public class LogEventFilterTest {
         return EventBuilder.create(
                 TimeUtil.millisToTicks(System.currentTimeMillis()),
                 "00000000-0000-0000-0000-000000000000");
+    }
+
+    @Test
+    public void shouldInitializeListOfFiltersFromProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("0.class", "ru.kontur.vostok.hercules.elastic.sink.LogEventFilter");
+
+        List<EventFilter> filters = EventFilter.from(properties);
+        Assert.assertEquals(1, filters.size());
+        Assert.assertEquals(LogEventFilter.class, filters.get(0).getClass());
     }
 }
