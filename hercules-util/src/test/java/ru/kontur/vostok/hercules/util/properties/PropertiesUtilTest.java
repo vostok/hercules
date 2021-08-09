@@ -81,13 +81,13 @@ public class PropertiesUtilTest {
         boolean b;
 
         public TestClass(Properties properties) {
-            a = Integer.parseInt(properties.getProperty("a"));
-            b = Boolean.parseBoolean(properties.getProperty("b"));
-        }
-
-        public TestClass() {
-            a = 3;
-            b = true;
+            if (properties.isEmpty()) {
+                a = 3;
+                b = true;
+            } else {
+                a = Integer.parseInt(properties.getProperty("a"));
+                b = Boolean.parseBoolean(properties.getProperty("b"));
+            }
         }
     }
 }

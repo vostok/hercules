@@ -84,7 +84,6 @@ public final class PropertiesUtil {
      *                    Notes:
      *                    The property {@code class} should be inheritor from parentClass
      *                    and implement constructor with Properties param
-     *                    if properties for class are defined under scope {@code props}
      * @return list of parentClass instances
      */
     public static <T> List<T> createClassInstanceList(Properties properties, Class<T> parentClass) {
@@ -127,22 +126,16 @@ public final class PropertiesUtil {
      *                    Notes:
      *                    The property {@code class} should be inheritor from parentClass
      *                    and implement constructor with Properties param
-     *                    if properties for class are defined under scope {@code props}
      * @return parentClass instance
      */
     public static <T> T createClassInstance(Properties properties, Class<T> parentClass) {
         String className = PropertiesUtil.get(Props.CLASS, properties).get();
         Properties classProperties = PropertiesUtil.ofScope(properties, "props");
-
-        if (classProperties.isEmpty()) {
-            return ClassUtil.fromClass(className, parentClass);
-        } else {
-            return ClassUtil.fromClass(
-                    className,
-                    parentClass,
-                    new Class<?>[]{Properties.class},
-                    new Object[]{classProperties});
-        }
+        return ClassUtil.fromClass(
+                className,
+                parentClass,
+                new Class<?>[]{Properties.class},
+                new Object[]{classProperties});
     }
 
     private static class Props {
