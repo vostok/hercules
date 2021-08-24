@@ -29,6 +29,7 @@ public class CassandraInitializer {
     }
 
     public void init() {
+        //TODO Use CassandraConnector with CassandraAuthProvider
         try (CqlSession session = CqlSession.builder().
                 withLocalDatacenter(dataCenter).
                 addContactEndPoints(
