@@ -12,6 +12,8 @@ public final class CassandraDefaults {
     public static final long DEFAULT_READ_TIMEOUT_MILLIS = 12_000L;
     public static final String DEFAULT_KEYSPACE = "hercules";
     public static final int DEFAULT_REPLICATION_FACTOR = 3;
+    public static final boolean DEFAULT_AUTH_ENABLE = false;
+    public static final String DEFAULT_AUTH_CLASSNAME = "PlainTextAuthProvider";
 
     // Default pooling options:
 

@@ -163,6 +163,18 @@ also, default port value is `9042`
 
 `reader.cassandra.consistencyLevel` - consistency level (see Cassandra docs for details), default value: `QUORUM`
 
+`cassandra.auth.enable` - if Cassandra requires authentication then set this property value to `true`
+and specify credential in the respective properties, default value: `false`
+
+`cassandra.auth.provider.username` - username which is needed for Cassandra authentication.
+*Required* if `cassandra.auth.enable` is set to `true`, otherwise value is *ignored*.
+
+`cassandra.auth.provider.password` - password which is needed for Cassandra authentication.
+*Required* if `cassandra.auth.enable` is set to `true`, otherwise value is *ignored*.
+
+`cassandra.auth.provider.class` - name of the class which is needed for Cassandra authentication.
+Only classes that implements `com.datastax.driver.core.AuthProvider` should be specified, default value: `PlainTextAuthProvider`
+
 #### ClickHouse Tracing Reader settings
 `reader.table` - table name in ClickHouse
 

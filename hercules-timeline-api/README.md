@@ -170,6 +170,18 @@ also, default port value is `9042`
 
 `cassandra.requestTimeoutMs` - default value: `12000`
 
+`cassandra.auth.enable` - if Cassandra requires authentication then set this property value to `true`
+and specify credential in the respective properties, default value: `false`
+
+`cassandra.auth.provider.username` - username which is needed for Cassandra authentication.
+*Required* if `cassandra.auth.enable` is set to `true`, otherwise value is *ignored*.
+
+`cassandra.auth.provider.password` - password which is needed for Cassandra authentication.
+*Required* if `cassandra.auth.enable` is set to `true`, otherwise value is *ignored*.
+
+`cassandra.auth.provider.class` - name of the class which is needed for Cassandra authentication.
+Only classes that implements `com.datastax.driver.core.AuthProvider` should be specified, default value: `PlainTextAuthProvider`
+
 ### HTTP Server settings
 `http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
@@ -204,6 +216,7 @@ curator.sessionTimeout=30000
 curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
+cassandra.auth.enable=false
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003
