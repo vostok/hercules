@@ -10,6 +10,7 @@ import ru.kontur.vostok.hercules.elastic.adapter.gate.GateSender;
 import ru.kontur.vostok.hercules.elastic.adapter.gate.GateStatus;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexManager;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexMeta;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -59,7 +60,7 @@ public class BulkHandler implements HttpHandler {
                 }),
                 (r, exception) -> {
                     LOGGER.error("Read body failed with exception", exception);
-                    request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+                    tryComplete(request, HttpStatusCodes.INTERNAL_SERVER_ERROR);
                 });
     }
 
@@ -90,7 +91,8 @@ public class BulkHandler implements HttpHandler {
             GateStatus status = gateSender.send(batch.getValue(), false, batch.getKey());
             if (status == GateStatus.GATE_UNAVAILABLE) {
                 LOGGER.warn("Gate is unavailable: didn't send " + batch.getValue().size() + " events to the stream " + batch.getKey());
-                tryComplete(request, HttpStatusCodes.SERVICE_UNAVAILABLE);
+                tryComplete(request, HttpStatusCodes.SERVICE_UNAVAILABLE, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Gate is unavailable");
             } else if (status == GateStatus.BAD_REQUEST) {
                 LOGGER.error("Got bad request from Gate while sending events to the stream " + batch.getKey());
                 tryComplete(request, HttpStatusCodes.INTERNAL_SERVER_ERROR);
@@ -103,6 +105,14 @@ public class BulkHandler implements HttpHandler {
     private void tryComplete(HttpServerRequest request, int code) {
         try {
             request.complete(code);
+        } catch (Exception ex) {
+            LOGGER.error("Error on request completion", ex);
+        }
+    }
+
+    private void tryComplete(HttpServerRequest request, int code, String contentType, String data) {
+        try {
+            request.complete(code, contentType, data);
         } catch (Exception ex) {
             LOGGER.error("Error on request completion", ex);
         }

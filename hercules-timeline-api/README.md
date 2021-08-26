@@ -93,19 +93,15 @@ EventId			    Long, Long
 
 **Response codes:**
 
-`200` - successfully read timeline and return it's content in response body.
-
-`400` - bad request.
-
-`401` - read rules for this apiKey is absent.
-
-`403` - the timeline cannot be accessed with provided API key.
-
-`404` - the timeline not found.
-
-`411` - can't get Content-Length value.
-
-`500` - internal service error.
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | Successfully read timeline and return it's content in response body.   |
+| `400` | Invalid request body or parameters (see response message for details). |
+| `401` | apiKey is not valid or absent.                                         |
+| `403` | Access is denied (check if apiKey has appropriate access rights).      |
+| `404` | Source timeline not found.                                             |
+| `411` | Content length must be specified.                                      |
+| `500` | Internal error while processing request.                               |
 
 **Response headers:**
 

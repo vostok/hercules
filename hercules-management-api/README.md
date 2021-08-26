@@ -123,15 +123,16 @@ Request body contains JSON-object with following properties:
 
 **Response codes:**
 
-`200` - successfully creation of stream.
-
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`409` - conflict. Entity already exists.
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | Successfully created stream.                                           |
+| `400` | Invalid request body or parameters (see response message for details). |
+| `401` | apiKey is not valid or absent.                                         |
+| `403` | Access is denied (check if apiKey has appropriate access rights).      |
+| `408` | Requested operation took too long.                                     |
+| `409` | Stream with such a name already exists.                                |
+| `411` | Content length must be specified.                                      |
+| `500` | Internal error while processing request.                               |
 
 ### Delete stream
 
@@ -162,15 +163,15 @@ The API Key with manage access to the stream.
 
 **Response codes:**
 
-`200` - successfully deletion of stream.
-
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`404` - source stream not found.
+| Code  | Description                                                       |
+|-------|-------------------------------------------------------------------|
+| `200` | Successfully deleted stream.                                      |
+| `400` | Parameter 'stream' is invalid.                                    |
+| `401` | apiKey is not valid or absent.                                    |
+| `403` | Access is denied (check if apiKey has appropriate access rights). |
+| `404` | Source stream not found.                                          |
+| `408` | Requested operation took too long.                                |
+| `500` | Internal error while processing request.                          |
 
 ### Show streams
 
@@ -206,11 +207,11 @@ Any valid API Key.
 
 **Response codes:**
 
-`200` - list of streams.
-
-`400` - bad request.
-
-`401` - apiKey is absent.
+| Code  | Description                                                                  |
+|-------|------------------------------------------------------------------------------|
+| `200` | List of streams.                                                             |
+| `401` | Both master api key and api key are either not valid or absent               |
+| `500` | Internal error while processing request.                                     |
 
 ### Increase stream partition count
 
@@ -243,17 +244,16 @@ The API Key with manage access to the stream.
 
 **Response codes:**
 
-`200` - successfully increase count of partition in the stream.
-
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`404` - source stream not found.
-
-`409` - conflict. New partition count is less than or equal to the old value.
+| Code  | Description                                                                      |
+|-------|----------------------------------------------------------------------------------|
+| `200` | Successfully increased count of partition in the stream.                         |
+| `400` | Invalid parameters (see response message for details).                           |
+| `401` | apiKey is not valid or absent.                                                   |
+| `403` | Access is denied (check if apiKey has appropriate access rights).                |
+| `404` | Source stream not found.                                                         |
+| `408` | Requested operation took too long.                                               |
+| `409` | New partitions count cannot be less than or equal to a current partitions count. |
+| `500` | Internal error while processing request.                                         |
 
 ### Change TTL of stream
 
@@ -286,15 +286,15 @@ The API Key with manage access to the stream.
 
 **Response codes:**
 
-`200` - successfully change ttl of stream.
-
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`404` - source stream not found.
+| Code  | Description                                                       |
+|-------|-------------------------------------------------------------------|
+| `200` | Successfully changed the TTL of the stream.                       |
+| `400` | Invalid parameters (see response message for details).            |
+| `401` | apiKey is not valid or absent.                                    |
+| `403` | Access is denied (check if apiKey has appropriate access rights). |
+| `404` | Source stream not found.                                          |
+| `408` | Requested operation took too long.                                |
+| `500` | Internal error while processing request.                          |
 
 ### Change description of stream
 
@@ -327,15 +327,15 @@ The API Key with manage access to the stream.
 
 **Response codes:**
 
-`200` - successfully change description of stream.
-
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`404` - source stream not found.
+| Code  | Description                                                       |
+|-------|-------------------------------------------------------------------|
+| `200` | Successfully changed the TTL of the stream.                       |
+| `400` | Invalid parameters (see response message for details).            |
+| `401` | apiKey is not valid or absent.                                    |
+| `403` | Access is denied (check if apiKey has appropriate access rights). |
+| `404` | Source stream not found.                                          |
+| `408` | Requested operation took too long.                                |
+| `500` | Internal error while processing request.                          |
 
 ### Show information about stream
 
@@ -378,15 +378,15 @@ The API Key with manage access to the stream.
 
 **Response codes:**
 
-`200` - information about stream.
+| Code  | Description                                                       |
+|-------|-------------------------------------------------------------------|
+| `200` | Information about stream.                                         |
+| `400` | Parameter 'stream' is invalid.                                    |
+| `401` | apiKey is not valid or absent.                                    |
+| `403` | Access is denied (check if apiKey has appropriate access rights). |
+| `404` | Source stream not found.                                          |
+| `500` | Internal error while processing request.                          |
 
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`404` - source stream not found.
 
 ## Timeline
 
@@ -451,15 +451,16 @@ Request body contains JSON-object with following properties:
 
 **Response codes:**
 
-`200` - successfully creation of timeline.
-
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`409` - conflict. Entity already exists.
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | Successfully created timeline.                                         |
+| `400` | Invalid request body or parameters (see response message for details). |
+| `401` | Both masterApiKey and apiKey are either not valid or absent.           |
+| `403` | Access is denied (check if apiKey has appropriate access rights).      |
+| `408` | Requested operation took too long.                                     |
+| `409` | Timeline with such a name already exists.                              |
+| `411` | Content length must be specified.                                      |
+| `500` | Internal error while processing request.                               |
 
 ### Delete timeline
 
@@ -490,15 +491,15 @@ The API Key with manage access to the timeline.
 
 **Response codes:**
 
-`200` - successfully deletion of timeline.
-
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`404` - source timeline not found.
+| Code  | Description                                                       |
+|-------|-------------------------------------------------------------------|
+| `200` | Successfully deleted timeline.                                    |
+| `400` | Parameter 'timeline' is invalid.                                  |
+| `401` | Both masterApiKey and apiKey are either not valid or absent.      |
+| `403` | Access is denied (check if apiKey has appropriate access rights). |
+| `404` | Source timeline not found.                                        |
+| `408` | Requested operation took too long.                                |
+| `500` | Internal error while processing request.                          |
 
 ### Show timelines
 
@@ -534,11 +535,11 @@ Any valid API key.
 
 **Response codes:**
 
-`200` - list of timelines.
-
-`400` - bad request.
-
-`401` - apiKey is absent.
+| Code  | Description                                                                    |
+|-------|--------------------------------------------------------------------------------|
+| `200` | List of timelines.                                                             |
+| `401` | Both masterApiKey and apiKey are either not valid or absent.                   |
+| `500` | Internal error while processing request.                                       |
 
 ### Change TTL of timeline
 
@@ -571,15 +572,16 @@ The API Key with manage access to the stream.
 
 **Response codes:**
 
-`200` - successfully change TTL of timeline.
+| Code  | Description                                                       |
+|-------|-------------------------------------------------------------------|
+| `200` | Successfully changed the TTL of the timeline.                     |
+| `400` | Invalid parameters (see response message for details).            |
+| `401` | Both masterApiKey and apiKey are either not valid or absent.      |
+| `403` | Access is denied (check if apiKey has appropriate access rights). |
+| `404` | Source timeline not found.                                        |
+| `408` | Requested operation took too long.                                |
+| `500` | Internal error while processing request.                          |
 
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`404` - source timeline not found.
 
 ### Show information about timeline
 
@@ -626,15 +628,14 @@ The API Key with manage access to the timeline.
 
 **Response codes:**
 
-`200` - information about timeline.
-
-`400` - bad request.
-
-`401` - management rules for this apiKey is absent.
-
-`403` - forbidden for this API-key.
-
-`404` - source timeline not found.
+| Code  | Description                                                       |
+|-------|-------------------------------------------------------------------|
+| `200` | Information about timeline.                                       |
+| `400` | Parameter 'timeline' is invalid.                                  |
+| `401` | Both masterApiKey and apiKey are either not valid or absent.      |
+| `403` | Access is denied (check if apiKey has appropriate access rights). |
+| `404` | Source timeline not found.                                        |
+| `500` | Internal error while processing request.                          |
 
 ## Rules
 
@@ -671,11 +672,12 @@ Available values : ---, r--, -w-, --m, rw-, r-m, -wm, rwm.
 
 **Response codes:**
 
-`200` - successfully set rules.
-
-`400` - bad request.
-
-`401` - unauthorized.
+| Code  | Description                                            |
+|-------|--------------------------------------------------------|
+| `200` | Successfully set rules.                                |
+| `400` | Invalid parameters (see response message for details). |
+| `401` | masterApiKey is not valid or absent                    |
+| `500` | Internal error while processing request.               |
 
 ### Show rules
 
@@ -711,11 +713,11 @@ The API key for rules management.
 
 **Response codes:**
 
-`200` - list of rules.
-
-`400` - bad request.
-
-`401` - unauthorized.
+| Code  | Description                                                                |
+|-------|----------------------------------------------------------------------------|
+| `200` | List of rules.                                                             |
+| `401` | masterApiKey is not valid or absent.                                       |
+| `500` | Internal error while processing request.                                   |
 
 ## Blacklist
 
@@ -744,11 +746,12 @@ The API key for rules management.
 
 **Response codes:**
 
-`200` - successfully add apiKey to blacklist.
-
-`400` - bad request.
-
-`401` - unauthorized.
+| Code  | Description                              |
+|-------|------------------------------------------|
+| `200` | Successfully send data into stream.      |
+| `400` | Parameter 'key' is invalid.              |
+| `401` | masterApiKey is not valid or absent.     |
+| `500` | Internal error while processing request. |
 
 ### Remove apiKey from blacklist
 
@@ -775,11 +778,12 @@ The API key for rules management.
 
 **Response codes:**
 
-`200` - successfully removing apiKey from blacklist.
-
-`400` - bad request.
-
-`401` - unauthorized.
+| Code  | Description                                  |
+|-------|----------------------------------------------|
+| `200` | Successfully removing apiKey from blacklist. |
+| `400` | Parameter 'key' is invalid.                  |
+| `401` | masterApiKey is not valid or absent.         |
+| `500` | Internal error while processing request.     |
 
 ### Show apiKeys in blacklist
 
@@ -815,11 +819,11 @@ The API key for rules management.
 
 **Response codes:**
 
-`200` - all apiKeys in blacklist.
-
-`400` - bad request.
-
-`401` - unauthorized.
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | All apiKeys in blacklist.                                              |
+| `401` | masterApiKey is not valid or absent.                                   |
+| `500` | Internal error while processing request.                               |
 
 ## Settings
 Application is configured through properties file.

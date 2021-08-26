@@ -13,7 +13,9 @@ Elastic Adapter receives log events from Elasticsearch compatible clients and tr
 
 **Response codes:**
 
-`200` - successfully ping.
+| Code  | Description        |
+|-------|--------------------|
+| `200` | Successfully ping. |
 
 ### About
 
@@ -25,7 +27,9 @@ Elastic Adapter receives log events from Elasticsearch compatible clients and tr
 
 **Response codes:**
 
-`200` - successfully getting service information.
+| Code  | Description                               |
+|-------|-------------------------------------------|
+| `200` | Successfully getting service information. |
 
 **Response body:**
 
@@ -72,9 +76,11 @@ See Elasticsearch [docs](https://www.elastic.co/guide/en/elasticsearch/reference
 
 **Response codes:**
 
-`200` - successfully processed.
-
-`400` - bad request.
+| Code  | Description                                                   |
+|-------|---------------------------------------------------------------|
+| `200` | Successfully processed.                                       |
+| `500` | Internal error while processing request.                      |
+| `503` | Gate is unavailable: didn't send events to the stream.        |
 
 ### Index API
 
@@ -102,13 +108,13 @@ Required field `@timestamp` should contain log event timestamp in ISO 8601 date 
 
 **Response codes:**
 
-`200` - successfully processed.
-
-`400` - bad request.
-
-`404` - index not found.
-
-`503` - gate is unavailable.
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | Successfully processed.                                                |
+| `400` | Invalid request body or parameters (see response message for details). |
+| `404` | Unknown index.                                                         |
+| `500` | Internal error while processing request.                               |
+| `503` | Gate is unavailable.                                                   |
 
 ## Settings
 Application is configured through properties file.
