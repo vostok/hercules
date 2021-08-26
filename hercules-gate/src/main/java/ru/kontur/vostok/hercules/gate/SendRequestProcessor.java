@@ -8,10 +8,12 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.gate.validation.EventValidator;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.ContentEncodings;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.header.HeaderUtil;
 import ru.kontur.vostok.hercules.http.header.HttpHeaders;
+import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
@@ -112,20 +114,26 @@ public class SendRequestProcessor {
                                     Parameter<Integer>.ParameterValue originalContentLength =
                                             HeaderUtil.get(ORIGINAL_CONTENT_LENGTH, request);
                                     if (originalContentLength.isError()) {
-                                        tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
-                                        LOGGER.warn("Request has header Content-Encoding, but there is no valid Original-Content-Length: " + originalContentLength.result().error());
+                                        tryComplete(
+                                                HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8,
+                                                "Request has header Content-Encoding, but there is no valid Original-Content-Length: "
+                                                        + originalContentLength.result().error(),
+                                                callback);
+                                        LOGGER.warn("Request has header Content-Encoding, but there is no valid Original-Content-Length: "
+                                                + originalContentLength.result().error());
                                         return;
                                     }
                                     requestUncompressedSizeBytes = originalContentLength.get();
                                     buffer = decompressLz4(bytes, originalContentLength.get());
                                 } else {
-                                    tryComplete(HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE, callback);
+                                    tryComplete(HttpStatusCodes.UNSUPPORTED_MEDIA_TYPE, ContentTypes.TEXT_PLAIN_UTF_8,
+                                            "Unsupported content encoding", callback);
                                     return;
                                 }
-
                                 sendEvents(buffer, callback);
                             } catch (RuntimeException ex) {
-                                tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
+                                tryComplete(HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8,
+                                        "Unknown error while processing request", callback);
                                 LOGGER.error("Cannot process request due to exception", ex);
                             } finally {
                                 if (buffer != null) {
@@ -154,7 +162,7 @@ public class SendRequestProcessor {
             try {
                 reader = new ReaderIterator<>(new Decoder(buffer), EventReader.readTags(context.tags()));
             } catch (InvalidDataException ex) {
-                tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
+                tryComplete(HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8, "Request is malformed", callback);
                 LOGGER.error("Request is malformed", ex);
                 return;
             }
@@ -174,7 +182,7 @@ public class SendRequestProcessor {
                     event = reader.next();
                     if (!eventValidator.validate(event)) {
                         if (processed.compareAndSet(false, true)) {
-                            tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
+                            tryComplete(HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8, "Invalid event data", callback);
                         }
                         //TODO: Metrics are coming!
                         LOGGER.warn("Invalid event data");
@@ -182,7 +190,7 @@ public class SendRequestProcessor {
                     }
                 } catch (Exception ex) {
                     if (processed.compareAndSet(false, true)) {
-                        tryComplete(HttpStatusCodes.BAD_REQUEST, callback);
+                        tryComplete(HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8, "Exception on validation event", callback);
                     }
                     LOGGER.error("Exception on validation event", ex);
                     //TODO: Metrics are coming!
@@ -235,6 +243,18 @@ public class SendRequestProcessor {
             try {
                 requestCompletionTimestampMs = time.milliseconds();
                 request.complete(code);
+            } catch (Exception ex) {
+                LOGGER.error("Error on request completion", ex);
+            } finally {
+                callback.call();
+                metrics.update(this, code);
+            }
+        }
+
+        public void tryComplete(int code, String contentType, String data, Callback callback) {
+            try {
+                requestCompletionTimestampMs = time.milliseconds();
+                request.complete(code, contentType, data);
             } catch (Exception ex) {
                 LOGGER.error("Error on request completion", ex);
             } finally {

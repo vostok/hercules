@@ -30,7 +30,7 @@ public class RemoveBlacklistHandler extends BlacklistHandler {
         try {
             repository.remove(key.get());
         } catch (CuratorException ex) {
-            LOGGER.error("Add key to blacklist error", ex);
+            LOGGER.error("Remove key from blacklist error", ex);
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }

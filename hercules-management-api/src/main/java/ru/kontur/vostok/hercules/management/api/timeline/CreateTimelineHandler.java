@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.auth.AuthUtil;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -48,7 +49,8 @@ public class CreateTimelineHandler implements HttpHandler {
     public void handle(HttpServerRequest request) {
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
-            request.complete(HttpStatusCodes.LENGTH_REQUIRED);
+            request.complete(HttpStatusCodes.LENGTH_REQUIRED, ContentTypes.TEXT_PLAIN_UTF_8,
+                    "Content length must be specified");
             return;
         }
 
@@ -64,19 +66,20 @@ public class CreateTimelineHandler implements HttpHandler {
                 //TODO: Validate timeline
 
                 if (repository.exists(timeline.getName())) {
-                    r.complete(HttpStatusCodes.CONFLICT);
+                    r.complete(HttpStatusCodes.CONFLICT, ContentTypes.TEXT_PLAIN_UTF_8,
+                            "Timeline with a name " + timeline.getName() + " already exists");
                     return;
                 }
 
                 String[] streams = timeline.getStreams();
                 if (streams == null || streams.length == 0) {
-                    r.complete(HttpStatusCodes.BAD_REQUEST);
+                    r.complete(HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8,
+                            "Array of streams for timeline is absent");
                     return;
                 }
                 for (String stream : streams) {
                     authResult = authProvider.authRead(r, stream);
-                    if (!authResult.isSuccess()) {
-                        r.complete(HttpStatusCodes.FORBIDDEN);
+                    if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
                         return;
                     }
                 }
@@ -90,7 +93,8 @@ public class CreateTimelineHandler implements HttpHandler {
                 HttpAsyncApiHelper.awaitAndComplete(taskFuture, request);
             } catch (DeserializationException ex) {
                 LOGGER.warn("Error on entity deserialization", ex);
-                r.complete(HttpStatusCodes.BAD_REQUEST);
+                r.complete(HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Exception while trying to deserialize timeline");
                 return;
             } catch (Exception ex) {
                 LOGGER.error("Error on processing request", ex);
@@ -99,7 +103,7 @@ public class CreateTimelineHandler implements HttpHandler {
             }
         }, (r, exception) -> {
             LOGGER.error("Error on processing request", exception);
-            r.complete(HttpStatusCodes.BAD_REQUEST);
+            r.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         });
     }

@@ -111,16 +111,18 @@ Count		Integer
 
 **Response codes:**
 
-| Code  | Description                                                          |
-|-------|----------------------------------------------------------------------|
-| `200` | Successfully send data into stream.                                  |
-| `400` | Bad request.                                                         |
-| `401` | Write rules for this apiKey is absent.                               |
-| `403` | The stream cannot be accessed with provided API key.                 |
-| `404` | The stream is not found.                                             |
-| `413` | Request body is too large.                                           |
-| `415` | Unsupported `Content-Encoding`.                                      |
-| `503` | The gate is overloaded and request has been throttled.               |
+| Code  | Description                                                                           |
+|-------|---------------------------------------------------------------------------------------|
+| `200` | Successfully send data into stream.                                                   |
+| `400` | Invalid request body or parameters (see response message for details).                |
+| `401` | apiKey is not valid or absent.                                                        |
+| `403` | Access is denied (check if apiKey has appropriate access rights).                     |
+| `404` | Source stream not found.                                                              |
+| `411` | Content length must be specified.                                                     |
+| `413` | Content length is too long.                                                           |
+| `415` | Unsupported content encoding.                                                         |
+| `500` | Internal error while processing request.                                              |
+| `503` | The gate is overloaded and request has been throttled.                                |
 
 ### Send Async
 
@@ -168,16 +170,17 @@ Count		Integer
 
 **Response codes:**
 
-| Code  | Description                                                          |
-|-------|----------------------------------------------------------------------|
-| `200` | Successfully send data into stream.                                  |
-| `400` | Bad request.                                                         |
-| `401` | Write rules for this apiKey is absent.                               |
-| `403` | The stream cannot be accessed with provided API key.                 |
-| `404` | The stream is not found.                                             |
-| `413` | Request body is too large.                                           |
-| `415` | Unsupported `Content-Encoding`.                                      |
-| `503` | The gate is overloaded and request has been throttled.               |
+| Code  | Description                                                                         |
+|-------|-------------------------------------------------------------------------------------|
+| `200` | Successfully send data into stream.                                                 |
+| `400` | Invalid request body or parameters (see response message for details).              |
+| `401` | apiKey is not valid or absent.                                                      |
+| `403` | Access is denied (check if apiKey has appropriate access rights).                   |
+| `404` | Source stream not found.                                                            |
+| `411` | Content length must be specified.                                                   |
+| `413` | Content length is too long.                                                         |
+| `415` | Unsupported content encoding.                                                       |
+| `503` | The gate is overloaded and request has been throttled.                              |
 
 ## Settings
 Application is configured through properties file.

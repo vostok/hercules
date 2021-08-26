@@ -76,9 +76,11 @@ GET /trace?traceId=1a2b3c4d-9bec-40b0-839b-cc51e2abcdef&parentSpanId=abcdef12-ac
 
 **Response codes:**
 
-`200` - a response as JSON is received
-
-`400` - the request has incorrect values
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | A response as JSON is received.                                        |
+| `400` | Invalid request body or parameters (see response message for details). |
+| `500` | Internal error while processing request.                               |
 
 **Response headers:**
 

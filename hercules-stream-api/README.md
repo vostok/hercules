@@ -95,20 +95,15 @@ Offset          Long
 
 **Response codes:**
 
-`200` - successfully read stream and return it's content in response body.
-
-`400` - bad request.
-
-`401` - no API key is provided or it is invalid.
-
-`403` - read rules for this apiKey is absent.
-
-`404` - the stream not found.
-
-`411` - can't get Content-Length value.
-
-`500` - internal service error.
-
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | Successfully read stream and return it's content in response body.     |
+| `400` | Invalid request body or parameters (see response message for details). |
+| `401` | apiKey is not valid or absent.                                         |
+| `403` | Access is denied (check if apiKey has appropriate access rights).      |
+| `404` | Source stream not found.                                               |
+| `411` | Content length must be specified                                       |
+| `500` | Internal error while processing request.                               |
 **Response headers:**
 
 `Content-Type: application/octet-stream`
@@ -160,17 +155,14 @@ The API Key with read access to the stream is specified.
 
 **Response codes:**
 
-`200` - successfully seek the end of the stream and return it as read state in response body.
-
-`400` - bad request.
-
-`401` - read rules for this apiKey is absent.
-
-`403` - the stream cannot be accessed with provided API key.
-
-`404` - the stream not found.
-
-`500` - internal service error.
+| Code  | Description                                                                           |
+|-------|---------------------------------------------------------------------------------------|
+| `200` | Successfully seek the end of the stream and return it as read state in response body. |
+| `400` | Invalid request body or parameters (see response message for details).                |
+| `401` | apiKey is not valid or absent.                                                        |
+| `403` | Access is denied (check if apiKey has appropriate access rights).                     |
+| `404` | Source stream not found.                                                              |
+| `500` | Internal error while processing request.                                              |
 
 **Response headers:**
 

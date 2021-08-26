@@ -6,9 +6,9 @@ import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
-import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
@@ -55,7 +55,7 @@ public class ReadTimelineHandler implements HttpHandler {
     public void handle(HttpServerRequest request) {
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
-            request.complete(HttpStatusCodes.LENGTH_REQUIRED);
+            request.complete(HttpStatusCodes.LENGTH_REQUIRED, ContentTypes.TEXT_PLAIN_UTF_8, "Content length must be specified");
             return;
         }
 
@@ -82,7 +82,7 @@ public class ReadTimelineHandler implements HttpHandler {
         if (shardCount.get() <= shardIndex.get()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
+                    ContentTypes.TEXT_PLAIN_UTF_8,
                     "Invalid parameters: " + QueryParameters.SHARD_COUNT.name() + " must be > " + QueryParameters.SHARD_INDEX.name());
             return;
         }
@@ -106,16 +106,17 @@ public class ReadTimelineHandler implements HttpHandler {
         try {
             Optional<Timeline> optionalTimeline = timelineRepository.read(timelineName.get());
             if (!optionalTimeline.isPresent()) {
-                request.complete(HttpStatusCodes.NOT_FOUND);
+                request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Cannot find timeline with name " + timelineName.get());
                 return;
             }
             timeline = optionalTimeline.get();
         } catch (CuratorException ex) {
-            LOGGER.error("Curator exception when read Stream", ex);
+            LOGGER.error("Curator exception when read Timeline", ex);
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         } catch (DeserializationException ex) {
-            LOGGER.error("Deserialization exception of Stream", ex);
+            LOGGER.error("Deserialization exception of Timeline", ex);
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
@@ -123,8 +124,8 @@ public class ReadTimelineHandler implements HttpHandler {
         if (isTimetrapCountLimitExceeded(from.get(), to.get(), timeline.getTimetrapSize(), timetrapCountLimit)) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
-                    "Time interval should not exceeded " + TimeUtil.millisToTicks(timetrapCountLimit * timeline.getTimetrapSize()) + " ticks, but requested " + (to.get() - from.get()) + " ticks");
+                    ContentTypes.TEXT_PLAIN_UTF_8,
+                    "Time interval should not exceed " + TimeUtil.millisToTicks(timetrapCountLimit * timeline.getTimetrapSize()) + " ticks, but requested " + (to.get() - from.get()) + " ticks");
             return;
         }
 

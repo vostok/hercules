@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.auth.wrapper;
 
 import ru.kontur.vostok.hercules.auth.AuthProvider;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HandlerWrapper;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -21,7 +22,8 @@ public class OrdinaryAuthHandlerWrapper implements HandlerWrapper {
     public HttpHandler wrap(HttpHandler handler) {
         return request -> {
             if (!authProvider.authenticateOrdinary(request)) {
-                request.complete(HttpStatusCodes.UNAUTHORIZED);
+                request.complete(HttpStatusCodes.UNAUTHORIZED, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Api key is not valid or absent");
             } else {
                 handler.handle(request);
             }

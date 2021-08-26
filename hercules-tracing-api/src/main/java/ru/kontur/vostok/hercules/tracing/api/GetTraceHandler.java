@@ -73,9 +73,7 @@ public class GetTraceHandler implements HttpHandler {
             DocumentWriter.writeTo(outputStream, createDocument(traceSpans));
         } catch (IOException ex) {
             request.complete(
-                    HttpStatusCodes.INTERNAL_SERVER_ERROR,
-                    MimeTypes.TEXT_PLAIN,
-                    "Error of writing the JSON-document to the OutputStream");
+                    HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
         ByteBuffer byteBuffer = ByteBuffer.wrap(outputStream.toByteArray());

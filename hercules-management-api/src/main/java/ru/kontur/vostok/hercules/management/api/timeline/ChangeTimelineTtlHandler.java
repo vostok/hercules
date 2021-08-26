@@ -4,6 +4,7 @@ import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
 import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -58,7 +59,8 @@ public class ChangeTimelineTtlHandler implements HttpHandler {
         try {
             Optional<Timeline> optionalTimeline = timelineRepository.read(timelineName.get());
             if (!optionalTimeline.isPresent()) {
-                request.complete(HttpStatusCodes.NOT_FOUND);
+                request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Cannot find timeline with name " + timelineName.get());
                 return;
             }
             timeline = optionalTimeline.get();
