@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 
 /**
  * @author Gregory Koshelev
@@ -64,7 +65,11 @@ public class ElasticSender extends Sender {
         this.indexPolicy = PropertiesUtil.get(Props.INDEX_POLICY, properties).get();
 
         Properties indexResolverProperties = PropertiesUtil.ofScope(properties, "elastic.index.resolver");
-        this.indexResolver = IndexResolver.forPolicy(indexPolicy, indexResolverProperties);
+        List<IndexResolver> indexResolvers = PropertiesUtil.createClassInstanceList(indexResolverProperties, IndexResolver.class);
+        if(indexResolvers.isEmpty()) {
+            throw new IllegalArgumentException("None of index resolvers are defined");
+        }
+        this.indexResolver = IndexResolver.forPolicy(indexPolicy, indexResolvers);
 
         this.eventFormatter = new EventToJsonFormatter(PropertiesUtil.ofScope(properties, "elastic.format"));
 

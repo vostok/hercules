@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.elastic.sink;
 
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
+import ru.kontur.vostok.hercules.elastic.sink.index.TagsIndexResolver;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
@@ -18,7 +19,7 @@ import java.util.Properties;
  * {@code properties/project},
  * {@code properties/environment}
  * and {@code properties/subproject}
- * are commonly used in {@link IndexResolver} to determine index name.
+ * are commonly used in {@link TagsIndexResolver} to determine index name.
  * Thus,<br>
  * 1. {@link CommonTags#PROJECT_TAG project} must be specified if {@link ElasticSearchTags#ELK_INDEX_TAG elk-index} is absent.<br>
  * 2. All tags from above must start with alphanumeric (latin or digit characters) if present.
