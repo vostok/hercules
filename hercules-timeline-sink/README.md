@@ -33,7 +33,6 @@ and specify credential in the respective properties, default value: `false`
 `cassandra.auth.provider.class` - name of the class which is needed for Cassandra authentication.
 Only classes that implements `com.datastax.driver.core.AuthProvider` should be specified, default value: `PlainTextAuthProvider`
 
-
 ### Apache Curator settings
 See Apache Curator Config from Apache Curator documentation. Main settings are presented below.
 
