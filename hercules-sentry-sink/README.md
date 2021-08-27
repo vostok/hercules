@@ -27,15 +27,17 @@ Application is configured through properties file.
 `sink.sender.sentry.clientsUpdatePeriodMs` - period of client cache update in milliseconds. Default value: `3600000` ms.
 
 ### Filters settings
-Settings filling in is described in [SentryWhitelistEventFilter javadoc](../hercules-sentry-sink/src/main/java/ru/kontur/vostok/hercules/sentry/sink/filter/SentryWhitelistEventFilter.java).
+Properties for each defined filter under the scope `N`, where `N` is a filter number.
 
-`sink.filter.list` - list of filter classes. Set value: `ru.kontur.vostok.hercules.sentry.sink.filter.LevelEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryWhitelistEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryBlacklistEventFilter`
+`sink.filter.N.class` - filter class (inheritors of the `ru.kontur.vostok.hercules.sink.filter.EventFilter` class).
+Properties with key prefix `sink.filter.N.props` are defined for this class.  
+See method `createClassInstanceList` in `ru.kontur.vostok.hercules.util.properties.PropertiesUtil` for details.
 
-`sink.filter.0.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `ERROR` 
+###### Properties for [LevelEventFilter](../hercules-sentry-sink/src/main/java/ru/kontur/vostok/hercules/sentry/sink/filter/LevelEventFilter.java)
+`sink.filter.N.props.level` - log level. Logs with this level and higher levels could be sent to Sentry. Default value: `ERROR` 
 
-`sink.filter.1.patterns` - pattern of tag values. Current tag values are compared with this pattern in whitelist.
-
-`sink.filter.2.patterns` - pattern of tag values. Current tag values are compared with this pattern in blacklist.
+###### Properties for [SentryWhitelistEventFilter](../hercules-sentry-sink/src/main/java/ru/kontur/vostok/hercules/sentry/sink/filter/SentryWhitelistEventFilter.java) and [SentryBlacklistEventFilter](../hercules-sentry-sink/src/main/java/ru/kontur/vostok/hercules/sentry/sink/filter/SentryBlacklistEventFilter.java)
+`sink.filter.N.props.patterns` - pattern of tag values. Current tag values are compared with this pattern in whitelist.
 
 ### Rate Limiting settings 
 
@@ -94,10 +96,12 @@ sink.sender.readTimeoutMs=25000
 sink.consumer.bootstrap.servers=localhost:9092,localhost:9093,localhost:9094
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
-sink.filter.list=ru.kontur.vostok.hercules.sentry.sink.filter.LevelEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryWhitelistEventFilter,ru.kontur.vostok.hercules.sentry.sink.filter.SentryBlacklistEventFilter
-sink.filter.0.level=ERROR
-sink.filter.1.patterns=*:*:*
-sink.filter.2.patterns=test_project:testing:test_subproject
+sink.filter.0.class=ru.kontur.vostok.hercules.sentry.sink.filter.LevelEventFilter
+sink.filter.1.class=ru.kontur.vostok.hercules.sentry.sink.filter.SentryWhitelistEventFilter
+sink.filter.2.class=ru.kontur.vostok.hercules.sentry.sink.filter.SentryBlacklistEventFilter
+sink.filter.0.props.level=ERROR
+sink.filter.1.props.patterns=*:*:*
+sink.filter.2.props.patterns=test_project:testing:test_subproject
 
 sink.pattern=logs_*
 
