@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.ContentEncodings;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
@@ -103,7 +104,7 @@ public class StreamReadRequestProcessor {
 
                                     sendAsync(streamContent);
                                 } catch (IllegalArgumentException e) {
-                                    request.complete(HttpStatusCodes.BAD_REQUEST);
+                                    request.complete(HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8, "Request is malformed");
                                 } catch (Exception e) {
                                     LOGGER.error("Error on processing request", e);
                                     request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);

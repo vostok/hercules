@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -40,12 +42,7 @@ public class InfoTimelineHandler implements HttpHandler {
         }
 
         AuthResult authResult = authProvider.authManage(request, timelineName.get());
-        if (!authResult.isSuccess()) {
-            if (authResult.isUnknown()) {
-                request.complete(HttpStatusCodes.UNAUTHORIZED);
-                return;
-            }
-            request.complete(HttpStatusCodes.FORBIDDEN);
+        if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
             return;
         }
 
@@ -53,16 +50,17 @@ public class InfoTimelineHandler implements HttpHandler {
         try {
             Optional<Timeline> optionalTimeline = repository.read(timelineName.get());
             if (!optionalTimeline.isPresent()) {
-                request.complete(HttpStatusCodes.NOT_FOUND);
+                request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Cannot find timeline with name " + timelineName.get());
                 return;
             }
             timeline = optionalTimeline.get();
         } catch (CuratorException ex) {
-            LOGGER.error("Curator exception when read Stream", ex);
+            LOGGER.error("Curator exception when read Timeline", ex);
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         } catch (DeserializationException ex) {
-            LOGGER.error("Deserialization exception of Stream", ex);
+            LOGGER.error("Deserialization exception of Timeline", ex);
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
@@ -70,3 +68,4 @@ public class InfoTimelineHandler implements HttpHandler {
         HttpResponseContentWriter.writeJson(timeline, request);
     }
 }
+

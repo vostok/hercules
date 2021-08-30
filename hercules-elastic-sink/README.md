@@ -14,9 +14,11 @@ Application is configured through properties file.
 See Hercules Sink [docs](../hercules-sink/README.md).
 
 #### Filter settings
-`sink.filter.list` - list of filter classes (inheritors of the `ru.kontur.vostok.hercules.sink.filter.EventFilter` class).
-Properties for each defined filter under the scope `N`, where `N` is the position of the filter in the property `list`.
-See `ru.kontur.vostok.hercules.sink.filter.EventFilter` for details.
+Properties for each defined filter under the scope `N`, where `N` is a filter number.
+
+`sink.filter.N.class` - filter class (inheritors of the `ru.kontur.vostok.hercules.sink.filter.EventFilter` class).
+Properties with key prefix `sink.filter.N.props` are defined for this class.  
+See method `createClassInstanceList` in `ru.kontur.vostok.hercules.util.properties.PropertiesUtil` for details.
 
 #### Sender settings
 `sink.sender.pingPeriodMs` - elastic server ping period, default value: `5000`
@@ -28,12 +30,19 @@ See `ru.kontur.vostok.hercules.sink.filter.EventFilter` for details.
 ##### Index Settings
 `sink.sender.elastic.index.policy` - index policy: should use static index name, index per day or index lifecycle management. Should be one of `STATIC`, `DAILY` or `ILM`, respectively, default value: `DAILY`
 
-`sink.sender.elastic.index.resolver.index.name` - static index name if index policy `STATIC` is used
+###### [IndexResolver](../hercules-elastic-sink/src/main/java/ru/kontur/vostok/hercules/elastic/sink/index/IndexResolver.java) properties
+Properties for each defined resolver under the scope `N`, where `N` is a resolver number.
 
-`sink.sender.elastic.index.resolver.index.path` - the optional path of the tag with index name. Should be valid HPath if present. Index policy should be `ILM` or `DAILY`
+`sink.sender.elastic.index.resolver.N.class` - filter class (inheritors of the `ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver` class).
+Properties with key prefix `sink.sender.elastic.index.resolver.N.props` are defined for this class.  
+See method `createClassInstanceList` in `ru.kontur.vostok.hercules.util.properties.PropertiesUtil` for details.
 
-`sink.sender.elastic.index.resolver.index.tags` - the optional tags to build index name if no stored index name from above setting.
-Each tag definition should be a valid HPath. Tag is optional if HPath ends with `?`. Index policy should be `ILM` or `DAILY`
+###### [TagsIndexResolver](../hercules-elastic-sink/src/main/java/ru/kontur/vostok/hercules/elastic/sink/index/TagsIndexResolver.java) properties
+`sink.sender.elastic.index.resolver.N.props.tags` - the optional tags to build index name if no stored index name from above setting.
+Each tag definition should be a valid HPath. Tag is optional if HPath ends with `?`
+
+###### [StaticIndexResolver](../hercules-elastic-sink/src/main/java/ru/kontur/vostok/hercules/elastic/sink/index/StaticIndexResolver.java) properties
+`sink.sender.elastic.index.resolver.N.props.index.name` - static index name.
 
 ##### Format Settings
 `sink.sender.elastic.format.timestamp.enable` - should use event timestamp as field when send to Elastic, default value: `true`
@@ -139,7 +148,7 @@ sink.consumer.max.partition.fetch.bytes=52428800
 sink.consumer.max.poll.interval.ms=370000
 sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
 
-sink.filter.list=ru.kontur.vostok.hercules.elastic.sink.LogEventFilter
+sink.filter.0.class=ru.kontur.vostok.hercules.elastic.sink.LogEventFilter
 
 sink.sender.pingPeriodMs=60000
 
@@ -148,8 +157,10 @@ sink.sender.retryOnUnknownErrors=true
 
 sink.sender.elastic.index.policy=ILM
 
-sink.sender.elastic.index.resolver.index.path=properties/elk-index
-sink.sender.elastic.index.resolver.index.tags=properties/project,properties/environment?,properties/subproject?
+sink.sender.elastic.index.resolver.0.class=ru.kontur.vostok.hercules.elastic.sink.index.TagsIndexResolver
+sink.sender.elastic.index.resolver.0.props.tags=properties/elk-index
+sink.sender.elastic.index.resolver.1.class=ru.kontur.vostok.hercules.elastic.sink.index.TagsIndexResolver
+sink.sender.elastic.index.resolver.1.props.tags=properties/project,properties/environment?,properties/subproject?
 
 sink.sender.elastic.format.timestamp.enable=true
 sink.sender.elastic.format.timestamp.field=@timestamp

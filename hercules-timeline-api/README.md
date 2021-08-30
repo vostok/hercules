@@ -93,19 +93,15 @@ EventId			    Long, Long
 
 **Response codes:**
 
-`200` - successfully read timeline and return it's content in response body.
-
-`400` - bad request.
-
-`401` - read rules for this apiKey is absent.
-
-`403` - the timeline cannot be accessed with provided API key.
-
-`404` - the timeline not found.
-
-`411` - can't get Content-Length value.
-
-`500` - internal service error.
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | Successfully read timeline and return it's content in response body.   |
+| `400` | Invalid request body or parameters (see response message for details). |
+| `401` | apiKey is not valid or absent.                                         |
+| `403` | Access is denied (check if apiKey has appropriate access rights).      |
+| `404` | Source timeline not found.                                             |
+| `411` | Content length must be specified.                                      |
+| `500` | Internal error while processing request.                               |
 
 **Response headers:**
 
@@ -170,6 +166,18 @@ also, default port value is `9042`
 
 `cassandra.requestTimeoutMs` - default value: `12000`
 
+`cassandra.auth.enable` - if Cassandra requires authentication then set this property value to `true`
+and specify credential in the respective properties, default value: `false`
+
+`cassandra.auth.provider.username` - username which is needed for Cassandra authentication.
+*Required* if `cassandra.auth.enable` is set to `true`, otherwise value is *ignored*.
+
+`cassandra.auth.provider.password` - password which is needed for Cassandra authentication.
+*Required* if `cassandra.auth.enable` is set to `true`, otherwise value is *ignored*.
+
+`cassandra.auth.provider.class` - name of the class which is needed for Cassandra authentication.
+Only classes that implements `com.datastax.driver.core.AuthProvider` should be specified, default value: `PlainTextAuthProvider`
+
 ### HTTP Server settings
 `http.server.ioThreads` - the number of IO threads. IO threads are used to read incoming requests and perform non-blocking tasks. One IO thread per CPU core should be enough. Default value is implementation specific.
 
@@ -204,6 +212,7 @@ curator.sessionTimeout=30000
 curator.retryPolicy.baseSleepTime=1000
 curator.retryPolicy.maxRetries=5
 curator.retryPolicy.maxSleepTime=8000
+cassandra.auth.enable=false
 
 metrics.graphite.server.addr=localhost
 metrics.graphite.server.port=2003

@@ -4,8 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.auth.Right;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -41,12 +43,7 @@ public class InfoStreamHandler implements HttpHandler {
         }
 
         AuthResult authResult = authProvider.authAny(request, streamName.get(), Right.READ, Right.MANAGE);
-        if (!authResult.isSuccess()) {
-            if (authResult.isUnknown()) {
-                request.complete(HttpStatusCodes.UNAUTHORIZED);
-                return;
-            }
-            request.complete(HttpStatusCodes.FORBIDDEN);
+        if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
             return;
         }
 
@@ -54,7 +51,8 @@ public class InfoStreamHandler implements HttpHandler {
         try {
             Optional<Stream> optionalStream = repository.read(streamName.get());
             if (!optionalStream.isPresent()) {
-                request.complete(HttpStatusCodes.NOT_FOUND);
+                request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Cannot find stream with name " + streamName.get());
                 return;
             }
             stream = optionalStream.get();

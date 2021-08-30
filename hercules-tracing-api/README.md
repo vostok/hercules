@@ -76,9 +76,11 @@ GET /trace?traceId=1a2b3c4d-9bec-40b0-839b-cc51e2abcdef&parentSpanId=abcdef12-ac
 
 **Response codes:**
 
-`200` - a response as JSON is received
-
-`400` - the request has incorrect values
+| Code  | Description                                                            |
+|-------|------------------------------------------------------------------------|
+| `200` | A response as JSON is received.                                        |
+| `400` | Invalid request body or parameters (see response message for details). |
+| `500` | Internal error while processing request.                               |
 
 **Response headers:**
 
@@ -162,6 +164,18 @@ also, default port value is `9042`
 `reader.cassandra.maxRequestsPerConnection` - max requests per connection, default value: `1024`
 
 `reader.cassandra.consistencyLevel` - consistency level (see Cassandra docs for details), default value: `QUORUM`
+
+`reader.cassandra.auth.enable` - if Cassandra requires authentication then set this property value to `true`
+and specify credential in the respective properties, default value: `false`
+
+`reader.cassandra.auth.provider.username` - username which is needed for Cassandra authentication.
+*Required* if `cassandra.auth.enable` is set to `true`, otherwise value is *ignored*.
+
+`reader.cassandra.auth.provider.password` - password which is needed for Cassandra authentication.
+*Required* if `cassandra.auth.enable` is set to `true`, otherwise value is *ignored*.
+
+`reader.cassandra.auth.provider.class` - name of the class which is needed for Cassandra authentication.
+Only classes that implements `com.datastax.driver.core.AuthProvider` should be specified, default value: `PlainTextAuthProvider`
 
 #### ClickHouse Tracing Reader settings
 `reader.table` - table name in ClickHouse

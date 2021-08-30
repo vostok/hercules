@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -109,36 +110,32 @@ public class GateHandler implements HttpHandler {
         String stream = streamName.get();
 
         AuthResult authResult = authProvider.authWrite(request, stream);
-        if (!authResult.isSuccess()) {
-            if (authResult.isUnknown()) {
-                request.complete(HttpStatusCodes.UNAUTHORIZED);
-                return;
-            }
-            request.complete(HttpStatusCodes.FORBIDDEN);
+        if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
             return;
         }
         String apiKey = AuthUtil.getApiKey(request);
         // Check content length
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
-            request.complete(HttpStatusCodes.LENGTH_REQUIRED);
+            request.complete(HttpStatusCodes.LENGTH_REQUIRED, ContentTypes.TEXT_PLAIN_UTF_8, "Content length must be specified");
             return;
         }
         int contentLength = optionalContentLength.get();
 
         if (contentLength > maxContentLength) {
-            request.complete(HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE);
+            request.complete(HttpStatusCodes.REQUEST_ENTITY_TOO_LARGE, ContentTypes.TEXT_PLAIN_UTF_8,
+                    "Content length should be less than or equal to " + maxContentLength);
             return;
         }
 
         Optional<Stream> optionalBaseStream = streamStorage.read(stream);
         if (!optionalBaseStream.isPresent()) {
-            request.complete(HttpStatusCodes.NOT_FOUND);
+            request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8, "Cannot find stream with name " + stream);
             return;
         }
         Stream baseStream = optionalBaseStream.get();
         if (!(baseStream instanceof BaseStream)) {
-            request.complete(HttpStatusCodes.BAD_REQUEST);
+            request.complete(HttpStatusCodes.BAD_REQUEST, ContentTypes.TEXT_PLAIN_UTF_8, "Specified stream isn't a base one");
             return;
         }
 

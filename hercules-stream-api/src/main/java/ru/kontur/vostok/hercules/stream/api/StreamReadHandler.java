@@ -4,10 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
-import ru.kontur.vostok.hercules.http.MimeTypes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.meta.serialization.DeserializationException;
@@ -40,7 +41,8 @@ public class StreamReadHandler implements HttpHandler {
     public void handle(HttpServerRequest request) {
         Optional<Integer> optionalContentLength = request.getContentLength();
         if (!optionalContentLength.isPresent()) {
-            request.complete(HttpStatusCodes.LENGTH_REQUIRED);
+            request.complete(HttpStatusCodes.LENGTH_REQUIRED,
+                    ContentTypes.TEXT_PLAIN_UTF_8, "Content length must be specified");
             return;
         }
 
@@ -50,12 +52,7 @@ public class StreamReadHandler implements HttpHandler {
         }
 
         AuthResult authResult = authProvider.authRead(request, streamName.get());
-        if (!authResult.isSuccess()) {
-            if (authResult.isUnknown()) {
-                request.complete(HttpStatusCodes.UNAUTHORIZED);
-                return;
-            }
-            request.complete(HttpStatusCodes.FORBIDDEN);
+        if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
             return;
         }
 
@@ -72,7 +69,7 @@ public class StreamReadHandler implements HttpHandler {
         if (shardCount.get() <= shardIndex.get()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
+                    ContentTypes.TEXT_PLAIN_UTF_8,
                     "Invalid parameters: " + QueryParameters.SHARD_COUNT.name() + " must be > " + QueryParameters.SHARD_INDEX.name());
             return;
         }
@@ -86,7 +83,8 @@ public class StreamReadHandler implements HttpHandler {
         try {
             Optional<Stream> optionalStream = streamRepository.read(streamName.get());
             if (!optionalStream.isPresent()) {
-                request.complete(HttpStatusCodes.NOT_FOUND);
+                request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Cannot find stream with name " + streamName.get());
                 return;
             }
             stream = optionalStream.get();

@@ -5,6 +5,7 @@ import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
 import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoaderBuilder;
 import com.datastax.oss.driver.api.core.cql.BatchStatement;
 import com.datastax.oss.driver.api.core.cql.BatchableStatement;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
@@ -50,6 +51,10 @@ public class CassandraConnector {
 
     private final int batchSizeBytesLimit;
 
+    private final boolean authEnable;
+
+    private CassandraAuthProvider cassandraAuthProvider;
+
     private volatile CqlSession session;
     private volatile int batchSizeBytesMinimum;
 
@@ -68,17 +73,30 @@ public class CassandraConnector {
 
         this.batchSizeBytesLimit = PropertiesUtil.get(Props.BATCH_SIZE_BYTES_LIMIT, properties).get();
 
+        this.authEnable = PropertiesUtil.get(Props.AUTH_ENABLE, properties).get();
+
+        if (this.authEnable) {
+            this.cassandraAuthProvider = new CassandraAuthProvider(PropertiesUtil.ofScope(properties, "auth.provider"));
+        }
         init();
     }
 
     private void init() {
-        DriverConfigLoader configLoader = DriverConfigLoader.programmaticBuilder().
+        ProgrammaticDriverConfigLoaderBuilder configLoaderBuilder = DriverConfigLoader.programmaticBuilder().
                 withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofMillis(requestTimeoutMs)).
                 withString(DefaultDriverOption.REQUEST_CONSISTENCY, consistencyLevel).
                 withInt(DefaultDriverOption.CONNECTION_MAX_REQUESTS, maxRequestsPerConnection).
                 withInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE, connectionsPerHostLocal).
-                withInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE, connectionsPerHostRemote).
-                build();
+                withInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE, connectionsPerHostRemote);
+
+        if (authEnable) {
+            configLoaderBuilder.
+                    withString(DefaultDriverOption.AUTH_PROVIDER_CLASS, cassandraAuthProvider.getClassname()).
+                    withString(DefaultDriverOption.AUTH_PROVIDER_USER_NAME, cassandraAuthProvider.getUsername()).
+                    withString(DefaultDriverOption.AUTH_PROVIDER_PASSWORD, cassandraAuthProvider.getPassword());
+        }
+
+        DriverConfigLoader configLoader = configLoaderBuilder.build();
 
         session = CqlSession.builder().
                 withLocalDatacenter(dataCenter).
@@ -215,6 +233,11 @@ public class CassandraConnector {
                 Parameter.integerParameter("batchSizeBytesLimit").
                         withDefault(CassandraDefaults.DEFAULT_BATCH_SIZE_BYTES_LIMIT).
                         withValidator(IntegerValidators.positive()).
+                        build();
+
+        static final Parameter<Boolean> AUTH_ENABLE =
+                Parameter.booleanParameter("auth.enable").
+                        withDefault(CassandraDefaults.DEFAULT_AUTH_ENABLE).
                         build();
     }
 }

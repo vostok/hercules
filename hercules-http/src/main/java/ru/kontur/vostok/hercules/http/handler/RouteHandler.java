@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.http.handler;
 
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpMethod;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
@@ -54,7 +55,7 @@ public final class RouteHandler implements HttpHandler {
             }
         }
 
-        request.complete(HttpStatusCodes.NOT_FOUND);
+        request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8, "Page not found");
     }
 
     static class HandlerMatchers {

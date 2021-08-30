@@ -6,7 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.MimeTypes;
@@ -57,12 +59,7 @@ public class SeekToEndHandler implements HttpHandler {
         }
 
         AuthResult authResult = authProvider.authRead(request, streamName.get());
-        if (!authResult.isSuccess()) {
-            if (authResult.isUnknown()) {
-                request.complete(HttpStatusCodes.UNAUTHORIZED);
-                return;
-            }
-            request.complete(HttpStatusCodes.FORBIDDEN);
+        if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
             return;
         }
 
@@ -79,7 +76,7 @@ public class SeekToEndHandler implements HttpHandler {
         if (shardCount.get() <= shardIndex.get()) {
             request.complete(
                     HttpStatusCodes.BAD_REQUEST,
-                    MimeTypes.TEXT_PLAIN,
+                    ContentTypes.TEXT_PLAIN_UTF_8,
                     "Invalid parameters: " + QueryParameters.SHARD_COUNT.name() + " must be > " + QueryParameters.SHARD_INDEX.name());
             return;
         }
@@ -88,7 +85,8 @@ public class SeekToEndHandler implements HttpHandler {
         try {
             Optional<Stream> optionalStream = streamRepository.read(streamName.get());
             if (!optionalStream.isPresent()) {
-                request.complete(HttpStatusCodes.NOT_FOUND);
+                request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8,
+                        "Cannot find stream with name " + streamName.get());
                 return;
             }
             stream = optionalStream.get();

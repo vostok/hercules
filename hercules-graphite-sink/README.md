@@ -50,10 +50,14 @@ Application is configured through properties file.
 `sink.sender.graphite.connector.remote.socket.timeout.ms` - timeout in milliseconds to create TCP-connection with a remote endpoint, default value: `2 000`
 
 ### Filters settings
+Properties for each defined filter under the scope `N`, where `N` is a filter number.
 
-`sink.filter.list` - list of filter classes. Set value: `ru.kontur.vostok.hercules.graphite.sink.filter.MetricEventFilter,ru.kontur.vostok.hercules.graphite.sink.filter.MetricAclEventFilter`
+`sink.filter.N.class` - filter class (inheritors of the `ru.kontur.vostok.hercules.sink.filter.EventFilter` class).
+Properties with key prefix `sink.filter.N.props` are defined for this class.  
+See method `createClassInstanceList` in `ru.kontur.vostok.hercules.util.properties.PropertiesUtil` for details.
 
-`sink.filter.1.acl.path` - path to access control list. ACL file contains rules (each on a new line).
+###### Properties for [MetricAclEventFilter](../hercules-graphite-sink/src/main/java/ru/kontur/vostok/hercules/graphite/sink/filter/MetricAclEventFilter.java)
+`sink.filter.N.props.acl.path` - path to access control list. ACL file contains rules (each on a new line).
 Rules are written as `<statement> <pattern>`, where `<statement>` - action applied to the metric event (DENY or PERMIT),
 `<pattern>` - pattern for matching metric name. 
 
@@ -63,7 +67,7 @@ DENY value
 PERMIT value.*
 ```
 
-`sink.filter.1.acl.defaultStatement` - default statement, default value: `DENY`
+`sink.filter.N.props.acl.defaultStatement` - default statement, default value: `DENY`
 
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
@@ -130,9 +134,10 @@ sink.sender.graphite.connector.local.connection.limit.per.endpoint=3
 sink.sender.graphite.connector.local.socket.timeout.ms=2000
 sink.sender.graphite.connector.remote.endpoints=
 
-sink.filter.list=ru.kontur.vostok.hercules.graphite.sink.filter.MetricEventFilter,ru.kontur.vostok.hercules.graphite.sink.filter.MetricAclEventFilter
-sink.filter.1.acl.path=file://metrics.acl
-sink.filter.1.acl.defaultStatement=DENY
+sink.filter.0.class=ru.kontur.vostok.hercules.graphite.sink.filter.MetricEventFilter
+sink.filter.1.class=ru.kontur.vostok.hercules.graphite.sink.filter.MetricAclEventFilter
+sink.filter.1.props.acl.path=file://metrics.acl
+sink.filter.1.props.acl.defaultStatement=PERMIT
 
 metrics.graphite.server.addr=graphite.ru
 metrics.graphite.server.port=2003

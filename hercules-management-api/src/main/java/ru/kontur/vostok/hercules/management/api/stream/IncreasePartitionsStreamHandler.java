@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.AuthResult;
+import ru.kontur.vostok.hercules.auth.AuthUtil;
 import ru.kontur.vostok.hercules.curator.exception.CuratorException;
+import ru.kontur.vostok.hercules.http.ContentTypes;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
@@ -47,12 +49,7 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
         }
 
         AuthResult authResult = authProvider.authManage(request, streamName.get());
-        if (!authResult.isSuccess()) {
-            if (authResult.isUnknown()) {
-                request.complete(HttpStatusCodes.UNAUTHORIZED);
-                return;
-            }
-            request.complete(HttpStatusCodes.FORBIDDEN);
+        if (AuthUtil.tryCompleteRequestIfUnsuccessfulAuth(request, authResult)) {
             return;
         }
 
@@ -69,14 +66,16 @@ public class IncreasePartitionsStreamHandler implements HttpHandler {
             request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
             return;
         }
-        if(!optionalStream.isPresent()) {
-            request.complete(HttpStatusCodes.NOT_FOUND);
+        if (!optionalStream.isPresent()) {
+            request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8,
+                    "Cannot find stream with name " + streamName.get());
             return;
         }
         Stream stream = optionalStream.get();
 
         if (newPartitions.get() <= stream.getPartitions()) {
-            request.complete(HttpStatusCodes.CONFLICT);
+            request.complete(HttpStatusCodes.CONFLICT, ContentTypes.TEXT_PLAIN_UTF_8,
+                    "New partitions count cannot be less than or equal to a current partitions count - " + stream.getPartitions());
             return;
         }
 
