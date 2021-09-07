@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.graphite.adapter.server;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import ru.kontur.vostok.hercules.graphite.adapter.metric.Metric;
  *
  * @author Gregory Koshelev
  */
+@ChannelHandler.Sharable
 public class GraphiteHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteHandler.class);
 
@@ -28,9 +30,13 @@ public class GraphiteHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         ByteBuf buf = (ByteBuf) msg;
 
-        Metric metric = MetricReader.read(buf);
-        if (metric != null) {
-            purgatory.process(metric);
+        try {
+            Metric metric = MetricReader.read(buf);
+            if (metric != null) {
+                purgatory.process(metric);
+            }
+        } finally {
+            buf.release();
         }
     }
 
