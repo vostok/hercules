@@ -32,6 +32,9 @@ Application is configured through properties file.
 
 `sink.sender.graphite.tags.enable` - sending metrics with tags, default value: `false`
 
+`sink.sender.graphite.replace.dots` - replace dots in the tags with underscore
+(it is recommended to set to `true` if send metrics without tags to preserve metric's hierarchy), default value: `false`
+
 #### Graphite connector settings
 `sink.sender.graphite.connector.local.endpoints` - list of local Graphite endpoints in form `host:port`, required
 
@@ -128,6 +131,7 @@ sink.consumer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.Grap
 sink.sender.retryLimit=3
 sink.sender.pingPeriodMs=30000
 sink.sender.graphite.tags.enable=false
+sink.sender.graphite.replace.dots=true
 sink.sender.graphite.connector.local.endpoints=localhost:2003
 sink.sender.graphite.connector.local.frozen.time.ms=30000
 sink.sender.graphite.connector.local.connection.limit.per.endpoint=3

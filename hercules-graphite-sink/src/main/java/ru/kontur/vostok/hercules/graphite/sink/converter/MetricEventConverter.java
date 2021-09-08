@@ -4,7 +4,7 @@ import ru.kontur.vostok.hercules.graphite.sink.GraphiteMetricData;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.tags.MetricsTags;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+import ru.kontur.vostok.hercules.util.metrics.GraphiteSanitizer;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.stream.Collectors;
@@ -17,12 +17,17 @@ import java.util.stream.Stream;
  * @author Vladimir Tsypaev
  */
 public class MetricEventConverter implements MetricConverter {
+    private final GraphiteSanitizer sanitizer;
+
+    public MetricEventConverter(GraphiteSanitizer sanitizer) {
+        this.sanitizer = sanitizer;
+    }
 
     @Override
     public GraphiteMetricData convert(Event event) {
         String name = Stream.of(ContainerUtil.extract(event.getPayload(), MetricsTags.TAGS_VECTOR_TAG).get())
                 .map(tag -> ContainerUtil.extract(tag, MetricsTags.TAG_VALUE_TAG).orElse("null"))
-                .map(GraphiteMetricsUtil::sanitizeMetricName)
+                .map(sanitizer::sanitize)
                 .collect(Collectors.joining("."));
 
         long timestamp = TimeUtil.unixTicksToUnixTime(event.getTimestamp());
