@@ -24,6 +24,10 @@
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-gate-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-undertow-util</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.netty</groupId>
