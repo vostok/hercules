@@ -6,7 +6,7 @@ import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+import ru.kontur.vostok.hercules.util.metrics.GraphiteSanitizer;
 
 import java.nio.charset.StandardCharsets;
 
@@ -48,9 +48,9 @@ public class GrafanaAnnotationTagsTransformer implements Transformer {
                 isSubprojectTagAdded = true;
             }
 
-            sb.append(GraphiteMetricsUtil.sanitizeMetricName(tagKey));
+            sb.append(GraphiteSanitizer.METRIC_NAME_SANITIZER.sanitize(tagKey));
             sb.append('=');
-            sb.append(GraphiteMetricsUtil.sanitizeMetricName(tagValue));
+            sb.append(GraphiteSanitizer.METRIC_NAME_SANITIZER.sanitize(tagValue));
             sb.append(',');
         }
 
