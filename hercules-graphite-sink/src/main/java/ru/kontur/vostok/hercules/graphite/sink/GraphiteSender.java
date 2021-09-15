@@ -12,6 +12,7 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.util.metrics.GraphiteSanitizer;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -41,7 +42,9 @@ public class GraphiteSender extends Sender {
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
 
         final boolean graphiteTagsEnable = PropertiesUtil.get(Props.GRAPHITE_TAGS_ENABLE, properties).get();
-        this.metricsConverter = graphiteTagsEnable ? new MetricWithTagsEventConverter() : new MetricEventConverter();
+        final boolean graphiteReplaceDots = PropertiesUtil.get(Props.GRAPHITE_REPLACE_DOTS, properties).get();
+        GraphiteSanitizer sanitizer = graphiteReplaceDots ? GraphiteSanitizer.METRIC_NAME_SANITIZER : GraphiteSanitizer.METRIC_PATH_SANITIZER;
+        this.metricsConverter = graphiteTagsEnable ? new MetricWithTagsEventConverter(sanitizer) : new MetricEventConverter(sanitizer);
 
         this.connector = new GraphiteConnector(PropertiesUtil.ofScope(properties, "graphite.connector"));
 
@@ -113,5 +116,9 @@ public class GraphiteSender extends Sender {
                         withDefault(false).
                         build();
 
+        static final Parameter<Boolean> GRAPHITE_REPLACE_DOTS =
+                Parameter.booleanParameter("graphite.replace.dots").
+                        withDefault(false).
+                        build();
     }
 }

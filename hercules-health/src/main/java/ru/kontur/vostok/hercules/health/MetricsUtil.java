@@ -1,10 +1,10 @@
 package ru.kontur.vostok.hercules.health;
 
 import org.jetbrains.annotations.NotNull;
+import ru.kontur.vostok.hercules.util.metrics.GraphiteSanitizer;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -13,31 +13,28 @@ import java.util.stream.Collectors;
  * @author Gregory Koshelev
  */
 public final class MetricsUtil {
-    private static final Pattern METRIC_NAME_FORBIDDEN_CHARS = Pattern.compile("[^-a-zA-Z0-9_]");
-    private static final Pattern METRIC_PATH_FORBIDDEN_CHARS = Pattern.compile("[^-a-zA-Z0-9_.]");
-
     /**
      * Sanitize metric name to replace forbidden characters with underscore.
      * <p>
-     * Valid characters are satisfy {@code [-a-zA-Z0-9_]} regexp.
+     * Valid characters satisfy {@code [-a-zA-Z0-9_]} regexp.
      *
      * @param metricName the metric name
      * @return sanitized metric name
      */
     public static String sanitizeMetricName(@NotNull String metricName) {
-        return METRIC_NAME_FORBIDDEN_CHARS.matcher(metricName).replaceAll("_");
+        return GraphiteSanitizer.METRIC_NAME_SANITIZER.sanitize(metricName);
     }
 
     /**
      * Sanitize metric path to replace forbidden characters with underscore.
      * <p>
-     * Valid characters are satisfy {@code [-a-zA-Z0-9_.]} regexp.
+     * Valid characters satisfy {@code [-a-zA-Z0-9_.]} regexp.
      *
      * @param metricPath the metric path
      * @return sanitized metric path
      */
     public static String sanitizeMetricPath(String metricPath) {
-        return METRIC_PATH_FORBIDDEN_CHARS.matcher(metricPath).replaceAll("_");
+        return GraphiteSanitizer.METRIC_PATH_SANITIZER.sanitize(metricPath);
     }
 
     /**

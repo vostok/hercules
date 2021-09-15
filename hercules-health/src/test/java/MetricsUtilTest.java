@@ -18,6 +18,6 @@ public class MetricsUtilTest {
         assertEquals("1234567890_should_be_ok", MetricsUtil.sanitizeMetricName("1234567890_should_be_ok"));
         assertEquals("whitespace_metric_name", MetricsUtil.sanitizeMetricName("whitespace metric name"));
         assertEquals("____is_illegal__isn_t_", MetricsUtil.sanitizeMetricName("[.] is illegal, isn't?"));
-        assertEquals("http___is_url_but_20sanitized", MetricsUtil.sanitizeMetricName("http://is.url/but%20sanitized"));
+        assertEquals("http:__is_url_but_20sanitized", MetricsUtil.sanitizeMetricName("http://is.url/but%20sanitized"));
     }
 }

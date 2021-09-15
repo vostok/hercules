@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.tags.MetricsTags;
-import ru.kontur.vostok.hercules.util.metrics.GraphiteMetricsUtil;
+import ru.kontur.vostok.hercules.util.metrics.GraphiteSanitizer;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 /**
@@ -16,6 +16,11 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
  * @author Vladimir Tsypaev
  */
 public class MetricWithTagsEventConverter implements MetricConverter {
+    private final GraphiteSanitizer sanitizer;
+
+    public MetricWithTagsEventConverter(GraphiteSanitizer sanitizer) {
+        this.sanitizer = sanitizer;
+    }
 
     @Override
     public GraphiteMetricData convert(Event event) {
@@ -25,9 +30,9 @@ public class MetricWithTagsEventConverter implements MetricConverter {
         StringBuilder tags = new StringBuilder();
         Container[] tagsVector = ContainerUtil.extract(event.getPayload(), MetricsTags.TAGS_VECTOR_TAG).get();
         for (Container tag : tagsVector) {
-            String key = GraphiteMetricsUtil.sanitizeMetricName(
+            String key = sanitizer.sanitize(
                     ContainerUtil.extract(tag, MetricsTags.TAG_KEY_TAG).orElse("null"));
-            String value = GraphiteMetricsUtil.sanitizeMetricName(
+            String value = sanitizer.sanitize(
                     ContainerUtil.extract(tag, MetricsTags.TAG_VALUE_TAG).orElse("null"));
 
             if (key.equals("project")) {
