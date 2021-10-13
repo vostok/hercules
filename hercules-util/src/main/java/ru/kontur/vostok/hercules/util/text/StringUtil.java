@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.util.text;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -157,6 +160,18 @@ public final class StringUtil {
             throw new IllegalArgumentException("String cannot be an empty string or null");
         }
         return value;
+    }
+
+    /**
+     * If a {@code value} is not null, returns the {@code value}, otherwise returns {@code defaultValue}.
+     *
+     * @param value        the source string
+     * @param defaultValue the string to be returned, if {@code value} is null
+     * @return the {@code value}, if not null, otherwise {@code defaultValue}
+     */
+    @NotNull
+    public static String getOrDefault(@Nullable String value, @NotNull String defaultValue) {
+        return value == null ? defaultValue : value;
     }
 
     /**

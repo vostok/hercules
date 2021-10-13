@@ -2,6 +2,10 @@ package ru.kontur.vostok.hercules.elastic.sink;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import ru.kontur.vostok.hercules.application.Application;
+import ru.kontur.vostok.hercules.application.ApplicationContext;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Container;
@@ -11,6 +15,7 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
+import ru.kontur.vostok.hercules.sink.SinkContext;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -27,7 +32,8 @@ import static org.mockito.Mockito.mock;
  */
 public class LeproserySenderTest {
 
-    private static MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
+    private static final MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
+    private static final ApplicationContext applicationContext = createApplicationContext();
 
     @Test
     public void toLeproseryEventTest() {
@@ -39,14 +45,19 @@ public class LeproserySenderTest {
         properties.setProperty("stream", "leprosery-stream");
         properties.setProperty("apiKey", "123");
         properties.setProperty("gate.client.urls", "localhost:8080");
-        LeproserySender leproserySender = new LeproserySender(properties, metricsCollectorMock);
 
-        Event leproseryEvent = leproserySender.toLeproseryEvent(
-                new ElasticDocument(
-                        EventUtil.extractStringId(originalEvent),
-                        "my-original-index",
-                        eventFormatter.format(originalEvent)),
-                "my error reason").get();
+        LeproserySender leproserySender;
+        Event leproseryEvent;
+        try (MockedStatic<Application> applicationMock = Mockito.mockStatic(Application.class)) {
+            applicationMock.when(Application::context).thenReturn(applicationContext);
+            leproserySender = new LeproserySender(properties, metricsCollectorMock);
+            leproseryEvent = leproserySender.toLeproseryEvent(
+                    new ElasticDocument(
+                            EventUtil.extractStringId(originalEvent),
+                            "my-original-index",
+                            eventFormatter.format(originalEvent)),
+                    "my error reason").get();
+        }
 
         Assert.assertEquals("my error reason",
                 ContainerUtil.extract(leproseryEvent.getPayload(), LogEventTags.MESSAGE_TAG).get());
@@ -54,6 +65,10 @@ public class LeproserySenderTest {
         Assert.assertEquals("hercules-elastic-sink", getValueFromProperties(leproseryEvent, "service"));
         Assert.assertEquals("my-original-index", getValueFromProperties(leproseryEvent, "original-index"));
         Assert.assertEquals("leprosery", getValueFromProperties(leproseryEvent, "elk-index"));
+        Assert.assertEquals("instanceId", getValueFromProperties(leproseryEvent, "elastic-sink-id"));
+        Assert.assertEquals("testGroupId", getValueFromProperties(leproseryEvent, "elastic-sink-groupId"));
+        Assert.assertEquals("test_pattern,another_pattern_*", getValueFromProperties(leproseryEvent, "elastic-sink-subscription"));
+
         Assert.assertEquals("{\"@timestamp\":\"2019-10-25T08:55:21.839000000Z\"," +
                         "\"project\":\"my-project\",\"my_tag\":\"My value\"," +
                         "\"message\":\"Test event\",\"level\":\"info\"}",
@@ -84,5 +99,21 @@ public class LeproserySenderTest {
         final Optional<Container> propertiesContainer = ContainerUtil.
                 extract(event.getPayload(), CommonTags.PROPERTIES_TAG);
         return new String((byte[]) propertiesContainer.get().get(TinyString.of(tag)).getValue());//FIXME: Refactoring is needed
+    }
+
+    private static ApplicationContext createApplicationContext() {
+        ApplicationContext context = new ApplicationContext(
+                "appName",
+                "appId",
+                "version",
+                "commitId",
+                "environment",
+                "zone",
+                "instanceId",
+                "hostname"
+        );
+        context.put(SinkContext.GROUP_ID, "testGroupId");
+        context.put(SinkContext.SUBSCRIPTION, "test_pattern,another_pattern_*");
+        return context;
     }
 }

@@ -10,6 +10,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -95,8 +96,10 @@ public class Sink implements Lifecycle {
         String consumerGroupId =
                 PropertiesUtil.get(Props.GROUP_ID, properties).
                         orEmpty(subscription.toGroupId(applicationId));
+        Application.context().put(SinkContext.GROUP_ID, consumerGroupId);
 
         this.pattern = subscription.toPattern();
+        Application.context().put(SinkContext.SUBSCRIPTION, subscription.toString());
 
         Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
