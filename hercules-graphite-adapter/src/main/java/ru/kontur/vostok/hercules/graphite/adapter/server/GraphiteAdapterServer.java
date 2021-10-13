@@ -61,7 +61,7 @@ public class GraphiteAdapterServer implements Lifecycle {
                 workerThreadCount,
                 ThreadFactories.newNamedThreadFactory("workerEventLoop", false));
 
-        GraphiteHandler graphiteHandler = new GraphiteHandler(purgatory);
+        GraphiteHandler graphiteHandler = new GraphiteHandler(purgatory, metricsCollector);
 
         bootstrap = new ServerBootstrap()
                 .group(bossGroup, workerGroup)

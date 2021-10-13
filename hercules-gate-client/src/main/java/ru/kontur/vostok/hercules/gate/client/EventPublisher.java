@@ -133,6 +133,11 @@ public class EventPublisher implements Lifecycle {
         }
     }
 
+    public int size(String queue) {
+        EventQueue eventQueue = queueMap.get(queue);
+        return (eventQueue == null) ? 0 : eventQueue.size();
+    }
+
     /**
      * Stop executing of event publisher. Waits <code>timeoutMillis</code> milliseconds to send a portion of unhandled events
      *
@@ -148,9 +153,10 @@ public class EventPublisher implements Lifecycle {
         executor.shutdown();
 
         if (timeout > 0) {
+            long timeoutNanos = unit.toNanos(timeout);
             for (EventQueue eventQueue : queueMap.values()) {
                 long nanos = System.nanoTime();
-                while (unit.toNanos(timeout) > System.nanoTime() - nanos && process(eventQueue) > 0) {
+                while (timeoutNanos > System.nanoTime() - nanos && process(eventQueue) > 0) {
                     /* Empty */
                 }
             }

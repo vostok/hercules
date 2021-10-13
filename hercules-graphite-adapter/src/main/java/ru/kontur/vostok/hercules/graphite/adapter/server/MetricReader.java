@@ -45,7 +45,7 @@ public final class MetricReader {
             if (!hasMoreBytes(buf)) {
                 return null;
             }
-            buf.skipBytes(1);
+            buf.skipBytes(1);// Skip space
 
             length = buf.bytesBefore(AsciiUtil.ASCII_SPACE);
             if (length == -1) {
@@ -58,7 +58,7 @@ public final class MetricReader {
             if (!hasMoreBytes(buf)) {
                 return null;
             }
-            buf.skipBytes(1);
+            buf.skipBytes(1);// Skip space
 
             long metricTimestamp = readLong(buf, buf.readableBytes());
 
