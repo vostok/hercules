@@ -57,7 +57,6 @@ public class Application {
 
         Map<String, String> parameters = ArgsParser.parse(args);
         Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
-        LOGGER.info(PropertiesUtil.prettyView(properties));
 
         ApplicationConfig applicationConfig = new ApplicationConfig(PropertiesUtil.ofScope(properties, Scopes.APPLICATION));
 
