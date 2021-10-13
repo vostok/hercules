@@ -2,6 +2,7 @@ package ru.kontur.vostok.hercules.elastic.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.gate.client.GateClient;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
@@ -15,12 +16,15 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.sink.SinkContext;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ElasticSearchTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
+import ru.kontur.vostok.hercules.util.Lazy;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
@@ -48,6 +52,9 @@ class LeproserySender {
     private static final TinyString SERVICE = TinyString.of("service");
     private static final TinyString TEXT = TinyString.of("text");
     private static final TinyString ORIGINAL_INDEX = TinyString.of("original-index");
+    private static final TinyString ELASTIC_SINK_ID = TinyString.of("elastic-sink-id");
+    private static final TinyString ELASTIC_SINK_GROUP_ID = TinyString.of("elastic-sink-groupId");
+    private static final TinyString ELASTIC_SINK_SUBSCRIPTION = TinyString.of("elastic-sink-subscription");
 
     private static final int EMPTY_LEPROSERY_EVENT_SIZE_BYTES = 125;
     private static final int MAX_EVENT_SIZE_BYTES = 500_000;
@@ -57,6 +64,9 @@ class LeproserySender {
     private final String leproseryIndex;
     private final GateClient gateClient;
     private final String leproseryApiKey;
+    private final String sinkId;
+    private final Lazy<String> sinkGroupId;
+    private final Lazy<String> sinkSubscription;
 
     private final Meter sentToLeproseryEventCountMeter;
     private final Meter sentToLeproseryWithErrorsEventCountMeter;
@@ -68,6 +78,9 @@ class LeproserySender {
         this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, properties).get();
         this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, properties).get();
         this.leproseryApiKey = PropertiesUtil.get(Props.LEPROSERY_API_KEY, properties).get();
+        this.sinkId = StringUtil.getOrDefault(Application.context().getInstanceId(), "null");
+        this.sinkGroupId = new Lazy<>(() -> StringUtil.getOrDefault(Application.context().get(SinkContext.GROUP_ID), "null"));
+        this.sinkSubscription = new Lazy<>(() -> StringUtil.getOrDefault(Application.context().get(SinkContext.SUBSCRIPTION), "null"));
 
         Properties gateProperties = PropertiesUtil.ofScope(properties, Scopes.GATE_CLIENT);
         final String[] urls = PropertiesUtil.get(Props.URLS, gateProperties).get();
@@ -144,6 +157,9 @@ class LeproserySender {
                         .tag(TEXT, Variant.ofString(textBytes))
                         .tag(ORIGINAL_INDEX, Variant.ofString(document.index()))
                         .tag(ElasticSearchTags.ELK_INDEX_TAG.getName(), Variant.ofString(leproseryIndex))
+                        .tag(ELASTIC_SINK_ID, Variant.ofString(sinkId))
+                        .tag(ELASTIC_SINK_GROUP_ID, Variant.ofString(sinkGroupId.get()))
+                        .tag(ELASTIC_SINK_SUBSCRIPTION, Variant.ofString(sinkSubscription.get()))
                         .build()))
                 .build());
     }

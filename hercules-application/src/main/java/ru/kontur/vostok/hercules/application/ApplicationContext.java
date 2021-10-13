@@ -1,5 +1,8 @@
 package ru.kontur.vostok.hercules.application;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * @author Gregory Koshelev
  */
@@ -12,6 +15,8 @@ public class ApplicationContext {
     private final String zone;
     private final String instanceId;
     private final String hostname;
+
+    private final ConcurrentMap<String, String> additionalContext = new ConcurrentHashMap<>();
 
     public ApplicationContext(
             String applicationName,
@@ -62,5 +67,27 @@ public class ApplicationContext {
 
     public String getHostname() {
         return hostname;
+    }
+
+    /**
+     * Returns additional context value by the key.
+     * These values can be exchanged thread-safely between different components.
+     *
+     * @param key the key whose associated value is to be returned
+     * @return the value to which the specified key is mapped, or
+     *         {@code null} if this map contains no mapping for the key
+     */
+    public String get(String key) {
+        return additionalContext.get(key);
+    }
+
+    /**
+     * Associates the specified additional context value with the specified key.
+     *
+     * @param key   key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
+     */
+    public void put(String key, String value) {
+        additionalContext.put(key, value);
     }
 }
