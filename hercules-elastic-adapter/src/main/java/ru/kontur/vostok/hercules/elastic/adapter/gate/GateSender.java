@@ -11,6 +11,7 @@ import ru.kontur.vostok.hercules.util.concurrent.Topology;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.io.Closeable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -18,7 +19,7 @@ import java.util.Properties;
 /**
  * @author Gregory Koshelev
  */
-public class GateSender {
+public class GateSender implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GateSender.class);
 
     private final String apiKey;
@@ -51,6 +52,7 @@ public class GateSender {
         }
     }
 
+    @Override
     public void close() {
         client.close();
     }

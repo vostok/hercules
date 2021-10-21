@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.gate;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
@@ -37,8 +35,6 @@ import java.util.Properties;
  * @author Gregory Koshelev
  */
 public class GateApplication {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GateApplication.class);
-
     private static MetricsCollector metricsCollector;
     private static CuratorClient curatorClient;
     private static AuthManager authManager;
@@ -47,8 +43,6 @@ public class GateApplication {
     private static EventSender eventSender;
     private static EventValidator eventValidator;
     private static SendRequestProcessor sendRequestProcessor;
-    private static HttpServer server;
-    private static BeaconService beaconService;
 
     public static void main(String[] args) {
         Application.run("Hercules Gate", "gate", args, (properties, container) -> {
@@ -77,9 +71,9 @@ public class GateApplication {
 
                 sendRequestProcessor = new SendRequestProcessor(sendRequestProcessorProperties, eventSender, eventValidator, metricsCollector);
 
-                server = container.register(createHttpServer(httpServerProperties));
+                container.register(createHttpServer(httpServerProperties));
 
-                beaconService = container.register(new BeaconService(sdProperties, curatorClient));
+                container.register(new BeaconService(sdProperties, curatorClient));
             });
     }
 
