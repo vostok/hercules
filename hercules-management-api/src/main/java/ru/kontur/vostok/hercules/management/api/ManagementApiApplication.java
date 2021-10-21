@@ -1,16 +1,12 @@
 package ru.kontur.vostok.hercules.management.api;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
 import ru.kontur.vostok.hercules.auth.AuthProvider;
 import ru.kontur.vostok.hercules.auth.wrapper.AdminAuthHandlerWrapper;
 import ru.kontur.vostok.hercules.auth.wrapper.AuthHandlerWrapper;
-import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.curator.CuratorClient;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
@@ -48,9 +44,7 @@ import ru.kontur.vostok.hercules.http.handler.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,113 +52,32 @@ import java.util.stream.Stream;
  * @author Gregory Koshelev
  */
 public class ManagementApiApplication {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ManagementApiApplication.class);
-
     private static CuratorClient curatorClient;
     private static MetricsCollector metricsCollector;
     private static AuthManager authManager;
     private static AdminAuthManager adminAuthManager;
     private static TaskQueue<StreamTask> streamTaskQueue;
     private static TaskQueue<TimelineTask> timelineTaskQueue;
-    private static HttpServer server;
 
     public static void main(String[] args) {
-        long start = System.currentTimeMillis();
-
-        try {
-            Application.run("Hercules Management API", "management-api", args);
-
-            Map<String, String> parameters = ArgsParser.parse(args);
-
-            Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
-
+        Application.run("Hercules Management API", "management-api", args, (properties, container) -> {
             Properties curatorProperties = PropertiesUtil.ofScope(properties, Scopes.CURATOR);
             Properties metricsProperties = PropertiesUtil.ofScope(properties, Scopes.METRICS);
             Properties httpserverProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
 
-            curatorClient = new CuratorClient(curatorProperties);
-            curatorClient.start();
+            curatorClient = container.register(new CuratorClient(curatorProperties));
 
-            metricsCollector = new MetricsCollector(metricsProperties);
-            metricsCollector.start();
+            metricsCollector = container.register(new MetricsCollector(metricsProperties));
             CommonMetrics.registerCommonMetrics(metricsCollector);
 
-            authManager = new AuthManager(curatorClient);
-            authManager.start();
-
+            authManager = container.register(new AuthManager(curatorClient));
             adminAuthManager = new AdminAuthManager(Stream.of(PropertiesUtil.get(Props.ADMIN_KEYS, properties).get()).collect(Collectors.toSet()));
 
-            streamTaskQueue = new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L);
-            timelineTaskQueue = new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L);
+            streamTaskQueue = container.register(new TaskQueue<>(new StreamTaskRepository(curatorClient), 500L));
+            timelineTaskQueue = container.register(new TaskQueue<>(new TimelineTaskRepository(curatorClient), 500L));
 
-            server = createHttpServer(httpserverProperties);
-            server.start();
-        } catch (Throwable e) {
-            LOGGER.error("Error on starting management api", e);
-            shutdown();
-            return;
-        }
-
-        Runtime.getRuntime().addShutdownHook(new Thread(ManagementApiApplication::shutdown));
-
-        LOGGER.info("Management API started for {} millis", System.currentTimeMillis() - start);
-    }
-
-    private static void shutdown() {
-        long start = System.currentTimeMillis();
-        LOGGER.info("Started Management API shutdown");
-        try {
-            if (server != null) {
-                server.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on server stopping", e);
-            //TODO: Process error
-        }
-
-        try {
-            if (timelineTaskQueue != null) {
-                timelineTaskQueue.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on timeline's task queue stopping", e);
-        }
-
-        try {
-            if (streamTaskQueue != null) {
-                streamTaskQueue.stop(5_000, TimeUnit.MILLISECONDS);
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on stream's task queue stopping", e);
-        }
-
-        try {
-            if (authManager != null) {
-                authManager.stop();
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on auth manager stopping", e);
-        }
-
-        try {
-            if (metricsCollector != null) {
-                metricsCollector.stop();
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on metrics collector stopping", e);
-        }
-
-        try {
-            if (curatorClient != null) {
-                curatorClient.stop();
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Error on curator client stopping", e);
-            //TODO: Process error
-        }
-
-        LOGGER.info("Finished Management API shutdown for {} millis", System.currentTimeMillis() - start);
+            container.register(createHttpServer(httpserverProperties));
+        });
     }
 
     private static HttpServer createHttpServer(Properties httpServerProperties) {

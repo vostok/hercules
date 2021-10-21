@@ -8,13 +8,14 @@ import ru.kontur.vostok.hercules.tracing.api.clickhouse.ClickHouseTracingReader;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.io.Closeable;
 import java.util.Properties;
 import java.util.UUID;
 
 /**
  * @author Gregory Koshelev
  */
-public interface TracingReader {
+public interface TracingReader extends Closeable {
     /**
      * Get trace spans by trace id.
      *
@@ -42,8 +43,6 @@ public interface TracingReader {
             @NotNull UUID parentSpanId,
             int limit,
             @Nullable String pagingState);
-
-    void close();
 
     static TracingReader createTracingReader(Properties properties) {
         Source source = PropertiesUtil.get(Props.SOURCE, properties).get();

@@ -7,6 +7,7 @@ import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.serialization.SerializationException;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.lifecycle.Stoppable;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -18,8 +19,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Gregory Koshelev
  */
-public class TaskQueue<T> {
-    private static Logger LOGGER = LoggerFactory.getLogger(TaskQueue.class);
+public class TaskQueue<T> implements Stoppable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TaskQueue.class);
 
     private final TaskRepository<T> repository;
     private final long delayMs;
@@ -57,15 +58,19 @@ public class TaskQueue<T> {
         }
     }
 
-    public void stop(long timeout, TimeUnit unit) {
+    @Override
+    public boolean stop(long timeout, TimeUnit unit) {
         executor.shutdown();
         try {
-            if (!executor.awaitTermination(timeout, unit)) {
+            boolean isTerminated = executor.awaitTermination(timeout, unit);
+            if (!isTerminated) {
                 LOGGER.warn("Cannot stop Task Queue properly due to internal executor's slow termination");
             }
+            return isTerminated;
         } catch (InterruptedException ex) {
             LOGGER.warn("Task Queue stopping was interrupted", ex);
             Thread.currentThread().interrupt();
+            return false;
         }
     }
 
