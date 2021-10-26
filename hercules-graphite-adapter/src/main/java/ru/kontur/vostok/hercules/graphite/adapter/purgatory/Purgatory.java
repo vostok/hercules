@@ -14,7 +14,6 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.text.AsciiUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
@@ -43,6 +42,8 @@ public class Purgatory {
 
     private final UuidGenerator uuidGenerator = UuidGenerator.getClientInstance();
 
+    private final MetricValidator metricValidator;
+
     private final Accumulator accumulator;
 
     private final PlainMetricAclFilter acl;
@@ -56,6 +57,8 @@ public class Purgatory {
     private final Meter taggedMetricsMeter;
 
     public Purgatory(Properties properties, Accumulator accumulator, MetricsCollector metricsCollector) {
+        this.metricValidator = new MetricValidator();
+
         this.accumulator = accumulator;
 
         this.acl = new PlainMetricAclFilter(PropertiesUtil.ofScope(properties, "filter.acl"));
@@ -70,7 +73,7 @@ public class Purgatory {
     }
 
     public void process(Metric metric) {
-        if (!validate(metric)) {
+        if (!metricValidator.validate(metric)) {
             invalidMetricsMeter.mark();
             return;
         }
@@ -117,25 +120,6 @@ public class Purgatory {
             accumulator.add(plainMetricsStream, event);
         }
     }
-
-    private boolean validate(Metric metric) {
-        if (Double.isNaN(metric.value())) {
-            return false;
-        }
-
-        byte[] metricName = metric.name();
-        if (metricName.length == 0) {
-            return false;
-        }
-        for (byte c : metricName) {
-            if (!AsciiUtil.isAlphaNumeric(c) && !AsciiUtil.isDot(c) && !AsciiUtil.isUnderscore(c)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
 
     private static class Props {
         static Parameter<String> PLAIN_METRICS_STREAM =
