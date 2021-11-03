@@ -101,6 +101,7 @@ public class ClickHouseTracingReader implements TracingReader {
             try {
                 return select(sql, limit, offset, params);
             } catch (SQLException ex) {
+                //TODO: Process SQL Exception
                 if (ex.getErrorCode() != 159) {
                     LOGGER.error("Read failed with exception", ex);
                     throw new RuntimeException(ex);
@@ -109,7 +110,7 @@ public class ClickHouseTracingReader implements TracingReader {
         } while (retryCount-- > 0);
 
         LOGGER.warn("ClickHouse read timed out");
-        throw new RuntimeException();
+        throw new RuntimeException("Request timeout");
     }
 
     private static long pagingStateToOffset(@Nullable String pagingState) {

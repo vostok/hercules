@@ -180,7 +180,7 @@ Only classes that implements `com.datastax.driver.core.AuthProvider` should be s
 #### ClickHouse Tracing Reader settings
 `reader.table` - table name in ClickHouse
 
-`reader.retry.limit` - maximum attempts count when getting response from ClickHouse, default value: `1`
+`reader.retry.limit` - maximum retry-attempts count when getting response from ClickHouse, default value: `1`
 
 ##### ClickHouse settings
 `reader.clickhouse.nodes` - ClickHouse `node:port` comma-separated list,
