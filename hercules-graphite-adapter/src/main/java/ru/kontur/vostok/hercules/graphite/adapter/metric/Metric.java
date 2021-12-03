@@ -58,7 +58,7 @@ public class Metric {
     /**
      * The metric timestamp.
      * <p>
-     * Returns metric timestamp in Unix Time (seconds are passed since 1970-01-01T00:00:00Z).
+     * Returns metric timestamp in Unix Time (seconds have elapsed since 1970-01-01T00:00:00Z).
      *
      * @return the metric timestamp
      */
@@ -69,7 +69,7 @@ public class Metric {
     /**
      * Returns {@code true} if the metric has tags.
      *
-     * @return {@code true} if the metric has tags.
+     * @return {@code true} if the metric has tags
      */
     public boolean hasTags() {
         return tags != null;
