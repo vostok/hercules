@@ -52,7 +52,10 @@ public class GraphiteHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        LOGGER.warn("Got exception", cause);
-        ctx.close();
+        try {
+            LOGGER.warn("Got exception", cause);
+        } finally {
+            ctx.close();
+        }
     }
 }

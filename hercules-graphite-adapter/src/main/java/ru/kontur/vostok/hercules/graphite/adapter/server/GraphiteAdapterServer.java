@@ -54,6 +54,8 @@ public class GraphiteAdapterServer implements Lifecycle {
         int readTimeoutMs = PropertiesUtil.get(Props.READ_TIMEOUT_MS, properties).get();
         Integer recvBufferSizeBytes = PropertiesUtil.get(Props.RECV_BUFFER_SIZE_BYTES, properties).orEmpty(null);
 
+        int connLimit = PropertiesUtil.get(Props.CONNECTION_LIMIT, properties).get();
+
         bossGroup = new NioEventLoopGroup(
                 1,
                 ThreadFactories.newNamedThreadFactory("bossEventLoop", false));
@@ -61,6 +63,7 @@ public class GraphiteAdapterServer implements Lifecycle {
                 workerThreadCount,
                 ThreadFactories.newNamedThreadFactory("workerEventLoop", false));
 
+        ConnectionLimiter connectionLimiter = new ConnectionLimiter(connLimit);
         GraphiteHandler graphiteHandler = new GraphiteHandler(purgatory, metricsCollector);
 
         bootstrap = new ServerBootstrap()
@@ -71,6 +74,8 @@ public class GraphiteAdapterServer implements Lifecycle {
                             @Override
                             public void initChannel(SocketChannel channel) {
                                 channel.pipeline().
+                                        /* Limit concurrent connections */
+                                        addLast("connectionLimiter", connectionLimiter).
                                         /* Wait for new metrics for this period of time */
                                         addLast("readTimeout", new ReadTimeoutHandler(readTimeoutMs, TimeUnit.MILLISECONDS)).
                                         /* One metric per line, a metric length must not exceed 1024 bytes */
@@ -140,6 +145,12 @@ public class GraphiteAdapterServer implements Lifecycle {
         static final Parameter<Integer> RECV_BUFFER_SIZE_BYTES =
                 Parameter.integerParameter("recv.buffer.size.bytes").
                         withValidator(IntegerValidators.positive()).
+                        build();
+
+        static final Parameter<Integer> CONNECTION_LIMIT =
+                Parameter.integerParameter("connection.limit").
+                        withValidator(IntegerValidators.positive()).
+                        withDefault(50_000).
                         build();
     }
 }
