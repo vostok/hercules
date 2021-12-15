@@ -11,9 +11,13 @@ import ru.kontur.vostok.hercules.protocol.decoder.Decoder;
 import ru.kontur.vostok.hercules.protocol.decoder.EventReader;
 import ru.kontur.vostok.hercules.tracing.api.Page;
 import ru.kontur.vostok.hercules.tracing.api.TracingReader;
+import ru.kontur.vostok.hercules.tracing.api.exception.ReadTimeoutException;
+import ru.kontur.vostok.hercules.tracing.api.exception.TracingReaderException;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
+import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
+import ru.yandex.clickhouse.except.ClickHouseErrorCode;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -36,6 +40,7 @@ public class ClickHouseTracingReader implements TracingReader {
     private final ClickHouseConnector connector;
     private final String selectByTraceIdQuery;
     private final String selectByTraceIdAndParentSpanIdQuery;
+    private final int retryLimit;
 
     public ClickHouseTracingReader(Properties properties) {
         Properties clickHouseProperties = PropertiesUtil.ofScope(properties, Scopes.CLICKHOUSE);
@@ -54,25 +59,30 @@ public class ClickHouseTracingReader implements TracingReader {
                 " WHERE trace_id = ? AND parent_span_id = ?" +
                 " ORDER BY span_id" +
                 " LIMIT ? OFFSET ?";
+
+        this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
     }
 
     @Override
-    public Page<Event> getTraceSpansByTraceId(@NotNull UUID traceId, int limit, @Nullable String pagingState) {
+    public Page<Event> getTraceSpansByTraceId(@NotNull UUID traceId, int limit, @Nullable String pagingState)
+            throws TracingReaderException {
         long offset = pagingStateToOffset(pagingState);
-        return select(selectByTraceIdQuery, limit, offset, traceId, limit, offset);
+        return getTraceSpans(selectByTraceIdQuery, limit, offset, traceId, limit, offset);
     }
 
     @Override
-    public Page<Event> getTraceSpansByTraceIdAndParentSpanId(@NotNull UUID traceId, @NotNull UUID parentSpanId, int limit, @Nullable String pagingState) {
+    public Page<Event> getTraceSpansByTraceIdAndParentSpanId(@NotNull UUID traceId, @NotNull UUID parentSpanId, int limit, @Nullable String pagingState)
+            throws TracingReaderException {
         long offset = pagingStateToOffset(pagingState);
-        return select(selectByTraceIdAndParentSpanIdQuery, limit, offset, traceId, parentSpanId, limit, offset);
+        return getTraceSpans(selectByTraceIdAndParentSpanIdQuery, limit, offset, traceId, parentSpanId, limit, offset);
     }
+
     @Override
     public void close() {
         connector.close();
     }
 
-    private Page<Event> select(String sql, int limit, long offset, Object... params) {
+    private Page<Event> select(String sql, int limit, long offset, Object... params) throws SQLException {
         Optional<Connection> connection = connector.connection();
         try (PreparedStatement select = connection.orElseThrow(IllegalStateException::new).prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
@@ -86,11 +96,27 @@ public class ClickHouseTracingReader implements TracingReader {
                 rowCounter++;
             }
             return new Page<>(events, rowCounter == limit ? offsetToPagingState(offset + limit) : null);
-        } catch (SQLException ex) {
-            //TODO: Process SQL Exception
-            LOGGER.error("Read failed with exception", ex);
-            throw new RuntimeException(ex);
         }
+    }
+
+    private Page<Event> getTraceSpans(String sql, int limit, long offset, Object... params)
+            throws TracingReaderException {
+        int retryCount = this.retryLimit;
+
+        do {
+            try {
+                return select(sql, limit, offset, params);
+            } catch (SQLException ex) {
+                //TODO: Process SQL Exception
+                if (ex.getErrorCode() != ClickHouseErrorCode.TIMEOUT_EXCEEDED.code) {
+                    LOGGER.error("Read failed with exception", ex);
+                    throw new TracingReaderException();
+                }
+            }
+        } while (retryCount-- > 0);
+
+        LOGGER.warn("ClickHouse read timed out");
+        throw new ReadTimeoutException();
     }
 
     private static long pagingStateToOffset(@Nullable String pagingState) {
@@ -116,6 +142,12 @@ public class ClickHouseTracingReader implements TracingReader {
         static Parameter<String> TABLE =
                 Parameter.stringParameter("table").
                         withDefault("tracing_spans").
+                        build();
+
+        static Parameter<Integer> RETRY_LIMIT =
+                Parameter.integerParameter("retry.limit").
+                        withDefault(1).
+                        withValidator(IntegerValidators.nonNegative()).
                         build();
     }
 }

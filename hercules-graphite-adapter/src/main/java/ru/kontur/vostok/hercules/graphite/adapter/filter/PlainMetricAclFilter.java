@@ -50,6 +50,7 @@ public class PlainMetricAclFilter implements MetricFilter {
     public boolean test(Metric metric) {
         CharSequence metricName = new AsciiString(metric.name());
 
+        //TODO: Per ACL entry statistics may be useful
         for (PlainMetricAclEntry entry : entries) {
             if (entry.pattern().matcher(metricName).matches()) {
                 return entry.isPermit();

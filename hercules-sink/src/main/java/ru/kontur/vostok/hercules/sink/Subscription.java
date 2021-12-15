@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Subscription determines {@link Pattern} for subscribing in a Kafka consumer.
@@ -42,7 +43,7 @@ public class Subscription {
 
     @Override
     public String toString() {
-        return pattern.pattern();
+        return patternMatchers.stream().map(Object::toString).collect(Collectors.joining(","));
     }
 
     /**

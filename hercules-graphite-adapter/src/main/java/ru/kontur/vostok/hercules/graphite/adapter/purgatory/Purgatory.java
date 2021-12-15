@@ -3,7 +3,9 @@ package ru.kontur.vostok.hercules.graphite.adapter.purgatory;
 import ru.kontur.vostok.hercules.graphite.adapter.filter.PlainMetricAclFilter;
 import ru.kontur.vostok.hercules.graphite.adapter.metric.Metric;
 import ru.kontur.vostok.hercules.graphite.adapter.metric.MetricTag;
+import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
@@ -12,7 +14,6 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-import ru.kontur.vostok.hercules.util.text.AsciiUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 import ru.kontur.vostok.hercules.uuid.UuidGenerator;
 
@@ -37,7 +38,11 @@ public class Purgatory {
     private static final TinyString VALUE_TAG = TinyString.of("value");
     private static final Variant NAME_KEY_TAG_VALUE = Variant.ofString("_name");
 
+    private static final String METRICS_SCOPE = Purgatory.class.getSimpleName();
+
     private final UuidGenerator uuidGenerator = UuidGenerator.getClientInstance();
+
+    private final MetricValidator metricValidator;
 
     private final Accumulator accumulator;
 
@@ -46,25 +51,41 @@ public class Purgatory {
     private final String plainMetricsStream;
     private final String taggedMetricsStream;
 
+    private final Meter invalidMetricsMeter;
+    private final Meter deniedMetricsMeter;
+    private final Meter plainMetricsMeter;
+    private final Meter taggedMetricsMeter;
+
     public Purgatory(Properties properties, Accumulator accumulator, MetricsCollector metricsCollector) {
+        this.metricValidator = new MetricValidator();
+
         this.accumulator = accumulator;
 
         this.acl = new PlainMetricAclFilter(PropertiesUtil.ofScope(properties, "filter.acl"));
 
         this.plainMetricsStream = PropertiesUtil.get(Props.PLAIN_METRICS_STREAM, properties).get();
         this.taggedMetricsStream = PropertiesUtil.get(Props.TAGGED_METRICS_STREAM, properties).get();
+
+        this.invalidMetricsMeter = metricsCollector.meter(MetricsUtil.toMetricPathWithPrefix(METRICS_SCOPE, "invalidMetrics"));
+        this.deniedMetricsMeter = metricsCollector.meter(MetricsUtil.toMetricPathWithPrefix(METRICS_SCOPE, "deniedMetrics"));
+        this.plainMetricsMeter = metricsCollector.meter(MetricsUtil.toMetricPathWithPrefix(METRICS_SCOPE, "plainMetrics"));
+        this.taggedMetricsMeter = metricsCollector.meter(MetricsUtil.toMetricPathWithPrefix(METRICS_SCOPE, "taggedMetrics"));
     }
 
     public void process(Metric metric) {
-        if (!validate(metric)) {
+        if (!metricValidator.validate(metric)) {
+            invalidMetricsMeter.mark();
             return;
         }
 
         if (!acl.test(metric)) {
-            return;//TODO: ACL statistics may be useful
+            deniedMetricsMeter.mark();
+            return;
         }
 
         if (metric.hasTags()) {
+            taggedMetricsMeter.mark();
+
             MetricTag[] tags = metric.tags();
             Container[] tagContainers = new Container[tags.length + 1];
             for (int i = 0; i < tags.length; i++) {
@@ -85,6 +106,8 @@ public class Purgatory {
                     build();
             accumulator.add(taggedMetricsStream, event);
         } else {
+            plainMetricsMeter.mark();
+
             Container nameContainer = Container.builder().
                     tag(KEY_TAG, NAME_KEY_TAG_VALUE).
                     tag(VALUE_TAG, Variant.ofString(metric.name())).
@@ -97,25 +120,6 @@ public class Purgatory {
             accumulator.add(plainMetricsStream, event);
         }
     }
-
-    private boolean validate(Metric metric) {
-        if (Double.isNaN(metric.value())) {
-            return false;
-        }
-
-        byte[] metricName = metric.name();
-        if (metricName.length == 0) {
-            return false;
-        }
-        for (byte c : metricName) {
-            if (!AsciiUtil.isAlphaNumeric(c) && !AsciiUtil.isDot(c) && !AsciiUtil.isUnderscore(c)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
 
     private static class Props {
         static Parameter<String> PLAIN_METRICS_STREAM =

@@ -6,7 +6,9 @@ package ru.kontur.vostok.hercules.util.text;
 public class AsciiUtil {
     public static final byte ASCII_SPACE = ' ';
     public static final byte ASCII_UNDERSCORE = '_';
+    public static final byte ASCII_HYPHEN = '-';
     public static final byte ASCII_DOT = '.';
+    public static final byte ASCII_COLON = ':';
     public static final byte ASCII_SEMICOLON = ';';
     public static final byte ASCII_EQUAL_SIGN = '=';
 
@@ -34,7 +36,15 @@ public class AsciiUtil {
         return c == ASCII_UNDERSCORE;
     }
 
+    public static boolean isHyphen(byte c) {
+        return c == ASCII_HYPHEN;
+    }
+
     public static boolean isDot(byte c) {
         return c == ASCII_DOT;
+    }
+
+    public static boolean isColon(byte c) {
+        return c == ASCII_COLON;
     }
 }

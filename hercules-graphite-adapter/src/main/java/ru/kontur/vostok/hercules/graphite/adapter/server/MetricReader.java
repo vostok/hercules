@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.graphite.adapter.server;
 
+import com.fasterxml.jackson.databind.exc.InvalidNullException;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
@@ -9,7 +10,7 @@ import ru.kontur.vostok.hercules.graphite.adapter.metric.MetricTag;
 import ru.kontur.vostok.hercules.util.text.AsciiUtil;
 
 /**
- * The metric reader reads metrics from a buffer.
+ * The metric reader reads metric from a buffer.
  * <p>
  * A buffer provides a single metric.
  * See handler pipeline in the {@link GraphiteAdapterServer} for details.
@@ -31,7 +32,7 @@ public final class MetricReader {
         try {
             int length = buf.bytesBefore(AsciiUtil.ASCII_SPACE);
             if (length == -1) {
-                buf.skipBytes(buf.readableBytes());
+                skipReadableBytes(buf);
                 return null;
             }
 
@@ -45,22 +46,34 @@ public final class MetricReader {
             if (!hasMoreBytes(buf)) {
                 return null;
             }
-            buf.skipBytes(1);
+            buf.skipBytes(1);// Skip space between metric name and value
 
             length = buf.bytesBefore(AsciiUtil.ASCII_SPACE);
             if (length == -1) {
-                buf.skipBytes(buf.readableBytes());
+                skipReadableBytes(buf);
                 return null;
             }
 
-            double metricValue = readDouble(buf, length);
+            double metricValue;
+            try {
+                metricValue = readDouble(buf, length);
+            } catch (NumberFormatException ex) {
+                skipReadableBytes(buf);
+                return null;
+            }
+            //TODO: Ignore metrics with NaN value
 
             if (!hasMoreBytes(buf)) {
                 return null;
             }
-            buf.skipBytes(1);
+            buf.skipBytes(1);// Skip space between metric value and timestamp
 
-            long metricTimestamp = readLong(buf, buf.readableBytes());
+            long metricTimestamp;
+            try {
+                metricTimestamp = readLong(buf, buf.readableBytes());
+            } catch (NumberFormatException ex) {
+                return null;
+            }
 
             return new Metric(metricName, tags, metricValue, metricTimestamp);
         } catch (Exception ex) {
@@ -143,6 +156,10 @@ public final class MetricReader {
             count++;
         } while (fromIndex < toIndex);
         return count;
+    }
+
+    private static void skipReadableBytes(ByteBuf buf) {
+        buf.skipBytes(buf.readableBytes());
     }
 
     private MetricReader() {
