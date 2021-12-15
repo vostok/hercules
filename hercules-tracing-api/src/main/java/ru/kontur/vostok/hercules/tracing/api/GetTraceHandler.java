@@ -9,6 +9,8 @@ import ru.kontur.vostok.hercules.json.Document;
 import ru.kontur.vostok.hercules.json.DocumentWriter;
 import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.tracing.api.exception.ReadTimeoutException;
+import ru.kontur.vostok.hercules.tracing.api.exception.TracingReaderException;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 
 import java.io.ByteArrayOutputStream;
@@ -56,18 +58,27 @@ public class GetTraceHandler implements HttpHandler {
         }
 
         final Page<Event> traceSpans;
-        if (!parentSpanId.isEmpty()) {
-            traceSpans = tracingReader.getTraceSpansByTraceIdAndParentSpanId(
-                    traceId.get(),
-                    parentSpanId.get(),
-                    limit.get(),
-                    pagingState.orEmpty(null));
-        } else {
-            traceSpans = tracingReader.getTraceSpansByTraceId(
-                    traceId.get(),
-                    limit.get(),
-                    pagingState.orEmpty(null));
+        try {
+            if (!parentSpanId.isEmpty()) {
+                traceSpans = tracingReader.getTraceSpansByTraceIdAndParentSpanId(
+                        traceId.get(),
+                        parentSpanId.get(),
+                        limit.get(),
+                        pagingState.orEmpty(null));
+            } else {
+                traceSpans = tracingReader.getTraceSpansByTraceId(
+                        traceId.get(),
+                        limit.get(),
+                        pagingState.orEmpty(null));
+            }
+        } catch (ReadTimeoutException ex) {
+            request.complete(HttpStatusCodes.REQUEST_TIMEOUT);
+            return;
+        } catch (TracingReaderException ex) {
+            request.complete(HttpStatusCodes.INTERNAL_SERVER_ERROR);
+            return;
         }
+
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             DocumentWriter.writeTo(outputStream, createDocument(traceSpans));

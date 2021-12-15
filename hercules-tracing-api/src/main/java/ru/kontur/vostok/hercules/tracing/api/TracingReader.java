@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.tracing.api.cassandra.CassandraTracingReader;
 import ru.kontur.vostok.hercules.tracing.api.clickhouse.ClickHouseTracingReader;
+import ru.kontur.vostok.hercules.tracing.api.exception.TracingReaderException;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -27,7 +28,7 @@ public interface TracingReader extends Closeable {
     Page<Event> getTraceSpansByTraceId(
             @NotNull UUID traceId,
             int limit,
-            @Nullable String pagingState);
+            @Nullable String pagingState) throws TracingReaderException;
 
     /**
      * Get trace spans by trace id and parent span id.
@@ -42,7 +43,7 @@ public interface TracingReader extends Closeable {
             @NotNull UUID traceId,
             @NotNull UUID parentSpanId,
             int limit,
-            @Nullable String pagingState);
+            @Nullable String pagingState) throws TracingReaderException;
 
     static TracingReader createTracingReader(Properties properties) {
         Source source = PropertiesUtil.get(Props.SOURCE, properties).get();
