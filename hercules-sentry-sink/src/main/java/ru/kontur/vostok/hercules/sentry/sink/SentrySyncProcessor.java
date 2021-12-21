@@ -19,6 +19,7 @@ import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
+import ru.kontur.vostok.hercules.tags.SentryTags;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -104,14 +105,20 @@ public class SentrySyncProcessor {
             return false;
         }
 
-        Optional<String> organizationName = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
+        Optional<String> organizationName = ContainerUtil.extract(properties.get(), SentryTags.ORGANIZATION_TAG);
+        if (!organizationName.isPresent()) {
+            organizationName = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
+        }
         if (!organizationName.isPresent()) {
             LOGGER.debug("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
             return false;
         }
         String organization = sanitizeName(organizationName.get());
 
-        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.SUBPROJECT_TAG);
+        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), SentryTags.PROJECT_TAG);
+        if (!sentryProjectName.isPresent()) {
+            sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.SUBPROJECT_TAG);
+        }
         String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
 
         final String prefix = makePrefix(organization, sentryProject);

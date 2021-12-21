@@ -50,4 +50,18 @@ public class SentryTags {
     public static TagDescription<Optional<String>> LOGGER_TAG = TagDescriptionBuilder.string("logger")
             .optional()
             .build();
+
+    /**
+     * Special name for marking use of special organization in Sentry
+     */
+    public static TagDescription<Optional<String>> ORGANIZATION_TAG = TagDescriptionBuilder.string("sentry-organization")
+            .optional()
+            .build();
+
+    /**
+     * Special name for marking use of special project in Sentry
+     */
+    public static TagDescription<Optional<String>> PROJECT_TAG = TagDescriptionBuilder.string("sentry-project")
+            .optional()
+            .build();
 }
