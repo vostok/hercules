@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractSinkDaemon {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSinkDaemon.class);
+    private static final long SHUTDOWN_TIMEOUT_MS = 5_000L;
 
     protected MetricsCollector metricsCollector;
 
@@ -106,11 +107,12 @@ public abstract class AbstractSinkDaemon {
 
     private void shutdown() {
         long start = System.currentTimeMillis();
+
         LOGGER.info("Start {} shutdown", getDaemonName());
 
         try {
             if (daemonHttpServer != null) {
-                daemonHttpServer.stop(5_000, TimeUnit.MILLISECONDS);
+                daemonHttpServer.stop(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping HTTP Server", t);
@@ -118,7 +120,7 @@ public abstract class AbstractSinkDaemon {
 
         try {
             if (sinkPool != null) {
-                sinkPool.stop(5_000, TimeUnit.MILLISECONDS);
+                sinkPool.stop(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping Sink pool", t);
@@ -127,7 +129,12 @@ public abstract class AbstractSinkDaemon {
         try {
             if (executor != null) {
                 executor.shutdown();
-                executor.awaitTermination(5_000L, TimeUnit.MILLISECONDS);
+                if (!executor.awaitTermination(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                    executor.shutdownNow();
+                    if (!executor.awaitTermination(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                        LOGGER.warn("Thread pool did not terminate");
+                    }
+                }
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping sink thread executor", t);
@@ -135,7 +142,7 @@ public abstract class AbstractSinkDaemon {
 
         try {
             if (sender != null) {
-                sender.stop(5_000L, TimeUnit.MILLISECONDS);
+                sender.stop(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable t) {
             LOGGER.error("Error on stopping sender", t);

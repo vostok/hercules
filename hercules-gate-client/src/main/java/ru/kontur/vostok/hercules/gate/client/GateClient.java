@@ -18,7 +18,7 @@ import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.HttpProtocolException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableHostException;
-import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.concurrent.ScheduledThreadPoolExecutorBuilder;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -27,10 +27,8 @@ import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +39,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class GateClient implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GateClient.class);
-    private static final Random RANDOM = new Random();
 
     private static final String PING = "/ping";
     private static final String SEND_ACK = "/stream/send";
@@ -53,9 +50,12 @@ public class GateClient implements Closeable {
     private final Topology<String> whiteList;
     private final int greyListElementsRecoveryTimeMs;
     private final ScheduledExecutorService scheduler =
-            Executors.newScheduledThreadPool(
-                    1,
-                    ThreadFactories.newNamedThreadFactory("gate-client-topology-updater", false));
+            new ScheduledThreadPoolExecutorBuilder()
+                    .threadPoolSize(1)
+                    .name("gate-client-topology-updater")
+                    .daemon(false)
+                    .dropDelayedTasksAfterShutdown()
+                    .build();
 
     public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList) {
 
@@ -221,6 +221,14 @@ public class GateClient implements Closeable {
 
     public void close() {
         scheduler.shutdown();
+
+        try {
+            if (!scheduler.awaitTermination(5_000L, TimeUnit.MILLISECONDS)) {
+                LOGGER.warn("Scheduled thread pool did not terminate");
+            }
+        } catch (InterruptedException ex) {
+            LOGGER.error("Error on stopping scheduler", ex);
+        }
 
         try {
             client.close();

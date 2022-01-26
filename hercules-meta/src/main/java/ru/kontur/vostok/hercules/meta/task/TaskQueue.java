@@ -6,10 +6,9 @@ import ru.kontur.vostok.hercules.curator.exception.CuratorInternalException;
 import ru.kontur.vostok.hercules.curator.exception.CuratorUnknownException;
 import ru.kontur.vostok.hercules.curator.result.CreationResult;
 import ru.kontur.vostok.hercules.meta.serialization.SerializationException;
-import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.concurrent.ScheduledThreadPoolExecutorBuilder;
 import ru.kontur.vostok.hercules.util.lifecycle.Stoppable;
 
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +25,12 @@ public class TaskQueue<T> implements Stoppable {
     private final long delayMs;
 
     private final ScheduledExecutorService executor =
-            Executors.newSingleThreadScheduledExecutor(ThreadFactories.newNamedThreadFactory("task-queue", false));
+            new ScheduledThreadPoolExecutorBuilder()
+                    .threadPoolSize(1)
+                    .name("task-queue")
+                    .daemon(false)
+                    .dropDelayedTasksAfterShutdown()
+                    .build();
 
     public TaskQueue(TaskRepository<T> repository, long delayMs) {
         this.repository = repository;
