@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.util.lifecycle.Stoppable;
 
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -18,7 +17,12 @@ public class RenewableTaskScheduler implements Stoppable {
     private final ScheduledExecutorService executor;
 
     public RenewableTaskScheduler(String name, int threadPoolSize) {
-        executor = Executors.newScheduledThreadPool(threadPoolSize, ThreadFactories.newNamedThreadFactory(name, false));
+        executor = new ScheduledThreadPoolExecutorBuilder()
+                .threadPoolSize(threadPoolSize)
+                .name(name)
+                .daemon(false)
+                .dropDelayedTasksAfterShutdown()
+                .build();
     }
 
     /**
@@ -26,8 +30,8 @@ public class RenewableTaskScheduler implements Stoppable {
      * <p>
      * If task is scheduled, it will run between two heartbeats. Task is auto-scheduled if call renew or run methods.
      *
-     * @param runnable is task to be scheduled
-     * @param heartbeatMillis is heartbeat interval in millis
+     * @param runnable          is task to be scheduled
+     * @param heartbeatMillis   is heartbeat interval in millis
      * @param shouldBeScheduled if true, then call schedule method on task
      * @return task created
      */
@@ -43,7 +47,11 @@ public class RenewableTaskScheduler implements Stoppable {
     public boolean stop(long timeout, TimeUnit unit) {
         executor.shutdown();
         try {
-            return executor.awaitTermination(timeout, unit);
+            boolean isTerminated = executor.awaitTermination(timeout, unit);
+            if (!isTerminated) {
+                LOGGER.warn("Scheduled thread pool did not terminate");
+            }
+            return isTerminated;
         } catch (InterruptedException e) {
             LOGGER.warn("Shutdown interrupted", e);
             Thread.currentThread().interrupt();
