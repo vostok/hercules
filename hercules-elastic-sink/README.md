@@ -54,6 +54,8 @@ default value: `yyyy-MM-dd'T'HH:mm:ss.nnnnnnnnnX`
 
 `sink.sender.elastic.format.file` - path to the mapping file. Can use `resource://log-event.mapping` if sink processes logs. See [MappingLoader](../hercules-json/src/main/java/ru/kontur/vostok/hercules/json/format/MappingLoader.java) for details, required
 
+`sink.sender.elastic.format.ignore.unknown.tags` - should ignore event tags for which no mapping is specified, default value: `false`
+
 ##### Elastic Client settings
 `sink.sender.elastic.client.hosts` - list of elastic hosts
 
