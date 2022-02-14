@@ -16,7 +16,6 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
-import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
@@ -202,7 +201,7 @@ public class SentryEventConverter {
                 continue;
             }
 
-            if (VariantUtil.isPrimitive(value)) {
+            if (value.getType().isPrimitive()) {
                 eventBuilder.withTag(tagName, sanitizeTagValue(value));
                 continue;
             }
@@ -226,7 +225,7 @@ public class SentryEventConverter {
         if (sourceName.length() <= prefixWithDelimiter.length()) {
             return Optional.empty();
         }
-        if (!sourceName.substring(0, prefixWithDelimiter.length()).equals(prefixWithDelimiter)) {
+        if (!sourceName.startsWith(prefixWithDelimiter)) {
             return Optional.empty();
         }
         return Optional.of(sourceName.substring(prefixWithDelimiter.length()));
