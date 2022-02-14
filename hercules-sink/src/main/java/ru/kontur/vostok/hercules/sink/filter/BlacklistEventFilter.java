@@ -2,14 +2,13 @@ package ru.kontur.vostok.hercules.sink.filter;
 
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -33,10 +32,9 @@ import java.util.stream.Stream;
  * @author Gregory Koshelev
  */
 public class BlacklistEventFilter extends EventFilter {
-    private static final TinyString STAR = TinyString.of("*");
 
     private final List<HPath> paths;
-    private final List<List<TinyString>> patterns;
+    private final PatternTree blacklistTree;
 
     /**
      * Inheritors must implement constructor with the same signature.
@@ -50,49 +48,25 @@ public class BlacklistEventFilter extends EventFilter {
                 map(HPath::fromPath).
                 collect(Collectors.toList());
 
-        this.patterns = Stream.of(PropertiesUtil.get(Props.PATTERNS, properties).get()).
-                map(x -> Stream.of(x.split(":")).
-                        map(v -> v.equals("*") ? STAR : TinyString.of(v)).
-                        collect(Collectors.toList())).
-                collect(Collectors.toList());
+        this.blacklistTree = new PatternTree(Collections.nCopies(paths.size(), Type.STRING));
 
-        for (List pattern : patterns) {
-            if (paths.size() != pattern.size()) {
-                throw new IllegalArgumentException("Pattern size should be equal to paths size");
-            }
+        for (String pattern : PropertiesUtil.get(Props.PATTERNS, properties).get()) {
+            blacklistTree.put(pattern);
         }
     }
 
     @Override
     public boolean test(Event event) {
-        if (patterns.isEmpty()) {
+        if (blacklistTree.isEmpty()) {
             return true;
         }
 
         Container payload = event.getPayload();
-        List<Variant> values = paths.stream().
+        List<Variant> variants = paths.stream().
                 map(path -> path.extract(payload)).
                 collect(Collectors.toList());
-        for (List<TinyString> pattern : patterns) {//TODO: Should be reimplemented (may be use trie?) to avoid for-for iterations with array comparing
-            boolean matched = true;
-            for (int i = 0; i < pattern.size(); i++) {
-                TinyString element = pattern.get(i);
-                if (element == STAR) {
-                    continue;
-                }
 
-                Variant variant = values.get(i);
-                matched = (variant != null) && (variant.getType() == Type.STRING) && Arrays.equals(element.getBytes(), (byte[]) variant.getValue());
-                if (!matched) {
-                    break;
-                }
-            }
-            if (matched) {
-                return false;
-            }
-        }
-
-        return true;
+        return !blacklistTree.matches(variants);
     }
 
     private static class Props {

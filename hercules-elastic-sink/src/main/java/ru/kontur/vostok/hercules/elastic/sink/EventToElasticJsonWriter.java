@@ -9,7 +9,6 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
-import ru.kontur.vostok.hercules.protocol.util.VariantUtil;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -59,7 +58,7 @@ public final class EventToElasticJsonWriter {
                 }
 
                 if (LogEventTags.EXCEPTION_TAG.getName().equals(tag.getKey())) {
-                    Optional<Container> exception = VariantUtil.extractContainer(tag.getValue());
+                    Optional<Container> exception = ContainerUtil.extractContainer(tag.getValue());
                     if (exception.isPresent()) {
                         String stackTrace = StackTraceCreator.createStackTrace(exception.get());
                         EventToJsonWriter.writeVariantAsField(generator, STACKTRACE_FIELD, Variant.ofString(stackTrace));
