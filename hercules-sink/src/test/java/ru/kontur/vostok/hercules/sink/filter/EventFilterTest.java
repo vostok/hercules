@@ -41,8 +41,9 @@ public class EventFilterTest {
     @Test
     public void blacklistTest() {
         Properties properties = new Properties();
-        properties.setProperty("paths", "properties/project,properties/environment");
-        properties.setProperty("patterns", "my_project:staging,test_project:production,bad_project:*");
+        properties.setProperty("types", "STRING,STRING,INTEGER");
+        properties.setProperty("paths", "properties/project,properties/environment,properties/id");
+        properties.setProperty("patterns", "my_project:staging:123,test_project:production:456,bad_project:*:*");
 
         BlacklistEventFilter filter = new BlacklistEventFilter(properties);
 
@@ -66,6 +67,7 @@ public class EventFilterTest {
                                 Container.builder().
                                         tag("project", Variant.ofString("bad_project")).
                                         tag("environment", Variant.ofString("testing")).
+                                        tag("id", Variant.ofInteger(123)).
                                         build())).
                 build();
         Assert.assertFalse(filter.test(event));
@@ -77,6 +79,7 @@ public class EventFilterTest {
                                 Container.builder().
                                         tag("project", Variant.ofString("test_project")).
                                         tag("environment", Variant.ofString("production")).
+                                        tag("id", Variant.ofInteger(456)).
                                         build())).
                 build();
         Assert.assertFalse(filter.test(event));
@@ -88,6 +91,7 @@ public class EventFilterTest {
                                 Container.builder().
                                         tag("project", Variant.ofString("test_project")).
                                         tag("environment", Variant.ofString("staging")).
+                                        tag("id", Variant.ofInteger(456)).
                                         build())).
                 build();
         Assert.assertTrue(filter.test(event));
@@ -96,8 +100,9 @@ public class EventFilterTest {
     @Test
     public void whitelistTest() {
         Properties properties = new Properties();
-        properties.setProperty("paths", "properties/project,properties/environment");
-        properties.setProperty("patterns", "my_project:staging,test_project:production,bad_project:*");
+        properties.setProperty("types", "STRING,STRING,INTEGER");
+        properties.setProperty("paths", "properties/project,properties/environment,properties/id");
+        properties.setProperty("patterns", "my_project:staging:123,test_project:production:456,bad_project:*:*");
 
         WhitelistEventFilter filter = new WhitelistEventFilter(properties);
 
@@ -121,6 +126,7 @@ public class EventFilterTest {
                                 Container.builder().
                                         tag("project", Variant.ofString("bad_project")).
                                         tag("environment", Variant.ofString("testing")).
+                                        tag("id", Variant.ofInteger(123)).
                                         build())).
                 build();
         Assert.assertTrue(filter.test(event));
@@ -132,6 +138,7 @@ public class EventFilterTest {
                                 Container.builder().
                                         tag("project", Variant.ofString("test_project")).
                                         tag("environment", Variant.ofString("production")).
+                                        tag("id", Variant.ofInteger(456)).
                                         build())).
                 build();
         Assert.assertTrue(filter.test(event));
@@ -143,6 +150,7 @@ public class EventFilterTest {
                                 Container.builder().
                                         tag("project", Variant.ofString("test_project")).
                                         tag("environment", Variant.ofString("staging")).
+                                        tag("id", Variant.ofInteger(456)).
                                         build())).
                 build();
         Assert.assertFalse(filter.test(event));
