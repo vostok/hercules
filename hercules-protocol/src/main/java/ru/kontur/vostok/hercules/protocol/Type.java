@@ -38,6 +38,18 @@ public enum Type {
 
     /**
      * Returns {@code true} if {@link Type} is primitive.
+     * <ul>List of primitive types:
+     *     <li>{@link Type#BYTE}</li>
+     *     <li>{@link Type#SHORT}</li>
+     *     <li>{@link Type#INTEGER}</li>
+     *     <li>{@link Type#LONG}</li>
+     *     <li>{@link Type#FLAG}</li>
+     *     <li>{@link Type#FLOAT}</li>
+     *     <li>{@link Type#DOUBLE}</li>
+     *     <li>{@link Type#STRING}</li>
+     *     <li>{@link Type#UUID}</li>
+     *     <li>{@link Type#NULL}</li>
+     * </ul>
      *
      * @return {@code true} if {@link Type} is primitive.
      */

@@ -26,6 +26,8 @@ import java.util.stream.Stream;
  * <p>
  * Blacklist filter supports star {@code *} in the pattern definition. It means {@code any value}.
  * <p>
+ * Blacklist filter supports only primitive types (see {@link Type#isPrimitive()}).
+ * <p>
  * Sample:
  * <pre>{@code types=STRING,STRING,INTEGER
  * paths=properties/project,properties/environment,properties/id
