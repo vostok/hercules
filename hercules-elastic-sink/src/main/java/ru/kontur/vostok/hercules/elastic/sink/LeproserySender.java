@@ -68,12 +68,18 @@ class LeproserySender {
     private final Lazy<String> sinkGroupId;
     private final Lazy<String> sinkSubscription;
 
-    private final Meter sentToLeproseryEventCountMeter;
-    private final Meter sentToLeproseryWithErrorsEventCountMeter;
+    private final Meter leproseryEventsMeter;
+    private final Meter leproseryEventsWithErrorsMeter;
+    private final IndicesMetricsCollector leproseryEventsIndicesMetricsCollector;
 
     LeproserySender(Properties properties, MetricsCollector metricsCollector) {
-        sentToLeproseryEventCountMeter = metricsCollector.meter("sentToLeproseryEventCount");
-        sentToLeproseryWithErrorsEventCountMeter = metricsCollector.meter("sentToLeproseryWithErrorsEventCount");
+        leproseryEventsMeter = metricsCollector.meter("leproseryEvents");
+        leproseryEventsWithErrorsMeter = metricsCollector.meter("leproseryEventsWithErrors");
+        leproseryEventsIndicesMetricsCollector = new IndicesMetricsCollector(
+                "leproseryEvents",
+                10_000,
+                metricsCollector
+        );
 
         this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, properties).get();
         this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, properties).get();
@@ -100,11 +106,11 @@ class LeproserySender {
             gateClient.send(leproseryApiKey, leproseryStream, data);
 
             LOGGER.info("Send to leprosery {} events", count);
-            sentToLeproseryEventCountMeter.mark(count);
-            sentToLeproseryWithErrorsEventCountMeter.mark(eventErrorInfos.size() - count);
+            leproseryEventsMeter.mark(count);
+            leproseryEventsWithErrorsMeter.mark(eventErrorInfos.size() - count);
         } catch (BadRequestException | UnavailableClusterException e) {
             LOGGER.error("Leprosery sending error", e);
-            sentToLeproseryWithErrorsEventCountMeter.mark(count);
+            leproseryEventsWithErrorsMeter.mark(count);
         }
     }
 
@@ -113,6 +119,7 @@ class LeproserySender {
                 .map(entry -> {
                     ElasticDocument document = entry.getKey();
                     ValidationResult validationResult = entry.getValue();
+                    leproseryEventsIndicesMetricsCollector.markEvent(document.index());
                     return toLeproseryEvent(document, validationResult.error());
                 })
                 .filter(Optional::isPresent)
