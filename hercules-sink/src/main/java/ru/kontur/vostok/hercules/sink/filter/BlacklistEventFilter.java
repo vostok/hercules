@@ -15,19 +15,23 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Blacklist filter uses paths and corresponding patterns to filter out any events with tag values from paths are same as any of patterns has.
+ * Blacklist filter uses paths and corresponding patterns to filter out any events with tag values and types from paths are same as any of patterns has.
  * <p>
- * For blacklist filter initialization two properties are needed:<br>
+ * For blacklist filter initialization three properties are needed:<br>
  * {@code paths} is the list of {@link HPath} in the string-path form ({@code paths} can be empty),<br>
- * and {@code patterns} is the list of value patterns for tags from paths above, values in the pattern are separated by the colon {@code :} ({@code patterns} can be empty).
+ * {@code types} is the list of {@link Type}s based on which tags retrieved from the event will be checked ({@code types} can be empty or absent,
+ * then by default the list will consist of {@link Type#STRING} elements,<br>
+ * and {@code patterns} is the list of value patterns for tags from paths above, values in the pattern are separated by the colon {@code :}
+ * and should correspond to the specified types ({@code patterns} can be empty).
  * <p>
  * Blacklist filter supports star {@code *} in the pattern definition. It means {@code any value}.
  * <p>
- * FIXME: Currently, this filter supports only tags of type {@link Type#STRING} and has inefficient walkthrough over patterns when test events.
+ * Blacklist filter supports only primitive types (see {@link Type#isPrimitive()}).
  * <p>
  * Sample:
- * <pre>{@code paths=properties/project,properties/environment
- * patterns=my_project:testing,my_project:staging}</pre>
+ * <pre>{@code types=STRING,STRING,INTEGER
+ * paths=properties/project,properties/environment,properties/id
+ * patterns=my_project:testing:123,my_project:staging:*}</pre>
  * Here, events for project {@code my_project} from {@code testing} and {@code staging} environments will be filtered out.
  * @author Gregory Koshelev
  */
@@ -48,7 +52,15 @@ public class BlacklistEventFilter extends EventFilter {
                 map(HPath::fromPath).
                 collect(Collectors.toList());
 
-        this.blacklistTree = new PatternTree(Collections.nCopies(paths.size(), Type.STRING));
+        List<Type> types = Stream.of(PropertiesUtil.get(Props.TYPES, properties).get()).
+                map(Type::valueOf).
+                collect(Collectors.toList());
+
+        if (types.isEmpty()) {
+            types = Collections.nCopies(paths.size(), Type.STRING);
+        }
+
+        this.blacklistTree = new PatternTree(types);
 
         for (String pattern : PropertiesUtil.get(Props.PATTERNS, properties).get()) {
             blacklistTree.put(pattern);
@@ -75,6 +87,10 @@ public class BlacklistEventFilter extends EventFilter {
                 build();
 
         private static final Parameter<String[]> PATTERNS = Parameter.stringArrayParameter("patterns").
+                withDefault(new String[0]).
+                build();
+
+        private static final Parameter<String[]> TYPES = Parameter.stringArrayParameter("types").
                 withDefault(new String[0]).
                 build();
     }
