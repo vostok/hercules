@@ -16,6 +16,8 @@ public class CombinerTest {
 
         Combiner combiner = new IsoDateTimeCombiner();
         assertEquals("2020-07-23T12:50:50.149976600+03:00", combiner.combine(timestamp, offset));
+        assertEquals("2020-07-23T09:50:50.149976600Z", combiner.combine(timestamp));
+        assertEquals("2020-07-23T09:50:50.149976600Z", combiner.combine(timestamp, null));
     }
 
     @Test
