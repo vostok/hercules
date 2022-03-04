@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.json.format.combiner;
 
+import org.jetbrains.annotations.Nullable;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.util.ClassUtil;
 
@@ -12,11 +13,12 @@ import ru.kontur.vostok.hercules.util.ClassUtil;
 public interface Combiner {
     /**
      * Combine values into single one.
+     * Each value in {@code values} can be {@code null}.
      *
      * @param values values to combine
      * @return the result
      */
-    Object combine(Variant... values);
+    @Nullable Object combine(Variant... values);
 
     static Combiner fromClass(String className) {
         return ClassUtil.fromClass(className, Combiner.class);
