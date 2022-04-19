@@ -211,3 +211,32 @@ move properties/* to *
 # Render structured exception as string stack trace
 transform exception to stackTrace using ru.kontur.vostok.hercules.elastic.sink.format.ExceptionToStackTraceTransformer
 ```
+
+### `indices.json` sample:
+```json
+[
+  {
+    "index": "first-index",
+    "tagMaps": [
+      {
+        "some-tag": "some-value",
+        "other-tag": "other-value"
+      },
+      {
+        "some-tag": "alternative-value"
+      }
+    ]
+  },
+  {
+    "index": "second-index",
+    "tagMaps": [
+      {
+        "some-tag": "for-second-index-value"
+      },
+      {
+        "special-tag": "special-value"
+      }
+    ]
+  }
+]
+```
