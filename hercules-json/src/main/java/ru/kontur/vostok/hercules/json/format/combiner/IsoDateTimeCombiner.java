@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.json.format.combiner;
 
+import org.jetbrains.annotations.Nullable;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
@@ -20,24 +21,36 @@ public class IsoDateTimeCombiner implements Combiner {
     /**
      * Combine timestamp and timezone offset into ISO 8601 formatted date and time string.
      *
-     * @param values timestamp and timezone offset
-     * @return ISO 8601 formatted date and time string
+     * @param values timestamp (required) and timezone offset (optional)
+     * @return ISO 8601 formatted date and time string if timestamp is present, otherwise {@code null}
      */
     @Override
-    public Object combine(Variant... values) {
-        if (values.length != 2) {
-            throw new IllegalArgumentException("Combiner expects 2 args: timestamp and zone offset");
-        }
-        if (values[0].getType() != Type.LONG || values[1].getType() != Type.LONG) {
+    public @Nullable Object combine(Variant... values) {
+        Long timestamp = extractTimestampFrom(values);
+        if (timestamp == null) {
             return null;
         }
-
-        Variant timestamp = values[0];
-        Variant offset = values[1];
+        long offset = extractOffsetFrom(values);
 
         ZonedDateTime dateTime = ZonedDateTime.ofInstant(
-                TimeUtil.unixTicksToInstant((Long) timestamp.getValue()),
-                ZoneOffset.ofTotalSeconds((int) TimeUtil.ticksToSeconds((Long) offset.getValue())));
+                TimeUtil.unixTicksToInstant(timestamp),
+                ZoneOffset.ofTotalSeconds((int) TimeUtil.ticksToSeconds(offset)));
         return FORMATTER.format(dateTime);
+    }
+
+    private Long extractTimestampFrom(Variant[] values) {
+        if (values.length == 0 || values.length > 2) {
+            throw new IllegalArgumentException("Combiner expects args like (timestamp) or (timestamp, offset)");
+        }
+
+        return values[0] != null && values[0].getType() == Type.LONG
+                ? (Long) values[0].getValue()
+                : null;
+    }
+
+    private long extractOffsetFrom(Variant[] values) {
+        return values.length == 2 && values[1] != null && values[1].getType() == Type.LONG
+                ? (long) values[1].getValue()
+                : 0L;
     }
 }

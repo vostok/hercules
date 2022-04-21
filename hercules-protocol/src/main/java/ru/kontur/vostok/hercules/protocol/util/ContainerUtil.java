@@ -29,6 +29,13 @@ public class ContainerUtil {
         return extractor.apply(value);
     }
 
+    public static Optional<Container> extractContainer(Variant variant) {
+        if (variant.getType() == Type.CONTAINER) {
+            return Optional.of((Container) variant.getValue());
+        }
+        return Optional.empty();
+    }
+
     private ContainerUtil() {
         /* static class */
     }

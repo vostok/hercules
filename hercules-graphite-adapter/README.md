@@ -56,6 +56,8 @@ Application is configured through properties file.
 
 `server.recv.buffer.size.bytes` - recv buffer size in bytes, value for socket option `SO_RCVBUF`, use system default if not set
 
+`server.conection.limit` - concurrent connection limit, default value: `50000`
+
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
 

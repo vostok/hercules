@@ -169,7 +169,6 @@ public class EventToJsonFormatterTest {
                         "}",
                 stream.toString(StandardCharsets.UTF_8.name())
         );
-
     }
 
     @Test
@@ -196,7 +195,28 @@ public class EventToJsonFormatterTest {
                         "}",
                 stream.toString(StandardCharsets.UTF_8.name())
         );
-
     }
 
+    @Test
+    public void shouldIgnoreUnknownTags() throws IOException {
+        Event event = EventBuilder.create(0, "11203800-63fd-11e8-83e2-3a587d902000").
+                tag("integerTag", Variant.ofInteger(123)).
+                tag("unmappedTag", Variant.ofString("value")).
+                build();
+
+        Properties properties = new Properties();
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "false");
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://transform.mapping");
+        properties.setProperty(EventToJsonFormatter.Props.IGNORE_UNKNOWN_TAGS.name(), "true");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DocumentWriter.writeTo(stream, formatter.format(event));
+
+        assertEquals("{" +
+                        "\"stringField\":\"123\"" +
+                        "}",
+                stream.toString(StandardCharsets.UTF_8.name())
+        );
+    }
 }

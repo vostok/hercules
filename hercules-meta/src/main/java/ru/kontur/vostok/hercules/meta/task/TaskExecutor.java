@@ -64,8 +64,16 @@ public abstract class TaskExecutor<T> implements Lifecycle {
     @Override
     public boolean stop(long timeout, TimeUnit unit) {
         running = false;
+        executorService.shutdown();
         try {
-            return executorService.awaitTermination(timeout, unit);
+            if (!executorService.awaitTermination(timeout, unit)) {
+                executorService.shutdownNow();
+                if (!executorService.awaitTermination(timeout, unit)) {
+                    LOGGER.warn("Thread pool did not terminate");
+                }
+                return false;
+            }
+            return true;
         } catch (InterruptedException e) {
             LOGGER.error("TaskExecutor shutdown execute was terminated by InterruptedException", e);
             return false;
@@ -205,7 +213,7 @@ public abstract class TaskExecutor<T> implements Lifecycle {
         /**
          * A task executor should poll ZK queue for new tasks.
          */
-        SHOULD_POLL;
+        SHOULD_POLL
     }
 
     /**

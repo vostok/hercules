@@ -41,11 +41,7 @@ public class CombineMapper implements Mapper {
         Variant[] values = new Variant[sourcePaths.size()];
         int i = 0;
         for (HPath sourcePath : sourcePaths) {
-            Variant value = sourcePath.extract(payload);
-            if (value == null) {
-                return;
-            }
-            values[i++] = value;
+            values[i++] = sourcePath.extract(payload);
         }
 
         Object result = combiner.combine(values);

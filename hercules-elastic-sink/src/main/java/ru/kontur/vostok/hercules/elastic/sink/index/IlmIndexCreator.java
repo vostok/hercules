@@ -20,7 +20,29 @@ public class IlmIndexCreator extends IndexCreator {
 
     @Override
     public boolean create(String index) {
-        return createTemplate(index) && createIndex(index);
+        boolean result = templateExists(index) || createTemplate(index);
+        return result && createIndex(index);
+    }
+
+    /**
+     * <pre>{@code GET _template/${index}
+     * }</pre>
+     *
+     * @param index
+     * @return
+     */
+    public boolean templateExists(String index) {
+        try {
+            Response response =
+                    restClient.performRequest(
+                            "GET",
+                            "/_template/" + index
+                    );
+            return HttpStatusCodes.isSuccess(response.getStatusLine().getStatusCode());
+        } catch (IOException ex) {
+            LOGGER.warn("Cannot check template due to exception", ex);
+            return false;
+        }
     }
 
     /**

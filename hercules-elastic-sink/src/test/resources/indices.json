@@ -1,0 +1,26 @@
+[
+  {
+    "index": "first-index",
+    "tagMaps": [
+      {
+        "some-tag": "some-value",
+        "other-tag": "other-value-\\d*",
+        "outer-tag/inner-tag": "inner-value"
+      },
+      {
+        "number-tag": 0,
+        "null-tag": null,
+        "boolean-tag": true
+      }
+    ]
+  },
+  {
+    "index": "second-index",
+    "tagMaps": [
+      {
+        "foo": 1,
+        "bar": "bar-value"
+      }
+    ]
+  }
+]

@@ -25,7 +25,8 @@ import java.util.Properties;
  * <ul>
  *   <li>Event timestamp can be used as JSON-document field,
  *   <li>Event payload can be mapped using {@link Mapper} implementations,
- *   <li>By default, {@link Transformer#PLAIN} is used if no mapping is specified.
+ *   <li>If no mapping is specified for some tags then {@link Transformer#PLAIN} is used by default
+ *   or you can ignore these tags.
  * </ul>
  *
  * @author Gregory Koshelev
@@ -37,6 +38,7 @@ public class EventToJsonFormatter {
     private final String timestampField;
     private final DateTimeFormatter timestampFormatter;
     private final Mapping mapping;
+    private final boolean ignoreUnknownTags;
 
     public EventToJsonFormatter(Properties properties) {
         timestampEnabled = PropertiesUtil.get(Props.TIMESTAMP_ENABLE, properties).get();
@@ -49,6 +51,7 @@ public class EventToJsonFormatter {
         }
 
         mapping = MappingLoader.loadMapping(PropertiesUtil.get(Props.FILE, properties).get());
+        ignoreUnknownTags = PropertiesUtil.get(Props.IGNORE_UNKNOWN_TAGS, properties).get();
     }
 
     public Document format(Event event) {
@@ -63,8 +66,10 @@ public class EventToJsonFormatter {
             mapper.map(event, document);
         }
 
-        HTree<Boolean>.Navigator navigator = mapping.navigator();
-        process(document, navigator, event.getPayload());
+        if (!ignoreUnknownTags) {
+            HTree<Boolean>.Navigator navigator = mapping.navigator();
+            process(document, navigator, event.getPayload());
+        }
 
         return document;
     }
@@ -106,6 +111,11 @@ public class EventToJsonFormatter {
         public static final Parameter<String> FILE =
                 Parameter.stringParameter("file").
                         required().
+                        build();
+
+        public static final Parameter<Boolean> IGNORE_UNKNOWN_TAGS =
+                Parameter.booleanParameter("ignore.unknown.tags").
+                        withDefault(false).
                         build();
     }
 }
