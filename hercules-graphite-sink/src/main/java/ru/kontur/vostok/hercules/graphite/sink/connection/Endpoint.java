@@ -37,6 +37,7 @@ public class Endpoint {
 
     private final ConcurrentLinkedQueue<Connection> connections = new ConcurrentLinkedQueue<>();
     private final AtomicInteger leasedConnections = new AtomicInteger(0);
+    private final long connectionTtlMs;
 
     private volatile boolean frozen;
     private volatile long frozenToMs;
@@ -44,10 +45,12 @@ public class Endpoint {
     public Endpoint(
             InetSocketAddress address,
             int connectionLimit,
+            long connectionTtlMs,
             int socketTimeoutMs,
             TimeSource time) {
         this.address = address;
         this.connectionLimit = connectionLimit;
+        this.connectionTtlMs = connectionTtlMs;
         this.socketTimeoutMs = socketTimeoutMs;
         this.time = time;
 
@@ -139,7 +142,7 @@ public class Endpoint {
 
     private void releaseConnection(Connection connection) {
         try {
-            if (connection.isBroken()) {
+            if (connection.isBroken() || connection.isExpired()) {
                 connection.close();
                 return;
             }
@@ -158,6 +161,7 @@ public class Endpoint {
         private final Socket socket;
         private final Writer writer;
         private boolean broken;
+        private long expiresAtMs;
 
         private Connection() throws IOException {
             this.socket = new Socket(Proxy.NO_PROXY);
@@ -171,6 +175,9 @@ public class Endpoint {
                                     socket.getOutputStream(),
                                     StandardCharsets.US_ASCII));
             this.broken = false;
+
+            long expiresAt = time.milliseconds() + connectionTtlMs;
+            this.expiresAtMs = (expiresAt > 0) ? expiresAt : Long.MAX_VALUE;
         }
 
         /**
@@ -237,6 +244,17 @@ public class Endpoint {
          */
         public boolean isBroken() {
             return broken;
+        }
+
+        /**
+         * Check if the connection is expired.
+         *
+         * @return {@code true} if the connection is expired, otherwise return {@code false}
+         *
+         * <p>
+         */
+        public boolean isExpired() {
+            return time.milliseconds() > this.expiresAtMs;
         }
     }
 }

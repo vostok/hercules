@@ -42,6 +42,8 @@ Application is configured through properties file.
 
 `sink.sender.graphite.connector.local.connection.limit.per.endpoint` - maximum connections per local endpoint, default value: `3`
 
+`sink.sender.graphite.connector.local.connection.ttl.ms` - TTL for connection in milliseconds. If missing, connections will never expire. 
+
 `sink.sender.graphite.connector.local.socket.timeout.ms` - timeout in milliseconds to create TCP-connection with a local endpoint, default value: `2 000`
 
 `sink.sender.graphite.connector.remote.endpoints` - list of remote Graphite endpoints in form `host:port`, optional
@@ -135,6 +137,7 @@ sink.sender.graphite.replace.dots=true
 sink.sender.graphite.connector.local.endpoints=localhost:2003
 sink.sender.graphite.connector.local.frozen.time.ms=30000
 sink.sender.graphite.connector.local.connection.limit.per.endpoint=3
+sink.sender.graphite.connector.local.connection.ttl.ms=3600000
 sink.sender.graphite.connector.local.socket.timeout.ms=2000
 sink.sender.graphite.connector.remote.endpoints=
 

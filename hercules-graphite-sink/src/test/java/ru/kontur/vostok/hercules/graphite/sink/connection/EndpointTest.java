@@ -19,6 +19,7 @@ public class EndpointTest {
                 new Endpoint(
                         InetSocketAddressUtil.fromString("127.0.0.1", 2003),
                         3,
+                        3_600_000,
                         2_000,
                         time);
 
