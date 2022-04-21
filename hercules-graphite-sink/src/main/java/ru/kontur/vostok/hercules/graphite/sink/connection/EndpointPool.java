@@ -29,6 +29,11 @@ public class EndpointPool {
         this.frozenTimeMs = PropertiesUtil.get(Props.FROZEN_TIME_MS, properties).get();
 
         int connectionLimitPerEndpoint = PropertiesUtil.get(Props.CONNECTION_LIMIT_PER_ENDPOINT, properties).get();
+
+        /* After August 17, 292278994 7:12:55 AM UTC connection will be never expire.
+        Just keep it in mind if this project will be alive so long */
+        long connectionTtlMs = PropertiesUtil.get(Props.CONNECTION_TTL_MS, properties).get();
+
         int socketTimeoutMs = PropertiesUtil.get(Props.SOCKET_TIMEOUT_MS, properties).get();
         Endpoint[] endpoints =
                 Stream.of(PropertiesUtil.get(Props.ENDPOINTS, properties).orEmpty(new String[0])).
@@ -36,6 +41,7 @@ public class EndpointPool {
                                 new Endpoint(
                                         InetSocketAddressUtil.fromString(hostAndPort, 2003),
                                         connectionLimitPerEndpoint,
+                                        connectionTtlMs,
                                         socketTimeoutMs,
                                         time)).
                         toArray(Endpoint[]::new);
@@ -106,6 +112,12 @@ public class EndpointPool {
         static final Parameter<Integer> CONNECTION_LIMIT_PER_ENDPOINT =
                 Parameter.integerParameter("connection.limit.per.endpoint").
                         withDefault(3).
+                        build();
+
+        static final Parameter<Long> CONNECTION_TTL_MS =
+                Parameter.longParameter("connection.ttl.ms").
+                        withDefault(Long.MAX_VALUE).
+                        withValidator(LongValidators.positive()).
                         build();
 
         static final Parameter<Integer> SOCKET_TIMEOUT_MS =
