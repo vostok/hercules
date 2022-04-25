@@ -15,7 +15,7 @@ import ru.kontur.vostok.hercules.kafka.util.serialization.UuidSerde;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
 import ru.kontur.vostok.hercules.meta.stream.DerivedStream;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
-import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
+import ru.kontur.vostok.hercules.partitioner.hash.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;

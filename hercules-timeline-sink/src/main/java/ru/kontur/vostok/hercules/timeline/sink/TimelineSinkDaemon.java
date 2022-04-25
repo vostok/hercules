@@ -13,7 +13,7 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
-import ru.kontur.vostok.hercules.partitioner.NaiveHasher;
+import ru.kontur.vostok.hercules.partitioner.hash.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.RandomPartitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.sink.SinkPool;
