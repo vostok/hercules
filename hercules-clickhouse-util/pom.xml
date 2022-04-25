@@ -19,7 +19,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.clickhouse</groupId>
+            <groupId>ru.yandex.clickhouse</groupId>
             <artifactId>clickhouse-jdbc</artifactId>
         </dependency>
     </dependencies>

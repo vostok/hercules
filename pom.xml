@@ -32,7 +32,7 @@
         <jetbrains-annotations.version>23.0.0</jetbrains-annotations.version>
         <sentry.version>1.7.30</sentry.version>
         <lz4.version>1.8.0</lz4.version>
-        <clickhouse.version>0.3.2-patch7</clickhouse.version>
+        <clickhouse.version>0.3.1-patch</clickhouse.version>
         <netty.version>4.1.74.Final</netty.version>
         <commons-codec.version>1.11</commons-codec.version>
         <spotbugs-annotations.version>3.1.12</spotbugs-annotations.version>
@@ -277,7 +277,7 @@
 
             <!-- ClickHouse -->
             <dependency>
-                <groupId>com.clickhouse</groupId>
+                <groupId>ru.yandex.clickhouse</groupId>
                 <artifactId>clickhouse-jdbc</artifactId>
                 <version>${clickhouse.version}</version>
             </dependency>
