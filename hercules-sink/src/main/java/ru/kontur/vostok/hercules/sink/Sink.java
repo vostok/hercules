@@ -35,12 +35,14 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Gregory Koshelev
  */
 public class Sink implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(Sink.class);
+    private static final AtomicInteger CONSUMER_CLIENT_ID_SEQUENCE = new AtomicInteger(1);
 
     private volatile boolean running = false;
 
@@ -49,7 +51,6 @@ public class Sink implements Lifecycle {
 
     private final List<EventFilter> filters;
 
-    private final long pollTimeoutMs;
     private final int batchSize;
     private final long availabilityTimeoutMs;
 
@@ -89,7 +90,7 @@ public class Sink implements Lifecycle {
 
         this.filters = EventFilter.from(PropertiesUtil.ofScope(properties, "filter"));
 
-        this.pollTimeoutMs = PropertiesUtil.get(Props.POLL_TIMEOUT_MS, properties).get();
+        long pollTimeoutMs = PropertiesUtil.get(Props.POLL_TIMEOUT_MS, properties).get();
         this.batchSize = PropertiesUtil.get(Props.BATCH_SIZE, properties).get();
         this.availabilityTimeoutMs = PropertiesUtil.get(Props.AVAILABILITY_TIMEOUT_MS, properties).get();
 
@@ -103,6 +104,8 @@ public class Sink implements Lifecycle {
 
         Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
+        consumerProperties.put(ConsumerConfig.CLIENT_ID_CONFIG,
+                Application.context().getInstanceId() + "-" + CONSUMER_CLIENT_ID_SEQUENCE.getAndIncrement());
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         consumerProperties.putIfAbsent(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, batchSize);
         consumerProperties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
@@ -223,7 +226,6 @@ public class Sink implements Lifecycle {
                                 totalEventsMeter.mark(events.size());
                             } catch (CommitFailedException ex) {
                                 LOGGER.warn("Commit failed due to rebalancing", ex);
-                                continue;
                             }
                         }
                     }
