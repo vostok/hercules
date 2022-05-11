@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.partitioner;
 
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.util.number.IntegerUtil;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -13,6 +12,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RandomPartitioner implements Partitioner {
     @Override
     public int partition(Event event, ShardingKey shardingKey, int partitions) {
-        return IntegerUtil.toPositive(ThreadLocalRandom.current().nextInt()) % partitions;
+        return Integer.remainderUnsigned(ThreadLocalRandom.current().nextInt(), partitions);
     }
 }

@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -19,8 +20,9 @@ import static org.junit.Assert.assertTrue;
 public class PartitionerTest {
     @Test
     public void roundRobinPartitionerTest() {
-        final int partitions = 4;
-        Partitioner partitioner = new RoundRobinPartitioner();
+        final int partitions = 3;
+        // Specify seed to avoid flaky test since int overflow and negative to positive transition as well
+        Partitioner partitioner = new RoundRobinPartitioner(0);
 
         Event event = buildTestEvent();
 
@@ -35,35 +37,26 @@ public class PartitionerTest {
 
     @Test
     public void batchedPerThreadPartitionerTest() {
-        final int partitions = 4;
-        final int batchSize = 8;
-        Partitioner partitioner = new BatchedPerThreadPartitioner(batchSize);
+        final int partitions = 3;
+        final int batchSize = 10;
+        // Specify seed to avoid flaky test since int overflow and negative to positive transition as well
+        Partitioner partitioner = new BatchedPerThreadPartitioner(batchSize, () -> new AtomicInteger(0));
 
         Event event = buildTestEvent();
 
-        int firstPartition = partitioner.partition(event, null, partitions);
-        assertRange(0, partitions, firstPartition);
+        int partition = partitioner.partition(event, null, partitions);
+        assertRange(0, partitions, partition);
 
-        // There is no guarantee that a size of the first batch equals batchSize due to random seed...
-        int secondPartition;
-        do {
-            secondPartition = partitioner.partition(event, null, partitions);
-            assertRange(0, partitions, secondPartition);
-        } while (firstPartition == secondPartition);
-
-        // ...That is why check the second one
         for (int i = 1; i < batchSize; i++) {
-            int partition = partitioner.partition(event, null, partitions);
-            assertRange(0, partitions, partition);
             assertEquals(
                     "Events from the same batch must belong to same partition",
-                    secondPartition,
-                    partition);
+                    partition,
+                    partitioner.partition(event, null, partitions));
         }
 
-        int thirdPartition = partitioner.partition(event, null, partitions);
-        assertRange(0, partitions, thirdPartition);
-        assertNotEquals(secondPartition, thirdPartition);
+        int secondPartition = partitioner.partition(event, null, partitions);
+        assertRange(0, partitions, secondPartition);
+        assertNotEquals(partition, secondPartition);
     }
 
     Event buildTestEvent() {
