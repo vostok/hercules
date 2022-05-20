@@ -22,15 +22,14 @@ import java.util.Properties;
 public class GateSender implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GateSender.class);
 
-    private final String apiKey;
     private final String[] urls;
     private final GateClient client;
 
     public GateSender(Properties properties) {
-        this.apiKey = PropertiesUtil.get(Props.API_KEY, properties).get();
+        String apiKey = PropertiesUtil.get(Props.API_KEY, properties).get();
         this.urls = PropertiesUtil.get(Props.URLS, properties).get();
         Topology<String> whiteList = new Topology<>(urls);
-        this.client = new GateClient(properties, whiteList);
+        this.client = new GateClient(properties, whiteList, apiKey);
     }
 
     public GateStatus send(List<Event> events, boolean async, String stream) {
@@ -38,9 +37,9 @@ public class GateSender implements Closeable {
 
         try {
             if (async) {
-                client.sendAsync(apiKey, stream, data);
+                client.sendAsync(stream, data);
             } else {
-                client.send(apiKey, stream, data);
+                client.send(stream, data);
             }
             return GateStatus.OK;
         } catch (BadRequestException e) {

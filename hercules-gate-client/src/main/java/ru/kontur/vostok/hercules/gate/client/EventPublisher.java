@@ -37,7 +37,6 @@ public class EventPublisher implements Lifecycle {
 
     private final ScheduledThreadPoolExecutor executor;
     private final String[] urls;
-    private final String apiKey;
 
     /**
      * Note that <code>threadFactory</code> should create daemon-thread. It's needing for correct stopping.
@@ -51,15 +50,14 @@ public class EventPublisher implements Lifecycle {
                           List<EventQueue> queues) {
         final int threads = PropertiesUtil.get(Props.THREAD_COUNT, properties).get();
         final String[] urls = PropertiesUtil.get(Props.URLS, properties).get();
-        final String apiKey = PropertiesUtil.get(Props.API_KEY, properties).get();
         final Properties gateClientProperties = PropertiesUtil.ofScope(properties, "gate.client");
 
         this.urls = urls;
-        this.apiKey = apiKey;
         this.executor = new ScheduledThreadPoolExecutor(threads, threadFactory);
 
+        final String apiKey = PropertiesUtil.get(Props.API_KEY, properties).get();
         Topology<String> whiteList = new Topology<>(urls);
-        this.gateClient = new GateClient(gateClientProperties, whiteList);
+        this.gateClient = new GateClient(gateClientProperties, whiteList, apiKey);
 
         registerAll(queues);
     }
@@ -224,7 +222,6 @@ public class EventPublisher implements Lifecycle {
 
         try {
             gateClient.sendAsync(
-                    this.apiKey,
                     stream,
                     EventWriterUtil.toBytes(size, eventsArray));
         } catch (BadRequestException ignored) {
