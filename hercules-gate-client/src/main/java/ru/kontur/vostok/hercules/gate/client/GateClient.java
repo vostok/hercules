@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.gate.client;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -44,11 +45,20 @@ public class GateClient implements Closeable {
     private static final String SEND_ACK = "/stream/send";
     private static final String SEND_ASYNC = "/stream/sendAsync";
 
+    /**
+     * Prefix for Authorization HTTP-header for ordinary API-keys.
+     * <p>
+     * E.g. {@code Authorization: Hercules apiKey <ordinary_key>}.
+     */
+    private static final String ORDINARY_APIKEY_PREFIX = "Hercules apiKey ";
+
     private final CloseableHttpClient client;
 
     private final BlockingQueue<GreyListTopologyElement> greyList;
     private final Topology<String> whiteList;
     private final int greyListElementsRecoveryTimeMs;
+    private final String authHeader;
+
     private final ScheduledExecutorService scheduler =
             new ScheduledThreadPoolExecutorBuilder()
                     .threadPoolSize(1)
@@ -57,8 +67,11 @@ public class GateClient implements Closeable {
                     .dropDelayedTasksAfterShutdown()
                     .build();
 
-    public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList) {
+    public GateClient(Properties properties, Topology<String> whiteList, String apiKey) {
+        this(properties, createHttpClient(properties), whiteList, apiKey);
+    }
 
+    public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList, String apiKey) {
         this.greyListElementsRecoveryTimeMs = PropertiesUtil.get(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS, properties).get();
         this.client = client;
         this.whiteList = whiteList;
@@ -68,24 +81,7 @@ public class GateClient implements Closeable {
                 greyListElementsRecoveryTimeMs,
                 greyListElementsRecoveryTimeMs,
                 TimeUnit.MILLISECONDS);
-
-    }
-
-    public GateClient(Properties properties, Topology<String> whiteList) {
-        final int requestTimeout = PropertiesUtil.get(Props.REQUEST_TIMEOUT, properties).get();
-        final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT, properties).get();
-        final int connectionCount = PropertiesUtil.get(Props.CONNECTION_COUNT, properties).get();
-
-        this.greyListElementsRecoveryTimeMs = PropertiesUtil.get(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS, properties).get();
-        this.whiteList = whiteList;
-        this.greyList = new ArrayBlockingQueue<>(whiteList.size());
-
-        this.client = createHttpClient(requestTimeout, connectionTimeout, connectionCount);
-
-        scheduler.scheduleWithFixedDelay(this::updateTopology,
-                greyListElementsRecoveryTimeMs,
-                greyListElementsRecoveryTimeMs,
-                TimeUnit.MILLISECONDS);
+        authHeader = ORDINARY_APIKEY_PREFIX + apiKey;
     }
 
     /**
@@ -106,16 +102,15 @@ public class GateClient implements Closeable {
      * Request to {@value #SEND_ASYNC}
      *
      * @param url    Gate url
-     * @param apiKey key for sending
      * @param stream topic name in kafka
      * @param data   payload
      * @throws BadRequestException      throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
-    public void sendAsync(String url, String apiKey, String stream, final byte[] data)
+    public void sendAsync(String url, String stream, final byte[] data)
             throws BadRequestException, UnavailableHostException, HttpProtocolException {
         sendToHost(url, urlParam -> {
-            HttpPost httpPost = buildRequest(url, apiKey, SEND_ASYNC, stream, data);
+            HttpPost httpPost = buildRequest(url, SEND_ASYNC, stream, data);
             return sendRequest(httpPost);
         });
     }
@@ -124,16 +119,15 @@ public class GateClient implements Closeable {
      * Request to {@value #SEND_ACK}
      *
      * @param url    Gate url
-     * @param apiKey key for sending
      * @param stream topic name in kafka
      * @param data   payload
      * @throws BadRequestException      throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableHostException throws if was error on server side: 5xx errors or connection errors
      */
-    public void send(String url, String apiKey, String stream, final byte[] data)
+    public void send(String url, String stream, final byte[] data)
             throws BadRequestException, UnavailableHostException, HttpProtocolException {
         sendToHost(url, urlParam -> {
-            HttpPost httpPost = buildRequest(url, apiKey, SEND_ACK, stream, data);
+            HttpPost httpPost = buildRequest(url, SEND_ACK, stream, data);
             return sendRequest(httpPost);
         });
     }
@@ -154,30 +148,28 @@ public class GateClient implements Closeable {
      * Request to {@value #SEND_ASYNC}
      *
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
-     * @param apiKey     key for sending
      * @param stream     topic name in kafka
      * @param data       payload
      * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void sendAsync(int retryLimit, String apiKey, String stream, final byte[] data)
+    public void sendAsync(int retryLimit, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
-        sendToPool(retryLimit, url -> sendAsync(url, apiKey, stream, data));
+        sendToPool(retryLimit, url -> sendAsync(url, stream, data));
     }
 
     /**
      * Request to {@value #SEND_ACK}
      *
      * @param retryLimit count of attempt to send data to one of the <code>urls</code>' hosts
-     * @param apiKey     key for sending
      * @param stream     topic name in kafka
      * @param data       payload
      * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void send(int retryLimit, String apiKey, String stream, final byte[] data)
+    public void send(int retryLimit, String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
-        sendToPool(retryLimit, url -> send(url, apiKey, stream, data));
+        sendToPool(retryLimit, url -> send(url, stream, data));
     }
 
     /**
@@ -194,29 +186,27 @@ public class GateClient implements Closeable {
     /**
      * Request to {@value #SEND_ASYNC}. Count of retry is <code>whitelist.size() + 1</code>
      *
-     * @param apiKey key for sending
      * @param stream topic name in kafka
      * @param data   payload
      * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void sendAsync(String apiKey, String stream, final byte[] data)
+    public void sendAsync(String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
-        sendAsync(whiteList.size() + 1, apiKey, stream, data);
+        sendAsync(whiteList.size() + 1, stream, data);
     }
 
     /**
      * Request to {@value #SEND_ACK}. Count of retry is <code>whitelist.size() + 1</code>
      *
-     * @param apiKey key for sending
      * @param stream topic name in kafka
      * @param data   payload
      * @throws BadRequestException         throws if was error on client side: 4xx errors or http protocol errors
      * @throws UnavailableClusterException throws if was error on addresses pool side: no one of address is unavailable
      */
-    public void send(String apiKey, String stream, final byte[] data)
+    public void send(String stream, final byte[] data)
             throws BadRequestException, UnavailableClusterException {
-        send(whiteList.size() + 1, apiKey, stream, data);
+        send(whiteList.size() + 1, stream, data);
     }
 
     public void close() {
@@ -324,16 +314,15 @@ public class GateClient implements Closeable {
      * Build http post request
      *
      * @param url    gateway url
-     * @param apiKey key for sending
      * @param action Command in Hercules Gateway
      * @param stream topic name in kafka
      * @param data   payload
      * @return formatted http post request
      */
-    private HttpPost buildRequest(String url, String apiKey, String action, String stream, byte[] data) {
+    private HttpPost buildRequest(String url, String action, String stream, byte[] data) {
         HttpPost httpPost = new HttpPost(url + action + "?stream=" + stream);
 
-        httpPost.addHeader("apiKey", apiKey);
+        httpPost.addHeader(HttpHeaders.AUTHORIZATION, authHeader);
 
         HttpEntity entity = new ByteArrayEntity(data, ContentType.APPLICATION_OCTET_STREAM);
         httpPost.setEntity(entity);
@@ -344,12 +333,14 @@ public class GateClient implements Closeable {
     /**
      * Tuning of {@link CloseableHttpClient}
      *
-     * @param requestTimeout    request timeout aka socket timeout (in millis)
-     * @param connectionTimeout connection timeout (in millis)
-     * @param connectionCount   maximum client connections
+     * @param properties Properties
      * @return Customized http client
      */
-    private static CloseableHttpClient createHttpClient(int requestTimeout, int connectionTimeout, int connectionCount) {
+    private static CloseableHttpClient createHttpClient(Properties properties) {
+        int requestTimeout = PropertiesUtil.get(Props.REQUEST_TIMEOUT, properties).get();
+        int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT, properties).get();
+        int connectionCount = PropertiesUtil.get(Props.CONNECTION_COUNT, properties).get();
+
         RequestConfig requestConfig = RequestConfig
                 .custom()
                 .setSocketTimeout(requestTimeout)

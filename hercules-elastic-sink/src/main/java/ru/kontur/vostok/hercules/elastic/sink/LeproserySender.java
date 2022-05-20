@@ -63,7 +63,6 @@ class LeproserySender {
     private final String leproseryStream;
     private final String leproseryIndex;
     private final GateClient gateClient;
-    private final String leproseryApiKey;
     private final String sinkId;
     private final Lazy<String> sinkGroupId;
     private final Lazy<String> sinkSubscription;
@@ -83,15 +82,15 @@ class LeproserySender {
 
         this.leproseryStream = PropertiesUtil.get(Props.LEPROSERY_STREAM, properties).get();
         this.leproseryIndex = PropertiesUtil.get(Props.LEPROSERY_INDEX, properties).get();
-        this.leproseryApiKey = PropertiesUtil.get(Props.LEPROSERY_API_KEY, properties).get();
         this.sinkId = StringUtil.getOrDefault(Application.context().getInstanceId(), "null");
         this.sinkGroupId = new Lazy<>(() -> StringUtil.getOrDefault(Application.context().get(SinkContext.GROUP_ID), "null"));
         this.sinkSubscription = new Lazy<>(() -> StringUtil.getOrDefault(Application.context().get(SinkContext.SUBSCRIPTION), "null"));
 
+        String leproseryApiKey = PropertiesUtil.get(Props.LEPROSERY_API_KEY, properties).get();
         Properties gateProperties = PropertiesUtil.ofScope(properties, Scopes.GATE_CLIENT);
         final String[] urls = PropertiesUtil.get(Props.URLS, gateProperties).get();
         Topology<String> whiteList = new Topology<>(urls);
-        this.gateClient = new GateClient(gateProperties, whiteList);
+        this.gateClient = new GateClient(gateProperties, whiteList, leproseryApiKey);
     }
 
     /**
@@ -103,7 +102,7 @@ class LeproserySender {
         int count = events.size();
         byte[] data = EventWriterUtil.toBytes(events.toArray(new Event[0]));
         try {
-            gateClient.send(leproseryApiKey, leproseryStream, data);
+            gateClient.send(leproseryStream, data);
 
             LOGGER.info("Send to leprosery {} events", count);
             leproseryEventsMeter.mark(count);
