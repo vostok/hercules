@@ -62,6 +62,16 @@ public class ByteUtil {
                 | (bytes[7] & 0xFFL);
     }
 
+    public static int toInt(byte[] bytes) {
+        if (bytes == null || bytes.length != 4) {
+            throw new IllegalArgumentException("The length if byte array should be equal to 4");
+        }
+        return ((bytes[0] & 0xFF) << 24)
+                | ((bytes[1] & 0xFF) << 16)
+                | ((bytes[2] & 0xFF) << 8)
+                | (bytes[3] & 0xFF);
+    }
+
     public static byte[] fromByteBuffer(ByteBuffer buffer) {
         int size = buffer.remaining();
         byte[] bytes = new byte[size];
