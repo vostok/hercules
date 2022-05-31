@@ -21,7 +21,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckAllPatternElements() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("PERMIT value.second_value.third_value"));
+        list.add(AccessControlEntry.fromString("PERMIT value.second_value.third_value"));
         final Statement statement = Statement.DENY;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -33,7 +33,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckPatternWithStarAtTheEnd() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY value.*"));
+        list.add(AccessControlEntry.fromString("DENY value.*"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -45,7 +45,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckPatternWithStarInTheMiddle() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY value.*.third_value"));
+        list.add(AccessControlEntry.fromString("DENY value.*.third_value"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -57,7 +57,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckPatternWithStarAtTheBeginning() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY *.second_value.third_value"));
+        list.add(AccessControlEntry.fromString("DENY *.second_value.third_value"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -69,7 +69,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckPatternOnlyWithStar() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY *"));
+        list.add(AccessControlEntry.fromString("DENY *"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -81,7 +81,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckPatternWithFewStar() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY *.*.third_value"));
+        list.add(AccessControlEntry.fromString("DENY *.*.third_value"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -93,7 +93,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckStarWithSuffixPatternSegment() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY *suffix"));
+        list.add(AccessControlEntry.fromString("DENY *suffix"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -113,7 +113,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckStarWithPrefixPatternSegment() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY prefix*"));
+        list.add(AccessControlEntry.fromString("DENY prefix*"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -133,7 +133,7 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckStarWithPrefixAndSuffixPatternSegment() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY prefix*"));
+        list.add(AccessControlEntry.fromString("DENY prefix*"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -153,9 +153,9 @@ public class AccessControlListTest {
     @Test
     public void shouldCheckFewPatterns() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("DENY value.second_value.third_value.fourth_value"));
-        list.add(new AccessControlEntry("PERMIT value.second_value.third_value.*"));
-        list.add(new AccessControlEntry("DENY value.second_value.*"));
+        list.add(AccessControlEntry.fromString("DENY value.second_value.third_value.fourth_value"));
+        list.add(AccessControlEntry.fromString("PERMIT value.second_value.third_value.*"));
+        list.add(AccessControlEntry.fromString("DENY value.second_value.*"));
         final Statement statement = Statement.PERMIT;
         final AccessControlList acl = new AccessControlList(list, statement);
 
@@ -167,7 +167,7 @@ public class AccessControlListTest {
     @Test
     public void shouldReturnDefaultStatement() {
         final List<AccessControlEntry> list = new ArrayList<>();
-        list.add(new AccessControlEntry("PERMIT other_value.*"));
+        list.add(AccessControlEntry.fromString("PERMIT other_value.*"));
         final Statement statement = Statement.DENY;
         AccessControlList acl = new AccessControlList(list, statement);
 
@@ -177,14 +177,14 @@ public class AccessControlListTest {
 
 
         list.clear();
-        list.add(new AccessControlEntry("PERMIT value.second_value.third_value.fourth_value"));
+        list.add(AccessControlEntry.fromString("PERMIT value.second_value.third_value.fourth_value"));
         acl = new AccessControlList(list, statement);
 
         Assert.assertFalse("Pattern element more then metric path", acl.isPermit(event));
 
 
         list.clear();
-        list.add(new AccessControlEntry("PERMIT value.second_value"));
+        list.add(AccessControlEntry.fromString("PERMIT value.second_value"));
         acl = new AccessControlList(list, statement);
 
         Assert.assertFalse("Pattern does not contain STAR at the end and pattern element less then metric path",
