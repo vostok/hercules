@@ -1,25 +1,23 @@
-# File for flat metrics filter
+# File for tagged metrics filter
 #
 # Syntax:
 # File can contains comments and empty lines. Comment is a line started with '#' character.
 #
 # Meaningful part of the file contains rules. One rule located in one line of the file. Rule should be written from
-# the beginning of the line. Rule contains operator and metrics mask delimited by one space character.
-#
-# There are two operators:
-#  * PERMIT - means do pass metrics that matches mask in argument;
-#  * DENY   - means do NOT pass metrics that matches mask in argument.
+# the beginning of the line. Rule should contains one or more conditions for tags divided by the ';' character. Last
+# condition should not ended with the ';' character. The condition for a tag consists of the tag name and a mask for
+# it's value, separated by the '=' character.
 #
 # Masks examples:
-#  * Mask '*' means any value in segment. If such mask located in the last segment, that means any count of segments
-#    with any content matches to the mask.
+#  * Mask '*' means tag exists.
 #  * Mask 'foo*' means value should have prefix 'foo'.
 #  * Mask '*bar' means value should have suffix 'bar'.
 #  * Mask 'foo*bar' means value should have prefix 'foo' and suffix 'bar'.
 #  * Mask '*baz*' means value should contains substring 'baz' (WARNING! Huge impact on throughput! Do not use
 #    unnecessarily).
 #
-# Examples:
-# PERMIT foo.bar.baz.*
-# DENY foo.bar.*
+# Rules examples:
+# app=foo
+# app=bar;env=dev
+# app=foobar*
 #

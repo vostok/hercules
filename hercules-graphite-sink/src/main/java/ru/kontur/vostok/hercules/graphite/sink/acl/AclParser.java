@@ -1,11 +1,10 @@
 package ru.kontur.vostok.hercules.graphite.sink.acl;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * AclParser is used for parse ACL file.<br>
@@ -14,16 +13,16 @@ import java.util.List;
  * @author Vladimir Tsypaev
  */
 public final class AclParser {
-    public static List<AccessControlEntry> parse(InputStream in) {
-        List<AccessControlEntry> acl = new ArrayList<>();
+    private static final Pattern BLANK_OR_COMMENT_LINE_PATTERN = Pattern.compile("^\\s*$|^\\s*#.*");
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-            String ace;
-            while ((ace = reader.readLine()) != null) {
-                acl.add(new AccessControlEntry(ace));
+    public static List<AccessControlEntry> parse(BufferedReader reader) throws IOException {
+        List<AccessControlEntry> acl = new ArrayList<>();
+        String ace;
+        while ((ace = reader.readLine()) != null) {
+            if (BLANK_OR_COMMENT_LINE_PATTERN.matcher(ace).matches()) {
+                continue;
             }
-        } catch (Exception ex) {
-            throw new IllegalArgumentException(ex);
+            acl.add(AccessControlEntry.fromString(ace));
         }
         return acl;
     }

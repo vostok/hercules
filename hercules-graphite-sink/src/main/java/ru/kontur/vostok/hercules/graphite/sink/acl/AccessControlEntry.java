@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.graphite.sink.acl;
 
+import ru.kontur.vostok.hercules.graphite.sink.common.PatternMatcher;
+
 import java.util.Arrays;
 
 /**
@@ -11,21 +13,27 @@ import java.util.Arrays;
  */
 public class AccessControlEntry {
     private final Statement statement;
-    private final PatternSegment[] pattern;
+    private final PatternMatcher[] pattern;
 
-    public AccessControlEntry(String ace) {
+    static AccessControlEntry fromString(String ace) {
         String[] aceParts = ace.split("\\s", 2);
-        this.statement = Statement.valueOf(aceParts[0]);
-        this.pattern = Arrays.stream(aceParts[1].split("\\."))
-                .map(PatternSegment::new)
-                .toArray(PatternSegment[]::new);
+        Statement statement = Statement.valueOf(aceParts[0]);
+        PatternMatcher[] pattern = Arrays.stream(aceParts[1].split("\\."))
+                .map(PatternMatcher::of)
+                .toArray(PatternMatcher[]::new);
+        return new AccessControlEntry(statement, pattern);
     }
 
-    public boolean isPermit() {
-        return statement.isPermit();
+    private AccessControlEntry(Statement statement, PatternMatcher[] pattern) {
+        this.statement = statement;
+        this.pattern = pattern;
     }
 
-    public PatternSegment[] getPattern() {
+    boolean isPermit() {
+        return statement == Statement.PERMIT;
+    }
+
+    PatternMatcher[] getPattern() {
         return pattern;
     }
 }

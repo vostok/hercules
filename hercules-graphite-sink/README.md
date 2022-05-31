@@ -74,6 +74,12 @@ PERMIT value.*
 
 `sink.filter.N.props.acl.defaultStatement` - default statement, default value: `DENY`
 
+###### Properties for [TaggedMetricFilter](../hercules-graphite-sink/src/main/java/ru/kontur/vostok/hercules/graphite/sink/filter/TaggedMetricFilter.java)
+
+`sink.filter.N.props.list.path` - path to the file with filter rules. For more information about file syntax see comments in example file (hercules-graphite-sink/filter-list.tfl). Path should have prefix 'file' (for user space files), 'zk' (data from ZooKeeper) or 'resource' (for classpath files). Default value is 'file://filter-list.tfl'.
+
+`sink.filter.N.props.list.matchResult` - The value which filter will return if event matches some rule from file. In other words if this parameter have 'false' value then filter will work in black-list mode, if 'true' - in white-list mode. Default value is 'false'.
+
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance, default value: `localhost`
 
@@ -145,6 +151,9 @@ sink.filter.0.class=ru.kontur.vostok.hercules.graphite.sink.filter.MetricEventFi
 sink.filter.1.class=ru.kontur.vostok.hercules.graphite.sink.filter.MetricAclEventFilter
 sink.filter.1.props.acl.path=file://metrics.acl
 sink.filter.1.props.acl.defaultStatement=PERMIT
+sink.filter.2.class=ru.kontur.vostok.hercules.graphite.sink.filter.TaggedMetricFilter
+sink.filter.2.props.list.path=file://filter-list.tfl
+sink.filter.2.props.list.matchResult=false
 
 metrics.graphite.server.addr=graphite.ru
 metrics.graphite.server.port=2003
