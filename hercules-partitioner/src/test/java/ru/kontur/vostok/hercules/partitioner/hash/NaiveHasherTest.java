@@ -1,7 +1,8 @@
-package ru.kontur.vostok.hercules.partitioner;
+package ru.kontur.vostok.hercules.partitioner.hash;
 
 import org.junit.Assert;
 import org.junit.Test;
+import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;

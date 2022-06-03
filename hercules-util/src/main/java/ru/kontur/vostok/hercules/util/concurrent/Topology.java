@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.util.concurrent;
 
 import org.jetbrains.annotations.NotNull;
+import ru.kontur.vostok.hercules.util.number.IntegerUtil;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -160,7 +161,7 @@ public class Topology<T> implements Iterable<T> {
             if (array.length == 0) {
                 throw new TopologyIsEmptyException("Topology is empty");
             }
-            return array[(seed() & 0x7FFFFFFF) % array.length];
+            return array[IntegerUtil.toPositive(seed()) % array.length];
         }
 
         public boolean isEmpty() {

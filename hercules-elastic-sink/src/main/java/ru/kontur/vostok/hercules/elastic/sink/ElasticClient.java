@@ -8,15 +8,14 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexCreator;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
-import ru.kontur.vostok.hercules.http.header.HttpHeaders;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
+import ru.kontur.vostok.hercules.http.header.HttpHeaders;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.parameter.parsing.Parsers;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -138,52 +137,52 @@ class ElasticClient {
         static final Parameter<Integer> MAX_CONNECTIONS = Parameter
                 .integerParameter("maxConnections")
                 .withValidator(IntegerValidators.positive())
-                .withDefault(RestClientBuilder.DEFAULT_MAX_CONN_TOTAL)
+                .withDefault(ElasticClientDefaults.DEFAULT_MAX_CONNECTIONS)
                 .build();
 
         static final Parameter<Integer> MAX_CONNECTIONS_PER_ROUTE = Parameter
                 .integerParameter("maxConnectionsPerRoute")
                 .withValidator(IntegerValidators.positive())
-                .withDefault(RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE)
+                .withDefault(ElasticClientDefaults.DEFAULT_MAX_CONNECTIONS_PER_ROUTE)
                 .build();
 
         static final Parameter<Integer> RETRY_TIMEOUT_MS = Parameter
                 .integerParameter("retryTimeoutMs")
                 .withValidator(IntegerValidators.nonNegative())
-                .withDefault(RestClientBuilder.DEFAULT_MAX_RETRY_TIMEOUT_MILLIS)
+                .withDefault(ElasticClientDefaults.DEFAULT_RETRY_TIMEOUT_MS)
                 .build();
 
         static final Parameter<Integer> CONNECTION_TIMEOUT_MS = Parameter
                 .integerParameter("connectionTimeoutMs")
                 .withValidator(IntegerValidators.nonNegative())
-                .withDefault(RestClientBuilder.DEFAULT_CONNECT_TIMEOUT_MILLIS)
+                .withDefault(ElasticClientDefaults.DEFAULT_CONNECTION_TIMEOUT_MS)
                 .build();
 
         static final Parameter<Integer> CONNECTION_REQUEST_TIMEOUT_MS = Parameter
                 .integerParameter("connectionRequestTimeoutMs")
                 .withValidator(IntegerValidators.nonNegative())
-                .withDefault(RestClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
+                .withDefault(ElasticClientDefaults.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MS)
                 .build();
 
         static final Parameter<Integer> SOCKET_TIMEOUT_MS = Parameter
                 .integerParameter("socketTimeoutMs")
                 .withValidator(IntegerValidators.nonNegative())
-                .withDefault(RestClientBuilder.DEFAULT_SOCKET_TIMEOUT_MILLIS)
+                .withDefault(ElasticClientDefaults.DEFAULT_SOCKET_TIMEOUT_MS)
                 .build();
 
         static final Parameter<String[]> REDEFINED_EXCEPTIONS = Parameter
                 .stringArrayParameter("redefinedExceptions")
-                .withDefault(new String[]{})
+                .withDefault(ElasticClientDefaults.DEFAULT_REDEFINED_EXCEPTIONS)
                 .build();
 
         static final Parameter<Boolean> INDEX_CREATION_ENABLE =
                 Parameter.booleanParameter("index.creation.enable").
-                        withDefault(false).
+                        withDefault(ElasticClientDefaults.DEFAULT_INDEX_CREATION_ENABLE).
                         build();
 
         static final Parameter<Boolean> COMPRESSION_GZIP_ENABLE = Parameter
                 .booleanParameter("compression.gzip.enable")
-                .withDefault(false)
+                .withDefault(ElasticClientDefaults.DEFAULT_COMPRESSION_GZIP_ENABLE)
                 .build();
     }
 }

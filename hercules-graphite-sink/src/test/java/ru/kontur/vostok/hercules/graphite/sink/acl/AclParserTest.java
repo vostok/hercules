@@ -4,9 +4,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.util.properties.ConfigsUtil;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.List;
 
 /**
@@ -15,9 +16,10 @@ import java.util.List;
 public class AclParserTest {
 
     @Test
-    public void shouldParseAcl() {
-        InputStream in = ConfigsUtil.readConfig("metric.property", "metrics.acl");
-        List<AccessControlEntry> acl = AclParser.parse(in);
+    public void shouldParseAcl() throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                ConfigsUtil.readConfig("metric.property", "metrics.acl")));
+        List<AccessControlEntry> acl = AclParser.parse(reader);
 
         Assert.assertEquals(3, acl.size());
 
@@ -32,14 +34,45 @@ public class AclParserTest {
     }
 
     @Test
-    public void shouldReturnEmptyList() {
-        List<AccessControlEntry> list = AclParser.parse(new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8)));
+    public void shouldReturnEmptyList() throws IOException {
+        BufferedReader reader = prepareReader("");
+
+        List<AccessControlEntry> list = AclParser.parse(reader);
+
         Assert.assertTrue(list.isEmpty());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowExceptionIfIncorrectFileContent() {
+    public void shouldThrowExceptionIfIncorrectFileContent() throws IOException {
         String source = "DENY:test.foo.bar.*";
-        AclParser.parse(new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8)));
+        BufferedReader reader = prepareReader(source);
+
+        AclParser.parse(reader);
+    }
+
+    @Test
+    public void shouldSkipEmptyLines() throws IOException {
+        String source = "\n\n\nDENY test.foo.bar.*\n\n\n";
+        BufferedReader reader = prepareReader(source);
+
+        List<AccessControlEntry> result = AclParser.parse(reader);
+
+        Assert.assertEquals(1, result.size());
+    }
+
+    @Test
+    public void shouldSupportLineComments() throws IOException {
+        String source = "# some comment here\n" +
+                "DENY test.foo.bar.*\n" +
+                "# some comment here too";
+
+        BufferedReader reader = prepareReader(source);
+        List<AccessControlEntry> result = AclParser.parse(reader);
+
+        Assert.assertEquals(1, result.size());
+    }
+
+    private static BufferedReader prepareReader(String data) {
+        return new BufferedReader(new StringReader(data));
     }
 }

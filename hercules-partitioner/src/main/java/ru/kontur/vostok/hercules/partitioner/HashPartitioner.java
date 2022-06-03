@@ -1,8 +1,12 @@
 package ru.kontur.vostok.hercules.partitioner;
 
+import ru.kontur.vostok.hercules.partitioner.hash.Hasher;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.number.IntegerUtil;
 
 /**
+ * Partitioner returns partition value according to {@link Hasher} implementation.
+ *
  * @author Gregory Koshelev
  */
 public class HashPartitioner implements Partitioner {
@@ -15,6 +19,6 @@ public class HashPartitioner implements Partitioner {
     @Override
     public int partition(Event event, ShardingKey shardingKey, int partitions) {
         int shardingHash = hasher.hash(event, shardingKey);
-        return (shardingHash & 0x7FFFFFFF) % partitions;
+        return IntegerUtil.toPositive(shardingHash) % partitions;
     }
 }

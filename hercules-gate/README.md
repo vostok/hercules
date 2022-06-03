@@ -211,6 +211,11 @@ HTTP Server binds on `<host>:<port>` are defined in Main Application settings.
 
 ### Event sender settings
 
+`gate.event.sender.default.partitioner.type` - type of the default partitioner (which is used if sharding key is absent).
+See possible values at `ru.kontur.vostok.hercules.gate.PartitionerType`, default value: `KAFKA_DEFAULT`
+
+`gate.event.sender.default.partitioner.batch.size` - batch size for partitioner of type `PartitionerType#BATCHED`, default value: `16`
+
 #### Kafka Producer settings
 Producer settings have base scope `gate.event.sender.producer`.
 See Producer's Config from Apache Kafka documentation. Main settings are presented below.
@@ -310,6 +315,8 @@ gate.event.sender.producer.buffer.memory=335544320
 gate.event.sender.producer.retries=4
 gate.event.sender.producer.retry.backoff.ms=250
 gate.event.sender.producer.metric.reporters=ru.kontur.vostok.hercules.kafka.util.metrics.GraphiteReporter
+
+gate.event.sender.default.partitioner.type=KAFKA_DEFAULT
 
 gate.send.request.processor.metrics.sampling.enable=true
 gate.send.request.processor.metrics.sampling.request.data.size.bytes=1048576

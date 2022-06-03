@@ -1,18 +1,19 @@
 package ru.kontur.vostok.hercules.graphite.sink.acl;
 
+import ru.kontur.vostok.hercules.graphite.sink.common.PatternMatcher;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.tags.MetricsTags;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Class for representing ACL.
+ * Class for representing access control list (ACL).
  * <p>
- * ACL file is scanned from top to bottom and when the metric name is fully matched to pattern, the {@link Statement} for this pattern is returned.<br>
- * If metric name do not fit any of the patterns in the ACL file, then will return {@code acl.defaultStatements}.
+ * Matches metric names to patterns of ACL entries sequentially from top to bottom
+ * and returns {@link Statement} operation of the first matched entry.<br>
+ * If the metric name doesn't fit any pattern in the ACL, then returns {@code acl.defaultStatements} operation.
  * <p>
  * ACL filter supports {@code *} in the pattern definition, means {@code any value}.<br>
  *
@@ -20,11 +21,11 @@ import java.util.Optional;
  */
 public class AccessControlList {
     private final List<AccessControlEntry> list;
-    private final Statement defaultStatement;
+    private final boolean defaultAnswer;
 
     public AccessControlList(List<AccessControlEntry> list, Statement defaultStatement) {
         this.list = list;
-        this.defaultStatement = defaultStatement;
+        this.defaultAnswer = defaultStatement == Statement.PERMIT;
     }
 
     /**
@@ -35,87 +36,45 @@ public class AccessControlList {
      */
     public boolean isPermit(Event event) {
         if (list.isEmpty()) {
-            return defaultStatement.isPermit();
+            return defaultAnswer;
         }
-
-        Optional<Container[]> optionalTagsVector = ContainerUtil.extract(event.getPayload(), MetricsTags.TAGS_VECTOR_TAG);
-        if (!optionalTagsVector.isPresent()) {
-            return defaultStatement.isPermit();
+        Container[] tagsVector = ContainerUtil
+                .extract(event.getPayload(), MetricsTags.TAGS_VECTOR_TAG)
+                .orElse(null);
+        if (tagsVector == null) {
+            return defaultAnswer;
         }
-
-        Container[] tagsVector = optionalTagsVector.get();
 
         for (AccessControlEntry ace : list) {
-            PatternSegment[] pattern = ace.getPattern();
-
-            if (!matchingIsPossible(tagsVector, pattern)) {
-                continue;
-            }
-
-            for (int i = 0; i < tagsVector.length; i++) {
-                String value = ContainerUtil.extract(tagsVector[i], MetricsTags.TAG_VALUE_TAG).orElse("null");
-                PatternSegment patternSegment = pattern[i];
-
-                if (matches(value, patternSegment)) {
+            PatternMatcher[] pattern = ace.getPattern();
+            if (matchingIsPossible(tagsVector, pattern)) {
+                for (int i = 0; i < tagsVector.length; i++) {
+                    // TODO: ContainerUtil.extract is expensive!
+                    //  (each time detecting extractor and coping values in StandardExtractors.extractString)
+                    String value = ContainerUtil.extract(tagsVector[i], MetricsTags.TAG_VALUE_TAG).orElse("null");
+                    if (!pattern[i].test(value)) {
+                        break;
+                    }
                     if (pattern.length == i + 1) {
                         return ace.isPermit();
                     }
-                } else {
-                    break;
                 }
             }
         }
-        return defaultStatement.isPermit();
+        return defaultAnswer;
     }
 
     /**
-     * Checks that value can matches the pattern
+     * Checks that value can match the pattern
      *
      * @param tagsVector array of metric name segments
-     * @param pattern array with pattern segments
+     * @param pattern    array with pattern segments
      * @return {@code true} if matching is possible, otherwise {@code false}
      */
-    private boolean matchingIsPossible(Container[] tagsVector, PatternSegment[] pattern) {
-        if (pattern[pattern.length - 1].isStar()) {
+    private boolean matchingIsPossible(Container[] tagsVector, PatternMatcher[] pattern) {
+        if (pattern[pattern.length - 1].isAny()) {
             return tagsVector.length >= pattern.length;
         }
         return tagsVector.length == pattern.length;
-    }
-
-    /**
-     * Checks that pattern segment matches the value
-     *
-     * @param value metric name segment
-     * @param segment pattern segment
-     * @return {@code true} if it matches, otherwise {@code false}
-     */
-    private static boolean matches(String value, PatternSegment segment) {
-        return (segment.containsStar())
-                ? starMatches(value, segment)
-                : segment.getSegment().equals(value);
-    }
-
-    /**
-     * Checks the pattern segment which contains star matches the value
-     *
-     * @param value metric name segment
-     * @param segment pattern segment
-     * @return {@code true} if it matches, otherwise {@code false}
-     */
-    private static boolean starMatches(String value, PatternSegment segment) {
-        if (segment.isStar()) {
-            return true;
-        }
-
-        if (segment.startsWithStar()) {
-            return value.endsWith(segment.getSuffix());
-        }
-
-        if (segment.endsWithStar()) {
-            return value.startsWith(segment.getPrefix());
-        }
-
-        return value.startsWith(segment.getPrefix())
-                && value.endsWith(segment.getSuffix());
     }
 }

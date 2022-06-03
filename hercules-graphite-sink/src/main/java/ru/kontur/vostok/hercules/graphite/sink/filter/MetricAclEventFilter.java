@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.graphite.sink.filter;
 
+import ru.kontur.vostok.hercules.configuration.Sources;
 import ru.kontur.vostok.hercules.graphite.sink.acl.AccessControlEntry;
 import ru.kontur.vostok.hercules.graphite.sink.acl.AccessControlList;
 import ru.kontur.vostok.hercules.graphite.sink.acl.AclParser;
@@ -30,13 +31,8 @@ public class MetricAclEventFilter extends EventFilter {
     public MetricAclEventFilter(Properties properties) {
         super(properties);
 
-        List<AccessControlEntry> list;
-        String path = PropertiesUtil.get(Props.ACL_PATH, properties).get().substring("file://".length());
-        try (FileInputStream in = new FileInputStream(path)) {
-            list = AclParser.parse(in);
-        } catch (IOException ex) {
-            throw new IllegalArgumentException(ex);
-        }
+        String path = PropertiesUtil.get(Props.ACL_PATH, properties).get();
+        List<AccessControlEntry> list = Sources.load(path, AclParser::parse);
 
         Statement defaultStatement = PropertiesUtil.get(Props.ACL_DEFAULT_STATEMENT, properties).get();
         this.acl = new AccessControlList(list, defaultStatement);

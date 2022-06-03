@@ -6,7 +6,7 @@
     <groupId>ru.kontur.vostok.hercules</groupId>
     <artifactId>hercules</artifactId>
     <packaging>pom</packaging>
-    <version>0.52.0-SNAPSHOT</version>
+    <version>0.53.0-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,27 +14,29 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <hercules.version>0.52.0-SNAPSHOT</hercules.version>
+        <hercules.version>0.53.0-SNAPSHOT</hercules.version>
 
         <kafka.version>2.4.0</kafka.version>
-        <zookeeper.version>3.4.13</zookeeper.version>
-        <curator.version>4.0.1</curator.version>
-        <cassandra-driver.version>4.0.1</cassandra-driver.version>
-        <undertow.version>2.0.13.Final</undertow.version>
+        <zookeeper.version>3.4.14</zookeeper.version>
+        <curator.version>4.2.0</curator.version>
+        <cassandra-driver.version>4.14.0</cassandra-driver.version>
+        <undertow.version>2.0.42.Final</undertow.version>
         <metrics.version>4.0.2</metrics.version>
-        <jackson.version>2.9.7</jackson.version>
-        <guava.version>20.0</guava.version>
-        <elasticsearch-client.version>6.2.4</elasticsearch-client.version>
-        <apache-httpclient.version>4.5.3</apache-httpclient.version>
-        <slf4j.version>1.7.25</slf4j.version>
-        <log4j.version>2.11.0</log4j.version>
-        <logback.version>1.2.3</logback.version>
-        <jetbrains-annotations.version>16.0.2</jetbrains-annotations.version>
-        <sentry.version>1.7.27</sentry.version>
-        <lz4.version>1.7.0</lz4.version>
-        <clickhouse.version>0.2.3</clickhouse.version>
-        <netty.version>4.1.66.Final</netty.version>
-        <junit.version>4.12</junit.version>
+        <jackson.version>2.13.1</jackson.version>
+        <guava.version>27.0.1-jre</guava.version>
+        <elasticsearch-client.version>6.8.23</elasticsearch-client.version>
+        <apache-httpclient.version>4.5.13</apache-httpclient.version>
+        <apache-httpcore.version>4.4.15</apache-httpcore.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <logback.version>1.2.10</logback.version>
+        <jetbrains-annotations.version>23.0.0</jetbrains-annotations.version>
+        <sentry.version>1.7.30</sentry.version>
+        <lz4.version>1.8.0</lz4.version>
+        <clickhouse.version>0.3.1-patch</clickhouse.version>
+        <netty.version>4.1.74.Final</netty.version>
+        <commons-codec.version>1.11</commons-codec.version>
+        <spotbugs-annotations.version>3.1.12</spotbugs-annotations.version>
+        <junit.version>4.13.2</junit.version>
         <mockito.version>3.12.4</mockito.version>
     </properties>
 
@@ -107,17 +109,29 @@
                 <artifactId>logback-classic</artifactId>
                 <version>${logback.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j.version}</version>
-            </dependency>
 
             <!-- Apache Http client -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${apache-httpclient.version}</version>
+                <exclusions>
+                    <!-- Should use SLF4J instead -->
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>${apache-httpcore.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore-nio</artifactId>
+                <version>${apache-httpcore.version}</version>
             </dependency>
 
             <!-- Apache Kafka client -->
@@ -238,6 +252,13 @@
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-client</artifactId>
                 <version>${elasticsearch-client.version}</version>
+                <exclusions>
+                    <!-- Should use SLF4J instead -->
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Sentry client -->
@@ -266,6 +287,25 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <!-- Commons modules -->
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+            </dependency>
+
+            <!-- SpotBugs Annotations -->
+            <dependency>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-annotations</artifactId>
+                <version>${spotbugs-annotations.version}</version>
             </dependency>
 
             <dependency>
