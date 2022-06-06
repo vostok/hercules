@@ -76,8 +76,7 @@ public class CassandraTracingInitializer {
                             "            'chunk_length_in_kb': '64',\n" +
                             "            'class': 'org.apache.cassandra.io.compress.LZ4Compressor'\n" +
                             "        }\n" +
-                            "        AND gc_grace_seconds = 10800\n" +
-                            "        AND read_repair_chance = 0.0;"
+                            "        AND gc_grace_seconds = 10800;"
             );
         }
     }
