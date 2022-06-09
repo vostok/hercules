@@ -15,7 +15,8 @@ SERVICES := hercules-elastic-adapter \
         hercules-timeline-sink \
         hercules-tracing-api \
         hercules-tracing-sink \
-        hercules-tracing-sink-clickhouse
+        hercules-tracing-sink-clickhouse \
+        hercules-init
 
 
 .PHONY: all build_images push_images
