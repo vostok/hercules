@@ -6,7 +6,7 @@
     <groupId>ru.kontur.vostok.hercules</groupId>
     <artifactId>hercules</artifactId>
     <packaging>pom</packaging>
-    <version>0.53.0-SNAPSHOT</version>
+    <version>0.53.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,7 +14,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <hercules.version>0.53.0-SNAPSHOT</hercules.version>
+        <hercules.version>0.53.0</hercules.version>
 
         <kafka.version>2.4.0</kafka.version>
         <zookeeper.version>3.4.14</zookeeper.version>
