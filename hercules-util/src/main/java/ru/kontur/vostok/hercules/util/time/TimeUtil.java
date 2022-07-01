@@ -43,6 +43,11 @@ public class TimeUtil {
     private static final long NANOS_IN_TICK = 100L;
 
     /**
+     * Nanoseconds in 1 millisecond
+     */
+    private static final long NANOS_IN_MS = 1_000_000L;
+
+    /**
      * GREGORIAN_EPOCH is offset from 1970-01-01T00:00:00.000Z to 1582-01-01T00:00:00.000Z in 100ns ticks.
      * Epoch determines time-point to start Time Traps
      */
@@ -52,6 +57,16 @@ public class TimeUtil {
      * UNIX_EPOCH starts from 1970-01-01T00:00:00.000Z.
      */
     public static final long UNIX_EPOCH = 0;
+
+    /**
+     * Convert millis to nanoseconds
+     *
+     * @param millis is millis
+     * @return nanoseconds
+     */
+    public static long millisToNanos(long millis) {
+        return millis * NANOS_IN_MS;
+    }
 
     private static long makeGregorianEpoch() {
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT-0"));

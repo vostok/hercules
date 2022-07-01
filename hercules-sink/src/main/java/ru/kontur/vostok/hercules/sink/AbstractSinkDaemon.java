@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.sink.metrics.SinkMetrics;
 import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -58,6 +59,7 @@ public abstract class AbstractSinkDaemon {
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
+            SinkMetrics sinkMetrics = new SinkMetrics(metricsCollector);
 
             sender = createSender(senderProperties, metricsCollector);
             sender.start();
@@ -73,7 +75,7 @@ public abstract class AbstractSinkDaemon {
                                     daemonId,
                                     sinkProperties,
                                     sender,
-                                    metricsCollector));
+                                    sinkMetrics));
             sinkPool.start();
 
             daemonHttpServer = new DaemonHttpServer(httpServerProperties, metricsCollector);

@@ -17,6 +17,7 @@ import ru.kontur.vostok.hercules.partitioner.hash.NaiveHasher;
 import ru.kontur.vostok.hercules.partitioner.RandomPartitioner;
 import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.sink.SinkPool;
+import ru.kontur.vostok.hercules.sink.metrics.SinkMetrics;
 import ru.kontur.vostok.hercules.undertow.util.servers.DaemonHttpServer;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -70,6 +71,7 @@ public class TimelineSinkDaemon {
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
             CommonMetrics.registerCommonMetrics(metricsCollector);
+            SinkMetrics sinkMetrics = new SinkMetrics(metricsCollector);
 
             daemonHttpServer = new DaemonHttpServer(statusServerProperties, metricsCollector);
             daemonHttpServer.start();
@@ -80,7 +82,7 @@ public class TimelineSinkDaemon {
             TimelineRepository timelineRepository = new TimelineRepository(curatorClient);
 
             Optional<Timeline> timelineOptional = timelineRepository.read(timelineName);
-            if (!timelineOptional.isPresent()) {
+            if (timelineOptional.isEmpty()) {
                 throw new IllegalArgumentException("Unknown timeline");
             }
 
@@ -106,7 +108,7 @@ public class TimelineSinkDaemon {
                                     executor,
                                     sinkProperties,
                                     sender,
-                                    metricsCollector,
+                                    sinkMetrics,
                                     timeline));
             sinkPool.start();
         } catch (Throwable t) {

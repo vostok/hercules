@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.sink;
 
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
+import ru.kontur.vostok.hercules.sink.metrics.SinkMetrics;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -17,7 +17,7 @@ public class SenderSink extends Sink {
             String applicationId,
             Properties properties,
             Sender sender,
-            MetricsCollector metricsCollector) {
+            SinkMetrics sinkMetrics) {
         super(
                 executor,
                 applicationId,
@@ -28,7 +28,7 @@ public class SenderSink extends Sink {
                         exclude(PropertiesUtil.get(Props.PATTERN_EXCLUSIONS, properties).get()).
                         build(),
                 EventDeserializer.parseAllTags(),
-                metricsCollector);
+                sinkMetrics);
     }
 
     private static class Props {
