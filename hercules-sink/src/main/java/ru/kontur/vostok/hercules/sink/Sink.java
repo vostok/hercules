@@ -5,20 +5,19 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.health.Meter;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidDeserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.filter.EventFilter;
+import ru.kontur.vostok.hercules.sink.metrics.SinkMetrics;
+import ru.kontur.vostok.hercules.sink.metrics.Stat;
 import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -28,7 +27,6 @@ import ru.kontur.vostok.hercules.util.time.Timer;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -59,11 +57,8 @@ public class Sink implements Lifecycle {
 
     private final Timer timer;
 
-    private final Meter droppedEventsMeter;
-    private final Meter filteredEventsMeter;
-    private final Meter processedEventsMeter;
-    private final Meter rejectedEventsMeter;
-    private final Meter totalEventsMeter;
+    private final Stat stat;
+    private final SinkMetrics sinkMetrics;
 
     public Sink(
             ExecutorService executor,
@@ -72,8 +67,8 @@ public class Sink implements Lifecycle {
             Processor processor,
             Subscription subscription,
             EventDeserializer deserializer,
-            MetricsCollector metricsCollector) {
-        this(executor, applicationId, properties, processor, subscription, deserializer, metricsCollector, TimeSource.SYSTEM);
+            SinkMetrics sinkMetrics) {
+        this(executor, applicationId, properties, processor, subscription, deserializer, sinkMetrics, TimeSource.SYSTEM);
     }
 
     Sink(
@@ -83,7 +78,7 @@ public class Sink implements Lifecycle {
             Processor processor,
             Subscription subscription,
             EventDeserializer deserializer,
-            MetricsCollector metricsCollector,
+            SinkMetrics sinkMetrics,
             TimeSource time) {
         this.executor = executor;
         this.processor = processor;
@@ -104,11 +99,11 @@ public class Sink implements Lifecycle {
 
         Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
-        consumerProperties.put(ConsumerConfig.CLIENT_ID_CONFIG,
-                Application.context().getInstanceId() + "-" + CONSUMER_CLIENT_ID_SEQUENCE.getAndIncrement());
+        String consumerId = Application.context().getInstanceId() + "-" + CONSUMER_CLIENT_ID_SEQUENCE.getAndIncrement();
+        consumerProperties.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerId);
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         consumerProperties.putIfAbsent(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, batchSize);
-        consumerProperties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, metricsCollector);
+        consumerProperties.put(KafkaConfigs.METRICS_COLLECTOR_INSTANCE_CONFIG, sinkMetrics.getMetricsCollector());
 
         UuidDeserializer keyDeserializer = new UuidDeserializer();
 
@@ -116,11 +111,8 @@ public class Sink implements Lifecycle {
 
         this.timer = time.timer(pollTimeoutMs);
 
-        droppedEventsMeter = metricsCollector.meter("droppedEvents");
-        filteredEventsMeter = metricsCollector.meter("filteredEvents");
-        processedEventsMeter = metricsCollector.meter("processedEvents");
-        rejectedEventsMeter = metricsCollector.meter("rejectedEvents");
-        totalEventsMeter = metricsCollector.meter("totalEvents");
+        this.stat = new Stat(consumerId, time);
+        this.sinkMetrics = sinkMetrics;
     }
 
     /**
@@ -171,6 +163,8 @@ public class Sink implements Lifecycle {
      * Sink awaits availability of {@link Processor}. Also, it controls {@link #isRunning()} during operations.
      */
     public final void run() {
+        List<Event> events = new ArrayList<>(batchSize * 2);
+
         while (isRunning()) {
             if (processor.isAvailable()) {
                 try {
@@ -178,12 +172,9 @@ public class Sink implements Lifecycle {
                     subscribe();
 
                     while (processor.isAvailable()) {
-                        List<Event> events = new ArrayList<>(batchSize * 2);
-
-                        int droppedEvents = 0;
-                        int filteredEvents = 0;
-
+                        events.clear();
                         timer.reset();
+                        stat.reset();
 
                         do {
                             ConsumerRecords<UUID, Event> pollResult;
@@ -198,32 +189,50 @@ public class Sink implements Lifecycle {
 
                             Set<TopicPartition> partitions = pollResult.partitions();
 
-                            for (TopicPartition partition : partitions) {
-                                List<ConsumerRecord<UUID, Event>> records = pollResult.records(partition);
-                                for (ConsumerRecord<UUID, Event> record : records) {
-                                    Event event = record.value();
-                                    if (event == null) {// Received non-deserializable data, should be ignored
-                                        droppedEvents++;
-                                        continue;
+                            stat.markFiltrationStart();
+                            try {
+                                for (TopicPartition partition : partitions) {
+                                    List<ConsumerRecord<UUID, Event>> records = pollResult.records(partition);
+                                    for (ConsumerRecord<UUID, Event> record : records) {
+                                        Event event = record.value();
+                                        if (event == null) {// Received non-deserializable data, should be ignored
+                                            stat.incrementDroppedEvents();
+                                            continue;
+                                        }
+                                        if (!filter(event)) {
+                                            stat.incrementFilteredEvents();
+                                            continue;
+                                        }
+                                        events.add(event);
                                     }
-                                    if (!filter(event)) {
-                                        filteredEvents++;
-                                        continue;
-                                    }
-                                    events.add(event);
                                 }
+                            } catch (Exception ex) {
+                                LOGGER.error("Unspecified exception acquired while filtration", ex);
+                            } finally {
+                                stat.markFiltrationEnd();
                             }
+
                         } while (events.size() < batchSize && !timer.isExpired());
 
-                        ProcessorResult result = processor.process(events);
+                        stat.setTotalEvents(events.size());
+
+                        ProcessorResult result;
+                        stat.markProcessStart();
+                        try {
+                            result = processor.process(events);
+                        } catch (Exception ex) {
+                            LOGGER.error("Unspecified exception acquired while processing events", ex);
+                            result = ProcessorResult.fail();
+                        } finally {
+                            stat.markProcessEnd();
+                        }
+
+                        stat.setProcessorResult(result);
+                        sinkMetrics.update(stat);
+
                         if (result.isSuccess()) {
                             try {
                                 commit();
-                                droppedEventsMeter.mark(droppedEvents);
-                                filteredEventsMeter.mark(filteredEvents);
-                                processedEventsMeter.mark(result.getProcessedEvents());
-                                rejectedEventsMeter.mark(result.getRejectedEvents());
-                                totalEventsMeter.mark(events.size());
                             } catch (CommitFailedException ex) {
                                 LOGGER.warn("Commit failed due to rebalancing", ex);
                             }
@@ -272,16 +281,17 @@ public class Sink implements Lifecycle {
      * @return polled Events
      * @throws WakeupException if poll terminated due to shutdown
      */
-    protected final ConsumerRecords<UUID, Event> poll(Duration timeout) throws WakeupException {
-        return consumer.poll(timeout);
+    protected final ConsumerRecords<UUID, Event> poll(Duration timeout) throws Exception {
+        stat.markPollStart();
+        try {
+            return consumer.poll(timeout);
+        } finally {
+            stat.markPollEnd();
+        }
     }
 
     protected final void commit() {
         consumer.commitSync();
-    }
-
-    protected final void commit(Map<TopicPartition, OffsetAndMetadata> offsets) {
-        consumer.commitSync(offsets);
     }
 
     private boolean filter(Event event) {

@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Function;
 
 /**
  * @author Gregory Koshelev
@@ -41,7 +40,6 @@ public class ElasticSender extends Sender {
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
     private static final ValidationResult UNDEFINED_INDEX_VALIDATION_RESULT = ValidationResult.error("Undefined index");
 
-    private final IndexPolicy indexPolicy;
     private final IndexResolver indexResolver;
 
     private final EventToJsonFormatter eventFormatter;
@@ -62,7 +60,7 @@ public class ElasticSender extends Sender {
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
 
-        this.indexPolicy = PropertiesUtil.get(Props.INDEX_POLICY, properties).get();
+        IndexPolicy indexPolicy = PropertiesUtil.get(Props.INDEX_POLICY, properties).get();
 
         Properties indexResolverProperties = PropertiesUtil.ofScope(properties, "elastic.index.resolver");
         List<IndexResolver> indexResolvers = PropertiesUtil.createClassInstanceList(indexResolverProperties, IndexResolver.class);
