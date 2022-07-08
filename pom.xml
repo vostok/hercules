@@ -34,6 +34,8 @@
         <lz4.version>1.8.0</lz4.version>
         <clickhouse.version>0.3.1-patch</clickhouse.version>
         <netty.version>4.1.74.Final</netty.version>
+        <opentelemetry.proto.version>0.17.1</opentelemetry.proto.version>
+        <grpc.version>1.45.1</grpc.version>
         <commons-codec.version>1.11</commons-codec.version>
         <spotbugs-annotations.version>3.1.12</spotbugs-annotations.version>
         <junit.version>4.13.2</junit.version>
@@ -82,6 +84,7 @@
         <module>hercules-tracing-sink-clickhouse</module>
         <module>hercules-elastic-adapter</module>
         <module>hercules-graphite-adapter</module>
+        <module>hercules-opentelemetry-adapter</module>
     </modules>
 
     <dependencyManagement>
@@ -292,6 +295,19 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
                 <version>${netty.version}</version>
+            </dependency>
+
+            <!-- OpenTelemetry -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-proto</artifactId>
+                <version>${opentelemetry.proto.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty</artifactId>
+                <version>${grpc.version}</version>
             </dependency>
 
             <!-- Commons modules -->

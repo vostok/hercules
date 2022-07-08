@@ -1,8 +1,7 @@
-package ru.kontur.vostok.hercules.elastic.adapter.gate;
+package ru.kontur.vostok.hercules.gate.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.gate.client.GateClient;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.protocol.Event;

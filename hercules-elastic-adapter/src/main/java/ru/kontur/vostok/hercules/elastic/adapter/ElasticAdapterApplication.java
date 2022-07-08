@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.elastic.adapter;
 
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.Scopes;
-import ru.kontur.vostok.hercules.elastic.adapter.gate.GateSender;
+import ru.kontur.vostok.hercules.gate.client.GateSender;
 import ru.kontur.vostok.hercules.elastic.adapter.handler.BulkHandler;
 import ru.kontur.vostok.hercules.elastic.adapter.handler.IndexHandler;
 import ru.kontur.vostok.hercules.elastic.adapter.index.IndexManager;
