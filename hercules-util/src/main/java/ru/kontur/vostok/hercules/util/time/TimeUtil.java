@@ -125,6 +125,16 @@ public class TimeUtil {
     }
 
     /**
+     * Convert nanos to 100ns ticks
+     *
+     * @param nanos is nanos
+     * @return 100ns ticks
+     */
+    public static long nanosToTicks(long nanos) {
+        return nanos / NANOS_IN_TICK;
+    }
+
+    /**
      * Convert millis to 100ns ticks
      *
      * @param millis is millis
