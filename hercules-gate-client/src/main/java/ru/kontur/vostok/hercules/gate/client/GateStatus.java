@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.elastic.adapter.gate;
+package ru.kontur.vostok.hercules.gate.client;
 
 /**
  * @author Gregory Koshelev
