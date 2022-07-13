@@ -85,6 +85,7 @@
         <module>hercules-elastic-adapter</module>
         <module>hercules-graphite-adapter</module>
         <module>hercules-opentelemetry-adapter</module>
+        <module>hercules-routing</module>
     </modules>
 
     <dependencyManagement>
@@ -449,6 +450,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-clickhouse-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-routing</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
 

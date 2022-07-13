@@ -1,5 +1,10 @@
 package ru.kontur.vostok.hercules.management.api;
 
+import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.auth.AdminAuthManager;
 import ru.kontur.vostok.hercules.auth.AuthManager;
@@ -12,10 +17,20 @@ import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
+import ru.kontur.vostok.hercules.http.handler.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
+import ru.kontur.vostok.hercules.http.handler.RouteHandlerBuilder;
 import ru.kontur.vostok.hercules.management.api.blacklist.AddBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.ListBlacklistHandler;
 import ru.kontur.vostok.hercules.management.api.blacklist.RemoveBlacklistHandler;
+import ru.kontur.vostok.hercules.management.api.routing.common.DeleteRouteHandler;
+import ru.kontur.vostok.hercules.management.api.routing.common.ReadAllRoutesHandler;
+import ru.kontur.vostok.hercules.management.api.routing.common.ReadEngineConfigHandler;
+import ru.kontur.vostok.hercules.management.api.routing.common.ReadRouteByIdHandler;
+import ru.kontur.vostok.hercules.management.api.routing.common.WriteEngineConfigHandler;
+import ru.kontur.vostok.hercules.management.api.routing.common.WriteRouteHandler;
+import ru.kontur.vostok.hercules.management.api.routing.sentry.SentryEngineConfigValidator;
+import ru.kontur.vostok.hercules.management.api.routing.sentry.SentryRouteValidator;
 import ru.kontur.vostok.hercules.management.api.rule.ListRuleHandler;
 import ru.kontur.vostok.hercules.management.api.rule.SetRuleHandler;
 import ru.kontur.vostok.hercules.management.api.stream.ChangeStreamDescriptionHandler;
@@ -39,14 +54,14 @@ import ru.kontur.vostok.hercules.meta.task.stream.StreamTaskRepository;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTask;
 import ru.kontur.vostok.hercules.meta.task.timeline.TimelineTaskRepository;
 import ru.kontur.vostok.hercules.meta.timeline.TimelineRepository;
+import ru.kontur.vostok.hercules.routing.config.zk.ZookeeperReadRepository;
+import ru.kontur.vostok.hercules.routing.config.zk.ZookeeperWriteRepository;
+import ru.kontur.vostok.hercules.routing.engine.tree.DecisionTreeEngineConfigDeserializer;
+import ru.kontur.vostok.hercules.routing.sentry.SentryRouteDeserializer;
+import ru.kontur.vostok.hercules.routing.sentry.SentryRouting;
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
-import ru.kontur.vostok.hercules.http.handler.InstrumentedRouteHandlerBuilder;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-
-import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Gregory Koshelev
@@ -124,7 +139,7 @@ public class ManagementApiApplication {
         HttpHandler removeBlacklistHandler = adminAuthHandlerWrapper.wrap(new RemoveBlacklistHandler(blacklistRepository));
         HttpHandler listBlacklistHandler = adminAuthHandlerWrapper.wrap(new ListBlacklistHandler(blacklistRepository));
 
-        RouteHandler handler = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
+        RouteHandlerBuilder handlerBuilder = new InstrumentedRouteHandlerBuilder(httpServerProperties, metricsCollector).
                 post("/streams/create", createStreamHandler).
                 post("/streams/delete", deleteStreamHandler).
                 post("/streams/changeTtl", changeStreamTtlHandler).
@@ -141,14 +156,54 @@ public class ManagementApiApplication {
                 get("/rules/list", listRuleHandler).
                 post("/blacklist/add", addBlacklistHandler).
                 post("/blacklist/remove", removeBlacklistHandler).
-                get("/blacklist/list", listBlacklistHandler).
-                build();
+                get("/blacklist/list", listBlacklistHandler);
+
+        registerSentryRoutingHandlers(authHandlerWrapper, handlerBuilder);
+
+        RouteHandler handler = handlerBuilder.build();
 
         return new UndertowHttpServer(
                 Application.application().getConfig().getHost(),
                 Application.application().getConfig().getPort(),
                 httpServerProperties,
                 handler);
+    }
+
+    private static void registerSentryRoutingHandlers(AuthHandlerWrapper auth, RouteHandlerBuilder builder) {
+        var objectMapper = new ObjectMapper();
+        var routeDeserializer = new SentryRouteDeserializer(objectMapper);
+        var engineConfigDeserializer = new DecisionTreeEngineConfigDeserializer(objectMapper);
+        ZookeeperWriteRepository writeRepository = ZookeeperWriteRepository.builder()
+                .withRootPath(SentryRouting.STORE_ROOT)
+                .withCuratorClient(curatorClient)
+                .withConfigSerializer(objectMapper::writeValueAsBytes)
+                .withRouteSerializer(objectMapper::writeValueAsBytes)
+                .build();
+        ZookeeperReadRepository readRepository = ZookeeperReadRepository.builder()
+                .withRootPath(SentryRouting.STORE_ROOT)
+                .withCuratorClient(curatorClient)
+                .withConfigDeserializer(engineConfigDeserializer)
+                .withRouteDeserializer(routeDeserializer)
+                .build();
+        var configValidator = new SentryEngineConfigValidator();
+        var routeValidator = new SentryRouteValidator(readRepository, SentryRouting.DEFAULT_CONFIG);
+        String apiRoot = "/routing/sink/sentry";
+
+        HttpHandler writeRouteHandler = auth.wrap(
+                new WriteRouteHandler(writeRepository, routeDeserializer, routeValidator));
+        builder
+                .get(apiRoot + "/routes", auth.wrap(
+                        new ReadAllRoutesHandler(readRepository, objectMapper)))
+                .get(apiRoot + "/routes/:routeId", auth.wrap(
+                        new ReadRouteByIdHandler(readRepository, objectMapper)))
+                .get(apiRoot + "/config", auth.wrap(
+                        new ReadEngineConfigHandler(readRepository, SentryRouting.DEFAULT_CONFIG, objectMapper)))
+                .post(apiRoot + "/config", auth.wrap(
+                        new WriteEngineConfigHandler(writeRepository, configValidator, engineConfigDeserializer)))
+                .post(apiRoot + "/routes", writeRouteHandler)
+                .post(apiRoot + "/routes/:routeId", writeRouteHandler)
+                .delete(apiRoot + "/routes/:routeId", auth.wrap(
+                        new DeleteRouteHandler(writeRepository)));
     }
 
     private static class Props {

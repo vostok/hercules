@@ -1,11 +1,13 @@
 package ru.kontur.vostok.hercules.protocol;
 
+import ru.kontur.vostok.hercules.util.arguments.Preconditions;
+
 import java.nio.charset.StandardCharsets;
 
 /**
  * @author Gregory Koshelev
  */
-public class TinyString {
+public class TinyString implements CharSequence {
     private static final int SIZE_OF_TINY_STRING_LENGTH = Type.BYTE.size;
 
     private static final TinyString EMPTY = new TinyString(new byte[0]);
@@ -65,6 +67,35 @@ public class TinyString {
     @Override
     public String toString() {
         return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public char charAt(int index) {
+        return (char) bytes[index];
+    }
+
+    @Override
+    public CharSequence subSequence(int start, int end) {
+        Preconditions.check(start < bytes.length, "start must be less than string length");
+        Preconditions.check(end <= bytes.length, "end must be less or equal to string length");
+        Preconditions.check(start <= end, "start must be be less or equal to end");
+        return new CharSequence() {
+            @Override
+            public int length() {
+                return end - start;
+            }
+
+            @Override
+            public char charAt(int index) {
+                Preconditions.check(index < length());
+                return (char) bytes[start + index];
+            }
+
+            @Override
+            public CharSequence subSequence(int startInner, int endInner) {
+                return TinyString.this.subSequence(start + startInner, start + endInner);
+            }
+        };
     }
 
     public static TinyString of(String s) {

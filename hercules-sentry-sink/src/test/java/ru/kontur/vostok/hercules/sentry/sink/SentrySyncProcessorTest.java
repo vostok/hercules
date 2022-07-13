@@ -4,14 +4,16 @@ import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.connection.TooManyRequestsException;
 import io.sentry.dsn.InvalidDsnException;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
+import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.routing.Router;
+import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
@@ -22,7 +24,6 @@ import java.util.Properties;
 import java.util.UUID;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -36,18 +37,20 @@ import static org.mockito.Mockito.when;
  * @author Petr Demenev
  */
 public class SentrySyncProcessorTest {
+    private final SentryClientHolder sentryClientHolderMock = mock(SentryClientHolder.class);
+    private final SentryClient sentryClientMock = mock(SentryClient.class);
+    private final MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
+    @SuppressWarnings("unchecked")
+    private final Router<Event, SentryDestination> router = mock(Router.class);
 
-    private SentryClientHolder sentryClientHolderMock = mock(SentryClientHolder.class);
-    private SentryClient sentryClientMock = mock(SentryClient.class);
-
-    private static MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
-
-    private SentrySyncProcessor sentrySyncProcessor = new SentrySyncProcessor(
+    private final SentrySyncProcessor sentrySyncProcessor = new SentrySyncProcessor(
             new Properties(),
             sentryClientHolderMock,
             new SentryEventConverter("0.0.0"),
-            metricsCollectorMock);
-    private static UUID someUuid = UUID.randomUUID();
+            metricsCollectorMock,
+            router
+    );
+    private static final UUID someUuid = UUID.randomUUID();
     private static final String MY_PROJECT = "my-project";
     private static final String MY_ORGANIZATION = "my-organization";
     private static final String MY_ENVIRONMENT = "test";
@@ -58,66 +61,20 @@ public class SentrySyncProcessorTest {
     /**
      * Mock metrics
      */
-    @BeforeClass
-    public static void init() {
+    @Before
+    public void init() {
         when(metricsCollectorMock.meter(anyString())).thenReturn(n -> {
         });
         when(metricsCollectorMock.timer(anyString())).thenReturn((duration, unit) -> {
         });
+        when(router.route(EVENT)).thenReturn(SentryDestination.of(MY_ORGANIZATION, MY_PROJECT));
     }
 
     @Test
-    public void shouldReturnFalseWhenProcessEventWithoutPropertiesTag() throws BackendServiceFailedException {
-        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
-                .build();
+    public void shouldReturnFalseRouterReturnsNowhereDestination() throws BackendServiceFailedException {
+        when(router.route(EVENT)).thenReturn(SentryDestination.toNowhere());
 
-        assertFalse(sentrySyncProcessor.process(event));
-    }
-
-    @Test
-    public void shouldReturnFalseWhenProcessEventWithoutProjectTag() throws BackendServiceFailedException {
-        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(
-                        Container.of(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))))
-                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
-                .build();
-
-        assertFalse(sentrySyncProcessor.process(event));
-    }
-
-    @Test
-    public void shouldReturnTrueWhenProcessEventWithoutSubprojectTag() throws BackendServiceFailedException {
-        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
-                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.ENVIRONMENT_TAG.getName(), Variant.ofString(MY_ENVIRONMENT))
-                        .build()
-                ))
-                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
-                .build();
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_ORGANIZATION))
-                .thenReturn(Result.ok(sentryClientMock));
-        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
-
-        assertTrue(sentrySyncProcessor.process(event));
-    }
-
-    @Test
-    public void shouldSetSentryProjectBySubprojectTag() throws BackendServiceFailedException {
-        final Event event = EventBuilder.create(TimeUtil.UNIX_EPOCH, someUuid.toString())
-                .tag(CommonTags.PROPERTIES_TAG.getName(), Variant.ofContainer(Container.builder()
-                        .tag(CommonTags.PROJECT_TAG.getName(), Variant.ofString(MY_ORGANIZATION))
-                        .tag(CommonTags.SUBPROJECT_TAG.getName(), Variant.ofString(MY_PROJECT))
-                        .build()
-                ))
-                .tag(LogEventTags.LEVEL_TAG.getName(), Variant.ofString("Error"))
-                .build();
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.ok(sentryClientMock));
-        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
-
-        assertTrue(sentrySyncProcessor.process(event));
+        assertFalse(sentrySyncProcessor.process(EVENT));
     }
 
     @Test(expected = BackendServiceFailedException.class)

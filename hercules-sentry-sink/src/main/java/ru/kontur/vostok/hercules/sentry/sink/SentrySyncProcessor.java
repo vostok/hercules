@@ -12,12 +12,12 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
-import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.routing.Router;
+import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryLevelEnumParser;
-import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.functional.Result;
@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
  * @author Gregory Koshelev
@@ -39,7 +38,6 @@ import java.util.regex.Pattern;
 public class SentrySyncProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SentrySyncProcessor.class);
-    private static final Pattern FORBIDDEN_CHARS_PATTERN = Pattern.compile("[^-_a-z0-9]");
 
     private final Level defaultLevel = Level.WARNING;
     private final int retryLimit;
@@ -47,6 +45,7 @@ public class SentrySyncProcessor {
     private final ScheduledExecutorService executor;
     private final SentryEventConverter eventConverter;
     private final MetricsCollector metricsCollector;
+    private final Router<Event, SentryDestination> router;
     private final ConcurrentHashMap<String, Timer> eventProcessingTimerMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Meter> throttledBySentryEventsMeterMap = new ConcurrentHashMap<>();
@@ -58,12 +57,14 @@ public class SentrySyncProcessor {
             Properties sinkProperties,
             SentryClientHolder sentryClientHolder,
             SentryEventConverter eventConverter,
-            MetricsCollector metricsCollector
+            MetricsCollector metricsCollector,
+            Router<Event, SentryDestination> router
     ) {
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, sinkProperties).get();
         this.sentryClientHolder = sentryClientHolder;
         this.eventConverter = eventConverter;
         this.metricsCollector = metricsCollector;
+        this.router = router;
 
         long clientsUpdatePeriodMs = PropertiesUtil.get(Props.CLIENTS_UPDATE_PERIOD_MS, sinkProperties).get();
         this.executor = Executors.newSingleThreadScheduledExecutor(
@@ -95,29 +96,17 @@ public class SentrySyncProcessor {
 
         final Optional<Level> level = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
                 .flatMap(SentryLevelEnumParser::parse);
-        if (!level.isPresent() || defaultLevel.compareTo(level.get()) < 0) {
+        if (level.isEmpty() || defaultLevel.compareTo(level.get()) < 0) {
             return false;
         }
-        final Optional<Container> properties = ContainerUtil.extract(event.getPayload(), CommonTags.PROPERTIES_TAG);
-        if (!properties.isPresent()) {
-            LOGGER.debug("Missing required tag '{}'", CommonTags.PROPERTIES_TAG.getName());
+        SentryDestination destination = router.route(event).sanitize();
+        if (destination.isNowhere()) {
             return false;
         }
-
-        Optional<String> organizationName = ContainerUtil.extract(properties.get(), CommonTags.PROJECT_TAG);
-        if (!organizationName.isPresent()) {
-            LOGGER.debug("Missing required tag '{}'", CommonTags.PROJECT_TAG.getName());
-            return false;
-        }
-        String organization = sanitizeName(organizationName.get());
-
-        Optional<String> sentryProjectName = ContainerUtil.extract(properties.get(), CommonTags.SUBPROJECT_TAG);
-        String sentryProject = sentryProjectName.map(this::sanitizeName).orElse(organization);
-
-        final String prefix = makePrefix(organization, sentryProject);
+        final String prefix = makePrefix(destination.organization(), destination.project());
         boolean processed =
-                throttlingService.check(organization, eventTimestampMs)
-                        && tryToSend(event, organization, sentryProject);
+                throttlingService.check(destination.organization(), eventTimestampMs)
+                        && tryToSend(event, destination.organization(), destination.project());
 
         final long processingTimeMs = System.currentTimeMillis() - sendingStart;
         eventProcessingTimerMap
@@ -250,10 +239,6 @@ public class SentrySyncProcessor {
         errorTypesMeterMap
                 .computeIfAbsent(prefix + "errorTypes." + errorType, metricsCollector::meter)
                 .mark();
-    }
-
-    private String sanitizeName(String name) {
-        return FORBIDDEN_CHARS_PATTERN.matcher(name.toLowerCase()).replaceAll("_");
     }
 
     private String makePrefix(final String organization, final String project) {

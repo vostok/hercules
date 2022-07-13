@@ -16,8 +16,8 @@ public final class StringUtil {
 
     }
 
-    public static boolean isNullOrEmpty(String string) {
-        return string == null || string.isEmpty();
+    public static boolean isNullOrEmpty(CharSequence string) {
+        return string == null || string.length() == 0;
     }
 
     public static boolean tryParseBoolean(String string, boolean defaultValue) {

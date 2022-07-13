@@ -2,8 +2,10 @@ package ru.kontur.vostok.hercules.curator;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.api.BackgroundPathable;
 import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.framework.imps.CuratorFrameworkState;
+import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -26,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -61,20 +64,24 @@ public class CuratorClient implements Lifecycle {
     }
 
     public ReadResult read(String path) throws CuratorInternalException, CuratorUnknownException {
-        try {
-            Stat stat = curatorFramework.checkExists().forPath(path);
-            if (stat == null) {
-                return ReadResult.notFound();
-            }
-            byte[] bytes = curatorFramework.getData().forPath(path);
-            return ReadResult.found(bytes);
-        } catch (KeeperException.NoNodeException ex) {
-            return ReadResult.notFound();
-        } catch (KeeperException ex) {
-            throw new CuratorInternalException("Read failed with KeeperException", ex);
-        } catch (Exception ex) {
-            throw new CuratorUnknownException("Read failed with Exception", ex);
-        }
+        return readImpl(path, curatorFramework.getData());
+    }
+
+    public ReadResult read(String path, CuratorWatcher curatorWatcher)
+            throws CuratorInternalException, CuratorUnknownException {
+        return readImpl(path, curatorFramework.getData().usingWatcher(curatorWatcher));
+    }
+
+    public void registerConnectionStateListener(ConnectionStateListener listener) {
+        curatorFramework.getConnectionStateListenable().addListener(listener);
+    }
+
+    public void registerConnectionStateListener(ConnectionStateListener listener, Executor executor) {
+        curatorFramework.getConnectionStateListenable().addListener(listener, executor);
+    }
+
+    public void removeConnectionStateListener(ConnectionStateListener listener) {
+        curatorFramework.getConnectionStateListenable().removeListener(listener);
     }
 
     /**
@@ -155,7 +162,7 @@ public class CuratorClient implements Lifecycle {
      *
      * @param path path of the node
      * @return {@code true} if node exists, {@code false} otherwise
-     * @throws CuratorUnknownException
+     * @throws CuratorUnknownException Will be thrown as a result of any error.
      */
     public boolean exists(String path) throws CuratorUnknownException {
         try {
@@ -220,6 +227,24 @@ public class CuratorClient implements Lifecycle {
         }
     }
 
+    private ReadResult readImpl(String path, BackgroundPathable<byte[]> dataPathable)
+            throws CuratorInternalException, CuratorUnknownException {
+        try {
+            Stat stat = this.curatorFramework.checkExists().forPath(path);
+            if (stat == null) {
+                return ReadResult.notFound();
+            }
+            byte[] bytes = dataPathable.forPath(path);
+            return ReadResult.found(bytes);
+        } catch (KeeperException.NoNodeException ex) {
+            return ReadResult.notFound();
+        } catch (KeeperException ex) {
+            throw new CuratorInternalException("Read failed with KeeperException", ex);
+        } catch (Exception ex) {
+            throw new CuratorUnknownException("Read failed with Exception", ex);
+        }
+    }
+
     private static CuratorFramework build(Properties properties) {
         final String connectString = PropertiesUtil.get(Props.CONNECT_STRING, properties).get();
         final int connectionTimeout = PropertiesUtil.get(Props.CONNECTION_TIMEOUT_MS, properties).get();
@@ -230,14 +255,13 @@ public class CuratorClient implements Lifecycle {
 
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime);
 
-        CuratorFramework curatorFramework = CuratorFrameworkFactory.builder()
+        return CuratorFrameworkFactory.builder()
                 .zk34CompatibilityMode(true)
                 .connectString(connectString)
                 .connectionTimeoutMs(connectionTimeout)
                 .sessionTimeoutMs(sessionTimeout)
                 .retryPolicy(retryPolicy)
                 .build();
-        return curatorFramework;
     }
 
     private static class Props {
