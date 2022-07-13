@@ -485,6 +485,161 @@ paths:
           $ref: '#/responses/badRequest'
         '401':
           $ref: '#/responses/unauthorized'
+  /routing/sink/sentry/routes:
+    get:
+      tags:
+        - sentry-routing
+      summary: "List of Sentry routes"
+      description: "This method returns all available Sentry routes."
+      parameters:
+        - $ref: '#/parameters/masterApiKey'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: "List of Sentry routes."
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/sentry-route-with-id'
+        '401':
+          $ref: '#/responses/unauthorized'
+    post:
+      tags:
+        - sentry-routing
+      summary: Create new Sentry route
+      description: This method creates new Sentry route
+      parameters:
+        - $ref: '#/parameters/masterApiKey'
+        - name: body
+          in: body
+          description: Route parameters
+          required: true
+          schema:
+            $ref: '#/definitions/sentry-route'
+      consumes:
+        - application/json
+      produces:
+        - application/json
+        - plain/text
+      responses:
+        '200':
+          description: "Route created successfully."
+          schema:
+            type: object
+            properties:
+              routeId:
+                type: string
+                example: "4c4bd0d7-914d-49e1-bec4-2b83a1e9a146"
+        '400':
+          description: "Bad route were given. Will return text error description in the body."
+        '401':
+          $ref: '#/responses/unauthorized'
+  /routing/sink/sentry/routes/{routeId}:
+    get:
+      tags:
+        - sentry-routing
+      summary: "Get Route by Id"
+      description: "This method returns route data by given route id."
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: "Returns found route data"
+          schema:
+            $ref: '#/definitions/sentry-route'
+        '401':
+          $ref: '#/responses/unauthorized'
+    post:
+      tags:
+        - sentry-routing
+      summary: "Change Sentry route"
+      description: "This method changes existent Sentry route."
+      parameters:
+        - $ref: '#/parameters/masterApiKey'
+        - name: routeId
+          description: Id of route that must be changed
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          description: Route parameters
+          required: true
+          schema:
+            $ref: '#/definitions/sentry-route'
+      consumes:
+        - application/json
+      produces:
+        - plain/text
+      responses:
+        '200':
+          description: "Route successfully changed."
+        '400':
+          description: "Bad route were given. Will return text error description in the body."
+        '401':
+          $ref: '#/responses/unauthorized'
+    delete:
+      tags:
+        - sentry-routing
+      summary: Remove Sentry route
+      description: Remove Sentry route
+      parameters:
+        - $ref: '#/parameters/masterApiKey'
+        - name: routeId
+          description: "Id of route that must be changed."
+          in: path
+          required: true
+          type: string
+      produces:
+        - plain/text
+      responses:
+        '200':
+          description: "Route successfully removed."
+        '400':
+          description: "Bad route given"
+        '401':
+          $ref: '#/responses/unauthorized'
+  /routing/sink/sentry/config:
+    get:
+      tags:
+        - sentry-routing
+      summary: "Read route engine configuration for Sentry routing"
+      description: "This method returns route engine configuration for Sentry routing."
+      parameters:
+        - $ref: '#/parameters/masterApiKey'
+      produces:
+        - application/json
+        - plain/text
+      responses:
+        '200':
+          description: "Current routing engine configuration."
+          schema:
+            $ref: '#/definitions/decision-tree-engine-config'
+        '401':
+          $ref: '#/responses/unauthorized'
+    post:
+      tags:
+        - sentry-routing
+      summary: "Change route engine configuration for Sentry routing"
+      description: "This method changes route engine configuration for Sentry routing."
+      consumes:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/masterApiKey'
+        - name: body
+          in: body
+          description: "Routing engine configuration."
+          required: true
+          schema:
+            $ref: '#/definitions/decision-tree-engine-config'
+      responses:
+        '200':
+          description: "Configuration successfully applied."
+        '400':
+          description: "Bad routing engine configuration were given."
+        '401':
+          $ref: '#/responses/unauthorized'
 definitions:
   stream:
     type: object
@@ -564,6 +719,55 @@ definitions:
         type: string
       instanceId:
         type: string
+  sentry-route:
+    type: object
+    required:
+      - conditions
+      - destination
+    properties:
+      conditions:
+        type: object
+        additionalProperties:
+          type: string
+        example: '{ "properties/project": "my-project", "properties/subproject": "my-subproject" }'
+      destination:
+        type: object
+        description: "The destination of log events that are matches conditions"
+        properties:
+          organization:
+            type: string
+            description: "Sentry organization name. This field supports interpolations. Interpolation syntax example: {tag:properties/application}"
+            example: "my-sentry-organization-name"
+          project:
+            type: string
+            description: "Sentry project name. This field supports interpolations. Interpolation syntax example: {tag:properties/application}"
+            example: "{tag:properties/application}"
+      description:
+        description: "Commentary that can help with route purpose understanding"
+        type: string
+        example: "This route is required because ..."
+  decision-tree-engine-config:
+    type: object
+    required:
+      - allowedTags
+    properties:
+      allowedTags:
+        description: "Allowed tag's paths. Tags that are listed here can be used in conditions of routes and also in destination interpolations. The order of this list specifies identifier's hierarchy."
+        example: '[ "properties/project", "properties/subproject", "properties/application", "properties/environment" ]'
+        type: array
+        items:
+          type: string
+  sentry-route-with-id:
+    allOf:
+      - $ref: '#/definitions/sentry-route'
+      - type: object
+        required:
+          - id
+        properties:
+          id:
+            type: string
+            example: "4c4bd0d7-914d-49e1-bec4-2b83a1e9a146"
+
 parameters:
   apiKey:
     name: Authorization

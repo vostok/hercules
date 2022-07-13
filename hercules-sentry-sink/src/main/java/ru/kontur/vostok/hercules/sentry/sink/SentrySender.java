@@ -4,6 +4,8 @@ import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.routing.Router;
+import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
 import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
 import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
@@ -30,8 +32,13 @@ public class SentrySender extends Sender {
      *
      * @param senderProperties sender's properties.
      * @param metricsCollector metrics collector
+     * @param router           makes decisions about log events' destinations
      */
-    public SentrySender(Properties senderProperties, MetricsCollector metricsCollector) {
+    public SentrySender(
+            Properties senderProperties,
+            MetricsCollector metricsCollector,
+            Router<Event, SentryDestination> router
+    ) {
         super(senderProperties, metricsCollector);
 
         final String sentryUrl = PropertiesUtil.get(Props.SENTRY_URL, senderProperties).get();
@@ -39,7 +46,7 @@ public class SentrySender extends Sender {
         sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
         SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient, senderProperties);
         SentryEventConverter sentryEventConverter = new SentryEventConverter(Application.context().getVersion());
-        this.processor = new SentrySyncProcessor(senderProperties, sentryClientHolder, sentryEventConverter, metricsCollector);
+        this.processor = new SentrySyncProcessor(senderProperties, sentryClientHolder, sentryEventConverter, metricsCollector, router);
     }
 
     @Override
@@ -73,12 +80,10 @@ public class SentrySender extends Sender {
 
     @Override
     public boolean stop(long timeout, TimeUnit unit) {
-        boolean stopped = false;
         try {
-            stopped = super.stop(timeout, unit);
+            return super.stop(timeout, unit);
         } finally {
             this.processor.stop();
         }
-        return stopped;
     }
 }

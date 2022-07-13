@@ -38,6 +38,10 @@ public abstract class AbstractSinkDaemon {
     private DaemonHttpServer daemonHttpServer;
 
     protected void run(String[] args) {
+        run(args, (properties, container) -> {});
+    }
+
+    protected void run(String[] args, Application.Starter starter) {
         long start = System.currentTimeMillis();
         LOGGER.info("Starting {}", getDaemonName());
 
@@ -54,7 +58,7 @@ public abstract class AbstractSinkDaemon {
 
             String daemonId = getDaemonId();
 
-            Application.run(getDaemonName(), getDaemonId(), args);
+            Application.run(getDaemonName(), getDaemonId(), args, starter);
 
             metricsCollector = new MetricsCollector(metricsProperties);
             metricsCollector.start();
