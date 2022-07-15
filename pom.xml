@@ -20,7 +20,7 @@
         <zookeeper.version>3.4.14</zookeeper.version>
         <curator.version>4.2.0</curator.version>
         <cassandra-driver.version>4.14.0</cassandra-driver.version>
-        <undertow.version>2.0.42.Final</undertow.version>
+        <undertow.version>2.2.15.Final</undertow.version>
         <metrics.version>4.0.2</metrics.version>
         <jackson.version>2.13.1</jackson.version>
         <guava.version>27.0.1-jre</guava.version>
