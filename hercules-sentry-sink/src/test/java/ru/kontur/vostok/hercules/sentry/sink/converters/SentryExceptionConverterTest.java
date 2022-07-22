@@ -7,6 +7,7 @@ import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.SentryExceptionConverter;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.StackFrameTags;
 

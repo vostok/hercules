@@ -1,16 +1,19 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import io.sentry.SentryClient;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
-import ru.kontur.vostok.hercules.sentry.api.model.DsnInfo;
-import ru.kontur.vostok.hercules.sentry.api.model.KeyInfo;
-import ru.kontur.vostok.hercules.sentry.api.model.OrganizationInfo;
-import ru.kontur.vostok.hercules.sentry.api.model.ProjectInfo;
-import ru.kontur.vostok.hercules.sentry.api.model.TeamInfo;
+import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
+import ru.kontur.vostok.hercules.sentry.client.ErrorInfo;
+import ru.kontur.vostok.hercules.sentry.client.api.SentryApiClient;
+import ru.kontur.vostok.hercules.sentry.client.api.model.DsnInfo;
+import ru.kontur.vostok.hercules.sentry.client.api.model.KeyInfo;
+import ru.kontur.vostok.hercules.sentry.client.api.model.OrganizationInfo;
+import ru.kontur.vostok.hercules.sentry.client.api.model.ProjectInfo;
+import ru.kontur.vostok.hercules.sentry.client.api.model.TeamInfo;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnector;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolder;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 import java.util.ArrayList;
@@ -39,13 +42,13 @@ public class SentryClientHolderTest {
 
     private Map<String, SentryOrg> sentrySimulator;
     private SentryApiClient sentryApiClientMock;
-    private SentryClientHolder sentryClientHolder;
+    private SentryConnectorHolder sentryConnectorHolder;
 
     @Before
     public void init() {
         sentrySimulator = new HashMap<>();
         sentryApiClientMock = Mockito.mock(SentryApiClient.class);
-        sentryClientHolder = new SentryClientHolder(sentryApiClientMock, new Properties());
+        sentryConnectorHolder = new SentryConnectorHolder(sentryApiClientMock, new Properties());
     }
 
     @Test
@@ -54,9 +57,9 @@ public class SentryClientHolderTest {
         getOrganizationsMock();
         getProjectsMock(MY_ORGANIZATION);
         getPublicDsnMock(MY_ORGANIZATION, MY_PROJECT);
-        sentryClientHolder.update();
+        sentryConnectorHolder.update();
 
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT);
 
         Mockito.verify(sentryApiClientMock).getOrganizations();
         Mockito.verify(sentryApiClientMock, Mockito.times(0)).getProjects(NEW_ORGANIZATION);
@@ -70,9 +73,9 @@ public class SentryClientHolderTest {
         getOrganizationsMock();
         getProjectsMock(MY_ORGANIZATION);
         getPublicDsnMock(MY_ORGANIZATION, MY_PROJECT);
-        sentryClientHolder.update();
+        sentryConnectorHolder.update();
 
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient("my_Company", MY_PROJECT);//capital letter
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector("my_Company", MY_PROJECT);//capital letter
 
         Assert.assertEquals("SlugValidationError", sentryClient.getError().getType());
     }
@@ -86,9 +89,9 @@ public class SentryClientHolderTest {
         createTeamMock(NEW_ORGANIZATION, NEW_ORGANIZATION);
         createProjectMock(NEW_ORGANIZATION, NEW_TEAM, NEW_PROJECT);
         getPublicDsnMock(NEW_ORGANIZATION, NEW_PROJECT);
-        sentryClientHolder.update();
+        sentryConnectorHolder.update();
 
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(NEW_ORGANIZATION, NEW_PROJECT);
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(NEW_ORGANIZATION, NEW_PROJECT);
 
         Mockito.verify(sentryApiClientMock, Mockito.times(2)).getOrganizations();
         Mockito.verify(sentryApiClientMock).createOrganization(NEW_ORGANIZATION);
@@ -109,9 +112,9 @@ public class SentryClientHolderTest {
         createTeamMock(MY_ORGANIZATION, MY_TEAM);
         createProjectMock(MY_ORGANIZATION, MY_TEAM, NEW_PROJECT);
         getPublicDsnMock(MY_ORGANIZATION, NEW_PROJECT);
-        sentryClientHolder.update();
+        sentryConnectorHolder.update();
 
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(MY_ORGANIZATION, NEW_PROJECT);
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(MY_ORGANIZATION, NEW_PROJECT);
 
         Mockito.verify(sentryApiClientMock).getOrganizations();
         Mockito.verify(sentryApiClientMock, Mockito.times(2)).getProjects(MY_ORGANIZATION);
@@ -130,9 +133,9 @@ public class SentryClientHolderTest {
         getTeamsMock(MY_ORGANIZATION);
         createProjectMock(MY_ORGANIZATION, MY_TEAM, NEW_PROJECT);
         getPublicDsnMock(MY_ORGANIZATION, NEW_PROJECT);
-        sentryClientHolder.update();
+        sentryConnectorHolder.update();
 
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(MY_ORGANIZATION, NEW_PROJECT);
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(MY_ORGANIZATION, NEW_PROJECT);
 
         Mockito.verify(sentryApiClientMock).getOrganizations();
         Mockito.verify(sentryApiClientMock, Mockito.times(2)).getProjects(MY_ORGANIZATION);
@@ -148,14 +151,14 @@ public class SentryClientHolderTest {
         getOrganizationsMock();
         getProjectsMock(MY_ORGANIZATION);
         getPublicDsnMock(MY_ORGANIZATION, MY_PROJECT);
-        sentryClientHolder.update();
+        sentryConnectorHolder.update();
         final String otherOrganization = "other-organisation";
         sentrySimulator.put(otherOrganization, new SentryOrg(initTeamInfoSet(NEW_TEAM), initProjectMap(NEW_PROJECT)));
         getOrganizationsMock();
         getProjectsMock(otherOrganization);
         getPublicDsnMock(otherOrganization, NEW_PROJECT);
 
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(otherOrganization, NEW_PROJECT);
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(otherOrganization, NEW_PROJECT);
 
         Mockito.verify(sentryApiClientMock, Mockito.times(2)).getOrganizations();
         Mockito.verify(sentryApiClientMock, Mockito.times(0)).createOrganization(otherOrganization);
@@ -168,12 +171,12 @@ public class SentryClientHolderTest {
         getOrganizationsMock();
         getProjectsMock(MY_ORGANIZATION);
         getPublicDsnMock(MY_ORGANIZATION, MY_PROJECT);
-        sentryClientHolder.update();
+        sentryConnectorHolder.update();
         sentrySimulator.put(MY_ORGANIZATION, new SentryOrg(initTeamInfoSet(MY_TEAM), initProjectMap(NEW_PROJECT)));
         getProjectsMock(MY_ORGANIZATION);
         getPublicDsnMock(MY_ORGANIZATION, NEW_PROJECT);
 
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(MY_ORGANIZATION, NEW_PROJECT);
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(MY_ORGANIZATION, NEW_PROJECT);
 
         Mockito.verify(sentryApiClientMock).getOrganizations();
         Mockito.verify(sentryApiClientMock, Mockito.times(0)).createProject(MY_ORGANIZATION, MY_TEAM, NEW_PROJECT);
@@ -189,8 +192,8 @@ public class SentryClientHolderTest {
         getProjectsMock(MY_ORGANIZATION);
         getPublicDsnMock(MY_ORGANIZATION, MY_PROJECT);
 
-        sentryClientHolder.update();
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+        sentryConnectorHolder.update();
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT);
 
         Assert.assertEquals("NoActiveDSN", sentryClient.getError().getType());
     }
@@ -203,8 +206,8 @@ public class SentryClientHolderTest {
         getProjectsMock(MY_ORGANIZATION);
         getPublicDsnMock(MY_ORGANIZATION, MY_PROJECT);
 
-        sentryClientHolder.update();
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+        sentryConnectorHolder.update();
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT);
 
         Assert.assertEquals("NoActiveDSN", sentryClient.getError().getType());
     }
@@ -216,9 +219,9 @@ public class SentryClientHolderTest {
         getProjectsMock(MY_ORGANIZATION);
         getPublicDsnMock(MY_ORGANIZATION, MY_PROJECT);
 
-        sentryClientHolder.update();
-        sentryClientHolder.removeClientFromCache(MY_ORGANIZATION, MY_PROJECT);
-        Result<SentryClient, ErrorInfo> sentryClient = sentryClientHolder.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+        sentryConnectorHolder.update();
+        sentryConnectorHolder.removeClientFromCache(SentryDestination.of(MY_ORGANIZATION, MY_PROJECT));
+        Result<SentryConnector, ErrorInfo> sentryClient = sentryConnectorHolder.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT);
 
         Assert.assertEquals("NoActiveDSN", sentryClient.getError().getType());
     }
@@ -355,9 +358,9 @@ public class SentryClientHolderTest {
         ).when(sentryApiClientMock).createTeam(organization, team);
     }
 
-    private class SentryOrg {
-        private Set<String> teamSet;
-        private Map<String, List<KeyInfo>> projectMap;
+    private static class SentryOrg {
+        private final Set<String> teamSet;
+        private final Map<String, List<KeyInfo>> projectMap;
 
         private SentryOrg(Set<String> teamSet, Map<String, List<KeyInfo>> projectMap) {
             this.teamSet = teamSet;

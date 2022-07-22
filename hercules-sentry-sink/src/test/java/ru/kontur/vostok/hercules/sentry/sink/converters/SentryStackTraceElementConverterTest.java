@@ -5,12 +5,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.SentryStackTraceElementConverter;
 import ru.kontur.vostok.hercules.tags.StackFrameTags;
 
 public class SentryStackTraceElementConverterTest {
 
     @Test
-    public void shouldConvert() throws Exception {
+    public void shouldConvert() {
 
         final Container container = Container.builder()
                 .tag(StackFrameTags.TYPE_TAG.getName(), Variant.ofString("test.module"))
