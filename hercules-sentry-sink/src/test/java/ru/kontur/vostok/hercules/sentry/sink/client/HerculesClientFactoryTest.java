@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Properties;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.HerculesClientFactory;
 
 /**
  * @author Petr Demenev
@@ -19,9 +20,9 @@ public class HerculesClientFactoryTest {
     public void shouldReplaceUrlTest() {
         Properties properties = new Properties();
         properties.setProperty("sentry.rewritingUrl", "http://localhost:8080");
-        HerculesClientFactory herculesClientFactory = new HerculesClientFactory(properties);
+        HerculesClientFactory herculesConnectorFactory = new HerculesClientFactory(properties);
 
-        Dsn newDsn = herculesClientFactory.modifyDsn(sourceDsn);
+        Dsn newDsn = herculesConnectorFactory.modifyDsn(sourceDsn);
 
         Assert.assertEquals("http", newDsn.getProtocol());
         Assert.assertEquals("localhost", newDsn.getHost());

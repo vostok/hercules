@@ -1,6 +1,5 @@
 package ru.kontur.vostok.hercules.sentry.sink;
 
-import io.sentry.SentryClient;
 import io.sentry.connection.ConnectionException;
 import io.sentry.connection.TooManyRequestsException;
 import io.sentry.dsn.InvalidDsnException;
@@ -11,10 +10,13 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
+import ru.kontur.vostok.hercules.sentry.client.ErrorInfo;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.HerculesSentryClient;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnector;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolder;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.routing.Router;
 import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
-import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.functional.Result;
@@ -37,20 +39,17 @@ import static org.mockito.Mockito.when;
  * @author Petr Demenev
  */
 public class SentrySyncProcessorTest {
-    private final SentryClientHolder sentryClientHolderMock = mock(SentryClientHolder.class);
-    private final SentryClient sentryClientMock = mock(SentryClient.class);
-    private final MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
+
     @SuppressWarnings("unchecked")
     private final Router<Event, SentryDestination> router = mock(Router.class);
 
-    private final SentrySyncProcessor sentrySyncProcessor = new SentrySyncProcessor(
-            new Properties(),
-            sentryClientHolderMock,
-            new SentryEventConverter("0.0.0"),
-            metricsCollectorMock,
-            router
-    );
     private static final UUID someUuid = UUID.randomUUID();
+
+    private static SentryConnectorHolder sentryConnectorHolderMock;
+    private static SentryConnector sentryConnectorMock;
+    private static HerculesSentryClient herculesSentryClientMock;
+    private static final MetricsCollector metricsCollectorMock = mock(MetricsCollector.class);
+    private static SentrySyncProcessor sentrySyncProcessor;
     private static final String MY_PROJECT = "my-project";
     private static final String MY_ORGANIZATION = "my-organization";
     private static final String MY_ENVIRONMENT = "test";
@@ -63,6 +62,15 @@ public class SentrySyncProcessorTest {
      */
     @Before
     public void init() {
+        sentryConnectorMock = mock(SentryConnector.class);
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        herculesSentryClientMock = mock(HerculesSentryClient.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
         when(metricsCollectorMock.meter(anyString())).thenReturn(n -> {
         });
         when(metricsCollectorMock.timer(anyString())).thenReturn((duration, unit) -> {
@@ -79,32 +87,40 @@ public class SentrySyncProcessorTest {
 
     @Test(expected = BackendServiceFailedException.class)
     public void shouldThrowExceptionWhenHappensRetryableErrorOfApiClient() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 404)));
-        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
     }
 
     @Test
     public void shouldRetryWhenHappensRetryableErrorOfApiClient() {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+        sentryConnectorMock = mock(SentryConnector.class);
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        herculesSentryClientMock = mock(HerculesSentryClient.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 404)));
-        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
             sentrySyncProcessor.process(EVENT);
         } catch (BackendServiceFailedException e) {
 
-            verify(sentryClientHolderMock, times(RETRY_COUNT + 1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+            verify(sentryConnectorHolderMock, times(RETRY_COUNT + 1)).getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT);
         }
     }
 
     @Test
     public void shouldReturnFalseWhenHappensNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 400)));
-        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
+        doNothing().when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         boolean result = sentrySyncProcessor.process(EVENT);
 
         assertFalse(result);
@@ -112,43 +128,68 @@ public class SentrySyncProcessorTest {
 
     @Test
     public void shouldNotRetryWhenHappensNonRetryableErrorOfApiClient() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 400)));
-        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
         sentrySyncProcessor.process(EVENT);
 
-        verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+        verify(sentryConnectorHolderMock, times(1)).getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT);
     }
 
     @Test(expected = BackendServiceFailedException.class)
     public void shouldThrowExceptionWhenHappensOtherErrorOfApiClient() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
                 .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 403)));
-        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
+        doNothing().when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
     }
 
     @Test
     public void shouldNotRetryWhenHappensOtherErrorOfApiClient() {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.error(new ErrorInfo(CLIENT_API_ERROR, 403)));
-        doNothing().when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
+        Result<SentryConnector, ErrorInfo> errorInfoResult = Result.error(new ErrorInfo(CLIENT_API_ERROR, 403));
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(errorInfoResult);
+        doNothing().when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
             sentrySyncProcessor.process(EVENT);
         } catch (BackendServiceFailedException e) {
 
-            verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+            verify(sentryConnectorHolderMock, times(1)).getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT);
         }
     }
 
     @Test
     public void shouldReturnFalseWhenHappensTooManyRequestsExceptionOfSending() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.ok(sentryClientMock));
+        sentryConnectorMock = mock(SentryConnector.class);
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        herculesSentryClientMock = mock(HerculesSentryClient.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
+        when(sentryConnectorHolderMock.getOrCreateConnector(anyString(), anyString()))
+                .thenReturn(Result.ok(sentryConnectorMock));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
         doThrow(new TooManyRequestsException("TooManyRequestsException", new Exception(), 60000L, 429))
-                .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+                .when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         boolean result = sentrySyncProcessor.process(EVENT);
 
         assertFalse(result);
@@ -156,9 +197,10 @@ public class SentrySyncProcessorTest {
 
     @Test
     public void shouldReturnFalseWhenHappensInvalidDsnExceptionOfSending() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.ok(sentryClientMock));
-        doThrow(InvalidDsnException.class).when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        when(sentryConnectorHolderMock.getOrCreateConnector(anyString(), anyString())).thenReturn(
+                Result.ok(sentryConnectorMock));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
+        doThrow(InvalidDsnException.class).when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         boolean result = sentrySyncProcessor.process(EVENT);
 
@@ -167,21 +209,40 @@ public class SentrySyncProcessorTest {
 
     @Test
     public void shouldNotRetryWhenHappensInvalidDsnExceptionOfSending() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.ok(sentryClientMock));
-        doThrow(InvalidDsnException.class).when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+        sentryConnectorMock = mock(SentryConnector.class);
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryConnectorMock));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
+        doThrow(InvalidDsnException.class).when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
 
-        verify(sentryClientHolderMock, times(1)).getOrCreateClient(MY_ORGANIZATION, MY_PROJECT);
+        verify(sentryConnectorHolderMock, times(1)).getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT);
     }
 
     @Test(expected = BackendServiceFailedException.class)
     public void shouldThrowExceptionWhenHappensExceptionWithRetryableCode() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.ok(sentryClientMock));
+        sentryConnectorMock = mock(SentryConnector.class);
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        herculesSentryClientMock = mock(HerculesSentryClient.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryConnectorMock));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
         doThrow(new ConnectionException("ConnectionException", new Exception(), null, 401))
-                .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+                .when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         sentrySyncProcessor.process(EVENT);
     }
@@ -189,25 +250,44 @@ public class SentrySyncProcessorTest {
 
     @Test
     public void shouldRetryWhenHappensExceptionWithRetryableCode() {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.ok(sentryClientMock));
+        sentryConnectorMock = mock(SentryConnector.class);
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        herculesSentryClientMock = mock(HerculesSentryClient.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryConnectorMock));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
         doThrow(new ConnectionException("ConnectionException", new Exception(), null, 401))
-                .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+                .when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
 
         try {
             sentrySyncProcessor.process(EVENT);
         } catch (BackendServiceFailedException e) {
-
-            verify(sentryClientMock, times(RETRY_COUNT + 1)).sendEvent(any(io.sentry.event.Event.class));
+            verify(herculesSentryClientMock, times(RETRY_COUNT + 1))
+                    .sendEvent(any(io.sentry.event.Event.class));
         }
     }
 
     @Test
     public void shouldReturnFalseWhenHappensConnectionException() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.ok(sentryClientMock));
+        sentryConnectorMock = mock(SentryConnector.class);
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryConnectorMock));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
         doThrow(new ConnectionException("ConnectionException", new Exception(), null, 400))
-                .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+                .when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         boolean result = sentrySyncProcessor.process(EVENT);
 
         assertFalse(result);
@@ -215,13 +295,23 @@ public class SentrySyncProcessorTest {
 
     @Test
     public void shouldNotRetryWhenHappensExceptionWithNonRetryableCode() throws BackendServiceFailedException {
-        when(sentryClientHolderMock.getOrCreateClient(MY_ORGANIZATION, MY_PROJECT))
-                .thenReturn(Result.ok(sentryClientMock));
+        sentryConnectorMock = mock(SentryConnector.class);
+        sentryConnectorHolderMock = mock(SentryConnectorHolder.class);
+        herculesSentryClientMock = mock(HerculesSentryClient.class);
+        sentrySyncProcessor = new SentrySyncProcessor(
+                new Properties(),
+                sentryConnectorHolderMock,
+                metricsCollectorMock,
+                router,
+                "");
+        when(sentryConnectorHolderMock.getOrCreateConnector(MY_ORGANIZATION, MY_PROJECT))
+                .thenReturn(Result.ok(sentryConnectorMock));
+        when(sentryConnectorMock.getSentryClient()).thenReturn(herculesSentryClientMock);
         doThrow(new ConnectionException("ConnectionException", new Exception(), null, 400))
-                .when(sentryClientMock).sendEvent(any(io.sentry.event.Event.class));
+                .when(herculesSentryClientMock).sendEvent(any(io.sentry.event.Event.class));
         sentrySyncProcessor.process(EVENT);
 
-        verify(sentryClientMock, times(1)).sendEvent(any(io.sentry.event.Event.class));
+        verify(herculesSentryClientMock, times(1)).sendEvent(any(io.sentry.event.Event.class));
     }
 
     private static Event createEvent() {

@@ -6,8 +6,8 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.routing.Router;
 import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
-import ru.kontur.vostok.hercules.sentry.api.SentryApiClient;
-import ru.kontur.vostok.hercules.sentry.sink.converters.SentryEventConverter;
+import ru.kontur.vostok.hercules.sentry.client.api.SentryApiClient;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolder;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -44,9 +44,9 @@ public class SentrySender extends Sender {
         final String sentryUrl = PropertiesUtil.get(Props.SENTRY_URL, senderProperties).get();
         final String sentryToken = PropertiesUtil.get(Props.SENTRY_TOKEN, senderProperties).get();
         sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
-        SentryClientHolder sentryClientHolder = new SentryClientHolder(sentryApiClient, senderProperties);
-        SentryEventConverter sentryEventConverter = new SentryEventConverter(Application.context().getVersion());
-        this.processor = new SentrySyncProcessor(senderProperties, sentryClientHolder, sentryEventConverter, metricsCollector, router);
+        SentryConnectorHolder sentryConnectorHolder = new SentryConnectorHolder(sentryApiClient, senderProperties);
+        String herculesVersion = Application.context().getVersion();
+        this.processor = new SentrySyncProcessor(senderProperties, sentryConnectorHolder, metricsCollector, router, herculesVersion);
     }
 
     @Override

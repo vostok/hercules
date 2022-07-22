@@ -62,7 +62,8 @@ public class SentryThrottlingService {
                         k -> new SlidingRateLimiter(limit, timeWindowMs, timeMs));
         boolean result = rateLimiter.updateAndCheck(timeMs);
         if (!result) {
-            LOGGER.debug("Event in organization '{}' has been rejected by rate limiter", organization);
+            LOGGER.debug("Event in organization '{}' has been rejected by rate limiter",
+                        organization);
             Meter rejectedEventMeter =
                     rejectedEventMeterMap.computeIfAbsent(
                             organization,

@@ -79,6 +79,15 @@ public class ParsingResult<T> {
     }
 
     /**
+     * Return the parsed value if it exists or default value otherwise.
+     * @param defaultValue the default value
+     * @return parsed value if it exists or defaultValue otherwise.
+     */
+    public T orElse(T defaultValue) {
+        return hasValue() ? value : defaultValue;
+    }
+    
+    /**
      * The empty result.
      *
      * @param <T> the value type
