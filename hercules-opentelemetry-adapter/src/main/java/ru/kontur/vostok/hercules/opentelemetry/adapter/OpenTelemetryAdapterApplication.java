@@ -30,9 +30,9 @@ public class OpenTelemetryAdapterApplication {
 
             GateSender gateSender = container.register(new GateSender(gateClientProperties));
 
-            GrpcTraceService grpcTraceService = new GrpcTraceService(gateSender, grpcTraceServiceProperties);
+            GrpcTraceService grpcTraceService = new GrpcTraceService(gateSender, grpcTraceServiceProperties, metricsCollector);
 
-            container.register(new GrpcOpenTelemetryServer(List.of(grpcTraceService), grpcServerProperties));
+            container.register(new GrpcOpenTelemetryServer(List.of(grpcTraceService), grpcServerProperties, metricsCollector));
             container.register(new DaemonHttpServer(httpServerProperties, metricsCollector));
         });
     }

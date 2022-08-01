@@ -9,10 +9,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.gate.client.GateSender;
 import ru.kontur.vostok.hercules.gate.client.GateStatus;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.opentelemetry.adapter.converters.TraceConverter;
+import ru.kontur.vostok.hercules.opentelemetry.adapter.metrics.GrpcServiceMetrics;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.List;
 import java.util.Properties;
@@ -30,9 +33,11 @@ public class GrpcTraceService extends TraceServiceGrpc.TraceServiceImplBase {
 
     private final GateSender gateSender;
     private final String stream;
+    private final GrpcServiceMetrics metrics;
 
-    public GrpcTraceService(GateSender gateSender, Properties properties) {
+    public GrpcTraceService(GateSender gateSender, Properties properties, MetricsCollector metricsCollector) {
         this.gateSender = gateSender;
+        this.metrics = new GrpcServiceMetrics(getClass().getSimpleName(), TimeSource.SYSTEM, metricsCollector);
         this.stream = PropertiesUtil.get(Props.STREAM, properties).get();
     }
 
@@ -47,26 +52,31 @@ public class GrpcTraceService extends TraceServiceGrpc.TraceServiceImplBase {
             ExportTraceServiceRequest request,
             StreamObserver<ExportTraceServiceResponse> responseObserver
     ) {
+        long convertingEventsStartedAtMs = metrics.startMilliseconds();
         List<Event> events = TraceConverter.convert(request.getResourceSpansList());
 
+        long sendingEventsStartedAtMs = metrics.convertingEnded(convertingEventsStartedAtMs);
         GateStatus status = gateSender.send(events, false, stream);
 
+        if (status == GateStatus.OK) {
+            responseObserver.onNext(ExportTraceServiceResponse.getDefaultInstance());
+            responseObserver.onCompleted();
+            metrics.markDelivered(events, sendingEventsStartedAtMs);
+        } else {
+            responseObserver.onError(getErrorStatus(status).asException());
+            LOGGER.error("Got " + status + " error from Gate while sending " + events.size() + " events to the stream " + stream);
+            metrics.markFailed(events, sendingEventsStartedAtMs);
+        }
+    }
+
+    private Status getErrorStatus(GateStatus status) {
         switch (status) {
-            case OK:
-                responseObserver.onNext(ExportTraceServiceResponse.getDefaultInstance());
-                responseObserver.onCompleted();
-                return;
             case BAD_REQUEST:
-                responseObserver.onError(Status.INTERNAL.asException());
-                LOGGER.error("Got bad request from Gate while sending " + events.size() + " events to the stream " + stream);
-                return;
+                return Status.INTERNAL;
             case GATE_UNAVAILABLE:
-                responseObserver.onError(Status.UNAVAILABLE.asException());
-                LOGGER.warn("Gate is unavailable: didn't send " + events.size() + " events to the stream " + stream);
-                return;
+                return Status.UNAVAILABLE;
             default:
-                responseObserver.onError(Status.UNKNOWN.asException());
-                LOGGER.error("Gate unknown status " + status + ", didn't send " + events.size() + " events to the stream " + stream);
+                return Status.UNKNOWN;
         }
     }
 
