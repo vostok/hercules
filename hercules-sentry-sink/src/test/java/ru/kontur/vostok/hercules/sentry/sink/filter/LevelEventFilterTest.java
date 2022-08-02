@@ -52,6 +52,15 @@ public class LevelEventFilterTest {
     }
 
     @Test
+    public void shouldReturnFalseIfLevelIsUnexpected() {
+        Event event = getEventBuilder()
+                .tag("level", Variant.ofString("informational"))
+                .build();
+
+        Assert.assertFalse(filter.test(event));
+    }
+
+    @Test
     public void shouldReturnFalseIfLevelTagIsAbsent() {
         Event event = getEventBuilder().build();
 

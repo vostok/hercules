@@ -31,9 +31,12 @@ public class LevelEventFilter extends EventFilter {
 
     @Override
     public boolean test(Event event) {
-        final Optional<String> value = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG);
-        SentryLevel currentLevel = value.map(sentryLevelParser::parse).orElse(ParsingResult.of(SentryLevel.INFO)).get();
-        return level.compareTo(currentLevel) >= 0;
+        return  ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
+                .map(sentryLevelParser::parse)
+                .filter(ParsingResult::hasValue)
+                .map(ParsingResult::get)
+                .map(value -> level.compareTo(value) >= 0)
+                .orElse(false);
     }
 
     private static class Props {
