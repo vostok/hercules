@@ -16,7 +16,9 @@ SERVICES := hercules-elastic-adapter \
         hercules-tracing-api \
         hercules-tracing-sink \
         hercules-tracing-sink-clickhouse \
-        hercules-init
+        hercules-init \
+        hercules-routing \
+        hercules-opentelemetry-adapter
 
 
 .PHONY: all build_images push_images

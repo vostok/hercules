@@ -119,9 +119,12 @@ public class SentrySyncProcessor {
     }
 
     private boolean checkLevel(Event event) {
-        final Optional<String> value = ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG);
-        SentryLevel level = value.map(sentryLevelParser::parse).orElse(ParsingResult.of(SentryLevel.INFO)).get();
-        return defaultLevel.compareTo(level) >= 0;
+        return  ContainerUtil.extract(event.getPayload(), LogEventTags.LEVEL_TAG)
+                .map(sentryLevelParser::parse)
+                .filter(ParsingResult::hasValue)
+                .map(ParsingResult::get)
+                .map(value -> defaultLevel.compareTo(value) >= 0)
+                .orElse(false);
     }
 
     public void stop() {
