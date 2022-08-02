@@ -3,12 +3,16 @@ package ru.kontur.vostok.hercules.opentelemetry.adapter.server;
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.opentelemetry.adapter.OpenTelemetryAdapterDefaults;
+import ru.kontur.vostok.hercules.opentelemetry.adapter.metrics.MonitoringServerInterceptor;
 import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
+import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.io.IOException;
@@ -27,12 +31,15 @@ public class GrpcOpenTelemetryServer implements Lifecycle {
     private final int port;
     private final Server server;
 
-    public GrpcOpenTelemetryServer(List<BindableService> services, Properties properties) {
+    public GrpcOpenTelemetryServer(List<BindableService> services, Properties properties, MetricsCollector metricsCollector) {
         this.port = PropertiesUtil.get(Props.PORT, properties).get();
 
         ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port);
 
-        services.forEach(serverBuilder::addService);
+        services.forEach(service -> {
+            var interceptor = new MonitoringServerInterceptor(service.getClass().getSimpleName(), TimeSource.SYSTEM, metricsCollector);
+            serverBuilder.addService(ServerInterceptors.intercept(service, interceptor));
+        });
 
         server = serverBuilder.build();
     }
