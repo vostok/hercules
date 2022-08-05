@@ -140,10 +140,11 @@ class ElasticClient {
     }
 
     private byte[] compressData(byte[] data) throws IOException {
-        try (var compressed = new ByteArrayOutputStream(data.length); var stream = new GZIPOutputStream(compressed)) {
+        var compressed = new ByteArrayOutputStream(data.length);
+        try (var stream = new GZIPOutputStream(compressed)) {
             stream.write(data);
-            return compressed.toByteArray();
         }
+        return compressed.toByteArray();
     }
 
     private void recreateRestClient() {
