@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   description: 'Tracing api for Hercules. The method provides traces by traceId or traceId+parentSpanId from Cassandra.'
-  version: 1.0.3
+  version: 1.1.0-SNAPSHOT
   title: Hercules tracing API
 host: 'vm-hercules05:6312'
 schemes:
