@@ -54,7 +54,7 @@ class ElasticClient {
     private final boolean compressionGzipEnable;
 
     ElasticClient(Properties properties, IndexPolicy policy, MetricsCollector metricsCollector) {
-        this.properties = new Properties(properties);
+        this.properties = PropertiesUtil.copy(properties);
         recreateRestClient();
 
         Set<String> redefinedExceptions = new HashSet<>(Arrays.asList(PropertiesUtil.get(Props.REDEFINED_EXCEPTIONS, this.properties).get()));

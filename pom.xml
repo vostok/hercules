@@ -459,6 +459,16 @@
                 <artifactId>hercules-routing</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sentry-client</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sentry-client-impl-v9</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
 
             <!-- Test libraries -->
             <dependency>
