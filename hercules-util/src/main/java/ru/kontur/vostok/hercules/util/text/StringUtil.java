@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.IntPredicate;
 
 /**
  * @author Gregory Koshelev
@@ -189,5 +190,40 @@ public final class StringUtil {
             throw new StringIndexOutOfBoundsException(beginIndex);
         }
         return src.substring(0, beginIndex) + maskSymbol;
+    }
+
+    /**
+     * Replace all incorrect characters with placeholder ({@code _}).
+     *
+     * @param source          Source string.
+     * @param isCorrectSymbol Predicates that checks each symbol correctness.
+     * @return Sanitized string.
+     */
+    public static String sanitize(String source, IntPredicate isCorrectSymbol) {
+        int len = source.length();
+        int firstIncorrect = -1;
+        for (int i = 0; i < len; i++) {
+            if (!isCorrectSymbol.test(source.charAt(i))) {
+                firstIncorrect = i;
+                break;
+            }
+        }
+        if (firstIncorrect == -1) {
+            return source;
+        }
+        var builder = new StringBuilder(len);
+        builder.append(source, 0, firstIncorrect);
+        builder.append('_');
+        int prevIndex = firstIncorrect + 1;
+        for (int i = prevIndex; i < len; i++) {
+            if (isCorrectSymbol.test(source.charAt(i))) {
+                continue;
+            }
+            builder.append(source, prevIndex, i);
+            builder.append('_');
+            prevIndex = i + 1;
+        }
+        builder.append(source, prevIndex, source.length());
+        return builder.toString();
     }
 }

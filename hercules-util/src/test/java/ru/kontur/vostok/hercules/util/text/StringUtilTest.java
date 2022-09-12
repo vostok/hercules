@@ -2,10 +2,19 @@ package ru.kontur.vostok.hercules.util.text;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+
+import java.util.Objects;
+import java.util.function.IntPredicate;
 
 /**
  * @author Gregory Koshelev
  */
+@RunWith(Enclosed.class)
 public class StringUtilTest {
     @Test
     public void shouldSplitEmptyString() {
@@ -93,5 +102,37 @@ public class StringUtilTest {
         Assert.assertArrayEquals(
                 new String[]{"", "aaa", "", "bb", "", "", "c", "", "", "", ""},
                 StringUtil.split("/aaa//bb///c////", '/', false));
+    }
+
+    /**
+     * Tests of {@link StringUtil#sanitize} method.
+     */
+    @RunWith(Parameterized.class)
+    public static class SanitizeTest {
+
+        @Parameter(0)
+        public String input;
+
+        @Parameter(1)
+        public String expectedOutput;
+
+        @Test
+        public void test() {
+            String actualOutput = StringUtil.sanitize(input, ch -> ch != '$');
+
+            Assert.assertEquals(expectedOutput, actualOutput);
+        }
+
+        @Parameters
+        public static Object[][] parameters() {
+            return new Object[][] {
+                    { "foobar", "foobar" },
+                    { "$foobar", "_foobar" },
+                    { "foobar$", "foobar_" },
+                    { "foo$bar", "foo_bar" },
+                    { "foo$$$$bar", "foo____bar" },
+                    { "$", "_" },
+            };
+        }
     }
 }
