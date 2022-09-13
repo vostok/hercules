@@ -9,6 +9,8 @@ import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
 import ru.kontur.vostok.hercules.util.validation.Validators;
 
+import java.util.function.Consumer;
+
 
 /**
  * Parameter
@@ -430,6 +432,17 @@ public class Parameter<T> {
          */
         public Parameter<T> parameter() {
             return Parameter.this;
+        }
+
+        /**
+         * If a value is present and validation result is ok, performs the given action with the value, otherwise does nothing.
+         *
+         * @param consumer Consumer for a value.
+         */
+        public void ifPresent(Consumer<? super T> consumer) {
+            if (!isEmpty() && result.isOk()) {
+                consumer.accept(value);
+            }
         }
     }
 }

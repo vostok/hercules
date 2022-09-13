@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Gregory Koshelev
  */
 public abstract class HttpServer implements Lifecycle {
+
     private final AtomicReference<HttpServerState> state = new AtomicReference<>(HttpServerState.INIT);
 
     protected final String host;
@@ -66,35 +67,46 @@ public abstract class HttpServer implements Lifecycle {
     }
 
     public static final class Props {
-        public static final Parameter<Long> MAX_CONTENT_LENGTH =
-                Parameter.longParameter("maxContentLength").
-                        withDefault(HttpServerDefaults.DEFAULT_MAX_CONTENT_LENGTH).
-                        withValidator(LongValidators.positive()).
-                        build();
 
-        public static final Parameter<Integer> CONNECTION_THRESHOLD =
-                Parameter.integerParameter("connection.threshold").
-                        withDefault(HttpServerDefaults.DEFAULT_CONNECTION_THRESHOLD).
-                        withValidator(IntegerValidators.positive()).
-                        build();
+        /**
+         * Maximum value of content length of HTTP-requests.
+         */
+        public static final Parameter<Long> MAX_CONTENT_LENGTH = Parameter.longParameter("maxContentLength")
+                .withDefault(HttpServerDefaults.DEFAULT_MAX_CONTENT_LENGTH)
+                .withValidator(LongValidators.positive())
+                .build();
 
-        public static final Parameter<Integer> IO_THREADS =
-                Parameter.integerParameter("ioThreads").
-                        withValidator(IntegerValidators.positive()).
-                        build();
+        /**
+         * Maximum simultaneous connections count.
+         */
+        public static final Parameter<Integer> CONNECTION_THRESHOLD = Parameter.integerParameter("connection.threshold")
+                .withDefault(HttpServerDefaults.DEFAULT_CONNECTION_THRESHOLD)
+                .withValidator(IntegerValidators.positive())
+                .build();
 
-        public static final Parameter<Integer> WORKER_THREADS =
-                Parameter.integerParameter("workerThreads").
-                        withValidator(IntegerValidators.positive()).
-                        build();
+        /**
+         * Count of IO threads.
+         */
+        public static final Parameter<Integer> IO_THREADS = Parameter.integerParameter("ioThreads")
+                .withValidator(IntegerValidators.positive())
+                .build();
 
-        public static final Parameter<String> ROOT_PATH =
-                Parameter.stringParameter("rootPath").
-                        withDefault("/").
-                        withValidator(Validators.and(
-                                Validators.notNull(),
-                                x -> x.startsWith("/") ? ValidationResult.ok() : ValidationResult.error("Should start with '/'"))).
-                        build();
+        /**
+         * Count of worker threads.
+         */
+        public static final Parameter<Integer> WORKER_THREADS = Parameter.integerParameter("workerThreads")
+                .withValidator(IntegerValidators.positive())
+                .build();
+
+        /**
+         * Root path of HTTP-server.
+         */
+        public static final Parameter<String> ROOT_PATH = Parameter.stringParameter("rootPath")
+                .withDefault("/")
+                .withValidator(Validators.and(
+                        Validators.notNull(),
+                        x -> x.startsWith("/") ? ValidationResult.ok() : ValidationResult.error("Should start with '/'")))
+                .build();
 
         private Props() {
             /* static class */

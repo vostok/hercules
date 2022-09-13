@@ -131,6 +131,18 @@ HTTP Server binds on host:port are defined in Main Application settings.
 
 `http.server.connection.threshold` - maximum active http connections, default value: `100000`
 
+`http.server.readTimeout` - Configure a read timeout for a socket, in milliseconds.
+
+`http.server.writeTimeout` - Configure a write timeout for a socket, in milliseconds.
+
+`http.server.requestParseTimeout` - The maximum allowed time of reading HTTP request in milliseconds.
+`-1` or missing value disables this functionality.
+
+`http.server.idleTimeout` - The idle timeout in milliseconds after which the channel will be closed.
+If the underlying channel already has a read or write timeout set the smaller of the two values will be used for read/write timeouts.
+
+`http.server.noRequestTimeout` - The amount of time the connection can be idle with no current requests before it is closed.
+
 ### Graphite metrics reporter settings
 `metrics.graphite.server.addr` - hostname of graphite instance to which metrics are sent, default value: `localhost`
 

@@ -871,6 +871,18 @@ See Curator Config from Apache Curator documentation. Main settings are presente
 
 `http.server.rootPath` - base url, default value: `/`
 
+`http.server.readTimeout` - Configure a read timeout for a socket, in milliseconds.
+
+`http.server.writeTimeout` - Configure a write timeout for a socket, in milliseconds.
+
+`http.server.requestParseTimeout` - The maximum allowed time of reading HTTP request in milliseconds.
+`-1` or missing value disables this functionality.
+
+`http.server.idleTimeout` - The idle timeout in milliseconds after which the channel will be closed.
+If the underlying channel already has a read or write timeout set the smaller of the two values will be used for read/write timeouts.
+
+`http.server.noRequestTimeout` - The amount of time the connection can be idle with no current requests before it is closed.
+
 ### Management API settings
 `keys` - master API keys.
 
