@@ -205,6 +205,18 @@ HTTP Server binds on `<host>:<port>` are defined in Main Application settings.
 
 `http.server.throttling.requestTimeout` - timeout for request, which capacity throttling more then permissible, default value: `5000`
 
+`http.server.readTimeout` - Configure a read timeout for a socket, in milliseconds.
+
+`http.server.writeTimeout` - Configure a write timeout for a socket, in milliseconds.
+
+`http.server.requestParseTimeout` - The maximum allowed time of reading HTTP request in milliseconds.
+`-1` or missing value disables this functionality.
+
+`http.server.idleTimeout` - The idle timeout in milliseconds after which the channel will be closed.
+If the underlying channel already has a read or write timeout set the smaller of the two values will be used for read/write timeouts.
+
+`http.server.noRequestTimeout` - The amount of time the connection can be idle with no current requests before it is closed.
+
 ### Validation settings
 
 `validation.max.event.size` - max size of Hercules event, value must be consistent with broker setting `max.message.bytes`, default value: `500000`
