@@ -226,4 +226,27 @@ public final class StringUtil {
         builder.append(source, prevIndex, source.length());
         return builder.toString();
     }
+
+    private static final int ESTIMATE_COUNT_OF_SPACES = 5;
+
+    /**
+     * Changes style of naming from camelCase to snake_case.
+     *
+     * @param name Some name in camelCase.
+     * @return The same name in snake_case style.
+     */
+    public static String camelToSnake(CharSequence name) {
+        StringBuilder result = new StringBuilder(name.length() + ESTIMATE_COUNT_OF_SPACES);
+        result.append(Character.toLowerCase(name.charAt(0)));
+        for (int i = 1; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            if (Character.isUpperCase(ch)) {
+                result.append('_');
+                result.append(Character.toLowerCase(ch));
+            } else {
+                result.append(ch);
+            }
+        }
+        return result.toString();
+    }
 }

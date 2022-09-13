@@ -17,7 +17,7 @@ public class SentryTags {
     /**
      * The release version of the application which generated event
      */
-    public static TagDescription<Optional<String>> RELEASE_TAG = TagDescriptionBuilder.string("release")
+    public static final TagDescription<Optional<String>> RELEASE_TAG = TagDescriptionBuilder.string("release")
             .optional()
             .build();
 
@@ -40,14 +40,28 @@ public class SentryTags {
     /**
      * The platform of the application which generated the event
      */
-    public static TagDescription<Optional<String>> PLATFORM_TAG = TagDescriptionBuilder.string("platform")
+    public static final TagDescription<Optional<String>> PLATFORM_TAG = TagDescriptionBuilder.string("platform")
             .optional()
             .build();
 
     /**
      * The name of the logger which created the event
      */
-    public static TagDescription<Optional<String>> LOGGER_TAG = TagDescriptionBuilder.string("logger")
+    public static final TagDescription<Optional<String>> LOGGER_TAG = TagDescriptionBuilder.string("logger")
+            .optional()
+            .build();
+
+    /**
+     * The name of the server where exception was created
+     */
+    public static final TagDescription<Optional<String>> SERVER_NAME_TAG = TagDescriptionBuilder.string("server_name")
+            .optional()
+            .build();
+
+    /**
+     * The name of the transaction which created the event
+     */
+    public static final TagDescription<Optional<String>> TRANSACTION_TAG = TagDescriptionBuilder.string("transaction")
             .optional()
             .build();
 }

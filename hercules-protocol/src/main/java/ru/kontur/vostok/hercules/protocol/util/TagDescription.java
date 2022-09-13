@@ -26,6 +26,10 @@ public class TagDescription<T> {
         return name;
     }
 
+    public String getNameAsString() {
+        return name.toString();
+    }
+
     public Map<Type, Function<Object, ? extends T>> getExtractors() {
         return extractors;
     }
