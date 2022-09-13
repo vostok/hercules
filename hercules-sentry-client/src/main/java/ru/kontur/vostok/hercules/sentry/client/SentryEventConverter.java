@@ -8,5 +8,10 @@ import ru.kontur.vostok.hercules.protocol.Event;
  * @author Tatyana Tokmyanina
  */
 public interface SentryEventConverter {
-    SentryEvent convert(Event logEvent);
+    /**
+     * Converts Hercules event to Sentry event
+     * @param logEvent Hercules event
+     * @return converted Sentry event
+     */
+    HerculesSentryEvent convert(Event logEvent);
 }

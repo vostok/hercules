@@ -28,6 +28,13 @@ public final class ExceptionTags {
         .build();
 
     /**
+     * Exception module
+     */
+    public static final TagDescription<Optional<String>> MODULE_TAG = TagDescriptionBuilder.string("module")
+            .optional()
+            .build();
+
+    /**
      * Inner exceptions
      */
     public static final TagDescription<Optional<Container[]>> INNER_EXCEPTIONS_TAG = TagDescriptionBuilder.containerVector("innerExceptions")
