@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.opentelemetry.adapter.converters;
 
+import ru.kontur.vostok.hercules.protocol.TinyString;
+
 /**
  * Vostok tracing annotations
  *
@@ -11,38 +13,24 @@ public class VostokAnnotations {
     /**
      * Common annotations
      */
-    protected static final String KIND = "kind";
-    protected static final String OPERATION = "operation";
-    protected static final String STATUS = "status";
-    protected static final String APPLICATION = "application";
-    protected static final String ENVIRONMENT = "environment";
-    protected static final String HOST = "host";
-    protected static final String COMPONENT = "component";
+    protected static final TinyString KIND = TinyString.of("kind");
+    protected static final TinyString OPERATION = TinyString.of("operation");
+    protected static final TinyString STATUS = TinyString.of("status");
+    protected static final TinyString APPLICATION = TinyString.of("application");
+    protected static final TinyString HOST = TinyString.of("host");
 
     /**
      * HTTP requests
      */
-    protected static final String HTTP_REQUEST_METHOD = "http.request.method";
-    protected static final String HTTP_REQUEST_URL = "http.request.url";
-    protected static final String HTTP_REQUEST_SIZE = "http.request.size";
-    protected static final String HTTP_RESPONSE_CODE = "http.response.code";
-    protected static final String HTTP_RESPONSE_SIZE = "http.response.size";
-
-    /**
-     * HTTP client (direct)
-     */
-    protected static final String HTTP_REQUEST_TARGET_SERVICE = "http.request.targetService";
-    protected static final String HTTP_REQUEST_TARGET_ENVIRONMENT = "http.request.targetEnvironment";
-
-    /**
-     * HTTP client (cluster)
-     */
-    protected static final String HTTP_CLUSTER_STRATEGY = "http.cluster.strategy";
-    protected static final String HTTP_CLUSTER_STATUS = "http.cluster.status";
+    protected static final TinyString HTTP_REQUEST_METHOD = TinyString.of("http.request.method");
+    protected static final TinyString HTTP_REQUEST_URL = TinyString.of("http.request.url");
+    protected static final TinyString HTTP_REQUEST_SIZE = TinyString.of("http.request.size");
+    protected static final TinyString HTTP_RESPONSE_CODE = TinyString.of("http.response.code");
+    protected static final TinyString HTTP_RESPONSE_SIZE = TinyString.of("http.response.size");
 
     /**
      * HTTP server
      */
-    protected static final String HTTP_CLIENT_NAME = "http.client.name";
-    protected static final String HTTP_CLIENT_ADDRESS = "http.client.address";
+    protected static final TinyString HTTP_CLIENT_NAME = TinyString.of("http.client.name");
+    protected static final TinyString HTTP_CLIENT_ADDRESS = TinyString.of("http.client.address");
 }

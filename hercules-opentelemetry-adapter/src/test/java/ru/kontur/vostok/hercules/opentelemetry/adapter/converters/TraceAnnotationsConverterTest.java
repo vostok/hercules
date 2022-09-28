@@ -44,7 +44,7 @@ public class TraceAnnotationsConverterTest {
                 .build();
 
         Container annotations = TraceAnnotationsConverter.getAnnotations(span, resource);
-        assertEquals(14, annotations.count());
+        assertEquals(19, annotations.count());
         assertEquals("(STRING) http-request-client", HPath.fromPath("kind").extract(annotations).toString());
         assertEquals("(STRING) GET test.com", HPath.fromPath("operation").extract(annotations).toString());
         assertEquals("(STRING) success", HPath.fromPath("status").extract(annotations).toString());
@@ -57,11 +57,17 @@ public class TraceAnnotationsConverterTest {
         assertEquals("(STRING) GET", HPath.fromPath("http.request.method").extract(annotations).toString());
         assertEquals("(STRING) https://test.com", HPath.fromPath("http.request.url").extract(annotations).toString());
         assertEquals("(LONG) 1000", HPath.fromPath("http.request.size").extract(annotations).toString());
-        assertEquals("(LONG) 200", HPath.fromPath("http.response.code").extract(annotations).toString());
+        assertEquals("(INTEGER) 200", HPath.fromPath("http.response.code").extract(annotations).toString());
         assertEquals("(LONG) 2000", HPath.fromPath("http.response.size").extract(annotations).toString());
 
         assertEquals("(STRING) default", HPath.fromPath("http.request.targetEnvironment").extract(annotations).toString());
         assertEquals("(STRING) Portal.Fias.Api", HPath.fromPath("http.request.targetService").extract(annotations).toString());
+
+        assertEquals("(STRING) 2.0", HPath.fromPath("http.flavor").extract(annotations).toString());
+        assertEquals("(STRING) ip_tcp", HPath.fromPath("net.transport").extract(annotations).toString());
+        assertEquals("(LONG) 1", HPath.fromPath("thread.id").extract(annotations).toString());
+        assertEquals("(STRING) main", HPath.fromPath("thread.name").extract(annotations).toString());
+        assertEquals("(LONG) 443", HPath.fromPath("net.peer.port").extract(annotations).toString());
     }
 
     @Test
@@ -85,28 +91,31 @@ public class TraceAnnotationsConverterTest {
         Span span = Span.newBuilder()
                 .setKind(Span.SpanKind.SPAN_KIND_SERVER)
                 .setStatus(Status.newBuilder().setCode(Status.StatusCode.STATUS_CODE_ERROR).build())
+                .addAttributes(getStringValueAttr("http.target", "/users/123"))
                 .addAttributes(getStringValueAttr("net.peer.name", "test name"))
                 .addAttributes(getStringValueAttr("net.peer.ip", "0.0.0.0"))
                 .build();
 
         Container annotations = TraceAnnotationsConverter.getAnnotations(span, Resource.newBuilder().build());
-        assertEquals(4, annotations.count());
+        assertEquals(5, annotations.count());
         assertEquals("(STRING) http-request-server", HPath.fromPath("kind").extract(annotations).toString());
         assertEquals("(STRING) error", HPath.fromPath("status").extract(annotations).toString());
+        assertEquals("(STRING) /users/123", HPath.fromPath("http.request.url").extract(annotations).toString());
 
         assertEquals("(STRING) test name", HPath.fromPath("http.client.name").extract(annotations).toString());
         assertEquals("(STRING) 0.0.0.0", HPath.fromPath("http.client.address").extract(annotations).toString());
     }
 
     @Test
-    public void supportTextWarningStatus() {
+    public void supportTextWarningStatusAndKind() {
         Span span = Span.newBuilder()
                 .addAttributes(getStringValueAttr("status", "warning"))
+                .addAttributes(getStringValueAttr("kind", "custom-request-client"))
                 .build();
 
         Container annotations = TraceAnnotationsConverter.getAnnotations(span, Resource.newBuilder().build());
         assertEquals(2, annotations.count());
-        assertEquals("(STRING) custom-operation", HPath.fromPath("kind").extract(annotations).toString());
+        assertEquals("(STRING) custom-request-client", HPath.fromPath("kind").extract(annotations).toString());
         assertEquals("(STRING) warning", HPath.fromPath("status").extract(annotations).toString());
     }
 
@@ -125,8 +134,7 @@ public class TraceAnnotationsConverterTest {
                 .build();
 
         Container annotations = TraceAnnotationsConverter.getAnnotations(span, Resource.newBuilder().build());
-        assertEquals(9, annotations.count());
-        assertEquals("(STRING) custom-operation", HPath.fromPath("kind").extract(annotations).toString());
+        assertEquals(8, annotations.count());
         assertEquals("(STRING) success", HPath.fromPath("status").extract(annotations).toString());
 
         assertEquals("(STRING) ms", HPath.fromPath("http.client.name").extract(annotations).toString());
