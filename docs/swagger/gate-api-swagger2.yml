@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   description: 'Gate api for Hercules. The method to send event to Apache Kafka.'
-  version: 1.2.0-SNAPSHOT
+  version: 1.2.0
   title: Hercules gate API
 host: 'vm-hercules05:6306'
 schemes:
