@@ -6,6 +6,7 @@ import ru.kontur.vostok.hercules.graphite.sink.converter.MetricConverter;
 import ru.kontur.vostok.hercules.graphite.sink.converter.MetricEventConverter;
 import ru.kontur.vostok.hercules.graphite.sink.converter.MetricWithTagsEventConverter;
 import ru.kontur.vostok.hercules.health.AutoMetricStopwatch;
+import ru.kontur.vostok.hercules.health.Counter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
@@ -33,6 +34,7 @@ public class GraphiteSender extends Sender {
     private final GraphiteConnector connector;
 
     private final Timer sendMetricsTimeMsTimer;
+    private final Counter retryCounter;
 
     private final AtomicLong sentMetricsCounter = new AtomicLong(0);
 
@@ -49,6 +51,7 @@ public class GraphiteSender extends Sender {
         this.connector = new GraphiteConnector(PropertiesUtil.ofScope(properties, "graphite.connector"));
 
         this.sendMetricsTimeMsTimer = metricsCollector.timer("sendMetricsTimeMs");
+        this.retryCounter = metricsCollector.counter("retryCount");
     }
 
     @Override
@@ -85,12 +88,11 @@ public class GraphiteSender extends Sender {
                 if (channel == null) {
                     throw new EndpointException("There is no available endpoint");
                 }
-                try {
-                    channel.send(metrics);
-                    return;
-                } catch (IOException ex) {
-                    lastException = ex;
-                }
+                channel.send(metrics);
+                return;
+            } catch (IOException ex) {
+                retryCounter.increment();
+                lastException = ex;
             }
 
         } while (--attemptsLeft > 0);
