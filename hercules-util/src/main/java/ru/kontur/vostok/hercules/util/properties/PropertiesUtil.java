@@ -56,6 +56,21 @@ public final class PropertiesUtil {
         return copy;
     }
 
+    /**
+     * Factory of {@link Properties} using {@link Map.Entry} objects.
+     *
+     * @param entries Entries that should be added to created {@link Properties} object.
+     * @return Created bean.
+     */
+    @SafeVarargs
+    public static Properties ofEntries(Map.Entry<String, ?> ... entries) {
+        Properties properties = new Properties();
+        for (Map.Entry<String, ?> entry : entries) {
+            properties.setProperty(entry.getKey(), entry.getValue().toString());
+        }
+        return properties;
+    }
+
     private PropertiesUtil() {
         /* static class */
     }

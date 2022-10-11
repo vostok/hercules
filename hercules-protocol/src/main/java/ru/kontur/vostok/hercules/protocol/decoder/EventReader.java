@@ -11,11 +11,11 @@ import java.util.UUID;
 
 public class EventReader implements Reader<Event> {
 
-    private static final ContainerReader CONTAINER_READER = ContainerReader.readTags(Collections.emptySet());
+    private final ContainerReader CONTAINER_READER = ContainerReader.readTags(Collections.emptySet());
 
-    private final ContainerReader containerReader;
+    private final Reader<Container> containerReader;
 
-    public EventReader(ContainerReader containerReader) {
+    public EventReader(Reader<Container> containerReader) {
         this.containerReader = containerReader;
     }
 

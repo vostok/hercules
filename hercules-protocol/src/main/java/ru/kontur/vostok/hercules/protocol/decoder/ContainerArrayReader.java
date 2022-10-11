@@ -11,7 +11,7 @@ import ru.kontur.vostok.hercules.protocol.Type;
 public class ContainerArrayReader implements Reader<Container[]> {
     public static final ContainerArrayReader INSTANCE = new ContainerArrayReader();
 
-    private static final ContainerReader CONTAINER_READER = ContainerReader.INSTANCE;
+    private static final ContainerReader CONTAINER_READER = ContainerReader.readAllTags();
 
     /**
      * Read array of container  with decoder

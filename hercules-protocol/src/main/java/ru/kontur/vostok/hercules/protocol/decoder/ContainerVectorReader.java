@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.protocol.Container;
 public class ContainerVectorReader implements Reader<Container[]> {
     public static final ContainerVectorReader INSTANCE = new ContainerVectorReader();
 
-    private static final ContainerReader CONTAINER_READER = ContainerReader.INSTANCE;
+    private static final ContainerReader CONTAINER_READER = ContainerReader.readAllTags();
 
     /**
      * Read vector of container  with decoder

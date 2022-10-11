@@ -1,4 +1,4 @@
-package ru.kontur.vostok.hercules.sink;
+package ru.kontur.vostok.hercules.kafka.util.consumer;
 
 import ru.kontur.vostok.hercules.util.PatternMatcher;
 import ru.kontur.vostok.hercules.util.collection.CollectionUtil;

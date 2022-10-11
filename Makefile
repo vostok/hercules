@@ -17,7 +17,7 @@ SERVICES := hercules-elastic-adapter \
         hercules-tracing-sink \
         hercules-tracing-sink-clickhouse \
         hercules-init \
-        hercules-routing \
+        hercules-splitter \
         hercules-opentelemetry-adapter
 
 
