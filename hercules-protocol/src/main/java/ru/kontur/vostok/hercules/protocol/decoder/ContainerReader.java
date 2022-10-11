@@ -11,24 +11,31 @@ import java.util.Objects;
 import java.util.Set;
 
 public class ContainerReader implements Reader<Container> {
-
-    public static final ContainerReader INSTANCE = readAllTags();
-
-    private static final VariantReader VARIANT_READER = VariantReader.INSTANCE;
+    private final Reader<Variant> variantReader;
 
     private final Set<TinyString> tags;
 
-    private ContainerReader(Set<TinyString> tags) {
+    private ContainerReader(Set<TinyString> tags, Reader<Variant> variantReader) {
         this.tags = tags;
+        this.variantReader = variantReader;
     }
 
     public static ContainerReader readAllTags() {
-        return new ContainerReader(null);
+        return readAllTags(new VariantReader());
+    }
+
+    public static ContainerReader readAllTags(Reader<Variant> variantReader) {
+        return new ContainerReader(null, variantReader);
     }
 
     public static ContainerReader readTags(Set<TinyString> tags) {
-        return new ContainerReader(tags);
+        return readTags(tags, new VariantReader());
     }
+
+    public static ContainerReader readTags(Set<TinyString> tags, Reader<Variant> variantReader) {
+        return new ContainerReader(tags, variantReader);
+    }
+
 
     @Override
     public Container read(Decoder decoder) {
@@ -37,10 +44,10 @@ public class ContainerReader implements Reader<Container> {
         while (0 <= --length) {
             TinyString tagName = decoder.readTinyString();
             if (Objects.isNull(tags) || tags.contains(tagName)) {
-                Variant variant = VARIANT_READER.read(decoder);
+                Variant variant = variantReader.read(decoder);
                 variantMap.put(tagName, variant);
             } else {
-                VARIANT_READER.skip(decoder);
+                variantReader.skip(decoder);
             }
         }
         return Container.of(variantMap);
@@ -53,7 +60,7 @@ public class ContainerReader implements Reader<Container> {
         int length = decoder.readContainerSize();
         while (0 <= --length) {
             decoder.skipTinyString();
-            VARIANT_READER.skip(decoder);
+            variantReader.skip(decoder);
         }
         return decoder.position() - position;
     }

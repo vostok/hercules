@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.sink;
 
+import ru.kontur.vostok.hercules.kafka.util.consumer.Subscription;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.sink.metrics.SinkMetrics;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;

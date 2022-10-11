@@ -1,5 +1,6 @@
 package ru.kontur.vostok.hercules.timeline.sink;
 
+import ru.kontur.vostok.hercules.kafka.util.consumer.Subscription;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.meta.filter.Filter;
 import ru.kontur.vostok.hercules.meta.timeline.Timeline;
@@ -7,7 +8,6 @@ import ru.kontur.vostok.hercules.partitioner.ShardingKey;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.sink.Sink;
-import ru.kontur.vostok.hercules.sink.Subscription;
 import ru.kontur.vostok.hercules.sink.metrics.SinkMetrics;
 
 import java.util.Arrays;

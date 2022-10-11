@@ -31,6 +31,10 @@ public class Decoder {
 
     /* --- Read data types --- */
 
+    public byte[] array() {
+        return buffer.array();
+    }
+
     public byte readByte() {
         return buffer.get();
     }

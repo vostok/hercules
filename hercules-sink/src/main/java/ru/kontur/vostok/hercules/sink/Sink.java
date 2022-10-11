@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
+import ru.kontur.vostok.hercules.kafka.util.consumer.Subscription;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.kafka.util.serialization.UuidDeserializer;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -32,8 +33,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 /**
  * @author Gregory Koshelev

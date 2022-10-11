@@ -11,8 +11,7 @@ import java.util.function.ToIntFunction;
 
 public class VariantReader implements Reader<Variant> {
 
-    public static final VariantReader INSTANCE = new VariantReader();
-    private static final ContainerReader CONTAINER_READER = ContainerReader.INSTANCE;
+    private static final ContainerReader CONTAINER_READER = ContainerReader.readAllTags();
     private static final ContainerVectorReader CONTAINER_VECTOR_READER = ContainerVectorReader.INSTANCE;
 
     private static final ObjectReader[] TYPE_DECODERS = new ObjectReader[256];

@@ -6,6 +6,7 @@ package ru.kontur.vostok.hercules.configuration;
 public final class Scopes {
     public static final String ZOOKEEPER = "zk";
     public static final String KAFKA = "kafka";
+    public static final String KAFKA_STREAMS = "kafka.streams";
     public static final String CASSANDRA = "cassandra";
     public static final String CLICKHOUSE = "clickhouse";
 
