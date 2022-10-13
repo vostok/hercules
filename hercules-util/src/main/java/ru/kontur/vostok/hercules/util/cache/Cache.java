@@ -53,8 +53,11 @@ public class Cache<K, V> {
 
         Result<V, E> result = provider.apply(key);
         if (!result.isOk()) {
-            return element;
+            Cached<V> cached = Cached.of(element.get(), lifetime);
+            cache.put(key, cached);
+            return cached;
         }
+
         V value = result.get();
         if (value != null) {
             Cached<V> cached = Cached.of(value, lifetime);
