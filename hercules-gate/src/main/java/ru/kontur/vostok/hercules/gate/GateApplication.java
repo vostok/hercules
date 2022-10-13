@@ -63,7 +63,7 @@ public class GateApplication {
 
                 authValidationManager = container.register(new AuthValidationManager(curatorClient));
 
-                streamStorage = new StreamStorage(new StreamRepository(curatorClient));
+                streamStorage = container.register(new StreamStorage(curatorClient, new StreamRepository(curatorClient)));
 
                 eventSender = container.register(new EventSender(eventSenderProperties, new HashPartitioner(new NaiveHasher()), metricsCollector));
 

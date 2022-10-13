@@ -18,6 +18,8 @@ import java.util.Optional;
  * @author Gregory Koshelev
  */
 public class StreamRepository {
+    public static final String Z_PREFIX = "/hercules/streams";
+
     private final CuratorClient curatorClient;
     private final Deserializer deserializer;
     private final Serializer serializer;
@@ -30,30 +32,28 @@ public class StreamRepository {
     }
 
     public Optional<Stream> read(String name) throws CuratorException, DeserializationException {
-        ReadResult readResult = curatorClient.read(zPrefix + '/' + name);
+        ReadResult readResult = curatorClient.read(Z_PREFIX + '/' + name);
         Optional<byte[]> jsonBytes = readResult.getData();
         return jsonBytes.isPresent() ? Optional.of(deserializer.deserialize(jsonBytes.get())) : Optional.empty();
     }
 
     public CreationResult create(Stream stream) throws CuratorException, SerializationException {
-        return curatorClient.create(zPrefix + '/' + stream.getName(), serializer.serialize(stream));
+        return curatorClient.create(Z_PREFIX + '/' + stream.getName(), serializer.serialize(stream));
     }
 
     public List<String> list() throws CuratorException {
-        return curatorClient.children(zPrefix);
+        return curatorClient.children(Z_PREFIX);
     }
 
     public DeletionResult delete(String name) throws CuratorException {
-        return curatorClient.delete(zPrefix + '/' + name);
+        return curatorClient.delete(Z_PREFIX + '/' + name);
     }
 
     public UpdateResult update(Stream stream) throws CuratorException, SerializationException {
-        return curatorClient.update(zPrefix + '/' + stream.getName(), serializer.serialize(stream));
+        return curatorClient.update(Z_PREFIX + '/' + stream.getName(), serializer.serialize(stream));
     }
 
     public boolean exists(String name) throws CuratorException {
-        return curatorClient.exists(zPrefix + '/' + name);
+        return curatorClient.exists(Z_PREFIX + '/' + name);
     }
-
-    private static String zPrefix = "/hercules/streams";
 }
