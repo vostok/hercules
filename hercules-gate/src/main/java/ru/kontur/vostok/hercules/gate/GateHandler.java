@@ -128,7 +128,7 @@ public class GateHandler implements HttpHandler {
             return;
         }
 
-        Optional<Stream> optionalBaseStream = streamStorage.read(stream);
+        Optional<Stream> optionalBaseStream = streamStorage.get(stream);
         if (!optionalBaseStream.isPresent()) {
             request.complete(HttpStatusCodes.NOT_FOUND, ContentTypes.TEXT_PLAIN_UTF_8, "Cannot find stream with name " + stream);
             return;
