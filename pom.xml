@@ -22,7 +22,7 @@
         <cassandra-driver.version>4.14.0</cassandra-driver.version>
         <undertow.version>2.0.42.Final</undertow.version>
         <metrics.version>4.0.2</metrics.version>
-        <jackson.version>2.13.1</jackson.version>
+        <jackson.version>2.13.4.1</jackson.version>
         <guava.version>27.0.1-jre</guava.version>
         <elasticsearch-client.version>6.8.23</elasticsearch-client.version>
         <apache-httpclient.version>4.5.13</apache-httpclient.version>
