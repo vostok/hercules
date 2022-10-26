@@ -100,7 +100,7 @@ public class Sink implements Lifecycle {
 
         Properties consumerProperties = PropertiesUtil.ofScope(properties, Scopes.CONSUMER);
         consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
-        String consumerId = Application.context().getInstanceId() + "-" + CONSUMER_CLIENT_ID_SEQUENCE.getAndIncrement();
+        String consumerId = CONSUMER_CLIENT_ID_SEQUENCE.getAndIncrement() + "-" + Application.context().getInstanceId();
         consumerProperties.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerId);
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         consumerProperties.putIfAbsent(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, batchSize);
