@@ -130,8 +130,7 @@ public class SplitterApplicationTest {
 
             inputTopic.pipeInput(badData);
 
-            IllegalArgumentException exception = Assert.assertThrows(IllegalArgumentException.class, () -> outputTopic.isEmpty());
-            Assert.assertEquals("Unknown topic: output_topic_node_1", exception.getMessage());
+            Assert.assertTrue(outputTopic.isEmpty());
         }
     }
 }
