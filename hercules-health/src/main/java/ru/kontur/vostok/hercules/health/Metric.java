@@ -6,4 +6,10 @@ package ru.kontur.vostok.hercules.health;
  * @author Gregory Koshelev
  */
 public interface Metric {
+    /**
+     * Represents metric name.
+     *
+     * @return  metric name
+     */
+    String name();
 }

@@ -1,9 +1,15 @@
 package ru.kontur.vostok.hercules.sink.metrics;
 
+import org.apache.kafka.common.TopicPartition;
 import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.sink.ProcessorResult;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Counts and stores {@link ru.kontur.vostok.hercules.sink.Sink Sink} metric values.
@@ -16,6 +22,7 @@ public class Stat {
 
     private final String consumerId;
     private final TimeSource time;
+    private final Supplier<Set<TopicPartition>> currentAssignmentSupplier;
 
     private int droppedEvents;
     private int filteredEvents;
@@ -32,9 +39,21 @@ public class Stat {
 
     private ProcessorResult processorResult;
 
-    public Stat(String consumerId, @NotNull TimeSource time) {
+    private final Map<TopicPartition, Integer> totalEventsPerPartition = new HashMap<>();
+    private final Map<TopicPartition, Integer> batchSizePerPartition = new HashMap<>();
+
+    public Stat(String consumerId, @NotNull TimeSource time, Supplier<Set<TopicPartition>> currentAssignmentSupplier) {
         this.consumerId = consumerId;
         this.time = time;
+        this.currentAssignmentSupplier = currentAssignmentSupplier;
+    }
+
+    public void incrementTotalEventsPerPartition(TopicPartition partition) {
+        totalEventsPerPartition.merge(partition, 1, Integer::sum);
+    }
+
+    public void incrementBatchSizePerPartition(TopicPartition partition, int eventSize) {
+        batchSizePerPartition.merge(partition, eventSize, Integer::sum);
     }
 
     /**
@@ -98,6 +117,8 @@ public class Stat {
         this.pollTimeMs = 0;
         this.filtrationTimeMs = 0;
         this.processTimeMs = 0;
+        this.totalEventsPerPartition.clear();
+        this.batchSizePerPartition.clear();
     }
 
     public void incrementDroppedEvents() {
@@ -156,6 +177,14 @@ public class Stat {
         return processorResult.isSuccess();
     }
 
+    public Map<TopicPartition, Integer> getTotalEventsPerPartition() {
+        return totalEventsPerPartition;
+    }
+
+    public Map<TopicPartition, Integer> getBatchSizePerPartition() {
+        return batchSizePerPartition;
+    }
+
     public long getPollTimePerEventNs() {
         return calculatePerEventTime(pollTimeMs, totalEvents + filteredEvents + droppedEvents);
     }
@@ -170,5 +199,9 @@ public class Stat {
 
     private long calculatePerEventTime(long timeMs, int events) {
         return events != 0 ? TimeUtil.millisToNanos(timeMs) / events : 0;
+    }
+
+    public Set<TopicPartition> getCurrentPartitionAssignment() {
+        return currentAssignmentSupplier.get();
     }
 }

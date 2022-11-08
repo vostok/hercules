@@ -1,11 +1,15 @@
 package ru.kontur.vostok.hercules.sink.metrics;
 
+import org.apache.kafka.common.TopicPartition;
 import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.health.Timer;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -101,21 +105,27 @@ public class SinkMetrics {
      * Stores and sends {@link ru.kontur.vostok.hercules.sink.Sink Sink} metrics by Kafka-consumers.
      */
     private static class ConsumerMetrics {
-        private static final String CONSUMER_METRICS_SCOPE
-                = MetricsUtil.toMetricPathWithPrefix(SINK_METRICS_SCOPE, ConsumerMetrics.class.getSimpleName());
+        private final String consumerMetricsScope;
+
+        private final MetricsCollector metricsCollector;
 
         private final Timer pollTimeMs;
         private final Timer processTimeMs;
         private final Meter totalEvents;
 
+        private final Map<TopicPartition, Meter> totalEventsPerPartition = new HashMap<>();
+        private final Map<TopicPartition, Meter> batchSizePerPartition = new HashMap<>();
+
         private ConsumerMetrics(@NotNull MetricsCollector metricsCollector, String consumerId) {
-            this.pollTimeMs = metricsCollector.timer(metricPath(consumerId, "pollTimeMs"));
-            this.processTimeMs = metricsCollector.timer(metricPath(consumerId, "processTimeMs"));
-            this.totalEvents = metricsCollector.meter(metricPath(consumerId, "totalEvents"));
+            this.consumerMetricsScope = MetricsUtil.toMetricPath(SINK_METRICS_SCOPE, ConsumerMetrics.class.getSimpleName(), consumerId);
+            this.metricsCollector = metricsCollector;
+            this.pollTimeMs = metricsCollector.timer(metricPath( "pollTimeMs"));
+            this.processTimeMs = metricsCollector.timer(metricPath( "processTimeMs"));
+            this.totalEvents = metricsCollector.meter(metricPath( "totalEvents"));
         }
 
-        private String metricPath(String consumerId, String metricName) {
-            return MetricsUtil.toMetricPathWithPrefix(CONSUMER_METRICS_SCOPE, consumerId, metricName);
+        private String metricPath(String... metricNameParts) {
+            return MetricsUtil.toMetricPathWithPrefix(consumerMetricsScope, metricNameParts);
         }
 
         /**
@@ -127,6 +137,32 @@ public class SinkMetrics {
             this.pollTimeMs.update(stat.getPollTimeMs());
             this.processTimeMs.update(stat.getProcessTimeMs());
             this.totalEvents.mark(stat.getTotalEvents());
+
+            updatePerPartitionMetrics(stat.getTotalEventsPerPartition(), totalEventsPerPartition, "totalEvents");
+            updatePerPartitionMetrics(stat.getBatchSizePerPartition(), batchSizePerPartition, "batchSize");
+
+            clearUnsubscribedPartitionsMetrics(stat, totalEventsPerPartition);
+            clearUnsubscribedPartitionsMetrics(stat, batchSizePerPartition);
+        }
+
+        private void updatePerPartitionMetrics(Map<TopicPartition, Integer> data, Map<TopicPartition, Meter> metrics, String metricName) {
+            for (Map.Entry<TopicPartition, Integer> entry : data.entrySet()) {
+                metrics.computeIfAbsent(
+                                entry.getKey(),
+                                p -> metricsCollector.meter(metricPath("partition", p.toString(), metricName)))
+                        .mark(entry.getValue());
+            }
+        }
+
+        private void clearUnsubscribedPartitionsMetrics(Stat stat, Map<TopicPartition, Meter> metrics) {
+            Set<TopicPartition> currentPartitionAssignment = stat.getCurrentPartitionAssignment();
+            for (Map.Entry<TopicPartition, Meter> entry : metrics.entrySet()) {
+                if (!currentPartitionAssignment.contains(entry.getKey())) {
+                    metricsCollector.remove(entry.getValue().name());
+                    metrics.remove(entry.getKey());
+                }
+            }
+
         }
     }
 }
