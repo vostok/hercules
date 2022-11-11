@@ -33,4 +33,9 @@ public interface Counter extends Metric {
     default void decrement() {
         decrement(1);
     }
+
+    @Override
+    default String name() {
+        return "counter";
+    }
 }

@@ -21,11 +21,10 @@ import java.util.function.Supplier;
  * @author Gregory Koshelev
  */
 public class MetricsCollector implements Lifecycle {
-    private MetricRegistry registry = new MetricRegistry();
+    private final MetricRegistry registry = new MetricRegistry();
 
     private final long period;
 
-    private final Graphite graphite;
     private final GraphiteReporter graphiteReporter;
 
     /**
@@ -46,7 +45,7 @@ public class MetricsCollector implements Lifecycle {
 
         this.period = PropertiesUtil.get(Props.REPORT_PERIOD_SECONDS, properties).get();
 
-        graphite = new Graphite(new InetSocketAddress(graphiteServerAddr, graphiteServerPort));
+        Graphite graphite = new Graphite(new InetSocketAddress(graphiteServerAddr, graphiteServerPort));
         graphiteReporter = GraphiteReporter.forRegistry(registry)
                 .prefixedWith(prefix)
                 .convertRatesTo(TimeUnit.SECONDS)
@@ -87,7 +86,7 @@ public class MetricsCollector implements Lifecycle {
      * @return requested meter
      */
     public Meter meter(String name) {
-        return new MeterImpl(registry.meter(name));
+        return new MeterImpl(registry.meter(name), name);
     }
 
     /**
@@ -180,9 +179,11 @@ public class MetricsCollector implements Lifecycle {
      */
     public static class MeterImpl implements Meter {
         private final com.codahale.metrics.Meter meter;
+        private final String name;
 
-        MeterImpl(com.codahale.metrics.Meter meter) {
+        MeterImpl(com.codahale.metrics.Meter meter, String name) {
             this.meter = meter;
+            this.name = name;
         }
 
         @Override
@@ -193,6 +194,11 @@ public class MetricsCollector implements Lifecycle {
         @Override
         public void mark() {
             meter.mark();
+        }
+
+        @Override
+        public String name() {
+            return name;
         }
     }
 

@@ -112,7 +112,7 @@ public class Sink implements Lifecycle {
 
         this.timer = time.timer(pollTimeoutMs);
 
-        this.stat = new Stat(consumerId, time);
+        this.stat = new Stat(consumerId, time, consumer::assignment);
         this.sinkMetrics = sinkMetrics;
     }
 
@@ -205,6 +205,8 @@ public class Sink implements Lifecycle {
                                             continue;
                                         }
                                         events.add(event);
+                                        stat.incrementTotalEventsPerPartition(partition);
+                                        stat.incrementBatchSizePerPartition(partition, event.sizeOf());
                                     }
                                 }
                             } catch (Exception ex) {

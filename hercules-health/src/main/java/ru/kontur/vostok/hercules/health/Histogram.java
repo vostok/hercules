@@ -7,4 +7,9 @@ package ru.kontur.vostok.hercules.health;
 public interface Histogram extends Metric {
     void update(int value);
     void update(long value);
+
+    @Override
+    default String name() {
+        return "histogram";
+    }
 }

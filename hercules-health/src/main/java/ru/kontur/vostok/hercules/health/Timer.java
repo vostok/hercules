@@ -24,4 +24,9 @@ public interface Timer extends Metric {
     default void update(long durationMs) {
         update(durationMs, TimeUnit.MILLISECONDS);
     }
+
+    @Override
+    default String name() {
+        return "timer";
+    }
 }

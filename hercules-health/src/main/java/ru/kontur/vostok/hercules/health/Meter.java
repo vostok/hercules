@@ -20,4 +20,9 @@ public interface Meter extends Metric {
     default void mark() {
         mark(1);
     }
+
+    @Override
+    default String name() {
+        return "meter";
+    }
 }
