@@ -3,7 +3,7 @@
     <parent>
         <artifactId>hercules</artifactId>
         <groupId>ru.kontur.vostok.hercules</groupId>
-        <version>1.4.0</version>
+        <version>1.5.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -67,7 +67,7 @@
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-sentry-client-impl-v9</artifactId>
-            <version>1.4.0</version>
+            <version>1.5.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
