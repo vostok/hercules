@@ -8,6 +8,7 @@ import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.health.Timer;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,13 +157,15 @@ public class SinkMetrics {
 
         private void clearUnsubscribedPartitionsMetrics(Stat stat, Map<TopicPartition, Meter> metrics) {
             Set<TopicPartition> currentPartitionAssignment = stat.getCurrentPartitionAssignment();
-            for (Map.Entry<TopicPartition, Meter> entry : metrics.entrySet()) {
+            Iterator<Map.Entry<TopicPartition, Meter>> iterator = metrics.entrySet().iterator();
+
+            while (iterator.hasNext()) {
+                Map.Entry<TopicPartition, Meter> entry = iterator.next();
                 if (!currentPartitionAssignment.contains(entry.getKey())) {
                     metricsCollector.remove(entry.getValue().name());
-                    metrics.remove(entry.getKey());
+                    iterator.remove();
                 }
             }
-
         }
     }
 }
