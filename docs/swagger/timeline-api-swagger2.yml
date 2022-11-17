@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   description: 'Timeline api for Hercules. Uses for reading the timeline content.'
-  version: 1.4.1
+  version: 1.5.0-SNAPSHOT
   title: Hercules timeline API
 host: 'vm-hercules05:6306'
 schemes:

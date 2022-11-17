@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   description: 'Stream api for Hercules. Uses for read the stream content.'
-  version: 1.4.1
+  version: 1.5.0-SNAPSHOT
   title: Hercules stream API
 host: 'vm-hercules05:6307'
 schemes:
