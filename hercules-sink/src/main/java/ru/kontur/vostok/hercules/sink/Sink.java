@@ -27,6 +27,7 @@ import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -112,7 +113,7 @@ public class Sink implements Lifecycle {
 
         this.timer = time.timer(pollTimeoutMs);
 
-        this.stat = new Stat(consumerId, time, consumer::assignment);
+        this.stat = new Stat(consumerId, time, () -> isRunning() ? consumer.assignment() : Collections.emptySet());
         this.sinkMetrics = sinkMetrics;
     }
 
