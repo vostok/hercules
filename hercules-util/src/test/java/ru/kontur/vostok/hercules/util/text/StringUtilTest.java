@@ -8,9 +8,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.Objects;
-import java.util.function.IntPredicate;
-
 /**
  * @author Gregory Koshelev
  */
@@ -132,6 +129,44 @@ public class StringUtilTest {
                     { "foo$bar", "foo_bar" },
                     { "foo$$$$bar", "foo____bar" },
                     { "$", "_" },
+            };
+        }
+    }
+
+    /**
+     * Tests of {@link StringUtil#equalsIgnoreCase(CharSequence, CharSequence)} method.
+     */
+    @RunWith(Parameterized.class)
+    public static class EqualsIgnoreCaseCharSeqTest {
+        @Parameter(0)
+        public String lhs;
+
+        @Parameter(1)
+        public String rhs;
+
+        @Parameter(2)
+        public boolean expectedOutput;
+
+        @Test
+        public void test() {
+            boolean actualOutput = StringUtil.equalsIgnoreCase(lhs, rhs);
+
+            Assert.assertEquals(expectedOutput, actualOutput);
+        }
+
+        @Parameters
+        public static Object[][] parameters() {
+            return new Object[][] {
+                    { "F", "F", true },
+                    { "f", "f", true },
+                    { "f", "F", true },
+                    { "f", "FF", false },
+                    { "ff", "F", false },
+                    { "foobar", "FooBar", true },
+                    { "foobar", "FooBaz", false },
+                    { null, "FooBaz", false },
+                    { "foobar", null, false },
+                    { null, null, true },
             };
         }
     }

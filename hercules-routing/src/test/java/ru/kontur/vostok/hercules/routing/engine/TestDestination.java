@@ -46,4 +46,9 @@ public class TestDestination implements Destination<TestDestination> {
     public int hashCode() {
         return Objects.hash(value);
     }
+
+    @Override
+    public String toString() {
+        return value;
+    }
 }

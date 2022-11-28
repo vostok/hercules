@@ -10,7 +10,6 @@ import ru.kontur.vostok.hercules.routing.interpolation.Interpolator;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 /**
  * Implementation of {@link Destination} interface for full identification of Sentry project.
@@ -20,9 +19,21 @@ import java.util.regex.Pattern;
 @JsonPropertyOrder({"organization", "project"})
 public class SentryDestination implements Destination<SentryDestination> {
     private static final SentryDestination NOWHERE = new SentryDestination(null, null);
-    private static final InterpolationExpression PROJECT_INTERPOLATION = InterpolationExpression.of("tag", "properties/project");
-    private static final InterpolationExpression SUBPROJECT_INTERPOLATION = InterpolationExpression.of("tag", "properties/subproject");
-    private static final Pattern FORBIDDEN_CHARS_PATTERN = Pattern.compile("[^-_a-z0-9]");
+    private static final SentryDestination DEFAULT;
+
+    static {
+        var projectExpr = InterpolationExpression.of("tag", "properties/project");
+        var subprojectExpr = InterpolationExpression.of("tag", "properties/subproject");
+
+        DEFAULT = new SentryDestination("{tag:properties/project}", "{tag:properties/subproject}") {
+            @Override
+            public SentryDestination interpolate(Interpolator interpolator, Interpolator.Context context) {
+                CharSequence project = context.stringValueOf(projectExpr);
+                CharSequence subproject = context.stringValueOf(subprojectExpr);
+                return of(project, subproject == null ? project : subproject);
+            }
+        };
+    }
 
     private final String organization;
     private final String project;
@@ -54,16 +65,16 @@ public class SentryDestination implements Destination<SentryDestination> {
      * @return Default destination.
      */
     public static SentryDestination byDefault() {
-        return new SentryDestination("{tag:properties/project}", "{tag:properties/subproject}") {
-            @Override
-            public SentryDestination interpolate(Interpolator interpolator, Interpolator.Context context) {
-                CharSequence project = context.stringValueOf(PROJECT_INTERPOLATION);
-                CharSequence subproject = context.stringValueOf(SUBPROJECT_INTERPOLATION);
-                return of(project, subproject == null ? project : subproject);
-            }
-        };
+        return DEFAULT;
     }
 
+    /**
+     * Create destination by organization and project.
+     *
+     * @param organization Sentry organization (concrete or template with interpolation placeholders).
+     * @param project      Sentry project (concrete or template with interpolation placeholders).
+     * @return Created destination.
+     */
     @JsonCreator
     public static SentryDestination of(
             @JsonProperty("organization") CharSequence organization,
@@ -134,8 +145,8 @@ public class SentryDestination implements Destination<SentryDestination> {
             return false;
         }
         SentryDestination other = (SentryDestination) otherRaw;
-        return Objects.equals(organization, other.organization) &&
-                Objects.equals(project, other.project);
+        return Objects.equals(organization, other.organization)
+                && Objects.equals(project, other.project);
     }
 
     @Override
@@ -144,6 +155,11 @@ public class SentryDestination implements Destination<SentryDestination> {
     }
 
     private static String sanitizeName(String name) {
-        return FORBIDDEN_CHARS_PATTERN.matcher(name.toLowerCase()).replaceAll("_");
+        return StringUtil.sanitize(name, value -> value == '-'
+                || value == '_'
+                || 'a' <= value && value <= 'z'
+                || 'A' <= value && value <= 'Z'
+                || '0' <= value && value <= '9'
+        );
     }
 }

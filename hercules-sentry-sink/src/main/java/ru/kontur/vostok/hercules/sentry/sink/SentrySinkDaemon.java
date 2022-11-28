@@ -14,6 +14,7 @@ import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
 import ru.kontur.vostok.hercules.routing.sentry.SentryRouteDeserializer;
 import ru.kontur.vostok.hercules.routing.sentry.SentryRouting;
 import ru.kontur.vostok.hercules.sink.AbstractSinkDaemon;
+import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
@@ -34,7 +35,7 @@ public class SentrySinkDaemon extends AbstractSinkDaemon {
             curatorClient = container.register(new CuratorClient(curatorProperties));
 
             ObjectMapper objectMapper = new ObjectMapper();
-            router = container.register(createRouter(curatorClient, objectMapper));
+            router = container.register(createRouter(properties, curatorClient, objectMapper));
         });
     }
 
@@ -54,7 +55,7 @@ public class SentrySinkDaemon extends AbstractSinkDaemon {
     }
 
     private static Router<Event, SentryDestination> createRouter(
-            CuratorClient curatorClient, ObjectMapper objectMapper
+            Properties properties, CuratorClient curatorClient, ObjectMapper objectMapper
     ) {
         ZookeeperReadRepository readRepository = ZookeeperReadRepository.builder()
                 .withCuratorClient(curatorClient)
@@ -63,7 +64,30 @@ public class SentrySinkDaemon extends AbstractSinkDaemon {
                 .withConfigDeserializer(new DecisionTreeEngineConfigDeserializer(objectMapper))
                 .build();
         var configWatchTask = new ZookeeperConfigurationWatchTask(readRepository);
-        var engine = new DecisionTreeRouterEngine(SentryRouting.DEFAULT_CONFIG, SentryDestination.byDefault());
+        DefaultDestination destinationDestinationConfig = PropertiesUtil.get(Props.DEFAULT_DESTINATION_PARAMETER, properties).get();
+        SentryDestination defaultDestination = destinationDestinationConfig == DefaultDestination.PROJECT_SUBPROJECT
+                ? SentryDestination.byDefault()
+                : SentryDestination.toNowhere();
+        var engine = new DecisionTreeRouterEngine(SentryRouting.DEFAULT_CONFIG, defaultDestination);
         return new Router<>(configWatchTask, engine);
+    }
+
+    enum DefaultDestination {
+        PROJECT_SUBPROJECT,
+        NOWHERE,
+    }
+
+    static class Props {
+
+        /**
+         * Determines what will routing submodule use as default destination.
+         */
+        static final Parameter<DefaultDestination> DEFAULT_DESTINATION_PARAMETER = Parameter
+                .enumParameter("routing.default.destination", DefaultDestination.class)
+                .withDefault(DefaultDestination.PROJECT_SUBPROJECT)
+                .build();
+
+        private Props() {
+        }
     }
 }

@@ -8,6 +8,8 @@ import ru.kontur.vostok.hercules.routing.interpolation.Interpolator;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * Unit tests for {@link SentryDestination}.
+ *
  * @author Aleksandr Yuferov
  */
 public class SentryDestinationTest {
@@ -54,5 +56,21 @@ public class SentryDestinationTest {
         SentryDestination result = destination.interpolate(interpolator, context);
 
         Assert.assertEquals("my-proj", result.project());
+    }
+
+    @Test
+    public void shouldDoNothingWithNoWhereDestinationInSanitizeMethod() {
+        SentryDestination destination = SentryDestination.toNowhere();
+
+        Assert.assertSame(destination, destination.sanitize());
+    }
+
+    @Test
+    public void shouldReplaceIllegalCharactersInSanitizeMethod() {
+        SentryDestination destination = SentryDestination.of("Illegal^Characters09", "o-t_her:+chars")
+                .sanitize();
+
+        Assert.assertEquals("Illegal_Characters09", destination.organization());
+        Assert.assertEquals("o-t_her__chars", destination.project());
     }
 }

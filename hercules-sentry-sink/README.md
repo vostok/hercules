@@ -71,6 +71,11 @@ See method `createClassInstanceList` in `ru.kontur.vostok.hercules.util.properti
 
 `http.server.workerThreads` - the number of worker threads. Default value: `1`.
 
+### Routing settings
+
+`routing.default.destination` - determines what will routing submodule use as default destination. 
+Acceptable values are: `PROJECT_SUBPROJECT` (default), `NOWHERE`.
+
 ## Command line
 `java $JAVA_OPTS -jar hercules-sentry-sink.jar application.properties=file://path/to/properties/file`
 
@@ -116,4 +121,6 @@ metrics.period=60
 
 http.server.ioThreads=1
 http.server.workerThreads=1
+
+routing.default.destination=PROJECT_SUBPROJECT
 ```

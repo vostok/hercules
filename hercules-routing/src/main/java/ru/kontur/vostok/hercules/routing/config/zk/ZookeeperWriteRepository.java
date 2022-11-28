@@ -1,8 +1,5 @@
 package ru.kontur.vostok.hercules.routing.config.zk;
 
-import java.util.Objects;
-import java.util.UUID;
-
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +8,9 @@ import ru.kontur.vostok.hercules.routing.engine.EngineConfig;
 import ru.kontur.vostok.hercules.routing.engine.EngineConfigSerializer;
 import ru.kontur.vostok.hercules.routing.engine.Route;
 import ru.kontur.vostok.hercules.routing.engine.RouteSerializer;
+
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Repository for making changes into router config stored in ZooKeeper.
@@ -108,6 +108,23 @@ public class ZookeeperWriteRepository {
         } catch (Exception exception) {
             LOGGER.error("an error occurred while deleting route", exception);
             return false;
+        }
+    }
+
+    /**
+     * Checks route does not exists.
+     *
+     * @param routeId Route id.
+     * @return {@code true} if route exists.
+     */
+    public boolean isNotRouteExists(UUID routeId) {
+        Preconditions.checkArgument(routeId != null, "route id cannot be null");
+        try {
+            String absolutePath = PathUtil.createAbsolutePathFromRouteId(rootPath, routeId);
+            return !curatorClient.exists(absolutePath);
+        } catch (Exception exception) {
+            LOGGER.error("an error occurred while checking route exists", exception);
+            return true;
         }
     }
 

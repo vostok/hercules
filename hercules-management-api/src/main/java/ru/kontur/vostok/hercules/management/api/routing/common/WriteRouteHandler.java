@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.management.api.routing.common;
 
-import java.util.UUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -14,6 +12,8 @@ import ru.kontur.vostok.hercules.routing.engine.RouteDeserializer;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 import ru.kontur.vostok.hercules.util.validation.Validator;
+
+import java.util.UUID;
 
 /**
  * Handler of HTTP-requests to create/change routes in ZooKeeper.
@@ -57,9 +57,15 @@ public class WriteRouteHandler implements HttpHandler {
                             createRouteResponseBody(createdRouteId));
                     return;
                 }
-            } else if (repository.tryUpdateRoute(route)) {
-                request.complete(HttpStatusCodes.OK);
-                return;
+            } else {
+                if (repository.isNotRouteExists(routeId.get())) {
+                    request.complete(HttpStatusCodes.NOT_FOUND);
+                    return;
+                }
+                if (repository.tryUpdateRoute(route)) {
+                    request.complete(HttpStatusCodes.OK);
+                    return;
+                }
             }
         } catch (Exception exception) {
             LOGGER.error("an error occurred while handle write route request", exception);

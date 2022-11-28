@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.management.api.routing.common;
 
-import java.util.UUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.http.HttpServerRequest;
@@ -11,6 +9,8 @@ import ru.kontur.vostok.hercules.http.path.PathUtil;
 import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.routing.config.zk.ZookeeperWriteRepository;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+
+import java.util.UUID;
 
 /**
  * Handler of HTTP-requests to delete route from ZooKeeper.
@@ -32,6 +32,10 @@ public class DeleteRouteHandler implements HttpHandler {
             return;
         }
         try {
+            if (writeRepository.isNotRouteExists(routeId.get())) {
+                request.complete(HttpStatusCodes.NOT_FOUND);
+                return;
+            }
             if (writeRepository.tryRemoveRouteById(routeId.get())) {
                 request.complete(HttpStatusCodes.OK);
                 return;

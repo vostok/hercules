@@ -5,6 +5,8 @@ import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.routing.config.ConfigurationObserver;
 import ru.kontur.vostok.hercules.routing.config.ConfigurationWatchTask;
 import ru.kontur.vostok.hercules.routing.engine.EngineConfig;
@@ -32,6 +34,9 @@ import java.util.stream.Collectors;
  * @author Aleksandr Yuferov
  */
 public class ZookeeperConfigurationWatchTask implements ConfigurationWatchTask {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperConfigurationWatchTask.class);
+
     private static final int TASKS_QUEUE_CAPACITY = 100;
     private final CuratorWatcher concreteRouteWatcher = new DeferredWatcher(this::onConcreteRouteChanged);
     private final CuratorWatcher routeListWatcher = new DeferredWatcher(this::onRoutesListChanged);
@@ -44,7 +49,9 @@ public class ZookeeperConfigurationWatchTask implements ConfigurationWatchTask {
      * configuration changes may have been lost.
      */
     private final ConnectionStateListener connectionStateListener = (c, newState) -> {
+        LOGGER.debug("Connection with ZooKeeper state: {}", newState);
         if (newState.isConnected()) {
+            LOGGER.info("Connection with ZooKeeper reestablished");
             reinitialize();
         }
     };
@@ -57,6 +64,7 @@ public class ZookeeperConfigurationWatchTask implements ConfigurationWatchTask {
      */
     private final RejectedExecutionHandler rejectedExecutionHandler = (r, executor) -> {
         if (!executor.isShutdown()) {
+            LOGGER.warn("Config change queue is overflow. Performing cleaning and full reinitialization...");
             executor.getQueue().clear();
             executor.execute(this::reinitialize);
         }
@@ -116,10 +124,12 @@ public class ZookeeperConfigurationWatchTask implements ConfigurationWatchTask {
                 }
             } catch (InterruptedException e) {
                 executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            } finally {
+                executorService = null;
+                observer = null;
+                routesFilesNames.clear();
             }
-            executorService = null;
-            observer = null;
-            routesFilesNames.clear();
             return true;
         }
         return false;
@@ -142,7 +152,14 @@ public class ZookeeperConfigurationWatchTask implements ConfigurationWatchTask {
                 .collect(Collectors.toList());
         routesFilesNames.addAll(routesRelativePaths);
         EngineConfig engineConfig = repository.fetchEngineConfig(engineConfigWatcher);
-        observer.init(engineConfig, routes);
+        try {
+            observer.init(engineConfig, routes);
+        } catch (Exception exception) {
+            LOGGER.error("An error occurred on (re-)initialization", exception);
+        }
+        LOGGER.info("(Re-)initialization performed. Fetched routes ids: {}", routes.stream()
+                .map(Route::id)
+                .collect(Collectors.toUnmodifiableList()));
     }
 
     /**
@@ -157,10 +174,14 @@ public class ZookeeperConfigurationWatchTask implements ConfigurationWatchTask {
     private void onEngineConfigChanged(WatchedEvent event) {
         switch (event.getType()) {
             case NodeDeleted:
+                LOGGER.info("Received event about engine config deletion. Performing full reinitialization with default config...");
                 reinitialize();
                 break;
             case NodeDataChanged:
+                LOGGER.info("Received event about engine config change");
                 observer.onEngineConfigChanged(repository.fetchEngineConfig(engineConfigWatcher));
+                break;
+            default:
                 break;
         }
     }
@@ -180,23 +201,37 @@ public class ZookeeperConfigurationWatchTask implements ConfigurationWatchTask {
             return;
         }
         List<String> newRoutesList = repository.fetchAllRoutesFilesNames(routeListWatcher);
-        List<String> created = new ArrayList<>(newRoutesList.size() / 2);
+        List<String> created = new ArrayList<>();
         for (String relativePath : newRoutesList) {
             if (!routesFilesNames.contains(relativePath)) {
                 Route route = repository.fetchRouteByRelativePath(relativePath, concreteRouteWatcher);
                 if (route != null) {
                     created.add(relativePath);
-                    observer.onRouteCreated(route);
+                    try {
+                        observer.onRouteCreated(route);
+                    } catch (Exception exception) {
+                        LOGGER.error("An error occurred while handling route creation", exception);
+                    }
                 }
             }
         }
+        List<String> removed = new ArrayList<>();
         for (String relativePath : routesFilesNames) {
             if (!newRoutesList.contains(relativePath)) {
                 routesFilesNames.remove(relativePath);
-                observer.onRouteRemoved(PathUtil.extractRouteIdFromRelativePath(relativePath));
+                removed.add(relativePath);
+                try {
+                    observer.onRouteRemoved(PathUtil.extractRouteIdFromRelativePath(relativePath));
+                } catch (Exception exception) {
+                    LOGGER.error("An error occurred while handling route deletion", exception);
+                }
             }
         }
         routesFilesNames.addAll(created);
+        LOGGER.info("Routes changes handled: created = {}, removed = {}",
+                created.stream().map(PathUtil::extractRouteIdFromRelativePath).collect(Collectors.toUnmodifiableList()),
+                removed.stream().map(PathUtil::extractRouteIdFromRelativePath).collect(Collectors.toUnmodifiableList())
+        );
     }
 
     /**
@@ -213,6 +248,7 @@ public class ZookeeperConfigurationWatchTask implements ConfigurationWatchTask {
         Route route = repository.fetchRouteByAbsolutePath(event.getPath(), concreteRouteWatcher);
         if (route != null) {
             observer.onRouteChanged(route);
+            LOGGER.info("Route {} changes handled", route.id());
         }
     }
 
