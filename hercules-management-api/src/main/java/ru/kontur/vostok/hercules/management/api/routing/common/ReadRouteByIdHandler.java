@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.management.api.routing.common;
 
-import java.util.UUID;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +12,8 @@ import ru.kontur.vostok.hercules.http.query.QueryUtil;
 import ru.kontur.vostok.hercules.routing.config.zk.ZookeeperReadRepository;
 import ru.kontur.vostok.hercules.routing.engine.Route;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+
+import java.util.UUID;
 
 /**
  * Handler of HTTP-requests to read route by its id from ZooKeeper.
@@ -41,6 +41,10 @@ public class ReadRouteByIdHandler implements HttpHandler {
         }
         try {
             Route route = repository.fetchRouteById(routeId.get(), null);
+            if (route == null) {
+                request.complete(HttpStatusCodes.NOT_FOUND);
+                return;
+            }
             String serializedData = objectMapper.writeValueAsString(route);
             request.complete(HttpStatusCodes.OK, MimeTypes.APPLICATION_JSON, serializedData);
         } catch (Exception exception) {

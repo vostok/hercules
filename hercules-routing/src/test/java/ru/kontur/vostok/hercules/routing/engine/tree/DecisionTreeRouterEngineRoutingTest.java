@@ -23,7 +23,6 @@ public class DecisionTreeRouterEngineRoutingTest {
             .addAllowedTag("tag1")
             .addAllowedTag("tag2")
             .addAllowedTag("tag3")
-            .addAllowedTag("tag4")
             .build();
 
     private final TestDestination defaultDestination = TestDestination.of("default destination");
@@ -63,14 +62,17 @@ public class DecisionTreeRouterEngineRoutingTest {
         List<DecisionTreeEngineRoute<TestDestination>> nestedRules = List.of(
                 DecisionTreeEngineRoute.<TestDestination>builder()
                         .setConditions(Map.of(
-                                "tag1", "value1"
+                                "tag1", "value1",
+                                "tag2", "*",
+                                "tag3", "*"
                         ))
                         .setDestination(TestDestination.of("destination 0"))
                         .build(),
                 DecisionTreeEngineRoute.<TestDestination>builder()
                         .setConditions(Map.of(
                                 "tag1", "value1",
-                                "tag2", "value2"
+                                "tag2", "value2",
+                                "tag3", "*"
                         ))
                         .setDestination(TestDestination.of("destination 1"))
                         .build(),
@@ -228,6 +230,52 @@ public class DecisionTreeRouterEngineRoutingTest {
                         nestedRules,
                         EventBuilder.create(0, UUID.randomUUID())
                                 .tag("tag1", Variant.ofString("value-other"))
+                                .build(),
+                        "default destination"
+                },
+                {
+                        List.of(DecisionTreeEngineRoute.<TestDestination>builder()
+                                .setConditions(Map.of(
+                                        "tag1", "value1",
+                                        "tag2", "value2",
+                                        "tag3", "*"
+                                ))
+                                .setDestination(TestDestination.of("any-mask-includes-null"))
+                                .build()),
+                        EventBuilder.create(0, UUID.randomUUID())
+                                .tag("tag1", Variant.ofString("value1"))
+                                .tag("tag2", Variant.ofString("value2"))
+                                .build(),
+                        "any-mask-includes-null"
+                },
+                {
+                        List.of(DecisionTreeEngineRoute.<TestDestination>builder()
+                                .setConditions(Map.of(
+                                        "tag1", "VaLuE1",
+                                        "tag2", "vAlUe2",
+                                        "tag3", "*"
+                                ))
+                                .setDestination(TestDestination.of("rules-are-case-insensitive"))
+                                .build()),
+                        EventBuilder.create(0, UUID.randomUUID())
+                                .tag("tag1", Variant.ofString("value1"))
+                                .tag("tag2", Variant.ofString("value2"))
+                                .tag("tag3", Variant.ofString("value3"))
+                                .build(),
+                        "rules-are-case-insensitive"
+                },
+                {
+                        List.of(DecisionTreeEngineRoute.<TestDestination>builder()
+                                .setConditions(Map.of(
+                                        "tag1", "value1",
+                                        "tag2", "value2"
+                                ))
+                                .setDestination(TestDestination.of("should-use-default-dest"))
+                                .build()),
+                        EventBuilder.create(0, UUID.randomUUID())
+                                .tag("tag1", Variant.ofString("value1"))
+                                .tag("tag2", Variant.ofString("value2"))
+                                .tag("tag3", Variant.ofString("non null value"))
                                 .build(),
                         "default destination"
                 }

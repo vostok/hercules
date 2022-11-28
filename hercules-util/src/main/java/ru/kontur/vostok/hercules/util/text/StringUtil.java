@@ -249,4 +249,30 @@ public final class StringUtil {
         }
         return result.toString();
     }
+
+    /**
+     * Compares {@code CharSequence}s, ignoring case considerations (null safe impl).
+     *
+     * @param lhs First string.
+     * @param rhs Second string.
+     * @return Result of comparing.
+     */
+    public static boolean equalsIgnoreCase(CharSequence lhs, CharSequence rhs) {
+        if (lhs == rhs) {
+            return true;
+        }
+        if (lhs == null || rhs == null) {
+            return false;
+        }
+        int length = lhs.length();
+        if (rhs.length() != length) {
+            return false;
+        }
+        for (int i = 0; i < length; i++) {
+            if (Character.toLowerCase(lhs.charAt(i)) != Character.toLowerCase(rhs.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

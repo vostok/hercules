@@ -1,10 +1,14 @@
 package ru.kontur.vostok.hercules.routing.engine.tree;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
 import ru.kontur.vostok.hercules.routing.Destination;
+import ru.kontur.vostok.hercules.util.text.IgnoreCaseWrapper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +24,10 @@ import java.util.stream.IntStream;
  * @author Aleksandr Yuferov
  */
 class Indexer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Indexer.class);
+
+    private static final IgnoreCaseWrapper<TinyString> ANY_MASK = new IgnoreCaseWrapper<>(TinyString.of("*"));
+
     private final DecisionTreeEngineConfig defaultConfig;
     private final Destination<?> defaultDestination;
     private List<DecisionTreeEngineRoute<?>> routes;
@@ -65,21 +73,28 @@ class Indexer {
     }
 
     private Index reindex() {
-        List<HPath> allowedTags = config.allowedTags();
+        LOGGER.debug("Reindexing started ...");
+        List<IgnoreCaseWrapper<TinyString>> conditions = new ArrayList<>(treeHeight());
         var rootBuilder = new TreeBuilder(defaultDestination);
-        var conditions = new TinyString[allowedTags.size()];
         for (DecisionTreeEngineRoute<?> route : routes) {
             Map<String, String> routeConditions = route.conditions();
-            for (int tagIndex = 0; tagIndex < conditions.length; tagIndex++) {
-                String tagKey = allowedTags.get(tagIndex).getPath();
+            for (HPath tag : config.allowedTags()) {
+                String tagKey = tag.getPath();
                 String tagConditionValue = routeConditions.get(tagKey);
-                conditions[tagIndex] = tagConditionValue != null
-                        ? TinyString.of(tagConditionValue)
-                        : null;
+                conditions.add(tagConditionValue != null
+                        ? new IgnoreCaseWrapper<>(TinyString.of(tagConditionValue))
+                        : null
+                );
             }
             rootBuilder.addRoute(conditions, route.destination());
+            conditions.clear();
         }
-        return new Index(allowedTags, rootBuilder.build());
+        LOGGER.debug("Reindexing finished");
+        return new Index(config.allowedTags(), rootBuilder.build());
+    }
+
+    private int treeHeight() {
+        return config.allowedTags().size();
     }
 
     private int findRuleById(UUID id) {
@@ -89,24 +104,24 @@ class Indexer {
                 .orElse(-1);
     }
 
-    private static class TreeBuilder {
+    private class TreeBuilder {
+
         private final NodeBuilder root;
 
         TreeBuilder(Destination<?> defaultDestination) {
-            root = new NodeBuilder(0, null);
+            root = new NodeBuilder(0);
             root.setDestination(defaultDestination);
         }
 
         /**
          * Add route into the tree.
          * <p>
-         * Finds node responsible for the condition in the tree and sets the destination of this node as given
-         * in argument.
+         * Finds node responsible for the condition in the tree and sets the destination of this node as given in argument.
          *
          * @param conditions  Condition of the route.
          * @param destination Destination of the route.
          */
-        void addRoute(TinyString[] conditions, Destination<?> destination) {
+        void addRoute(List<IgnoreCaseWrapper<TinyString>> conditions, Destination<?> destination) {
             findResponsibleNode(conditions)
                     .setDestination(destination);
         }
@@ -120,34 +135,30 @@ class Indexer {
             return root.build();
         }
 
-        private NodeBuilder findResponsibleNode(TinyString[] conditions) {
+        private NodeBuilder findResponsibleNode(List<IgnoreCaseWrapper<TinyString>> conditions) {
             NodeBuilder current = root;
-            int end = findLastNonNullElement(conditions);
-            for (int i = 0; i <= end; i++) {
-                TinyString condition = conditions[i];
+            int treeHeight = treeHeight();
+            for (int i = 0; i < treeHeight; i++) {
+                IgnoreCaseWrapper<TinyString> condition = conditions.get(i);
                 current = current.get(condition);
             }
             return current;
         }
 
-        private static <T> int findLastNonNullElement(T[] array) {
-            for (int index = array.length - 1; index >= 0; index--) {
-                if (array[index] != null) {
-                    return index;
-                }
-            }
-            return -1;
-        }
+        private class NodeBuilder {
 
-        private static class NodeBuilder {
             private final int index;
-            private final NodeBuilder parent;
-            private final Map<TinyString, NodeBuilder> children = new HashMap<>();
+            private final Map<IgnoreCaseWrapper<TinyString>, NodeBuilder> children = new HashMap<>();
+            private final NodeBuilder any;
             private Destination<?> destination;
 
-            NodeBuilder(int index, NodeBuilder parent) {
+            NodeBuilder(int index) {
                 this.index = index;
-                this.parent = parent;
+                if (index <= treeHeight()) {
+                    this.any = new NodeBuilder(index + 1);
+                } else {
+                    this.any = null;
+                }
             }
 
             /**
@@ -156,8 +167,10 @@ class Indexer {
              * @param condition Condition value.
              * @return Child node-builder.
              */
-            NodeBuilder get(TinyString condition) {
-                return children.computeIfAbsent(condition, (key) -> new NodeBuilder(index + 1, this));
+            NodeBuilder get(IgnoreCaseWrapper<TinyString> condition) {
+                return ANY_MASK.equals(condition)
+                        ? any
+                        : children.computeIfAbsent(condition, (key) -> new NodeBuilder(index + 1));
             }
 
             /**
@@ -170,37 +183,17 @@ class Indexer {
             }
 
             /**
-             * Get destination for current node.
-             * <p>
-             * If destination is not set for current node then should find it in one of the parents nodes.
-             *
-             * @return Destination for current node.
-             */
-            Destination<?> destination() {
-                NodeBuilder node = this;
-                while (node != null && node.destination == null) {
-                    node = node.parent;
-                }
-                return node != null ? node.destination : null;
-            }
-
-            /**
              * Create node.
-             * <p>
-             * If there is no children in this builder-node then creates a leaf node with the result of
-             * {@link #destination()} method.
-             * If there are some children in this builder-node then creates a decision node in witch as else-node
-             * creates a leaf with the result of {@link #destination()} method.
              *
              * @return Created node.
              */
             Node build() {
-                if (!children.isEmpty()) {
-                    Map<TinyString, Node> constructedChildren = children.entrySet().stream()
+                if (index < treeHeight()) {
+                    Map<IgnoreCaseWrapper<TinyString>, Node> constructedChildren = children.entrySet().stream()
                             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().build()));
-                    return new Node.DecisionNode(index, constructedChildren, destination());
+                    return new Node.DecisionNode(index, Collections.unmodifiableMap(constructedChildren), any.build());
                 }
-                return new Node.LeafNode(destination());
+                return new Node.LeafNode(destination == null ? defaultDestination : destination);
             }
         }
     }

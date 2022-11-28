@@ -57,27 +57,29 @@ public class SentryRouteValidator implements Validator<Route> {
         }
         SentryDestination destination = verifiableRoute.destination();
         {
-            if (destination == null || destination.isNowhere()) {
-                return ValidationResult.error("destination cannot be null or have null fields or have " +
-                        "empty strings in fields");
+            if (destination == null) {
+                return ValidationResult.error("destination cannot be null (if you want to create 'nowhere' destination use "
+                        + "'{ \"organization\": null, \"project\": \"null\" }' destination)");
             }
         }
-        {
-            ValidationResult error = findConstantInterpolations(conditions, destination.organization())
-                    .map(desc -> "constant interpolations found in 'organization' field:\n" + desc)
-                    .map(ValidationResult::error)
-                    .orElse(null);
-            if (error != null) {
-                return error;
+        if (!destination.isNowhere()) {
+            {
+                ValidationResult error = findConstantInterpolations(conditions, destination.organization())
+                        .map(desc -> "constant interpolations found in 'organization' field:\n" + desc)
+                        .map(ValidationResult::error)
+                        .orElse(null);
+                if (error != null) {
+                    return error;
+                }
             }
-        }
-        {
-            ValidationResult error = findConstantInterpolations(conditions, destination.project())
-                    .map(desc -> "constant interpolations found in 'project' field:\n" + desc)
-                    .map(ValidationResult::error)
-                    .orElse(null);
-            if (error != null) {
-                return error;
+            {
+                ValidationResult error = findConstantInterpolations(conditions, destination.project())
+                        .map(desc -> "constant interpolations found in 'project' field:\n" + desc)
+                        .map(ValidationResult::error)
+                        .orElse(null);
+                if (error != null) {
+                    return error;
+                }
             }
         }
         return ValidationResult.ok();

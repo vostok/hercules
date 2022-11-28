@@ -25,7 +25,8 @@ public class DecisionTreeRouterEngineInterpolationTest {
     private final List<DecisionTreeEngineRoute<TestDestination>> routes = List.of(
             DecisionTreeEngineRoute.<TestDestination>builder()
                     .setConditions(Map.of(
-                            "tag1", "value1"
+                            "tag1", "value1",
+                            "tag2", "*"
                     ))
                     .setDestination(TestDestination.of("{tag:tag2}"))
                     .build()

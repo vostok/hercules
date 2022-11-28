@@ -21,6 +21,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
+/**
+ * Unit tests for {@link SentryRouteValidator}.
+ *
+ * @author Aleksandr Yuferov
+ */
 @RunWith(Parameterized.class)
 public class SentryRouteValidatorTest {
     private SentryRouteValidator validator;
@@ -90,8 +95,8 @@ public class SentryRouteValidatorTest {
                                 ))
                                 .setDestination(null)
                                 .build(),
-                        ValidationResult.error("destination cannot be null or have null fields or have empty " +
-                                "strings in fields")
+                        ValidationResult.error("destination cannot be null (if you want to create 'nowhere' destination use "
+                                + "'{ \"organization\": null, \"project\": \"null\" }' destination)")
                 },
                 {
                         DecisionTreeEngineRoute.<SentryDestination>builder()
@@ -101,8 +106,7 @@ public class SentryRouteValidatorTest {
                                 ))
                                 .setDestination(SentryDestination.toNowhere())
                                 .build(),
-                        ValidationResult.error("destination cannot be null or have null fields or have empty " +
-                                "strings in fields")
+                        ValidationResult.ok()
                 },
                 {
                         DecisionTreeEngineRoute.<SentryDestination>builder()

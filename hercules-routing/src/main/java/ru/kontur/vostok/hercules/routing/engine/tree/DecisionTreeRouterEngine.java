@@ -11,7 +11,9 @@ import ru.kontur.vostok.hercules.routing.engine.EngineConfig;
 import ru.kontur.vostok.hercules.routing.engine.Route;
 import ru.kontur.vostok.hercules.routing.engine.RouterEngine;
 import ru.kontur.vostok.hercules.routing.interpolation.Interpolator;
+import ru.kontur.vostok.hercules.util.text.IgnoreCaseWrapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,15 +40,16 @@ public class DecisionTreeRouterEngine implements RouterEngine<Event> {
 
         Container payload = query.getPayload();
         List<HPath> allowedTags = index.allowedTags();
-        TinyString[] tagValues = new TinyString[allowedTags.size()];
+        var tagValues = new ArrayList<IgnoreCaseWrapper<TinyString>>(allowedTags.size());
         Interpolator.Context interpolationContext = interpolator.createContext();
-        for (int tagIndex = 0; tagIndex < tagValues.length; tagIndex++) {
-            HPath tagPath = allowedTags.get(tagIndex);
+        for (HPath tagPath : allowedTags) {
             Variant rawTagValue = tagPath.extract(payload);
             TinyString tagValue = rawTagValue != null
                     ? TinyString.of((byte[]) rawTagValue.getValue())
                     : null;
-            tagValues[tagIndex] = tagValue;
+            tagValues.add(tagValue != null
+                    ? new IgnoreCaseWrapper<>(tagValue)
+                    : null);
             interpolationContext.add("tag", tagPath.getPath(), tagValue);
         }
 
