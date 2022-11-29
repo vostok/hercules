@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.sentry.client.impl;
 
-import io.sentry.SentryEvent;
 import ru.kontur.vostok.hercules.sentry.client.HerculesSentryEvent;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryEvent;
 
 /**
  * Contains io.sentry.SentryEvent

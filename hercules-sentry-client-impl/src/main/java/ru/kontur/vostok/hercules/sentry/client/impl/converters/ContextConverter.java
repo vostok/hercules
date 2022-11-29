@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.sentry.client.impl.converters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.sentry.JsonUnknown;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -11,11 +10,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.sentry.client.SentryConverterUtil;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.JsonUnknown;
 import ru.kontur.vostok.hercules.util.text.StringUtil;
 
 /**
@@ -23,7 +22,6 @@ import ru.kontur.vostok.hercules.util.text.StringUtil;
  *
  * @author Aleksandr Yuferov
  */
-@SuppressWarnings("UnstableApiUsage")
 public class ContextConverter<T extends JsonUnknown> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ContextConverter.class);
     private static final String UNKNOWN_FIELD = "unknown";

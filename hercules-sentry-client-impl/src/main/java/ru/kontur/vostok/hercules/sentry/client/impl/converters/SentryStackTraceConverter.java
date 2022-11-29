@@ -1,12 +1,12 @@
 package ru.kontur.vostok.hercules.sentry.client.impl.converters;
 
-import io.sentry.protocol.SentryStackFrame;
-import io.sentry.protocol.SentryStackTrace;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryStackFrame;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryStackTrace;
 import ru.kontur.vostok.hercules.tags.StackFrameTags;
 
 /**
@@ -20,7 +20,8 @@ public class SentryStackTraceConverter {
      * @return SentryStackTrace - list of SentryStackFrames
      */
     public static SentryStackTrace convert(Container[] containers) {
-        return new SentryStackTrace(Arrays.stream(containers)
+        return new SentryStackTrace()
+                .setFrames(Arrays.stream(containers)
                 .map(SentryStackFrameConverter::convert)
                 .collect(Collectors.toCollection(() -> new ArrayList<>(containers.length))));
     }

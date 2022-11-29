@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.routing.config.zk.ZookeeperConfigurationWatchTa
 import ru.kontur.vostok.hercules.routing.config.zk.ZookeeperReadRepository;
 import ru.kontur.vostok.hercules.routing.engine.tree.DecisionTreeEngineConfigDeserializer;
 import ru.kontur.vostok.hercules.routing.engine.tree.DecisionTreeRouterEngine;
-import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
+import ru.kontur.vostok.hercules.util.routing.SentryDestination;
 import ru.kontur.vostok.hercules.routing.sentry.SentryRouteDeserializer;
 import ru.kontur.vostok.hercules.routing.sentry.SentryRouting;
 import ru.kontur.vostok.hercules.sink.AbstractSinkDaemon;

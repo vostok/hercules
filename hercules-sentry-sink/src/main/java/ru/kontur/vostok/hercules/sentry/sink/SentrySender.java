@@ -5,9 +5,13 @@ import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.routing.Router;
-import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
+import ru.kontur.vostok.hercules.sentry.client.SentryConnectorHolder;
+import ru.kontur.vostok.hercules.sentry.client.impl.SentryConnectorHolderImpl;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.DsnFetcherClient;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.DsnFetcherClient.DsnFetcherClientBuilder;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolderImplV9;
+import ru.kontur.vostok.hercules.util.routing.SentryDestination;
 import ru.kontur.vostok.hercules.sentry.client.api.SentryApiClient;
-import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolder;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
 import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -16,6 +20,7 @@ import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import ru.kontur.vostok.hercules.util.validation.LongValidators;
 
 /**
  * SentrySender sends events to Sentry
@@ -44,9 +49,31 @@ public class SentrySender extends Sender {
         final String sentryUrl = PropertiesUtil.get(Props.SENTRY_URL, senderProperties).get();
         final String sentryToken = PropertiesUtil.get(Props.SENTRY_TOKEN, senderProperties).get();
         sentryApiClient = new SentryApiClient(sentryUrl, sentryToken);
-        SentryConnectorHolder sentryConnectorHolder = new SentryConnectorHolder(sentryApiClient, senderProperties);
+        boolean useOldVersion = PropertiesUtil.get(Props.USE_OLD_VERSION, senderProperties).get();
         String herculesVersion = Application.context().getVersion();
-        this.processor = new SentrySyncProcessor(senderProperties, sentryConnectorHolder, metricsCollector, router, herculesVersion);
+        SentryConnectorHolder sentryConnectorHolder;
+        if (useOldVersion) {
+            sentryConnectorHolder = new SentryConnectorHolderImplV9(
+                    sentryApiClient,
+                    senderProperties);
+        } else {
+            long cacheTtlMs = PropertiesUtil.get(Props.CACHE_TTL_MS, senderProperties).get();
+            DsnFetcherClient dsnFetcherClient = new DsnFetcherClientBuilder()
+                    .withBaseUri(sentryUrl)
+                    .withAuthToken(sentryToken)
+                    .build();
+            sentryConnectorHolder = new SentryConnectorHolderImpl(
+                    sentryApiClient,
+                    cacheTtlMs,
+                    dsnFetcherClient);
+        }
+        this.processor = new SentrySyncProcessor(
+                senderProperties,
+                sentryConnectorHolder,
+                metricsCollector,
+                router,
+                herculesVersion,
+                sentryUrl);
     }
 
     @Override
@@ -63,7 +90,8 @@ public class SentrySender extends Sender {
 
     @Override
     public ProcessorStatus ping() {
-        return sentryApiClient.ping().isOk() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
+        return sentryApiClient.ping().isOk() ? ProcessorStatus.AVAILABLE
+                : ProcessorStatus.UNAVAILABLE;
     }
 
     private static class Props {
@@ -75,6 +103,17 @@ public class SentrySender extends Sender {
         static final Parameter<String> SENTRY_TOKEN =
                 Parameter.stringParameter("sentry.token").
                         required().
+                        build();
+
+        static final Parameter<Boolean> USE_OLD_VERSION =
+                Parameter.booleanParameter("sentry.use.old.version").
+                        withDefault(true).
+                        build();
+
+        static final Parameter<Long> CACHE_TTL_MS =
+                Parameter.longParameter("sentry.cache.ttl.ms").
+                        withDefault(600_000L).
+                        withValidator(LongValidators.nonNegative()).
                         build();
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.routing.engine.tree.DecisionTreeEngineRoute;
+import ru.kontur.vostok.hercules.util.routing.SentryDestination;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;

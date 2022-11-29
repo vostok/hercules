@@ -85,7 +85,7 @@ public class SentryApiClient {
     public Result<Void, ErrorInfo> ping() {
         return request(
                 new HttpHead(API_URL),
-                new TypeReference<Void>() {});
+                new TypeReference<>() {});
     }
 
     /**
@@ -96,7 +96,8 @@ public class SentryApiClient {
     public Result<List<OrganizationInfo>, ErrorInfo> getOrganizations() {
         return pagedRequest(
                 new HttpGet(ORGANIZATIONS_URL),
-                new TypeReference<List<OrganizationInfo>>() {});
+                new TypeReference<>() {
+                });
     }
 
     /**
@@ -108,7 +109,7 @@ public class SentryApiClient {
     public Result<List<ProjectInfo>, ErrorInfo> getProjects(String organization) {
         return pagedRequest(
                 new HttpGet(String.format(GET_PROJECTS_URL, organization)),
-                new TypeReference<List<ProjectInfo>>() {});
+                new TypeReference<>() {});
     }
 
     /**
@@ -121,7 +122,7 @@ public class SentryApiClient {
     public Result<List<KeyInfo>, ErrorInfo> getPublicDsn(String organization, String project) {
         return pagedRequest(
                 new HttpGet(String.format(GET_PUBLIC_DSN_URL, organization, project)),
-                new TypeReference<List<KeyInfo>>() {} );
+                new TypeReference<>() {} );
     }
 
     /**
@@ -133,7 +134,7 @@ public class SentryApiClient {
     public Result<List<TeamInfo>, ErrorInfo> getTeams(String organization) {
         return pagedRequest(
                 new HttpGet(String.format(GET_TEAMS_URL, organization)),
-                new TypeReference<List<TeamInfo>>() {} );
+                new TypeReference<>() {} );
     }
 
     /**
@@ -154,7 +155,7 @@ public class SentryApiClient {
         }
         HttpPost post = new HttpPost(ORGANIZATIONS_URL);
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        return request(post, new TypeReference<OrganizationInfo>() {});
+        return request(post, new TypeReference<>() {});
     }
 
     /**
@@ -176,7 +177,7 @@ public class SentryApiClient {
         }
         HttpPost post = new HttpPost(String.format(CREATE_TEAM_URL, organization));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        return request(post, new TypeReference<TeamInfo>() {});
+        return request(post, new TypeReference<>() {});
     }
 
     /**
@@ -199,7 +200,7 @@ public class SentryApiClient {
         }
         HttpPost post = new HttpPost(String.format(CREATE_PROJECT_URL, organization, team));
         post.setEntity(new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
-        return request(post, new TypeReference<ProjectInfo>() {});
+        return request(post, new TypeReference<>() {});
     }
 
     private <T> Result<T, ErrorInfo> request(HttpUriRequest request, TypeReference<T> typeReference) {
@@ -209,7 +210,7 @@ public class SentryApiClient {
                 String message = null;
                 if (entity.isPresent()) {
                     ResponseMessage responseMessage = objectMapper
-                            .readValue(entity.get().getContent(), new TypeReference<ResponseMessage>() {});
+                            .readValue(entity.get().getContent(), new TypeReference<>() {});
                     message = responseMessage.getDetail();
                 }
                 return Result.error(new ErrorInfo(CLIENT_API_ERROR, extractStatusCode(response), message));
@@ -241,7 +242,7 @@ public class SentryApiClient {
                         String message = null;
                         if (entity.isPresent()) {
                             ResponseMessage responseMessage = objectMapper
-                                    .readValue(entity.get().getContent(), new TypeReference<ResponseMessage>() {});
+                                    .readValue(entity.get().getContent(), new TypeReference<>() {});
                             message = responseMessage.getDetail();
                         }
                         return Result.error(new ErrorInfo(CLIENT_API_ERROR, extractStatusCode(response), message));

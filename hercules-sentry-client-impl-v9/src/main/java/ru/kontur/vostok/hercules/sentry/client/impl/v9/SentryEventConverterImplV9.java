@@ -19,7 +19,6 @@ import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.sentry.client.SentryConverterUtil;
 import ru.kontur.vostok.hercules.sentry.client.SentryEventConverter;
 import ru.kontur.vostok.hercules.sentry.client.SentryLevel;
-import ru.kontur.vostok.hercules.sentry.client.SentryLevelParser;
 import ru.kontur.vostok.hercules.tags.CommonTags;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
@@ -89,7 +88,7 @@ public class SentryEventConverterImplV9 implements SentryEventConverter {
 
     public SentryEventConverterImplV9(String herculesVersion) {
         this.sdk = new Sdk("hercules-sentry-sink", herculesVersion, null);
-        sentryLevelParser = new SentryLevelParser();
+        sentryLevelParser = new SentryLevelParserImplV9();
     }
 
     @Override

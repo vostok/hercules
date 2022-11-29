@@ -4,8 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
-import ru.kontur.vostok.hercules.routing.Destination;
-import ru.kontur.vostok.hercules.util.text.IgnoreCaseWrapper;
+import ru.kontur.vostok.hercules.util.routing.Destination;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import ru.kontur.vostok.hercules.util.text.IgnoreCaseWrapper;
 
 /**
  * Decision tree indexer.

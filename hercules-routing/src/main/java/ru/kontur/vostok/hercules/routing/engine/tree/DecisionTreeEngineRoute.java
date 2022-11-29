@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.routing.engine.tree;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import ru.kontur.vostok.hercules.routing.Destination;
+import ru.kontur.vostok.hercules.util.routing.Destination;
 import ru.kontur.vostok.hercules.routing.engine.Route;
 
 import java.util.Map;

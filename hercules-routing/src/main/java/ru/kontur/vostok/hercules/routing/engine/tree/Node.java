@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.routing.engine.tree;
 
 import ru.kontur.vostok.hercules.protocol.TinyString;
-import ru.kontur.vostok.hercules.routing.Destination;
+import ru.kontur.vostok.hercules.util.routing.Destination;
 import ru.kontur.vostok.hercules.util.text.IgnoreCaseWrapper;
 
 import java.util.List;

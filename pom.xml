@@ -89,6 +89,7 @@
         <module>hercules-sentry-client</module>
         <module>hercules-sentry-client-impl-v9</module>
         <module>hercules-splitter</module>
+        <module>hercules-sentry-client-impl</module>
     </modules>
 
     <dependencyManagement>
@@ -491,10 +492,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka-streams-test-utils</artifactId>
-                <version>${kafka.version}</version>
-                <scope>test</scope>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

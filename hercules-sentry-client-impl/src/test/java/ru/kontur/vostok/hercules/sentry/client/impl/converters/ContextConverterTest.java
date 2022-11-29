@@ -1,25 +1,21 @@
 package ru.kontur.vostok.hercules.sentry.client.impl.converters;
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
-
-import io.sentry.protocol.App;
-import io.sentry.protocol.Browser;
-import io.sentry.protocol.Device;
-import io.sentry.protocol.Device.DeviceOrientation;
-import io.sentry.protocol.Gpu;
-import io.sentry.protocol.Gpu.JsonKeys;
-import io.sentry.protocol.OperatingSystem;
-import io.sentry.protocol.SentryRuntime;
-import io.sentry.protocol.User;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.Vector;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.App;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.Browser;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.Device;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.Gpu;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.OperatingSystem;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryRuntime;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.User;
 
 @SuppressWarnings("ConstantConditions")
 public class ContextConverterTest {
@@ -97,7 +93,7 @@ public class ContextConverterTest {
                 Map.entry(Device.JsonKeys.BATTERY_LEVEL, Variant.ofFloat(85.f)),
                 Map.entry(Device.JsonKeys.CHARGING, Variant.ofString("true")),
                 Map.entry(Device.JsonKeys.ONLINE, Variant.ofString("false")),
-                Map.entry(Device.JsonKeys.ORIENTATION, Variant.ofString(DeviceOrientation.LANDSCAPE.name())),
+                Map.entry(Device.JsonKeys.ORIENTATION, Variant.ofString(Device.DeviceOrientation.LANDSCAPE.name())),
                 Map.entry(Device.JsonKeys.SIMULATOR, Variant.ofString("true")),
                 Map.entry(Device.JsonKeys.MEMORY_SIZE, Variant.ofLong(2048)),
                 Map.entry(Device.JsonKeys.FREE_MEMORY, Variant.ofInteger(1024)),
@@ -129,11 +125,13 @@ public class ContextConverterTest {
         Assert.assertEquals("family", context.getFamily());
         Assert.assertEquals("model", context.getModel());
         Assert.assertEquals("modelId", context.getModelId());
-        Assert.assertArrayEquals(new String[]{"x86", "arm"}, context.getArchs());
+        Assert.assertEquals(2, context.getArchs().size());
+        Assert.assertEquals("x86", context.getArchs().get(0));
+        Assert.assertEquals("arm", context.getArchs().get(1));
         Assert.assertEquals(85.f, context.getBatteryLevel(), 0.001f);
         Assert.assertEquals(Boolean.TRUE, context.isCharging());
         Assert.assertEquals(Boolean.FALSE, context.isOnline());
-        Assert.assertEquals(DeviceOrientation.LANDSCAPE, context.getOrientation());
+        Assert.assertEquals(Device.DeviceOrientation.LANDSCAPE, context.getOrientation());
         Assert.assertEquals(Boolean.TRUE, context.isSimulator());
         Assert.assertEquals(Long.valueOf(2048L), context.getMemorySize());
         Assert.assertEquals(Long.valueOf(1024L), context.getFreeMemory());
@@ -159,15 +157,15 @@ public class ContextConverterTest {
     @Test
     public void testGpu() {
         Map<String, Variant> data = Map.of(
-                JsonKeys.NAME, Variant.ofString("name"),
-                JsonKeys.ID, Variant.ofInteger(1),
-                JsonKeys.VENDOR_ID, Variant.ofInteger(2),
-                JsonKeys.VENDOR_NAME, Variant.ofString("Vendor Inc."),
-                JsonKeys.MEMORY_SIZE, Variant.ofInteger(1024),
-                JsonKeys.API_TYPE, Variant.ofString("OpenGL"),
-                JsonKeys.MULTI_THREADED_RENDERING, Variant.ofFlag(true),
-                JsonKeys.VERSION, Variant.ofString("3.0.1234-gamma"),
-                JsonKeys.NPOT_SUPPORT, Variant.ofString("yes")
+                Gpu.JsonKeys.NAME, Variant.ofString("name"),
+                Gpu.JsonKeys.ID, Variant.ofInteger(1),
+                Gpu.JsonKeys.VENDOR_ID, Variant.ofInteger(2),
+                Gpu.JsonKeys.VENDOR_NAME, Variant.ofString("Vendor Inc."),
+                Gpu.JsonKeys.MEMORY_SIZE, Variant.ofInteger(1024),
+                Gpu.JsonKeys.API_TYPE, Variant.ofString("OpenGL"),
+                Gpu.JsonKeys.MULTI_THREADED_RENDERING, Variant.ofFlag(true),
+                Gpu.JsonKeys.VERSION, Variant.ofString("3.0.1234-gamma"),
+                Gpu.JsonKeys.NPOT_SUPPORT, Variant.ofString("yes")
         );
         ContextConverter<Gpu> converter = new ContextConverter<>(Gpu.class);
 
@@ -226,7 +224,7 @@ public class ContextConverterTest {
         App context = converter.convert(data);
 
         Assert.assertEquals("my-supper-app-01", context.getAppIdentifier());
-        Assert.assertEquals(Date.from(ZonedDateTime.parse("2000-01-23T01:23:45.678+05:00").toInstant()), context.getAppStartTime());
+        Assert.assertEquals("2000-01-23T01:23:45.678+05:00", context.getAppStartTime());
         Assert.assertEquals("n7fh10ao0r", context.getDeviceAppHash());
         Assert.assertEquals("SNAPSHOT", context.getBuildType());
         Assert.assertEquals("My Super App", context.getAppName());
