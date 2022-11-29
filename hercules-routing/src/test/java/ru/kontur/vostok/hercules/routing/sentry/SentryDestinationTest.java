@@ -73,4 +73,35 @@ public class SentryDestinationTest {
         Assert.assertEquals("Illegal_Characters09", destination.organization());
         Assert.assertEquals("o-t_her__chars", destination.project());
     }
+
+    @Test
+    public void shouldCreateDefaultDestination() {
+        Assert.assertSame(SentryDestination.byDefault(), SentryDestination.of("__default__", "__default__"));
+    }
+
+    @Test
+    public void shouldCreateDefaultDestinationFromJson() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] serialized = "{\"organization\":\"__default__\",\"project\":\"__default__\"}".getBytes(StandardCharsets.UTF_8);
+
+        SentryDestination actual = objectMapper.readValue(serialized, SentryDestination.class);
+
+        Assert.assertSame(SentryDestination.byDefault(), actual);
+    }
+
+
+    @Test
+    public void shouldCreateNowhereDestination() {
+        Assert.assertSame(SentryDestination.toNowhere(), SentryDestination.of(null, null));
+    }
+
+    @Test
+    public void shouldCreateNowhereDestinationFromJson() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        byte[] serialized = "{\"organization\": null,\"project\": null}".getBytes(StandardCharsets.UTF_8);
+
+        SentryDestination actual = objectMapper.readValue(serialized, SentryDestination.class);
+
+        Assert.assertSame(SentryDestination.toNowhere(), actual);
+    }
 }

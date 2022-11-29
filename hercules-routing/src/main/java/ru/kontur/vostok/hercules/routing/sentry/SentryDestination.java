@@ -20,12 +20,13 @@ import java.util.Objects;
 public class SentryDestination implements Destination<SentryDestination> {
     private static final SentryDestination NOWHERE = new SentryDestination(null, null);
     private static final SentryDestination DEFAULT;
+    private static final String DEFAULT_DESTINATION = "__default__";
 
     static {
         var projectExpr = InterpolationExpression.of("tag", "properties/project");
         var subprojectExpr = InterpolationExpression.of("tag", "properties/subproject");
 
-        DEFAULT = new SentryDestination("{tag:properties/project}", "{tag:properties/subproject}") {
+        DEFAULT = new SentryDestination(DEFAULT_DESTINATION, DEFAULT_DESTINATION) {
             @Override
             public SentryDestination interpolate(Interpolator interpolator, Interpolator.Context context) {
                 CharSequence project = context.stringValueOf(projectExpr);
@@ -82,6 +83,9 @@ public class SentryDestination implements Destination<SentryDestination> {
     ) {
         if (StringUtil.isNullOrEmpty(organization) || StringUtil.isNullOrEmpty(project)) {
             return toNowhere();
+        }
+        if (StringUtil.equalsIgnoreCase(DEFAULT_DESTINATION, organization) && StringUtil.equalsIgnoreCase(DEFAULT_DESTINATION, project)) {
+            return byDefault();
         }
         return new SentryDestination(organization.toString(), project.toString());
     }
