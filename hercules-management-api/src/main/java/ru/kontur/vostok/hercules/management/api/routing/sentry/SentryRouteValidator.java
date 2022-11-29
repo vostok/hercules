@@ -46,9 +46,21 @@ public class SentryRouteValidator implements Validator<Route> {
                 return error;
             }
         }
+        var engineConfig = Optional
+                .ofNullable((DecisionTreeEngineConfig) repository.fetchEngineConfig(null))
+                .orElse(defaultConfig);
         {
-            ValidationResult error = findProhibitedTags(conditions)
+            ValidationResult error = findProhibitedTags(engineConfig, conditions)
                     .map(paths -> "tag paths found in conditions that are not allowed: " + paths)
+                    .map(ValidationResult::error)
+                    .orElse(null);
+            if (error != null) {
+                return error;
+            }
+        }
+        {
+            ValidationResult error = checkAllTagsListed(engineConfig, conditions)
+                    .map(paths -> "all tag paths should be listed, but paths " + paths + " not found")
                     .map(ValidationResult::error)
                     .orElse(null);
             if (error != null) {
@@ -64,8 +76,11 @@ public class SentryRouteValidator implements Validator<Route> {
         }
         if (!destination.isNowhere()) {
             {
-                ValidationResult error = findConstantInterpolations(conditions, destination.organization())
+                List<InterpolationExpression> expressions = interpolator.extractInterpolations(destination.organization());
+                ValidationResult error = findConstantInterpolations(conditions, expressions)
                         .map(desc -> "constant interpolations found in 'organization' field:\n" + desc)
+                        .or(() -> findNullInterpolations(conditions, expressions)
+                                .map(desc -> "null interpolations found in 'organization' field:\n" + desc))
                         .map(ValidationResult::error)
                         .orElse(null);
                 if (error != null) {
@@ -73,8 +88,11 @@ public class SentryRouteValidator implements Validator<Route> {
                 }
             }
             {
-                ValidationResult error = findConstantInterpolations(conditions, destination.project())
+                List<InterpolationExpression> expressions = interpolator.extractInterpolations(destination.project());
+                ValidationResult error = findConstantInterpolations(conditions, expressions)
                         .map(desc -> "constant interpolations found in 'project' field:\n" + desc)
+                        .or(() -> findNullInterpolations(conditions, expressions)
+                                .map(desc -> "null interpolations found in 'project' field:\n" + desc))
                         .map(ValidationResult::error)
                         .orElse(null);
                 if (error != null) {
@@ -85,11 +103,16 @@ public class SentryRouteValidator implements Validator<Route> {
         return ValidationResult.ok();
     }
 
-    private Optional<String> findProhibitedTags(Map<String, String> conditions) {
-        var engineConfig = Optional
-                .ofNullable((DecisionTreeEngineConfig) repository.fetchEngineConfig(null))
-                .orElse(defaultConfig);
-        List<String> allowedTagsPaths = engineConfig.allowedTags().stream()
+    private Optional<String> checkAllTagsListed(DecisionTreeEngineConfig engineConfig, Map<String, String> conditions) {
+        String result = engineConfig.allowedTags().stream()
+                .map(HPath::getPath)
+                .filter(path -> !conditions.containsKey(path))
+                .collect(Collectors.joining(", "));
+        return result.isEmpty() ? Optional.empty() : Optional.of(result);
+    }
+
+    private Optional<String> findProhibitedTags(DecisionTreeEngineConfig config, Map<String, String> conditions) {
+        List<String> allowedTagsPaths = config.allowedTags().stream()
                 .map(HPath::getPath)
                 .collect(Collectors.toList());
         String prohibitedTagsDesc = conditions.keySet().stream()
@@ -98,15 +121,30 @@ public class SentryRouteValidator implements Validator<Route> {
         return prohibitedTagsDesc.isEmpty() ? Optional.empty() : Optional.of(prohibitedTagsDesc);
     }
 
-    private Optional<String> findConstantInterpolations(Map<String, String> conditions, String templatedField) {
-        String replacementDesc = interpolator.extractInterpolations(templatedField).stream()
+    private Optional<String> findConstantInterpolations(Map<String, String> conditions, List<InterpolationExpression> expressions) {
+        String replacementDesc = expressions.stream()
                 .filter(interpolation -> interpolation.namespace().equals("tag"))
                 .map(InterpolationExpression::variable)
-                .filter(conditions::containsKey)
+                .filter(variable -> {
+                    String condition = conditions.get(variable);
+                    return condition != null && !"*".equals(condition);
+                })
                 .distinct()
                 .map(path -> String.format("* '{tag:%s}' can be replaced with '%s'", path, conditions.get(path)))
                 .collect(Collectors.joining("\n", "", ""));
         return replacementDesc.isEmpty() ? Optional.empty() : Optional.of(replacementDesc);
+    }
+
+    private Optional<String> findNullInterpolations(Map<String, String> conditions, List<InterpolationExpression> expressions) {
+        String description = expressions.stream()
+                .filter(interpolation -> interpolation.namespace().equals("tag"))
+                .map(InterpolationExpression::variable)
+                .filter(path -> conditions.get(path) == null)
+                .distinct()
+                .map(path -> String.format("* '{tag:%s}' will always be null, i.e. messages for this rule will be always filtered. "
+                        + "Use nowhere destination ('{ \"organization\": null, \"project\": \"null\" }') if you want filter data using this conditions", path))
+                .collect(Collectors.joining("\n", "", ""));
+        return description.isEmpty() ? Optional.empty() : Optional.of(description);
     }
 
     @SuppressWarnings("unchecked")

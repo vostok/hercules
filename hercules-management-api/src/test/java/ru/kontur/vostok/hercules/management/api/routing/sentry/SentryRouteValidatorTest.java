@@ -13,6 +13,7 @@ import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
 import ru.kontur.vostok.hercules.routing.sentry.SentryRouting;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -50,7 +51,9 @@ public class SentryRouteValidatorTest {
                 .setId(UUID.fromString("e610b9c3-4ccd-415a-b158-de98b27db57a"))
                 .setConditions(Map.of(
                         "properties/project", "my-project",
-                        "properties/subproject", "my-project-subproject"
+                        "properties/subproject", "my-project-subproject",
+                        "properties/application", "*",
+                        "properties/environment", "*"
                 ))
                 .setDestination(SentryDestination.of("my-organization", "my-project"))
                 .build()
@@ -80,7 +83,9 @@ public class SentryRouteValidatorTest {
                         DecisionTreeEngineRoute.<SentryDestination>builder()
                                 .setConditions(Map.of(
                                         "properties/project", "my-project",
-                                        "properties/subproject", "my-project-subproject"
+                                        "properties/subproject", "my-project-subproject",
+                                        "properties/application", "*",
+                                        "properties/environment", "*"
                                 ))
                                 .setDestination(SentryDestination.of("my-organization", "my-project"))
                                 .build(),
@@ -91,7 +96,9 @@ public class SentryRouteValidatorTest {
                         DecisionTreeEngineRoute.<SentryDestination>builder()
                                 .setConditions(Map.of(
                                         "properties/project", "other-project",
-                                        "properties/subproject", "my-project-subproject"
+                                        "properties/subproject", "my-project-subproject",
+                                        "properties/application", "*",
+                                        "properties/environment", "*"
                                 ))
                                 .setDestination(null)
                                 .build(),
@@ -102,7 +109,9 @@ public class SentryRouteValidatorTest {
                         DecisionTreeEngineRoute.<SentryDestination>builder()
                                 .setConditions(Map.of(
                                         "properties/project", "other-project",
-                                        "properties/subproject", "my-project-subproject"
+                                        "properties/subproject", "my-project-subproject",
+                                        "properties/application", "*",
+                                        "properties/environment", "*"
                                 ))
                                 .setDestination(SentryDestination.toNowhere())
                                 .build(),
@@ -112,7 +121,9 @@ public class SentryRouteValidatorTest {
                         DecisionTreeEngineRoute.<SentryDestination>builder()
                                 .setConditions(Map.of(
                                         "properties/project", "other-project",
-                                        "properties/subproject", "my-project-subproject"
+                                        "properties/subproject", "my-project-subproject",
+                                        "properties/application", "*",
+                                        "properties/environment", "*"
                                 ))
                                 .setDestination(SentryDestination.of("{tag:properties/project}", "my-project"))
                                 .build(),
@@ -123,7 +134,9 @@ public class SentryRouteValidatorTest {
                         DecisionTreeEngineRoute.<SentryDestination>builder()
                                 .setConditions(Map.of(
                                         "properties/project", "other-project",
-                                        "properties/subproject", "my-project-subproject"
+                                        "properties/subproject", "my-project-subproject",
+                                        "properties/application", "*",
+                                        "properties/environment", "*"
                                 ))
                                 .setDestination(SentryDestination.of("other-project", "{tag:properties/project}"))
                                 .build(),
@@ -143,11 +156,67 @@ public class SentryRouteValidatorTest {
                         DecisionTreeEngineRoute.<SentryDestination>builder()
                                 .setConditions(Map.of(
                                         "properties/project", "other-project",
-                                        "properties/subproject", "my-project-other-subproject"
+                                        "properties/subproject", "my-project-other-subproject",
+                                        "properties/application", "*",
+                                        "properties/environment", "*"
                                 ))
                                 .setDestination(SentryDestination.of("my-org", "my-proj"))
                                 .build(),
                         ValidationResult.ok()
+                },
+                {
+                        DecisionTreeEngineRoute.<SentryDestination>builder()
+                                .setConditions(Map.of(
+                                        "properties/project", "*",
+                                        "properties/subproject", "my-project-subproject",
+                                        "properties/application", "*",
+                                        "properties/environment", "*"
+                                ))
+                                .setDestination(SentryDestination.of("{tag:properties/project}", "my-project"))
+                                .build(),
+                        ValidationResult.ok()
+                },
+                {
+                        DecisionTreeEngineRoute.<SentryDestination>builder()
+                                .setConditions(new HashMap<>() {{
+                                    put("properties/project", "foo-bar");
+                                    put("properties/subproject", null);
+                                    put("properties/application", "*");
+                                    put("properties/environment", "*");
+                                }})
+                                .setDestination(SentryDestination.of("foo-bar", "{tag:properties/subproject}"))
+                                .build(),
+                        ValidationResult.error("null interpolations found in 'project' field:\n"
+                                + "* '{tag:properties/subproject}' will always be null, i.e. messages for this rule will be always filtered. "
+                                + "Use nowhere destination ('{ \"organization\": null, \"project\": \"null\" }') if you want filter data using this conditions"
+                        )
+                },
+                {
+                        DecisionTreeEngineRoute.<SentryDestination>builder()
+                                .setConditions(new HashMap<>() {{
+                                    put("properties/project", "foo-bar");
+                                    put("properties/subproject", null);
+                                    put("properties/application", "*");
+                                    put("properties/environment", "*");
+                                }})
+                                .setDestination(SentryDestination.of("{tag:properties/subproject}", "foo-bar"))
+                                .build(),
+                        ValidationResult.error("null interpolations found in 'organization' field:\n"
+                                + "* '{tag:properties/subproject}' will always be null, i.e. messages for this rule will be always filtered. "
+                                + "Use nowhere destination ('{ \"organization\": null, \"project\": \"null\" }') if you want filter data using this conditions"
+                        )
+                },
+                {
+                        DecisionTreeEngineRoute.<SentryDestination>builder()
+                                .setConditions(Map.of(
+                                        "properties/project", "foo"
+                                ))
+                                .setDestination(SentryDestination.of("any", "any"))
+                                .build(),
+                        ValidationResult.error(
+                                "all tag paths should be listed, but paths properties/subproject, properties/application, "
+                                        + "properties/environment not found"
+                        )
                 }
         };
     }
