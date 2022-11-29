@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.routing;
 import ru.kontur.vostok.hercules.routing.config.ConfigurationWatchTask;
 import ru.kontur.vostok.hercules.routing.engine.RouterEngine;
 import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
+import ru.kontur.vostok.hercules.util.routing.Destination;
 
 import java.util.concurrent.TimeUnit;
 

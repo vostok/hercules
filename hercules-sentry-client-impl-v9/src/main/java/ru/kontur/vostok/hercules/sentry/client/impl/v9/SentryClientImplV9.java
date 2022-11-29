@@ -12,12 +12,12 @@ import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorImplV9;
+import ru.kontur.vostok.hercules.util.routing.SentryDestination;
 import ru.kontur.vostok.hercules.sentry.client.ErrorInfo;
 import ru.kontur.vostok.hercules.sentry.client.SentryClient;
 import ru.kontur.vostok.hercules.sentry.client.SentryEventConverter;
-import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnector;
-import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolder;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolderImplV9;
 import ru.kontur.vostok.hercules.util.functional.Result;
 
 /**
@@ -26,7 +26,7 @@ import ru.kontur.vostok.hercules.util.functional.Result;
 public class SentryClientImplV9 implements SentryClient {
     private final int retryLimit;
     private final MetricsCollector metricsCollector;
-    private final SentryConnectorHolder sentryConnectorHolder;
+    private final SentryConnectorHolderImplV9 sentryConnectorHolderImplV9;
     private final SentryEventConverter eventConverter;
 
     private static final ConcurrentHashMap<String, Meter> throttledBySentryEventsMeterMap = new ConcurrentHashMap<>();
@@ -35,12 +35,12 @@ public class SentryClientImplV9 implements SentryClient {
 
     public SentryClientImplV9(int retryLimit,
             MetricsCollector metricsCollector,
-            SentryConnectorHolder sentryConnectorHolder,
+            SentryConnectorHolderImplV9 sentryConnectorHolderImplV9,
             String herculesVersion
             ) {
         this.retryLimit = retryLimit;
         this.metricsCollector = metricsCollector;
-        this.sentryConnectorHolder = sentryConnectorHolder;
+        this.sentryConnectorHolderImplV9 = sentryConnectorHolderImplV9;
         this.eventConverter = new SentryEventConverterImplV9(herculesVersion);
     }
 
@@ -79,7 +79,7 @@ public class SentryClientImplV9 implements SentryClient {
                 return false;
             }
             if (processErrorInfo.needToRemoveClientFromCache()) {
-                sentryConnectorHolder.removeClientFromCache(destination);
+                sentryConnectorHolderImplV9.removeClientFromCache(destination);
             }
         } while (0 < retryCount--);
         throw new BackendServiceFailedException();
@@ -100,8 +100,8 @@ public class SentryClientImplV9 implements SentryClient {
 
         ErrorInfo processErrorInfo;
 
-        Result<SentryConnector, ErrorInfo> sentryConnectorResult =
-                sentryConnectorHolder.getOrCreateConnector(destination.organization(),
+        Result<SentryConnectorImplV9, ErrorInfo> sentryConnectorResult =
+                sentryConnectorHolderImplV9.getOrCreateConnector(destination.organization(),
                         destination.project());
         if (!sentryConnectorResult.isOk()) {
             processErrorInfo = sentryConnectorResult.getError();

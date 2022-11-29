@@ -1,6 +1,6 @@
 package ru.kontur.vostok.hercules.routing.engine;
 
-import ru.kontur.vostok.hercules.routing.Destination;
+import ru.kontur.vostok.hercules.util.routing.Destination;
 import ru.kontur.vostok.hercules.routing.config.ConfigurationObserver;
 
 /**

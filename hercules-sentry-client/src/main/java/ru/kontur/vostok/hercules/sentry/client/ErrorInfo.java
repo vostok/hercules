@@ -16,7 +16,7 @@ import java.util.Set;
 public class ErrorInfo {
 
     @NotNull
-    private String type;
+    private final String type;
     private int code;
     private String message;
     private Boolean isRetryable;
@@ -44,6 +44,12 @@ public class ErrorInfo {
     public ErrorInfo(@NotNull String type, String message) {
         this.type = type;
         this.message = message;
+    }
+
+    public ErrorInfo(@NotNull String type, int code, boolean isRetryable) {
+        this.type = type;
+        this.code = code;
+        this.isRetryable = isRetryable;
     }
 
     @NotNull

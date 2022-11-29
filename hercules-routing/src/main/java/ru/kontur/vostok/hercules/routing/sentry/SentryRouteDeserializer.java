@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.kontur.vostok.hercules.routing.engine.RouteDeserializer;
 import ru.kontur.vostok.hercules.routing.engine.tree.DecisionTreeEngineRoute;
+import ru.kontur.vostok.hercules.util.routing.SentryDestination;
 
 import java.io.IOException;
 import java.util.UUID;

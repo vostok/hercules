@@ -8,10 +8,13 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.routing.Router;
-import ru.kontur.vostok.hercules.routing.sentry.SentryDestination;
-import ru.kontur.vostok.hercules.sentry.client.SentryLevelParser;
+import ru.kontur.vostok.hercules.sentry.client.SentryConnectorHolder;
+import ru.kontur.vostok.hercules.sentry.client.impl.SentryClientImpl;
+import ru.kontur.vostok.hercules.sentry.client.impl.SentryConnectorHolderImpl;
 import ru.kontur.vostok.hercules.sentry.client.impl.v9.SentryClientImplV9;
-import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolder;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolderImplV9;
+import ru.kontur.vostok.hercules.util.routing.SentryDestination;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.SentryLevelParserImplV9;
 import ru.kontur.vostok.hercules.sentry.client.SentryLevel;
 import ru.kontur.vostok.hercules.sentry.client.SentryClient;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
@@ -21,7 +24,6 @@ import ru.kontur.vostok.hercules.util.parameter.parsing.ParsingResult;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -42,13 +44,14 @@ public class SentrySyncProcessor {
     private final ConcurrentHashMap<String, Meter> processedEventsMeterMap = new ConcurrentHashMap<>();
     private final SentryThrottlingService throttlingService;
     private final SentryClient sentryClient;
-    private final SentryLevelParser sentryLevelParser;
+    private final SentryLevelParserImplV9 sentryLevelParser;
 
     public SentrySyncProcessor(
             Properties sinkProperties,
             SentryConnectorHolder sentryConnectorHolder,
             MetricsCollector metricsCollector,
             Router<Event, SentryDestination> router,
+            String sentryUrl,
             String herculesVersion
     ) {
         int retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, sinkProperties).get();
@@ -66,11 +69,20 @@ public class SentrySyncProcessor {
 
         Properties rateLimiterProperties = PropertiesUtil.ofScope(sinkProperties, "throttling.rate");
         this.throttlingService = new SentryThrottlingService(rateLimiterProperties, metricsCollector);
-        this.sentryClient = new SentryClientImplV9(retryLimit,
-                metricsCollector,
-                sentryConnectorHolder,
-                herculesVersion);
-        this.sentryLevelParser = new SentryLevelParser();
+        if (sentryConnectorHolder instanceof SentryConnectorHolderImpl) {
+            this.sentryClient = new SentryClientImpl(retryLimit,
+                    metricsCollector,
+                    (SentryConnectorHolderImpl) sentryConnectorHolder,
+                    herculesVersion,
+                    sentryUrl);
+        }
+        else {
+            this.sentryClient = new SentryClientImplV9(retryLimit,
+                    metricsCollector,
+                    (SentryConnectorHolderImplV9) sentryConnectorHolder,
+                    herculesVersion);
+        }
+        this.sentryLevelParser = new SentryLevelParserImplV9();
     }
 
     /**

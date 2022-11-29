@@ -1,24 +1,9 @@
 package ru.kontur.vostok.hercules.sentry.client.impl;
 
-import io.sentry.SentryEvent;
-import io.sentry.protocol.App;
-import io.sentry.protocol.Browser;
-import io.sentry.protocol.Contexts;
-import io.sentry.protocol.Device;
-import io.sentry.protocol.Gpu;
-import io.sentry.protocol.Message;
-import io.sentry.protocol.OperatingSystem;
-import io.sentry.protocol.SdkVersion;
-import io.sentry.protocol.SentryException;
-import io.sentry.protocol.SentryId;
-import io.sentry.SentryLevel;
-import io.sentry.protocol.SentryRuntime;
-import io.sentry.protocol.SentryStackFrame;
-import io.sentry.protocol.User;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -36,7 +21,20 @@ import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.sentry.client.SentryConverterUtil;
 import ru.kontur.vostok.hercules.sentry.client.SentryEventConverter;
-import ru.kontur.vostok.hercules.sentry.client.SentryLevelParser;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.App;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.Browser;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.ContextContainer;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.Device;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.Gpu;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.Message;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.OperatingSystem;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SdkVersion;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryEvent;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryException;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryLevel;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryRuntime;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryStackFrame;
+import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.User;
 import ru.kontur.vostok.hercules.sentry.client.impl.converters.ContextConverter;
 import ru.kontur.vostok.hercules.sentry.client.impl.converters.SentryExceptionConverter;
 import ru.kontur.vostok.hercules.tags.CommonTags;
@@ -96,7 +94,9 @@ public class SentryEventConverterImpl implements SentryEventConverter {
     private final ContextConverter<SentryRuntime> runtimeConverter;
 
     public SentryEventConverterImpl(String herculesVersion) {
-        this.sdkVersion = new SdkVersion("hercules-sentry-sink", herculesVersion);
+        this.sdkVersion = new SdkVersion()
+                .setName("hercules-sentry-sink")
+                .setVersion(herculesVersion);
         this.userConverter = new ContextConverter<>(User.class);
         this.deviceConverter = new ContextConverter<>(Device.class);
         this.gpuConverter = new ContextConverter<>(Gpu.class);
@@ -106,7 +106,7 @@ public class SentryEventConverterImpl implements SentryEventConverter {
         this.runtimeConverter = new ContextConverter<>(SentryRuntime.class);
 
         sentryLevelParser = new Parser<>() {
-            private final SentryLevelParser innerParser = new SentryLevelParser();
+            private final SentryLevelParserImpl innerParser = new SentryLevelParserImpl();
 
             @Override
             public @NotNull
@@ -122,14 +122,19 @@ public class SentryEventConverterImpl implements SentryEventConverter {
 
     @Override
     public SentryEventImpl convert(Event logEvent) {
-        Date timestamp = Date.from(TimeUtil.unixTicksToInstant(logEvent.getTimestamp()));
-        SentryEvent event = new SentryEvent(timestamp);
+
+        SentryEvent event = new SentryEvent();
+        event.setTimestamp(TimeUtil.unixTicksToInstant(logEvent.getTimestamp()));
 
         event.setSdk(sdkVersion);
-        event.setEventId(new SentryId(logEvent.getUuid()));
+        event.setEventId(logEvent.getUuid());
 
         Container payload = logEvent.getPayload();
         setDataFromPayload(event, payload);
+
+        event.setFingerprint(new ArrayList<>());
+        event.setTags(new HashMap<>());
+        event.setExtra(new HashMap<>());
 
         Map<String, Map<String, Variant>> contexts = ContainerUtil
                 .extract(payload, CommonTags.PROPERTIES_TAG)
@@ -137,9 +142,9 @@ public class SentryEventConverterImpl implements SentryEventConverter {
                 .orElse(Map.of());
 
         ContainerUtil.extract(payload, LogEventTags.MESSAGE_TEMPLATE_TAG).ifPresent(value -> {
-            if (event.getFingerprints() != null && event.getFingerprints().isEmpty()
+            if (event.getFingerprint() != null && event.getFingerprint().isEmpty()
                     && event.getExceptions() == null) {
-                event.getFingerprints().add(value);
+                event.getFingerprint().add(value);
             }
         });
 
@@ -153,26 +158,28 @@ public class SentryEventConverterImpl implements SentryEventConverter {
                 .map(levelString -> sentryLevelParser.parse(levelString).orElse(null))
                 .ifPresent(event::setLevel);
 
-        ContainerUtil.extract(payload, LogEventTags.MESSAGE_TAG).ifPresent(value -> {
-            Message message = new Message();
-            message.setMessage(value);
-            event.setMessage(message);
-        });
+        ContainerUtil.extract(payload, LogEventTags.MESSAGE_TAG).ifPresent(value -> event.setMessage(new Message().setMessage(value)));
 
         ContainerUtil.extract(payload, LogEventTags.EXCEPTION_TAG).ifPresent(value -> {
             List<SentryException> exceptions = SentryExceptionConverter.convertException(value);
             event.setExceptions(exceptions);
-            event.setPlatform(extractPlatform(exceptions));
+            String platform = extractPlatform(exceptions);
+            if (platform != null) {
+                event.setPlatform(platform);
+            }
         });
 
         ContainerUtil.extract(payload, LogEventTags.STACK_TRACE_TAG)
-                .ifPresent(value -> event.setTag("stackTrace", value));
+                .ifPresent(value -> {
+                    Map<String, String> tags = new HashMap<>();
+                    tags.put("stackTrace", value);
+                    event.setTags(tags);
+                });
     }
 
     private Map<String, Map<String, Variant>> setDataFromProperties(SentryEvent event,
             Container properties) {
         Map<String, Map<String, Variant>> contexts = new HashMap<>();
-        event.setFingerprints(new ArrayList<>());
         for (Map.Entry<TinyString, Variant> entry : properties.tags().entrySet()) {
             String tagKey = entry.getKey().toString();
             Variant tagValue = entry.getValue();
@@ -186,7 +193,7 @@ public class SentryEventConverterImpl implements SentryEventConverter {
             String extraField = SentryConverterUtil.cutOffPrefixIfExists("extra", tagKey)
                     .orElse(null);
             if (extraField != null) {
-                event.setExtra(extraField, SentryConverterUtil.extractObject(tagValue));
+                event.getExtra().put(extraField, SentryConverterUtil.extractObject(tagValue));
                 continue;
             }
             if (trySetContextValue(contexts, tagKey, tagValue)) {
@@ -194,9 +201,9 @@ public class SentryEventConverterImpl implements SentryEventConverter {
             }
 
             if (tagValue.getType().isPrimitive()) {
-                event.setTag(tagKey, SentryConverterUtil.sanitizeTagValue(tagValue));
+                event.getTags().put(tagKey, SentryConverterUtil.sanitizeTagValue(tagValue));
             } else {
-                event.setExtra(tagKey, SentryConverterUtil.extractObject(tagValue));
+                event.getExtra().put(tagKey, SentryConverterUtil.extractObject(tagValue));
             }
         }
         return contexts;
@@ -208,7 +215,7 @@ public class SentryEventConverterImpl implements SentryEventConverter {
             return;
         }
         for (Entry<String, Map<String, Variant>> entry : rawContexts.entrySet()) {
-            Contexts eventContexts = event.getContexts();
+            ContextContainer eventContexts = event.getContexts();
             switch (entry.getKey()) {
                 case "user":
                     event.setUser(userConverter.convert(entry.getValue()));
@@ -217,7 +224,7 @@ public class SentryEventConverterImpl implements SentryEventConverter {
                     eventContexts.setDevice(deviceConverter.convert(entry.getValue()));
                     continue;
                 case "os":
-                    eventContexts.setOperatingSystem(osConverter.convert(entry.getValue()));
+                    eventContexts.setOs(osConverter.convert(entry.getValue()));
                     continue;
                 case "runtime":
                     eventContexts.setRuntime(runtimeConverter.convert(entry.getValue()));
@@ -236,18 +243,18 @@ public class SentryEventConverterImpl implements SentryEventConverter {
     }
 
     private static String extractPlatform(final List<SentryException> exceptions) {
-        return exceptions
-                .stream()
-                .flatMap(e -> {
-                    assert e.getStacktrace() != null;
-                    assert e.getStacktrace().getFrames() != null;
-                    return e.getStacktrace().getFrames().stream();
-                })
-                .map(SentryStackFrame::getFilename)
-                .map(SentryConverterUtil::resolvePlatformByFileName)
-                .flatMap(Optional::stream)
-                .findFirst()
-                .orElse(null);
+            return exceptions
+                    .stream()
+                    .flatMap(e -> {
+                        assert e.getStacktrace() != null;
+                        assert e.getStacktrace().getFrames() != null;
+                        return e.getStacktrace().getFrames().stream();
+                    })
+                    .map(SentryStackFrame::getFilename)
+                    .map(SentryConverterUtil::resolvePlatformByFileName)
+                    .flatMap(Optional::stream)
+                    .findFirst()
+                    .orElse(null);
     }
 
     private static Map<String, BiConsumer<SentryEvent, Object>> fillFunctionsMap() {
@@ -264,7 +271,7 @@ public class SentryEventConverterImpl implements SentryEventConverter {
             if (event.getTransaction() == null) {
                 event.setTransaction(value.toString());
             }
-            event.setTag("traceId", value.toString());
+            event.getTags().put("traceId", value.toString());
         });
         functions.put(SentryTags.TRANSACTION_TAG.getNameAsString(),
                 (event, value) -> event.setTransaction((String) value));
@@ -275,8 +282,19 @@ public class SentryEventConverterImpl implements SentryEventConverter {
         functions.put(CommonTags.ENVIRONMENT_TAG.getNameAsString(),
                 (event, value) -> event.setEnvironment((String) value));
         functions.put(SentryTags.FINGERPRINT_TAG.getNameAsString(), (event, values) -> {
-            if (event.getFingerprints() != null) {
-                event.getFingerprints().addAll(Arrays.asList((String[]) values));
+            if (event.getFingerprint() != null) {
+                if (values instanceof String) {
+                    event.getFingerprint().add((String)values);
+                }
+                else if (values instanceof Collection) {
+                    Collection<?> val = (Collection<?>) values;
+                    for (Object v: val) {
+                        event.getFingerprint().add((String) v);
+                    }
+                }
+                else {
+                    event.getFingerprint().addAll(Arrays.asList((String[]) values));
+                }
             }
         });
         return functions;

@@ -1,7 +1,7 @@
 package ru.kontur.vostok.hercules.routing.engine;
 
-import ru.kontur.vostok.hercules.routing.Destination;
-import ru.kontur.vostok.hercules.routing.interpolation.Interpolator;
+import ru.kontur.vostok.hercules.util.routing.Destination;
+import ru.kontur.vostok.hercules.util.routing.interpolation.Interpolator;
 
 import java.util.Objects;
 

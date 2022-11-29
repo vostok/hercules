@@ -47,6 +47,7 @@ public final class HttpStatusCodes {
     public static final int SERVICE_UNAVAILABLE = 503;
     public static final int GATEWAY_TIMEOUT = 504;
 
+    public static final int ORGANIZATION_NOT_FOUND = 1000;
     /**
      * Check if the HTTP status code is {@code 2xx}.
      *

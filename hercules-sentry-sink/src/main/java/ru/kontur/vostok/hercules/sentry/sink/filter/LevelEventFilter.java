@@ -1,10 +1,9 @@
 package ru.kontur.vostok.hercules.sentry.sink.filter;
 
-import java.util.Optional;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.sentry.client.SentryLevel;
-import ru.kontur.vostok.hercules.sentry.client.SentryLevelParser;
+import ru.kontur.vostok.hercules.sentry.client.impl.v9.SentryLevelParserImplV9;
 import ru.kontur.vostok.hercules.sink.filter.EventFilter;
 import ru.kontur.vostok.hercules.tags.LogEventTags;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -21,12 +20,12 @@ import java.util.Properties;
 public class LevelEventFilter extends EventFilter {
 
     private final SentryLevel level;
-    private final SentryLevelParser sentryLevelParser;
+    private final SentryLevelParserImplV9 sentryLevelParser;
 
     public LevelEventFilter(Properties properties) {
         super(properties);
         this.level = PropertiesUtil.get(Props.LEVEL, properties).get();
-        sentryLevelParser = new SentryLevelParser();
+        sentryLevelParser = new SentryLevelParserImplV9();
     }
 
     @Override

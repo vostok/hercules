@@ -6,17 +6,17 @@ import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.TinyString;
 import ru.kontur.vostok.hercules.protocol.Variant;
 import ru.kontur.vostok.hercules.protocol.hpath.HPath;
-import ru.kontur.vostok.hercules.routing.Destination;
+import ru.kontur.vostok.hercules.util.routing.Destination;
 import ru.kontur.vostok.hercules.routing.engine.EngineConfig;
 import ru.kontur.vostok.hercules.routing.engine.Route;
 import ru.kontur.vostok.hercules.routing.engine.RouterEngine;
-import ru.kontur.vostok.hercules.routing.interpolation.Interpolator;
-import ru.kontur.vostok.hercules.util.text.IgnoreCaseWrapper;
+import ru.kontur.vostok.hercules.util.routing.interpolation.Interpolator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import ru.kontur.vostok.hercules.util.text.IgnoreCaseWrapper;
 
 /**
  * Router engine implemented using decision tree.
