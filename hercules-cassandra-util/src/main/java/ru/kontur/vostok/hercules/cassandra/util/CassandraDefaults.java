@@ -14,6 +14,7 @@ public final class CassandraDefaults {
     public static final int DEFAULT_REPLICATION_FACTOR = 3;
     public static final boolean DEFAULT_AUTH_ENABLE = false;
     public static final String DEFAULT_AUTH_CLASSNAME = "PlainTextAuthProvider";
+    public static final int DEFAULT_MAX_NODES_PER_REMOTE_DC = 0;
 
     // Default pooling options:
 

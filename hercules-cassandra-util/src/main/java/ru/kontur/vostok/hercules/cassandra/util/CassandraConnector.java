@@ -40,6 +40,7 @@ public class CassandraConnector {
     private final String dataCenter;
     private final String[] nodes;
     private final String keyspace;
+    private final int maxNodesPerRemoteDc;
 
     private final long requestTimeoutMs;
 
@@ -62,6 +63,7 @@ public class CassandraConnector {
         this.dataCenter = PropertiesUtil.get(Props.DATA_CENTER, properties).get();
         this.nodes = PropertiesUtil.get(Props.NODES, properties).get();
         this.keyspace = PropertiesUtil.get(Props.KEYSPACE, properties).get();
+        this.maxNodesPerRemoteDc = PropertiesUtil.get(Props.MAX_NODES_PER_REMOTE_DC, properties).get();
 
         this.requestTimeoutMs = PropertiesUtil.get(Props.REQUEST_TIMEOUT_MS, properties).get();
 
@@ -87,7 +89,9 @@ public class CassandraConnector {
                 withString(DefaultDriverOption.REQUEST_CONSISTENCY, consistencyLevel).
                 withInt(DefaultDriverOption.CONNECTION_MAX_REQUESTS, maxRequestsPerConnection).
                 withInt(DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE, connectionsPerHostLocal).
-                withInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE, connectionsPerHostRemote);
+                withInt(DefaultDriverOption.CONNECTION_POOL_REMOTE_SIZE, connectionsPerHostRemote).
+                withInt(DefaultDriverOption.LOAD_BALANCING_DC_FAILOVER_MAX_NODES_PER_REMOTE_DC, maxNodesPerRemoteDc)
+                ;
 
         if (authEnable) {
             configLoaderBuilder.
@@ -238,6 +242,11 @@ public class CassandraConnector {
         static final Parameter<Boolean> AUTH_ENABLE =
                 Parameter.booleanParameter("auth.enable").
                         withDefault(CassandraDefaults.DEFAULT_AUTH_ENABLE).
+                        build();
+
+        static final Parameter<Integer> MAX_NODES_PER_REMOTE_DC =
+                Parameter.integerParameter("maxNodesPerRemoteDc").
+                        withDefault(CassandraDefaults.DEFAULT_MAX_NODES_PER_REMOTE_DC).
                         build();
     }
 }

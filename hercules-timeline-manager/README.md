@@ -17,6 +17,8 @@ See Apache Cassandra Config from Apache Cassandra documentation. Main settings a
 `cassandra.nodes` - nodes of Cassandra in form `<host>[:port][,<host>[:port],...]`, default value: `127.0.0.1`,
 also, default port value is `9042`
 
+`reader.cassandra.maxNodesPerRemoteDc` - count of nodes in each remote DC, default value: 0
+
 `cassandra.keyspace` - default value: `hercules`
 
 `cassandra.requestTimeoutMs` - default value: `12000`
