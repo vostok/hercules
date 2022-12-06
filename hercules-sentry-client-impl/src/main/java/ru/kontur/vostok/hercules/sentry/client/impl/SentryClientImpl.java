@@ -83,9 +83,10 @@ public class SentryClientImpl implements SentryClient {
         }
         ErrorInfo processErrorInfo = result.getError();
         markError(processErrorInfo, destination);
-        if (processErrorInfo.isRetryable() == null) throw new BackendServiceFailedException(new Exception(processErrorInfo.toString()));
-        if (!processErrorInfo.isRetryable()) return false;
-        throw new BackendServiceFailedException();
+        if (Boolean.TRUE.equals(processErrorInfo.isRetryable())) {
+            throw new BackendServiceFailedException(new Exception(processErrorInfo.toString()));
+        }
+        return false;
     }
 
     private Result<Void, ErrorInfo> sendToSentry(Event event, SentryDestination destination) {
@@ -132,8 +133,8 @@ public class SentryClientImpl implements SentryClient {
                 return Result.error(sendEventResult);
             }
             return Result.ok();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
+            LOGGER.error("Non retryable error occurred: {}", e.getMessage());
             return Result.error(new ErrorInfo(e.getMessage(), false));
         }
     }
