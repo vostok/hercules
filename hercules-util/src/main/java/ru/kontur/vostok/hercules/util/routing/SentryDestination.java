@@ -159,11 +159,13 @@ public class SentryDestination implements Destination<SentryDestination> {
     }
 
     private static String sanitizeName(String name) {
-        return StringUtil.sanitize(name, value -> value == '-'
-                || value == '_'
-                || 'a' <= value && value <= 'z'
-                || 'A' <= value && value <= 'Z'
-                || '0' <= value && value <= '9'
-        );
+        return StringUtil
+                .sanitize(name, value -> value == '-'
+                        || value == '_'
+                        || 'a' <= value && value <= 'z'
+                        || 'A' <= value && value <= 'Z'
+                        || '0' <= value && value <= '9'
+                )
+                .toLowerCase();
     }
 }

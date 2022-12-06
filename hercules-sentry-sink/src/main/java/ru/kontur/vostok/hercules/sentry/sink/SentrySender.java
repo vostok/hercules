@@ -72,8 +72,8 @@ public class SentrySender extends Sender {
                 sentryConnectorHolder,
                 metricsCollector,
                 router,
-                herculesVersion,
-                sentryUrl);
+                sentryUrl,
+                herculesVersion);
     }
 
     @Override

@@ -35,8 +35,7 @@ public class DsnCache {
     public Dsn cacheAndGet(SentryDestination destination) throws ExecutionException {
         try {
             return dsnCache.get(destination);
-        }
-        catch (InvalidCacheLoadException e) {
+        } catch (InvalidCacheLoadException e) {
             return null;
         }
     }

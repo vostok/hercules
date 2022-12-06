@@ -70,7 +70,7 @@ public class SentryDestinationTest {
         SentryDestination destination = SentryDestination.of("Illegal^Characters09", "o-t_her:+chars")
                 .sanitize();
 
-        Assert.assertEquals("Illegal_Characters09", destination.organization());
+        Assert.assertEquals("illegal_characters09", destination.organization());
         Assert.assertEquals("o-t_her__chars", destination.project());
     }
 
@@ -88,7 +88,6 @@ public class SentryDestinationTest {
 
         Assert.assertSame(SentryDestination.byDefault(), actual);
     }
-
 
     @Test
     public void shouldCreateNowhereDestination() {
