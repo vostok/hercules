@@ -22,10 +22,12 @@ import java.util.List;
 public class AccessControlList {
     private final List<AccessControlEntry> list;
     private final boolean defaultAnswer;
+    private final int maxPatternLength;
 
     public AccessControlList(List<AccessControlEntry> list, Statement defaultStatement) {
         this.list = list;
         this.defaultAnswer = defaultStatement == Statement.PERMIT;
+        this.maxPatternLength = list.stream().mapToInt(it -> it.getPattern().length).max().orElse(0);
     }
 
     /**
@@ -45,14 +47,20 @@ public class AccessControlList {
             return defaultAnswer;
         }
 
+        int maxRequiredValue = Math.min(tagsVector.length, maxPatternLength);
+        String[] tagsValues = new String[maxRequiredValue];
+
+        for (int i = 0; i < maxRequiredValue; i++) {
+            // TODO: ContainerUtil.extract is expensive!
+            //  (each time detecting extractor and coping values in StandardExtractors.extractString)
+            tagsValues[i] = ContainerUtil.extract(tagsVector[i], MetricsTags.TAG_VALUE_TAG).orElse("null");
+        }
+
         for (AccessControlEntry ace : list) {
             PatternMatcher[] pattern = ace.getPattern();
             if (matchingIsPossible(tagsVector, pattern)) {
-                for (int i = 0; i < tagsVector.length; i++) {
-                    // TODO: ContainerUtil.extract is expensive!
-                    //  (each time detecting extractor and coping values in StandardExtractors.extractString)
-                    String value = ContainerUtil.extract(tagsVector[i], MetricsTags.TAG_VALUE_TAG).orElse("null");
-                    if (!pattern[i].test(value)) {
+                for (int i = 0; i < tagsValues.length; i++) {
+                    if (!pattern[i].test(tagsValues[i])) {
                         break;
                     }
                     if (pattern.length == i + 1) {
