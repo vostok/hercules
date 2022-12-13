@@ -30,10 +30,13 @@ public class MetricWithTagsEventConverter implements MetricConverter {
         StringBuilder tags = new StringBuilder();
         Container[] tagsVector = ContainerUtil.extract(event.getPayload(), MetricsTags.TAGS_VECTOR_TAG).get();
         for (Container tag : tagsVector) {
-            String key = sanitizer.sanitize(
-                    ContainerUtil.extract(tag, MetricsTags.TAG_KEY_TAG).orElse("null"));
-            String value = sanitizer.sanitize(
-                    ContainerUtil.extract(tag, MetricsTags.TAG_VALUE_TAG).orElse("null"));
+            String key = sanitizer.sanitize(ContainerUtil.extract(tag, MetricsTags.TAG_KEY_TAG).orElse("null"));
+
+            if (key.equals("__metrics_data_type")) {
+                continue;
+            }
+
+            String value = sanitizer.sanitize(ContainerUtil.extract(tag, MetricsTags.TAG_VALUE_TAG).orElse("null"));
 
             if (key.equals("project")) {
                 isProjectTagAdded = true;

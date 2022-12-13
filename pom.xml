@@ -34,7 +34,7 @@
         <lz4.version>1.8.0</lz4.version>
         <clickhouse.version>0.3.1-patch</clickhouse.version>
         <netty.version>4.1.74.Final</netty.version>
-        <opentelemetry.proto.version>0.17.1</opentelemetry.proto.version>
+        <opentelemetry.proto.version>0.19.0-alpha</opentelemetry.proto.version>
         <grpc.version>1.45.1</grpc.version>
         <commons-codec.version>1.11</commons-codec.version>
         <spotbugs-annotations.version>3.1.12</spotbugs-annotations.version>
@@ -304,7 +304,7 @@
 
             <!-- OpenTelemetry -->
             <dependency>
-                <groupId>io.opentelemetry</groupId>
+                <groupId>io.opentelemetry.proto</groupId>
                 <artifactId>opentelemetry-proto</artifactId>
                 <version>${opentelemetry.proto.version}</version>
             </dependency>
@@ -312,6 +312,12 @@
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-netty</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
                 <version>${grpc.version}</version>
             </dependency>
 

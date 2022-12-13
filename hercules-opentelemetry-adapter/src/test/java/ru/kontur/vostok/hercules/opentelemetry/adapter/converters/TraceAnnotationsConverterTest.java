@@ -41,6 +41,7 @@ public class TraceAnnotationsConverterTest {
                 .addAttributes(getStringValueAttr("host.name", "localhost"))
                 .addAttributes(getStringValueAttr("component", "test-app"))
                 .addAttributes(getStringValueAttr("environment", "default"))
+                .addAttributes(getStringValueAttr(ResourceAttributes.METRIC_RESOURCE_PREFIX + "environment", "metric-env"))
                 .build();
 
         Container annotations = TraceAnnotationsConverter.getAnnotations(span, resource);

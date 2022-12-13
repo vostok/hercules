@@ -2,8 +2,8 @@ package ru.kontur.vostok.hercules.opentelemetry.adapter.converters;
 
 import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.resource.v1.Resource;
-import io.opentelemetry.proto.trace.v1.InstrumentationLibrarySpans;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
+import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Container;
@@ -39,13 +39,13 @@ public class TraceConverter {
         Resource resource = resourceSpans.getResource();
 
         return resourceSpans
-                .getInstrumentationLibrarySpansList()
+                .getScopeSpansList()
                 .stream()
                 .flatMap(it -> convertSpans(it, resource));
     }
 
-    private static Stream<Event> convertSpans(InstrumentationLibrarySpans librarySpans, Resource resource) {
-        return librarySpans
+    private static Stream<Event> convertSpans(ScopeSpans scopeSpans, Resource resource) {
+        return scopeSpans
                 .getSpansList()
                 .stream()
                 .map(it -> convertSpan(it, resource));
