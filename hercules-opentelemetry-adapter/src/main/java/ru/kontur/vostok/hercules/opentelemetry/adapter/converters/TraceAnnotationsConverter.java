@@ -62,11 +62,13 @@ public class TraceAnnotationsConverter {
         }
 
         for (KeyValue keyValue : resource.getAttributesList()) {
-            TinyString vostokName = RESOURCE_CONVERT_MAP.get(keyValue.getKey());
-            if (vostokName != null) {
-                builder.tag(vostokName, VariantConverter.convert(keyValue.getValue()));
-            } else {
-                builder.tag(keyValue.getKey(), VariantConverter.convert(keyValue.getValue()));
+            if (!keyValue.getKey().startsWith(ResourceAttributes.METRIC_RESOURCE_PREFIX)) {
+                TinyString vostokName = RESOURCE_CONVERT_MAP.get(keyValue.getKey());
+                if (vostokName != null) {
+                    builder.tag(vostokName, VariantConverter.convert(keyValue.getValue()));
+                } else {
+                    builder.tag(keyValue.getKey(), VariantConverter.convert(keyValue.getValue()));
+                }
             }
         }
 
@@ -99,9 +101,6 @@ public class TraceAnnotationsConverter {
         }
     }
 
-    private static final String SERVICE_NAME = "service.name";
-    private static final String HOST_NAME = "host.name";
-
     private static final String HTTP_METHOD = "http.method";
     private static final String HTTP_URL = "http.url";
     private static final String HTTP_TARGET = "http.target";
@@ -127,7 +126,7 @@ public class TraceAnnotationsConverter {
     );
 
     private static final Map<String, TinyString> RESOURCE_CONVERT_MAP = Map.ofEntries(
-            Map.entry(SERVICE_NAME, VostokAnnotations.APPLICATION),
-            Map.entry(HOST_NAME, VostokAnnotations.HOST)
+            Map.entry(ResourceAttributes.SERVICE_NAME, VostokAnnotations.APPLICATION),
+            Map.entry(ResourceAttributes.HOST_NAME, VostokAnnotations.HOST)
     );
 }

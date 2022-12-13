@@ -4,8 +4,8 @@ import com.google.protobuf.ByteString;
 import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.resource.v1.Resource;
-import io.opentelemetry.proto.trace.v1.InstrumentationLibrarySpans;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
+import io.opentelemetry.proto.trace.v1.ScopeSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -46,14 +46,14 @@ public class TraceConverterTest {
                 .setEndTimeUnixNano(end.getNano())
                 .build();
 
-        InstrumentationLibrarySpans librarySpans = InstrumentationLibrarySpans.newBuilder().addSpans(span).build();
+        ScopeSpans librarySpans = ScopeSpans.newBuilder().addSpans(span).build();
 
         Resource resource = Resource.newBuilder()
                 .addAttributes(getStringValueAttr("service.name", "test-app"))
                 .build();
 
         ResourceSpans resourceSpans = ResourceSpans.newBuilder()
-                .addInstrumentationLibrarySpans(librarySpans)
+                .addScopeSpans(librarySpans)
                 .setResource(resource)
                 .build();
 

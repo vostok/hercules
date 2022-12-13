@@ -2,15 +2,15 @@ package ru.kontur.vostok.hercules.opentelemetry.adapter.server;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
-import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceResponse;
-import io.opentelemetry.proto.collector.trace.v1.TraceServiceGrpc;
+import io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest;
+import io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceResponse;
+import io.opentelemetry.proto.collector.metrics.v1.MetricsServiceGrpc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.gate.client.GateSender;
 import ru.kontur.vostok.hercules.gate.client.GateStatus;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.opentelemetry.adapter.converters.TraceConverter;
+import ru.kontur.vostok.hercules.opentelemetry.adapter.converters.MetricConverter;
 import ru.kontur.vostok.hercules.opentelemetry.adapter.metrics.GrpcServiceMetrics;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
@@ -21,21 +21,21 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * Trace service for receiving spans from Applications instrumented with OpenTelemetry.
+ * Metric service for receiving metrics from Applications instrumented with OpenTelemetry.
  * Extend generated gRPC service stub.
  *
  * @author Innokentiy Krivonosov
- * @see <a href="https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/collector/trace/v1/trace_service.proto">
- * OpenTelemetry trace_service.proto</a>
+ * @see <a href="https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/collector/metrics/v1/metrics_service.proto">
+ * OpenTelemetry metrics_service.proto</a>
  */
-public class GrpcTraceService extends TraceServiceGrpc.TraceServiceImplBase {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcTraceService.class);
+public class GrpcMetricService extends MetricsServiceGrpc.MetricsServiceImplBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcMetricService.class);
 
     private final GateSender gateSender;
     private final String stream;
     private final GrpcServiceMetrics metrics;
 
-    public GrpcTraceService(GateSender gateSender, Properties properties, MetricsCollector metricsCollector) {
+    public GrpcMetricService(GateSender gateSender, Properties properties, MetricsCollector metricsCollector) {
         this.gateSender = gateSender;
         this.metrics = new GrpcServiceMetrics(getClass().getSimpleName(), TimeSource.SYSTEM, metricsCollector);
         this.stream = PropertiesUtil.get(Props.STREAM, properties).get();
@@ -44,22 +44,22 @@ public class GrpcTraceService extends TraceServiceGrpc.TraceServiceImplBase {
     /**
      * The service method for a unary RPC call
      *
-     * @param request          trace request
+     * @param request          metric request
      * @param responseObserver response observer with empty response
      */
     @Override
     public void export(
-            ExportTraceServiceRequest request,
-            StreamObserver<ExportTraceServiceResponse> responseObserver
+            ExportMetricsServiceRequest request,
+            StreamObserver<ExportMetricsServiceResponse> responseObserver
     ) {
         long convertingEventsStartedAtMs = metrics.startMilliseconds();
-        List<Event> events = TraceConverter.convert(request.getResourceSpansList());
+        List<Event> events = MetricConverter.convert(request.getResourceMetricsList());
 
         long sendingEventsStartedAtMs = metrics.convertingEnded(convertingEventsStartedAtMs);
         GateStatus status = gateSender.send(events, false, stream);
 
         if (status == GateStatus.OK) {
-            responseObserver.onNext(ExportTraceServiceResponse.getDefaultInstance());
+            responseObserver.onNext(ExportMetricsServiceResponse.getDefaultInstance());
             responseObserver.onCompleted();
             metrics.markDelivered(events, sendingEventsStartedAtMs);
         } else {

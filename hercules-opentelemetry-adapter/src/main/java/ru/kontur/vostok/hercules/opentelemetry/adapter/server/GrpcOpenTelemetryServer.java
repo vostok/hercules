@@ -80,9 +80,9 @@ public class GrpcOpenTelemetryServer implements Lifecycle {
 
     private static class Props {
         static final Parameter<Integer> PORT =
-                Parameter.integerParameter("port").
-                        withDefault(OpenTelemetryAdapterDefaults.DEFAULT_PORT).
-                        withValidator(IntegerValidators.portValidator()).
-                        build();
+                Parameter.integerParameter("port")
+                        .withDefault(OpenTelemetryAdapterDefaults.DEFAULT_PORT)
+                        .withValidator(IntegerValidators.portValidator())
+                        .build();
     }
 }
