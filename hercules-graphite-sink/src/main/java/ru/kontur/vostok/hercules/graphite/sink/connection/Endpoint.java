@@ -13,6 +13,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -189,13 +191,7 @@ public class Endpoint {
         public void send(List<GraphiteMetricData> metrics) throws IOException {
             try {
                 for (GraphiteMetricData metric : metrics) {
-                    writer.write(
-                            String.format(
-                                    Locale.ENGLISH,
-                                    "%s %f %d\n",
-                                    metric.getMetricName(),
-                                    metric.getMetricValue(),
-                                    metric.getMetricUnixTime()));
+                    writer.write(format(metric));
                 }
                 writer.flush();
             } catch (Exception ex) {
@@ -257,4 +253,12 @@ public class Endpoint {
             return time.milliseconds() > this.expiresAtMs;
         }
     }
+
+    static String format(GraphiteMetricData metric) {
+        String value = FORMAT.get().format(metric.getMetricValue());
+        return metric.getMetricName() + ' ' + value + ' ' + metric.getMetricUnixTime() + '\n';
+    }
+
+    private static final ThreadLocal<DecimalFormat> FORMAT = ThreadLocal.withInitial(() ->
+            new DecimalFormat("0.000000", DecimalFormatSymbols.getInstance(Locale.ENGLISH)));
 }

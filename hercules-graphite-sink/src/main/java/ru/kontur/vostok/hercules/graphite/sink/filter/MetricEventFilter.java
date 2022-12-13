@@ -25,17 +25,17 @@ public class MetricEventFilter extends EventFilter {
 
     @Override
     public boolean test(Event event) {
-        if (ContainerUtil.extract(event.getPayload(), MetricsTags.AGGREGATION_TYPE_TAG).isPresent()) {
+        if (event.getPayload().tags().containsKey(MetricsTags.AGGREGATION_TYPE_TAG.getName())) {
             return false;
         }
 
         Optional<Double> metricValue = ContainerUtil.extract(event.getPayload(), MetricsTags.METRIC_VALUE_TAG);
-        if (!metricValue.isPresent() || !Double.isFinite(metricValue.get())) {
+        if (metricValue.isEmpty() || !Double.isFinite(metricValue.get())) {
             return false;
         }
 
         Optional<Container[]> tagsVector = ContainerUtil.extract(event.getPayload(), MetricsTags.TAGS_VECTOR_TAG);
-        if (!tagsVector.isPresent() || tagsVector.get().length == 0) {
+        if (tagsVector.isEmpty() || tagsVector.get().length == 0) {
             return false;
         }
 
