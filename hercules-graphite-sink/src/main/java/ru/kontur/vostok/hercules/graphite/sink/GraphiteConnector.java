@@ -19,13 +19,16 @@ public class GraphiteConnector {
     private final EndpointPool localEndpoints;
     private final EndpointPool remoteEndpoints;
 
-    public GraphiteConnector(Properties properties) {
-        this(properties, TimeSource.SYSTEM);
+    public GraphiteConnector(Properties properties, int retryLimit) {
+        this(properties, retryLimit, TimeSource.SYSTEM);
     }
 
-    GraphiteConnector(Properties properties, TimeSource time) {
-        this.localEndpoints = new EndpointPool(PropertiesUtil.ofScope(properties, "local"), time);
-        this.remoteEndpoints = new EndpointPool(PropertiesUtil.ofScope(properties, "remote"), time);
+    GraphiteConnector(Properties properties, int retryLimit, TimeSource time) {
+        this.localEndpoints = new EndpointPool(PropertiesUtil.ofScope(properties, "local"), retryLimit, time);
+        this.remoteEndpoints = new EndpointPool(PropertiesUtil.ofScope(properties, "remote"), retryLimit, time);
+        if (localEndpoints.isEmpty()) {
+            throw new IllegalStateException("Local endpoints must not be empty");
+        }
     }
 
     /**
@@ -38,9 +41,13 @@ public class GraphiteConnector {
      *
      * @return the channel if a connection has been leased, otherwise return {@code null}
      */
-    public Channel channel() {
-        Channel channel = localEndpoints.channel();
-        return channel != null ? channel : remoteEndpoints.channel();
+    public Channel channel(boolean isRetry) {
+        Channel channel = localEndpoints.channel(isRetry);
+        if (remoteEndpoints.isEmpty()) {
+            return channel;
+        } else {
+            return channel != null ? channel : remoteEndpoints.channel(isRetry);
+        }
     }
 
     /**

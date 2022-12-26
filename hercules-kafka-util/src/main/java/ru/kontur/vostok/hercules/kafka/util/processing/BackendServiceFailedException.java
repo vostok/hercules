@@ -16,4 +16,8 @@ public class BackendServiceFailedException extends Exception {
     public BackendServiceFailedException(Throwable cause) {
         super(ERROR_MESSAGE, cause);
     }
+
+    public BackendServiceFailedException(String message) {
+        super(message);
+    }
 }

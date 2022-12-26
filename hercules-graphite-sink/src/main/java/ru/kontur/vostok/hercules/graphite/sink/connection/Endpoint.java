@@ -3,7 +3,10 @@ package ru.kontur.vostok.hercules.graphite.sink.connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.graphite.sink.GraphiteMetricData;
+import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
+import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
+import ru.kontur.vostok.hercules.util.time.Timer;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -18,6 +21,12 @@ import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -32,13 +41,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Endpoint {
     private static final Logger LOGGER = LoggerFactory.getLogger(Endpoint.class);
 
+    private static final long SHUTDOWN_TIMEOUT_MS = 5_000L;
+
+    private final ExecutorService executor;
     private final InetSocketAddress address;
     private final int connectionLimit;
     private final int socketTimeoutMs;
+    private final int requestTimeoutMs;
     private final TimeSource time;
 
-    private final ConcurrentLinkedQueue<Connection> connections = new ConcurrentLinkedQueue<>();
-    private final AtomicInteger leasedConnections = new AtomicInteger(0);
+    final ConcurrentLinkedQueue<Connection> connections = new ConcurrentLinkedQueue<>();
+    final AtomicInteger leasedConnections = new AtomicInteger(0);
     private final long connectionTtlMs;
 
     private volatile boolean frozen;
@@ -46,14 +59,22 @@ public class Endpoint {
 
     public Endpoint(
             InetSocketAddress address,
+            int poolSize,
             int connectionLimit,
             long connectionTtlMs,
             int socketTimeoutMs,
-            TimeSource time) {
+            int requestTimeoutMs,
+            TimeSource time
+    ) {
+        this.executor = Executors.newFixedThreadPool(poolSize,
+                ThreadFactories.newNamedThreadFactory("endpoint_" + address, false)
+        );
+
         this.address = address;
         this.connectionLimit = connectionLimit;
         this.connectionTtlMs = connectionTtlMs;
         this.socketTimeoutMs = socketTimeoutMs;
+        this.requestTimeoutMs = requestTimeoutMs;
         this.time = time;
 
         this.frozen = false;
@@ -77,6 +98,24 @@ public class Endpoint {
     }
 
     /**
+     * Return the channel wraps a connection to the endpoint.
+     * <p>
+     * A channel should be used exclusively by a thread. Normally, {@code try-with-resources} should be used.
+     *
+     * @return the channel with new connection
+     * @throws EndpointException if failed to create a new connection.
+     */
+    public Channel channelForRetry() throws EndpointException {
+        try {
+            LOGGER.debug("Create new connection on retry");
+            leasedConnections.incrementAndGet();
+            return new Channel(new Connection());
+        } catch (IOException ex) {
+            throw new EndpointException("Cannot create connection to " + address, ex);
+        }
+    }
+
+    /**
      * Close active connections.
      */
     public void close() {
@@ -86,6 +125,18 @@ public class Endpoint {
                 connection.close();
             } catch (Exception ex) {
                 LOGGER.warn("Closing connection to " + address + " failed", ex);
+            }
+        }
+
+        if (executor != null) {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(SHUTDOWN_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                    LOGGER.warn("Thread pool did not terminate");
+                }
+            } catch (InterruptedException ex) {
+                /* Interruption during shutdown */
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -135,6 +186,7 @@ public class Endpoint {
         }
 
         try {
+            LOGGER.debug("Create new connection, pool is empty");
             return new Connection();
         } catch (Exception ex) {
             leasedConnections.decrementAndGet();
@@ -144,14 +196,49 @@ public class Endpoint {
 
     private void releaseConnection(Connection connection) {
         try {
-            if (connection.isBroken() || connection.isExpired()) {
+            if (connection.isBroken()) {
+                LOGGER.debug("Close broken connection");
                 connection.close();
+                maintainConnections();
                 return;
             }
-            connections.offer(connection);
+
+            if (connection.isExpired()) {
+                LOGGER.debug("Close expired connection");
+                connection.close();
+                maintainConnections();
+                return;
+            }
+
+            if (connections.size() >= connectionLimit) {
+                LOGGER.debug("Close connection, pool is full");
+                connection.close();
+            } else {
+                maintainConnections();
+                connections.offer(connection);
+            }
         } finally {
             leasedConnections.decrementAndGet();
         }
+    }
+
+    private void maintainConnections() {
+        try {
+            if (!verifyFrozen() && connections.size() + leasedConnections.get() < connectionLimit) {
+                LOGGER.debug("Create new connection, maintain pool");
+                connections.offer(new Connection());
+            }
+        } catch (IOException ex) {
+            LOGGER.debug("Cannot create additional connection", ex);
+        }
+    }
+
+    Socket getSocket() throws IOException {
+        Socket socket = new Socket(Proxy.NO_PROXY);
+        // There is no reason to call #setSoTimeout since SO_TIMEOUT is only used on read from socket.
+        socket.connect(address, socketTimeoutMs);
+        socket.setKeepAlive(true);
+        return socket;
     }
 
     /**
@@ -159,17 +246,15 @@ public class Endpoint {
      * <p>
      * A connection wraps {@link Socket}.
      */
-    class Connection {
+    public class Connection {
         private final Socket socket;
         private final Writer writer;
         private boolean broken;
-        private long expiresAtMs;
+        private final long expiresAtMs;
+        private final Timer timer;
 
-        private Connection() throws IOException {
-            this.socket = new Socket(Proxy.NO_PROXY);
-            // There is no reason to call #setSoTimeout since SO_TIMEOUT is only used on read from socket.
-            socket.connect(address, socketTimeoutMs);
-            socket.setKeepAlive(true);
+        public Connection() throws IOException {
+            this.socket = getSocket();
 
             this.writer =
                     new BufferedWriter(
@@ -180,23 +265,43 @@ public class Endpoint {
 
             long expiresAt = time.milliseconds() + connectionTtlMs;
             this.expiresAtMs = (expiresAt > 0) ? expiresAt : Long.MAX_VALUE;
+            this.timer = time.timer(requestTimeoutMs);
         }
 
         /**
          * Send metrics to the endpoint via the connection.
          *
          * @param metrics metrics to send
-         * @throws IOException in case of I/O errors
+         * @throws EndpointException in case of I/O errors or timeout
          */
-        public void send(List<GraphiteMetricData> metrics) throws IOException {
+        public void send(List<GraphiteMetricData> metrics) throws EndpointException {
+            timer.reset();
+
+            Future<Result<Void, Exception>> asyncTask = executor.submit(() -> sendMetrics(metrics));
+
+            try {
+                Result<Void, Exception> result = asyncTask.get(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
+                if (!result.isOk()) {
+                    broken = true;
+                    throw new EndpointException("Got I/O exception", result.getError());
+                }
+            } catch (ExecutionException | TimeoutException ex) {
+                broken = true;
+                throw new EndpointException("Cannot send metrics", ex);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        private Result<Void, Exception> sendMetrics(List<GraphiteMetricData> metrics) {
             try {
                 for (GraphiteMetricData metric : metrics) {
                     writer.write(format(metric));
                 }
                 writer.flush();
-            } catch (Exception ex) {
-                broken = true;
-                throw ex;
+                return Result.ok();
+            } catch (IOException ex) {
+                return Result.error(ex);
             }
         }
 
@@ -204,26 +309,13 @@ public class Endpoint {
          * Release the connection.
          */
         public void release() {
-            try {
-                writer.flush();
-            } catch (IOException ex) {
-                broken = true;
-                LOGGER.warn("Got I/O exception", ex);
-            } finally {
-                releaseConnection(this);
-            }
+            releaseConnection(this);
         }
 
         /**
          * Close the connection.
          */
         public void close() {
-            try {
-                writer.flush();
-            } catch (IOException ex) {
-                LOGGER.warn("Got I/O exception", ex);
-            }
-
             try {
                 socket.close();
             } catch (IOException ex) {
