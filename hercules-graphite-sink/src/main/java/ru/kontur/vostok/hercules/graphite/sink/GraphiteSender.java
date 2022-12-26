@@ -1,5 +1,7 @@
 package ru.kontur.vostok.hercules.graphite.sink;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.graphite.sink.connection.Channel;
 import ru.kontur.vostok.hercules.graphite.sink.connection.EndpointException;
 import ru.kontur.vostok.hercules.graphite.sink.converter.MetricConverter;
@@ -17,7 +19,6 @@ import ru.kontur.vostok.hercules.util.metrics.GraphiteSanitizer;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,8 @@ import java.util.stream.Collectors;
  * @author Gregory Koshelev
  */
 public class GraphiteSender extends Sender {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteSender.class);
+
     private final int retryLimit;
 
     private final MetricConverter metricsConverter;
@@ -48,7 +51,7 @@ public class GraphiteSender extends Sender {
         GraphiteSanitizer sanitizer = graphiteReplaceDots ? GraphiteSanitizer.METRIC_NAME_SANITIZER : GraphiteSanitizer.METRIC_PATH_SANITIZER;
         this.metricsConverter = graphiteTagsEnable ? new MetricWithTagsEventConverter(sanitizer) : new MetricEventConverter(sanitizer);
 
-        this.connector = new GraphiteConnector(PropertiesUtil.ofScope(properties, "graphite.connector"));
+        this.connector = new GraphiteConnector(PropertiesUtil.ofScope(properties, "graphite.connector"), retryLimit);
 
         this.sendMetricsTimeMsTimer = metricsCollector.timer("sendMetricsTimeMs");
         this.retryCounter = metricsCollector.counter("retryCount");
@@ -65,9 +68,7 @@ public class GraphiteSender extends Sender {
                 .collect(Collectors.toList());
 
         try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(sendMetricsTimeMsTimer, TimeUnit.MILLISECONDS)) {
-            send(metricsToSend, retryLimit);
-        } catch (Exception exception) {
-            throw new BackendServiceFailedException(exception);
+            sendMetrics(metricsToSend);
         }
 
         sentMetricsCounter.addAndGet(metricsToSend.size());
@@ -79,25 +80,28 @@ public class GraphiteSender extends Sender {
         return connector.isReady() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
     }
 
-    private void send(List<GraphiteMetricData> metrics, int attempts) throws EndpointException, IOException {
-        IOException lastException;
+    private void sendMetrics(List<GraphiteMetricData> metrics) throws BackendServiceFailedException {
+        Exception lastException;
 
-        int attemptsLeft = attempts;
+        int attemptsLeft = retryLimit;
         do {
-            try (Channel channel = connector.channel()) {
+            boolean isRetry = attemptsLeft < retryLimit;
+            try (Channel channel = connector.channel(isRetry)) {
                 if (channel == null) {
-                    throw new EndpointException("There is no available endpoint");
+                    throw new BackendServiceFailedException("There is no available endpoint");
                 }
                 channel.send(metrics);
                 return;
-            } catch (IOException ex) {
+            } catch (EndpointException ex) {
+                if (attemptsLeft > 1) {
+                    LOGGER.debug("Retry send exception, attempts left: " + attemptsLeft + ", retry limit: " + retryLimit, ex);
+                }
                 retryCounter.increment();
                 lastException = ex;
             }
-
         } while (--attemptsLeft > 0);
 
-        throw lastException;
+        throw new BackendServiceFailedException(lastException);
     }
 
     @Override

@@ -23,11 +23,14 @@ public class EndpointPool {
     private static final Logger LOGGER = LoggerFactory.getLogger(EndpointPool.class);
 
     private final long frozenTimeMs;
+    private final int retryLimit;
     private final Topology<Endpoint> topology;
 
-    public EndpointPool(Properties properties, TimeSource time) {
+    public EndpointPool(Properties properties, int retryLimit, TimeSource time) {
         this.frozenTimeMs = PropertiesUtil.get(Props.FROZEN_TIME_MS, properties).get();
+        this.retryLimit = retryLimit;
 
+        int requestTimeoutMs = PropertiesUtil.get(Props.REQUEST_TIMEOUT_MS, properties).get();
         int connectionLimitPerEndpoint = PropertiesUtil.get(Props.CONNECTION_LIMIT_PER_ENDPOINT, properties).get();
 
         /* After August 17, 292278994 7:12:55 AM UTC connection will be never expire.
@@ -40,9 +43,11 @@ public class EndpointPool {
                         map(hostAndPort ->
                                 new Endpoint(
                                         InetSocketAddressUtil.fromString(hostAndPort, 2003),
+                                        retryLimit,
                                         connectionLimitPerEndpoint,
                                         connectionTtlMs,
                                         socketTimeoutMs,
+                                        requestTimeoutMs,
                                         time)).
                         toArray(Endpoint[]::new);
         this.topology = new ThreadLocalTopology<>(endpoints);
@@ -56,24 +61,47 @@ public class EndpointPool {
      *
      * @return the channel if a connection has been leased, otherwise return {@code null}
      */
-    public Channel channel() {
-        int attemptsLeft = topology.size();
+    public Channel channel(boolean isRetry) {
+        int attemptsLeft = getRetryLimit();
 
         while (attemptsLeft-- > 0) {
             Endpoint endpoint = topology.next();
             Channel channel;
             try {
-                channel = endpoint.channel();
+                if (isRetry) {
+                    channel = endpoint.channelForRetry();
+                } else {
+                    channel = endpoint.channel();
+                }
+
                 if (channel != null) {
                     return channel;
                 }
+                if (attemptsLeft > 0) {
+                    LOGGER.debug("Retry get channel, attempts left: " + attemptsLeft + ", retry limit: " + getRetryLimit());
+                }
             } catch (EndpointException ex) {
-                LOGGER.warn("Cannot get channel for endpoint", ex);
-                endpoint.freeze(frozenTimeMs);
+                if (frozenTimeMs > 0) {
+                    LOGGER.warn("Cannot get channel for endpoint", ex);
+                    endpoint.freeze(frozenTimeMs);
+                }
+
+                if (attemptsLeft > 0) {
+                    LOGGER.debug("Retry get channel, attempts left: " + attemptsLeft + ", retry limit: " + getRetryLimit(), ex);
+                }
             }
         }
 
         return null;
+    }
+
+    /**
+     * Returns {@code true} if topology is empty.
+     *
+     * @return {@code true} if topology is empty
+     */
+    public boolean isEmpty() {
+        return topology.isEmpty();
     }
 
     /**
@@ -88,7 +116,7 @@ public class EndpointPool {
             }
         }
 
-        try (Channel channel = channel()) {
+        try (Channel channel = channel(false)) {
             return channel != null;
         }
     }
@@ -102,11 +130,15 @@ public class EndpointPool {
         }
     }
 
+    private int getRetryLimit() {
+        return Math.max(retryLimit, topology.size());
+    }
+
     private static class Props {
         static final Parameter<Long> FROZEN_TIME_MS =
                 Parameter.longParameter("frozen.time.ms").
                         withDefault(30_000L).
-                        withValidator(LongValidators.positive()).
+                        withValidator(LongValidators.nonNegative()).
                         build();
 
         static final Parameter<Integer> CONNECTION_LIMIT_PER_ENDPOINT =
@@ -123,6 +155,12 @@ public class EndpointPool {
         static final Parameter<Integer> SOCKET_TIMEOUT_MS =
                 Parameter.integerParameter("socket.timeout.ms").
                         withDefault(2_000).
+                        withValidator(IntegerValidators.nonNegative()).
+                        build();
+
+        static final Parameter<Integer> REQUEST_TIMEOUT_MS =
+                Parameter.integerParameter("request.timeout.ms").
+                        withDefault(10_000).
                         withValidator(IntegerValidators.nonNegative()).
                         build();
 
