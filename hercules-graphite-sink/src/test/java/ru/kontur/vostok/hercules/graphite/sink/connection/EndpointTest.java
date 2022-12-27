@@ -59,7 +59,7 @@ public class EndpointTest {
 
         Random random = new Random();
         ArrayList<GraphiteMetricData> data = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             data.add(new GraphiteMetricData("name", random.nextLong(), random.nextDouble()));
         }
         try (Channel channel = endpoint.channel()) {
