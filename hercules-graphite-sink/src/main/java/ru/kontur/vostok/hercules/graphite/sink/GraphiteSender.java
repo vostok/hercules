@@ -94,7 +94,7 @@ public class GraphiteSender extends Sender {
                 return;
             } catch (EndpointException ex) {
                 if (attemptsLeft > 1) {
-                    LOGGER.debug("Retry send exception, attempts left: " + attemptsLeft + ", retry limit: " + retryLimit, ex);
+                    LOGGER.debug("Retry send exception, attempts left: " + (attemptsLeft - 1) + ", retry limit: " + retryLimit, ex);
                 }
                 retryCounter.increment();
                 lastException = ex;

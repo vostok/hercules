@@ -26,8 +26,8 @@ public class GraphiteConnector {
     GraphiteConnector(Properties properties, int retryLimit, TimeSource time) {
         this.localEndpoints = new EndpointPool(PropertiesUtil.ofScope(properties, "local"), retryLimit, time);
         this.remoteEndpoints = new EndpointPool(PropertiesUtil.ofScope(properties, "remote"), retryLimit, time);
-        if (localEndpoints.isEmpty()) {
-            throw new IllegalStateException("Local endpoints must not be empty");
+        if (localEndpoints.isEmpty() && remoteEndpoints.isEmpty()) {
+            throw new IllegalStateException("Endpoints must not be empty");
         }
     }
 

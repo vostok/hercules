@@ -62,6 +62,10 @@ public class EndpointPool {
      * @return the channel if a connection has been leased, otherwise return {@code null}
      */
     public Channel channel(boolean isRetry) {
+        if (topology.isEmpty()) {
+            return null;
+        }
+
         int attemptsLeft = getRetryLimit();
 
         while (attemptsLeft-- > 0) {
