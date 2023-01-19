@@ -17,10 +17,14 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Gregory Koshelev
@@ -38,17 +42,38 @@ public class EndpointTest {
         TimeSource time = new MockTimeSource();
         Endpoint endpoint = getEndpoint(time, 1);
 
-        assertEquals(0, endpoint.leasedConnections());
+        assertEquals(0, endpoint.connections.size());
 
         endpoint.freeze(10_000);
 
         assertNull(endpoint.channel());
-        assertEquals(0, endpoint.leasedConnections());
+        assertEquals(0, endpoint.connections.size());
 
         time.sleep(1_000);
 
+        assertNull(endpoint.channelForRetry());
+        assertEquals(0, endpoint.connections.size());
+    }
+
+    @Test
+    public void shouldCorrectlyWorkAfterFreeze() throws Exception {
+        Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+        TimeSource time = new MockTimeSource();
+        Endpoint endpoint = getEndpoint(time, 1);
+
+        assertEquals(0, endpoint.connections.size());
+
+        endpoint.freeze(10_000);
+
         assertNull(endpoint.channel());
-        assertEquals(0, endpoint.leasedConnections());
+        assertEquals(0, endpoint.connections.size());
+
+        time.sleep(11_000);
+
+        try (Channel channel = endpoint.channel()) {
+            assertNotNull(channel);
+        }
+        assertEquals(2, endpoint.connections.size());
     }
 
     @Test(expected = TimeoutException.class)
@@ -89,6 +114,7 @@ public class EndpointTest {
 
         for (int i = 0; i < CONNECTION_LIMIT; i++) {
             try (Channel channel = endpoint.channel()) {
+                assertNotNull(channel);
             }
         }
 
@@ -96,27 +122,66 @@ public class EndpointTest {
     }
 
     @Test
-    public void supportLeasedConnections_channel() throws Throwable {
+    public void shouldNotCreateMoreThanLimitPlusThreadCount() throws Throwable {
+        Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+
+        Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
+
+        for (int i = 0; i < CONNECTION_LIMIT * 10; i++) {
+            try (Channel channel = endpoint.channel()) {
+                assertNotNull(channel);
+            }
+        }
+
+        assertTrue(endpoint.connections.size() <= CONNECTION_LIMIT);
+    }
+
+    @Test
+    public void shouldNotCreateMoreThanLimitPlusThreadCount_manyThreads() throws Throwable {
+        Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+
+        Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
+
+        int parallelism = 3;
+        ForkJoinPool customThreadPool = new ForkJoinPool(parallelism);
+        customThreadPool.submit(() ->
+                IntStream.range(0, 1000).parallel().forEach(id -> {
+                    try (Channel channel = endpoint.channel()) {
+                        assertNotNull(channel);
+                    } catch (EndpointException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+        ).get();
+        customThreadPool.shutdown();
+
+        assertTrue(endpoint.connections.size() <= CONNECTION_LIMIT + parallelism - 1);
+    }
+
+    @Test
+    public void shouldMaintainOneConnections_channel() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
 
         try (Channel channel = endpoint.channel()) {
-            assertEquals(1, endpoint.leasedConnections.get());
+            assertNotNull(channel);
+            assertEquals(0, endpoint.connections.size());
         }
 
-        assertEquals(0, endpoint.leasedConnections.get());
+        assertEquals(2, endpoint.connections.size());
     }
 
     @Test
-    public void supportLeasedConnections_channelForRetry() throws Throwable {
+    public void shouldMaintainOneConnections_channelForRetry() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
 
         try (Channel channel = endpoint.channelForRetry()) {
-            assertEquals(1, endpoint.leasedConnections.get());
+            assertNotNull(channel);
+            assertEquals(0, endpoint.connections.size());
         }
 
-        assertEquals(0, endpoint.leasedConnections.get());
+        assertEquals(2, endpoint.connections.size());
     }
 
     @Test
@@ -145,6 +210,7 @@ public class EndpointTest {
 
         // add broken connection on pool
         try (Channel channel = endpoint.channel()) {
+            assertNotNull(channel);
         }
 
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
