@@ -38,7 +38,7 @@ public class EventToJsonFormatterTest {
         assertEquals("{" +
                         "\"@timestamp\":\"1970-01-01T01:00:00.000000000Z\"" +
                         "}",
-                stream.toString(StandardCharsets.UTF_8.name())
+                stream.toString(StandardCharsets.UTF_8)
         );
     }
 
@@ -71,7 +71,29 @@ public class EventToJsonFormatterTest {
                         "\"notExcepted\":\"42\"" +
                         "}" +
                         "}",
-                stream.toString(StandardCharsets.UTF_8.name())
+                stream.toString(StandardCharsets.UTF_8)
+        );
+    }
+
+    @Test
+    public void shouldExceptExplicitRootLevelTags() throws IOException {
+        Event event = EventBuilder.create(TimeUtil.unixTimeToUnixTicks(3600), "11203800-63fd-11e8-83e2-3a587d902000")
+                .tag("tagIWant2Except", Variant.ofString("value1"))
+                .tag("tagIWant2LetBe", Variant.ofString("value2"))
+                .build();
+
+        Properties properties = new Properties();
+        properties.setProperty(EventToJsonFormatter.Props.TIMESTAMP_ENABLE.name(), "false");
+        properties.setProperty(EventToJsonFormatter.Props.FILE.name(), "resource://move-root.mapping");
+        EventToJsonFormatter formatter = new EventToJsonFormatter(properties);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DocumentWriter.writeTo(stream, formatter.format(event));
+
+        assertEquals("{" +
+                        "\"tagIWant2LetBe\":\"value2\"" +
+                        "}",
+                stream.toString(StandardCharsets.UTF_8)
         );
     }
 
@@ -96,7 +118,7 @@ public class EventToJsonFormatterTest {
                         "\"field\":\"value\"" +
                         "}" +
                         "}",
-                stream.toString(StandardCharsets.UTF_8.name())
+                stream.toString(StandardCharsets.UTF_8)
         );
     }
 
@@ -118,7 +140,7 @@ public class EventToJsonFormatterTest {
                         "\"integerField\":123," +
                         "\"stringField\":\"123\"" +
                         "}",
-                stream.toString(StandardCharsets.UTF_8.name())
+                stream.toString(StandardCharsets.UTF_8)
         );
     }
 
@@ -143,7 +165,7 @@ public class EventToJsonFormatterTest {
                         "\"latencyMs\":3," +
                         "\"latency\":\"3.372 milliseconds\"" +
                         "}",
-                stream.toString(StandardCharsets.UTF_8.name())
+                stream.toString(StandardCharsets.UTF_8)
         );
     }
 
@@ -167,7 +189,7 @@ public class EventToJsonFormatterTest {
                         "\"environment\":\"staging\"," +
                         "\"description\":\"This is the (almost) annotation\"" +
                         "}",
-                stream.toString(StandardCharsets.UTF_8.name())
+                stream.toString(StandardCharsets.UTF_8)
         );
     }
 
@@ -193,7 +215,7 @@ public class EventToJsonFormatterTest {
                         "\"hostname\":\"localhost\"," +
                         "\"description\":\"This is the annotation\"" +
                         "}",
-                stream.toString(StandardCharsets.UTF_8.name())
+                stream.toString(StandardCharsets.UTF_8)
         );
     }
 
@@ -216,7 +238,7 @@ public class EventToJsonFormatterTest {
         assertEquals("{" +
                         "\"stringField\":\"123\"" +
                         "}",
-                stream.toString(StandardCharsets.UTF_8.name())
+                stream.toString(StandardCharsets.UTF_8)
         );
     }
 }

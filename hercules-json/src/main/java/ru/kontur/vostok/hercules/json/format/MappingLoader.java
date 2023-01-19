@@ -164,6 +164,12 @@ public class MappingLoader {
 
         mappers.add(new MoveMapper(sourcePath, filteredDestination != null ? filteredDestination : "", exceptedTags));
         mappableTags.put(sourcePath, Boolean.TRUE);
+
+        if (sourcePath.equals(HPath.empty())) {
+            for (TinyString exceptedTag : exceptedTags) {
+                mappableTags.put(HPath.fromPath(exceptedTag.toString()), Boolean.TRUE);
+            }
+        }
     }
 
     /**
