@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Graphite endpoint.
@@ -51,7 +50,6 @@ public class Endpoint {
     private final TimeSource time;
 
     final ConcurrentLinkedQueue<Connection> connections = new ConcurrentLinkedQueue<>();
-    final AtomicInteger leasedConnections = new AtomicInteger(0);
     private final long connectionTtlMs;
 
     private volatile boolean frozen;
@@ -90,11 +88,18 @@ public class Endpoint {
      * @throws EndpointException if failed to create a new connection.
      */
     public Channel channel() throws EndpointException {
-        Connection connection = leaseConnection();
+        if (verifyFrozen()) {
+            LOGGER.debug("Skip frozen endpoint");
+            return null;
+        }
+
+        Connection connection = connections.poll();
         if (connection != null) {
             return new Channel(connection);
         }
-        return null;
+
+        LOGGER.debug("Create new connection, pool is empty");
+        return new Channel(newConnection());
     }
 
     /**
@@ -106,11 +111,19 @@ public class Endpoint {
      * @throws EndpointException if failed to create a new connection.
      */
     public Channel channelForRetry() throws EndpointException {
+        if (verifyFrozen()) {
+            LOGGER.debug("Skip frozen endpoint");
+            return null;
+        }
+
+        LOGGER.debug("Create new connection on retry");
+        return new Channel(newConnection());
+    }
+
+    private Connection newConnection() throws EndpointException {
         try {
-            LOGGER.debug("Create new connection on retry");
-            leasedConnections.incrementAndGet();
-            return new Channel(new Connection());
-        } catch (IOException ex) {
+            return new Connection();
+        } catch (Exception ex) {
             throw new EndpointException("Cannot create connection to " + address, ex);
         }
     }
@@ -161,75 +174,38 @@ public class Endpoint {
         return frozen = frozen && (frozenToMs >= time.milliseconds());
     }
 
-    public int leasedConnections() {
-        return leasedConnections.get();
-    }
-
-    private Connection leaseConnection() throws EndpointException {
-        int currentLeasedConnections;
-
-        do {
-            currentLeasedConnections = leasedConnections.get();
-            if (currentLeasedConnections >= connectionLimit) {
-                return null;
-            }
-        } while (!leasedConnections.compareAndSet(currentLeasedConnections, currentLeasedConnections + 1));
-
-        Connection connection = connections.poll();
-        if (connection != null) {
-            return connection;
-        }
-
-        if (verifyFrozen()) {
-            leasedConnections.decrementAndGet();
-            return null;
-        }
-
-        try {
-            LOGGER.debug("Create new connection, pool is empty");
-            return new Connection();
-        } catch (Exception ex) {
-            leasedConnections.decrementAndGet();
-            throw new EndpointException("Cannot create connection to " + address, ex);
-        }
-    }
-
     private void releaseConnection(Connection connection) {
-        try {
-            if (connection.isBroken()) {
-                LOGGER.debug("Close broken connection");
-                connection.close();
-                maintainConnections();
-                return;
-            }
+        if (connection.isBroken()) {
+            LOGGER.info("Close broken connection");
+            connection.close();
+            maintainConnections();
+            return;
+        }
 
-            if (connection.isExpired()) {
-                LOGGER.debug("Close expired connection");
-                connection.close();
-                maintainConnections();
-                return;
-            }
+        if (connection.isExpired()) {
+            LOGGER.debug("Close expired connection");
+            connection.close();
+            maintainConnections();
+            return;
+        }
 
-            if (connections.size() >= connectionLimit) {
-                LOGGER.debug("Close connection, pool is full");
-                connection.close();
-            } else {
-                maintainConnections();
-                connections.offer(connection);
-            }
-        } finally {
-            leasedConnections.decrementAndGet();
+        if (connections.size() >= connectionLimit * 2) {
+            LOGGER.warn("Close connection, pool is full, connection.limit.per.endpoint must be >= poolSize");
+            connection.close();
+        } else {
+            connections.offer(connection);
+            maintainConnections();
         }
     }
 
     private void maintainConnections() {
-        try {
-            if (!verifyFrozen() && connections.size() + leasedConnections.get() < connectionLimit) {
-                LOGGER.debug("Create new connection, maintain pool");
+        if (!verifyFrozen() && connections.size() < connectionLimit) {
+            LOGGER.debug("Create new connection, maintain pool");
+            try {
                 connections.offer(new Connection());
+            } catch (IOException ex) {
+                LOGGER.debug("Cannot create additional connection", ex);
             }
-        } catch (IOException ex) {
-            LOGGER.debug("Cannot create additional connection", ex);
         }
     }
 
