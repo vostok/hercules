@@ -60,7 +60,7 @@ class ElasticClient {
         Set<String> redefinedExceptions = new HashSet<>(Arrays.asList(PropertiesUtil.get(Props.REDEFINED_EXCEPTIONS, this.properties).get()));
         boolean indexCreationEnable = PropertiesUtil.get(Props.INDEX_CREATION_ENABLE, this.properties).get();
         IndexCreator indexCreator = IndexCreator.forPolicy(policy, restClient);
-        this.elasticResponseHandler = new ElasticResponseHandler(redefinedExceptions, indexCreationEnable, indexCreator, metricsCollector);
+        this.elasticResponseHandler = new ElasticResponseHandler(redefinedExceptions, indexCreationEnable, indexCreator);
 
         this.elasticsearchRequestTimeTimer = metricsCollector.timer("elasticsearchRequestTimeMs");
         this.elasticsearchRequestErrorsMeter = metricsCollector.meter("elasticsearchRequestErrors");

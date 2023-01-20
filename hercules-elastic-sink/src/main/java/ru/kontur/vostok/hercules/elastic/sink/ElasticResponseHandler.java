@@ -12,9 +12,6 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.elastic.sink.error.ElasticError;
 import ru.kontur.vostok.hercules.elastic.sink.error.ErrorGroup;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexCreator;
-import ru.kontur.vostok.hercules.health.Meter;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.health.MetricsUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static ru.kontur.vostok.hercules.util.throwable.ThrowableUtil.toUnchecked;
 
@@ -220,8 +216,6 @@ public class ElasticResponseHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticResponseHandler.class);
 
-    private static final String METRIC_PREFIX = "bulkResponseHandler";
-
     private static final JsonFactory FACTORY = new JsonFactory();
     private static final ObjectMapper MAPPER = new ObjectMapper(FACTORY);
 
@@ -229,24 +223,10 @@ public class ElasticResponseHandler {
     private final boolean shouldCreateIndexIfAbsent;
     private final IndexCreator indexCreator;
 
-    private final MetricsCollector metricsCollector;
-
-    private final ConcurrentHashMap<String, Meter> errorTypesMeter = new ConcurrentHashMap<>();
-
-    private final Meter retryableErrorsMeter;
-    private final Meter nonRetryableErrorsMeter;
-    private final Meter unknownErrorsMeter;
-
-
-    public ElasticResponseHandler(Set<String> redefinedExceptions, boolean shouldCreateIndexIfAbsent, IndexCreator indexCreator, final MetricsCollector metricsCollector) {
+    public ElasticResponseHandler(Set<String> redefinedExceptions, boolean shouldCreateIndexIfAbsent, IndexCreator indexCreator) {
         this.redefinedExceptions = redefinedExceptions;
         this.shouldCreateIndexIfAbsent = shouldCreateIndexIfAbsent;
         this.indexCreator = indexCreator;
-        this.metricsCollector = metricsCollector;
-
-        this.retryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".retryableErrors");
-        this.nonRetryableErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".nonRetryableErrors");
-        this.unknownErrorsMeter = metricsCollector.meter(METRIC_PREFIX + ".unknownErrors");
     }
 
     // TODO: Replace with a good parser
@@ -297,12 +277,7 @@ public class ElasticResponseHandler {
                     }
                 }
             }
-
             createIndicesIfNeeded(errors);
-
-            retryableErrorsMeter.mark(retryableErrorCount);
-            nonRetryableErrorsMeter.mark(nonRetryableErrorCount);
-            unknownErrorsMeter.mark(unknownErrorCount);
 
             return new Result(retryableErrorCount, nonRetryableErrorCount, unknownErrorCount, errors);
         });
@@ -319,7 +294,7 @@ public class ElasticResponseHandler {
     private ElasticError processError(TreeNode errorNode, String id, String index) {
         if (errorNode instanceof ObjectNode) {
             ObjectNode error = (ObjectNode) errorNode;
-            LOGGER.warn("Original error: {}", error);
+            LOGGER.debug("Original error: {}", error);
 
             final String type = Optional.ofNullable(error.get("type"))
                     .map(JsonNode::asText)
@@ -332,9 +307,8 @@ public class ElasticResponseHandler {
 
             //TODO: Build "caused by" trace
 
-            errorTypesMeter.computeIfAbsent(type, this::createMeter).mark();
             ErrorGroup group = getGroupForType(type);
-            LOGGER.warn("Got error: group={}, index={}, id={}, type={}, reason={}", group, index, id, type, reason);
+            LOGGER.debug("Got error: group={}, index={}, id={}, type={}, reason={}", group, index, id, type, reason);
             return new ElasticError(group, type, index, id, error.toString());
         } else {
             String errorMessage = "Error node is not object node, cannot parse";
@@ -380,9 +354,5 @@ public class ElasticResponseHandler {
             LOGGER.warn("Cannot create index " + index + ", will retry anyway");
         }
         indexCreator.waitForIndexReadiness(index);
-    }
-
-    private Meter createMeter(final String errorType) {
-        return metricsCollector.meter(METRIC_PREFIX + ".errorTypes." + MetricsUtil.sanitizeMetricName(errorType));
     }
 }
