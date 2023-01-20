@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.elastic.sink.error.ElasticError;
+import ru.kontur.vostok.hercules.elastic.sink.error.ElasticErrorMetrics;
 import ru.kontur.vostok.hercules.elastic.sink.error.ErrorGroup;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
@@ -56,6 +57,7 @@ public class ElasticSender extends Sender {
     private final IndicesMetricsCollector nonRetryableEventsIndicesMetricsCollector;
     private final Meter droppedNonRetryableErrorsMeter;
     private final Meter indexValidationErrorsMeter;
+    private final ElasticErrorMetrics elasticErrorMetrics;
 
     public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
@@ -85,6 +87,7 @@ public class ElasticSender extends Sender {
         this.nonRetryableEventsIndicesMetricsCollector = new IndicesMetricsCollector("nonRetryableEvents", 10_000, metricsCollector);
         this.droppedNonRetryableErrorsMeter = metricsCollector.meter("droppedNonRetryableErrors");
         this.indexValidationErrorsMeter = metricsCollector.meter("indexValidationErrors");
+        this.elasticErrorMetrics = new ElasticErrorMetrics("bulkResponseHandler", metricsCollector);
     }
 
     @Override
@@ -128,7 +131,7 @@ public class ElasticSender extends Sender {
 
                     ElasticResponseHandler.Result result = client.index(dataStream.toByteArray());
                     if (result.getTotalErrors() != 0) {
-                        resultProcess(result).forEach((eventId, validationResult) ->
+                        resultProcess(result, readyToSend).forEach((eventId, validationResult) ->
                                 nonRetryableErrorsMap.put(readyToSend.remove(eventId), validationResult));
                     } else {
                         readyToSend.clear();
@@ -148,8 +151,9 @@ public class ElasticSender extends Sender {
         return events.size() - droppedCount;
     }
 
-    private Map<String, ValidationResult> resultProcess(ElasticResponseHandler.Result result) {
-        LOGGER.info(
+    private Map<String, ValidationResult> resultProcess(ElasticResponseHandler.Result result,
+                                                        Map<String, ElasticDocument> documents) {
+        LOGGER.debug(
                 "Error statistics (retryable/non retryable/unknown/total): {}/{}/{}/{}",
                 result.getRetryableErrorCount(),
                 result.getNonRetryableErrorCount(),
@@ -164,6 +168,7 @@ public class ElasticSender extends Sender {
             if (ErrorGroup.NON_RETRYABLE.equals(group) || (ErrorGroup.UNKNOWN.equals(group) && !retryOnUnknownErrors)) {
                 errorsMap.put(eventId, ValidationResult.error(error.details()));
             }
+            elasticErrorMetrics.markError(documents.get(eventId).index(), group, error.type());
         }
         return errorsMap;
     }
