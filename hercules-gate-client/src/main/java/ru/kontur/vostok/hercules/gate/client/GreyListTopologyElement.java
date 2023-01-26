@@ -5,19 +5,19 @@ package ru.kontur.vostok.hercules.gate.client;
  */
 public class GreyListTopologyElement {
 
-    private String url;
-    private long entryTime;
+    private final String url;
+    private final long entryTime;
 
-    public GreyListTopologyElement(String url) {
+    public GreyListTopologyElement(String url, long entryTimeMs) {
         this.url = url;
-        this.entryTime = System.currentTimeMillis();
+        this.entryTime = entryTimeMs;
     }
 
     public String getUrl() {
         return url;
     }
 
-    public long getEntryTime() {
-        return entryTime;
+    public long elapsedFrom(long now) {
+        return now - entryTime;
     }
 }

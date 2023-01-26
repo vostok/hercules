@@ -27,6 +27,7 @@ import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -59,25 +60,32 @@ public class GateClient implements Closeable {
     private final int greyListElementsRecoveryTimeMs;
     private final String authHeader;
 
-    private final ScheduledExecutorService scheduler =
-            new ScheduledThreadPoolExecutorBuilder()
-                    .threadPoolSize(1)
-                    .name("gate-client-topology-updater")
-                    .daemon(false)
-                    .dropDelayedTasksAfterShutdown()
-                    .build();
+    private final ScheduledExecutorService scheduler;
+    private final Clock clock;
 
     public GateClient(Properties properties, Topology<String> whiteList, String apiKey) {
         this(properties, createHttpClient(properties), whiteList, apiKey);
     }
 
     public GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList, String apiKey) {
+        this(properties, client, whiteList, apiKey, new ScheduledThreadPoolExecutorBuilder()
+                        .threadPoolSize(1)
+                        .name("gate-client-topology-updater")
+                        .daemon(false)
+                        .dropDelayedTasksAfterShutdown()
+                        .build(),
+                Clock.systemUTC()
+        );
+    }
+
+    GateClient(Properties properties, CloseableHttpClient client, Topology<String> whiteList, String apiKey, ScheduledExecutorService scheduler, Clock clock) {
         this.greyListElementsRecoveryTimeMs = PropertiesUtil.get(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS, properties).get();
         this.client = client;
         this.whiteList = whiteList;
         this.greyList = new ArrayBlockingQueue<>(whiteList.size());
-
-        scheduler.scheduleWithFixedDelay(this::updateTopology,
+        this.scheduler = scheduler;
+        this.clock = clock;
+        this.scheduler.scheduleWithFixedDelay(this::updateTopology,
                 greyListElementsRecoveryTimeMs,
                 greyListElementsRecoveryTimeMs,
                 TimeUnit.MILLISECONDS);
@@ -235,14 +243,11 @@ public class GateClient implements Closeable {
             return;
         }
 
-        for (int i = 0; i < greyList.size(); i++) {
-            GreyListTopologyElement element = greyList.peek();
-            if (System.currentTimeMillis() - element.getEntryTime() >= greyListElementsRecoveryTimeMs) {
-                GreyListTopologyElement pollElement = greyList.poll();
-                whiteList.add(pollElement.getUrl());
-            } else {
-                return;
-            }
+        long now = clock.millis();
+        GreyListTopologyElement element;
+        while ((element = greyList.peek()) != null && element.elapsedFrom(now) >= greyListElementsRecoveryTimeMs) {
+            whiteList.add(element.getUrl());
+            greyList.remove();
         }
     }
 
@@ -269,7 +274,7 @@ public class GateClient implements Closeable {
                 if (!whiteList.remove(url)) {
                     continue;
                 }
-                if (!greyList.offer(new GreyListTopologyElement(url))) {
+                if (!greyList.offer(new GreyListTopologyElement(url, clock.millis()))) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Send fails", e);
                     }
@@ -367,26 +372,27 @@ public class GateClient implements Closeable {
         void send(String url) throws BadRequestException, UnavailableHostException, HttpProtocolException;
     }
 
-    private static class Props {
-        static final Parameter<Integer> REQUEST_TIMEOUT =
+    public static class Props {
+
+        public static final Parameter<Integer> REQUEST_TIMEOUT =
                 Parameter.integerParameter("requestTimeout")
                         .withDefault(GateClientDefaults.DEFAULT_TIMEOUT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final Parameter<Integer> CONNECTION_TIMEOUT =
+        public static final Parameter<Integer> CONNECTION_TIMEOUT =
                 Parameter.integerParameter("connectionTimeout")
                         .withDefault(GateClientDefaults.DEFAULT_TIMEOUT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final Parameter<Integer> CONNECTION_COUNT =
+        public static final Parameter<Integer> CONNECTION_COUNT =
                 Parameter.integerParameter("connectionCount")
                         .withDefault(GateClientDefaults.DEFAULT_CONNECTION_COUNT)
                         .withValidator(IntegerValidators.positive())
                         .build();
 
-        static final Parameter<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME_MS =
+        public static final Parameter<Integer> GREY_LIST_ELEMENTS_RECOVERY_TIME_MS =
                 Parameter.integerParameter("greyListElementsRecoveryTimeMs")
                         .withDefault(GateClientDefaults.DEFAULT_RECOVERY_TIME)
                         .withValidator(IntegerValidators.positive())

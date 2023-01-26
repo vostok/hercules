@@ -136,6 +136,11 @@ public class Topology<T> implements Iterable<T> {
         return new GlobalState(array);
     }
 
+    @Override
+    public String toString() {
+        return Arrays.toString(state.array);
+    }
+
     private final class TopologyIterator implements Iterator<T> {
 
         @Override
@@ -195,10 +200,6 @@ public class Topology<T> implements Iterable<T> {
      * {@link TopologyIsEmptyException} is thrown when try to get element from the empty topology.
      */
     public static class TopologyIsEmptyException extends RuntimeException {
-        public TopologyIsEmptyException() {
-            super();
-        }
-
         public TopologyIsEmptyException(String message) {
             super(message);
         }
