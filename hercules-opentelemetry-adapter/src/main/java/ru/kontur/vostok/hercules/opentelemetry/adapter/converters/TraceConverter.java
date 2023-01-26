@@ -28,20 +28,14 @@ import java.util.stream.Stream;
  * OpenTelemetry trace_service.proto</a>
  */
 public class TraceConverter {
-    public static List<Event> convert(List<ResourceSpans> resourceSpans) {
-        return resourceSpans
-                .stream()
-                .flatMap(TraceConverter::convertResourceSpans)
-                .collect(Collectors.toList());
-    }
-
-    private static Stream<Event> convertResourceSpans(ResourceSpans resourceSpans) {
+    public static List<Event> convert(ResourceSpans resourceSpans) {
         Resource resource = resourceSpans.getResource();
 
         return resourceSpans
                 .getScopeSpansList()
                 .stream()
-                .flatMap(it -> convertSpans(it, resource));
+                .flatMap(it -> convertSpans(it, resource))
+                .collect(Collectors.toList());
     }
 
     private static Stream<Event> convertSpans(ScopeSpans scopeSpans, Resource resource) {

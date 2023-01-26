@@ -56,7 +56,7 @@ public class MetricConverterTest {
 
         ResourceMetrics resourceMetrics = getResourceMetrics(metric);
 
-        List<Event> events = MetricConverter.convert(List.of(resourceMetrics));
+        List<Event> events = MetricConverter.convert(resourceMetrics);
         assertEquals(1, events.size());
         assertEquals(1.2, extractValue(events.get(0)), 0.000000001);
         assertEquals(TimeUtil.nanosToTicks(timestamp), events.get(0).getTimestamp(), 0.000000001);
@@ -116,7 +116,7 @@ public class MetricConverterTest {
 
         ResourceMetrics resourceMetrics = getResourceMetrics(metric);
 
-        List<Event> events = MetricConverter.convert(List.of(resourceMetrics));
+        List<Event> events = MetricConverter.convert(resourceMetrics);
         assertEquals(1, events.size());
         assertEquals(12, extractValue(events.get(0)), 0.000000001);
         Container[] tags = extractTags(events.get(0));
@@ -150,7 +150,7 @@ public class MetricConverterTest {
 
         ResourceMetrics resourceMetrics = getResourceMetrics(metric);
 
-        List<Event> events = MetricConverter.convert(List.of(resourceMetrics));
+        List<Event> events = MetricConverter.convert(resourceMetrics);
         assertEquals(10, events.size());
 
         {
@@ -257,7 +257,7 @@ public class MetricConverterTest {
 
         ResourceMetrics resourceMetrics = getResourceMetrics(metric);
 
-        List<Event> events = MetricConverter.convert(List.of(resourceMetrics));
+        List<Event> events = MetricConverter.convert(resourceMetrics);
         assertEquals(4, events.size());
 
         {

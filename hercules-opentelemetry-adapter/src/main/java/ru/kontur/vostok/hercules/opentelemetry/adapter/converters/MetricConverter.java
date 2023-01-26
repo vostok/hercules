@@ -40,14 +40,7 @@ import java.util.stream.Stream;
  * metrics.proto</a>
  */
 public class MetricConverter {
-    public static List<Event> convert(List<ResourceMetrics> resourceMetrics) {
-        return resourceMetrics
-                .stream()
-                .flatMap(MetricConverter::convertResourceMetrics)
-                .collect(Collectors.toList());
-    }
-
-    private static Stream<Event> convertResourceMetrics(ResourceMetrics resourceMetrics) {
+    public static List<Event> convert(ResourceMetrics resourceMetrics) {
         Resource resource = resourceMetrics.getResource();
 
         List<Container> resourceTags = getResourceTags(resource);
@@ -55,7 +48,8 @@ public class MetricConverter {
         return resourceMetrics
                 .getScopeMetricsList()
                 .stream()
-                .flatMap(it -> convertMetrics(it, resourceTags));
+                .flatMap(it -> convertMetrics(it, resourceTags))
+                .collect(Collectors.toList());
     }
 
     private static Stream<Event> convertMetrics(ScopeMetrics scopeMetrics, List<Container> resourceTags) {
