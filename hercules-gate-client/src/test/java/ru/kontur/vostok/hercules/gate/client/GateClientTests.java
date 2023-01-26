@@ -6,105 +6,148 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Stubber;
+import ru.kontur.vostok.hercules.gate.client.GateClient.Props;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.util.concurrent.Topology;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Daniil Zhenikhov
  */
-public class GateClientTests {
-    private static final String OK_200_ADDR = "ok_2xx";
-    private static final String ERROR_4XX_ADDR = "error_4xx";
-    private static final String ERROR_5XX_ADDR = "error_5xx";
-    private static final String ERROR_5XX_ADDR_PROCESSING_TEST = "error_5xx_processing_test";
+@ExtendWith(MockitoExtension.class)
+class GateClientTests {
 
-    private Properties properties = new Properties();
-    private final CloseableHttpClient HTTP_CLIENT = new CloseableHttpClientMock();
-    private Topology<String> whiteList;
-    private final String apiKey = "ordinary-api-key";
+    private static final String API_KEY = "ordinary-api-key";
 
-    @Before
-    public void setUp() {
-        whiteList = new Topology<>(new String[]{});
+    @Mock
+    private CloseableHttpClient httpClient;
+
+    static Stream<Arguments> errorsAndExceptions() {
+        return Stream.of(
+                Arguments.of(topologyOfElements("address"), 400, BadRequestException.class),
+                Arguments.of(topologyOfElements("address"), 500, UnavailableClusterException.class),
+                Arguments.of(topologyOfElements("address1", "address2"), 500, UnavailableClusterException.class)
+        );
     }
 
-    @Test(expected = BadRequestException.class)
-    public void shouldThrowExceptionIfReturn4xx() throws BadRequestException, UnavailableClusterException {
-        whiteList.add(ERROR_4XX_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, apiKey);
-        gateClient.ping();
-    }
+    @ParameterizedTest
+    @MethodSource("errorsAndExceptions")
+    void shouldThrowExceptionOnHttpErrors(
+            Topology<String> whiteList, int responseStatusCode, Class<? extends Throwable> expectedExceptionType
+    ) throws Exception {
+        doReturnStatusCode(responseStatusCode).when(httpClient).execute(any(HttpUriRequest.class));
+        var gateClient = new GateClient(new Properties(), httpClient, whiteList, API_KEY);
 
-    @Test(expected = UnavailableClusterException.class)
-    public void shouldThrowExceptionIfAllOneHostUnavailable() throws BadRequestException, UnavailableClusterException {
-        whiteList.add(ERROR_5XX_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, apiKey);
-        gateClient.ping();
-    }
-
-    @Test(expected = UnavailableClusterException.class)
-    public void shouldThrowExceptionIfAllHostUnavailable() throws BadRequestException, UnavailableClusterException {
-        whiteList.add(ERROR_5XX_ADDR);
-        whiteList.add(ERROR_5XX_ADDR);
-        whiteList.add(ERROR_5XX_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, apiKey);
-        gateClient.ping();
+        assertThrows(expectedExceptionType, gateClient::ping);
     }
 
     @Test
-    public void shouldDeleteUrlFromWhiteListAndReturnAfterTimeout() throws BadRequestException, UnavailableClusterException, InterruptedException {
-        Properties properties = new Properties();
-        properties.setProperty("greyListElementsRecoveryTimeMs", "100");
-        whiteList.add(ERROR_5XX_ADDR);
-        whiteList.add(ERROR_5XX_ADDR);
-        whiteList.add(OK_200_ADDR);
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, apiKey);
+    void shouldDeleteUrlFromWhiteListAndReturnAfterTimeout() throws Exception {
+        var properties = PropertiesUtil.ofEntries(Map.entry(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.name(), "100"));
+        var whiteList = topologyOfElements("address1", "address2", "address3");
+        var executorService = mock(ScheduledExecutorService.class);
+        var clock = mock(Clock.class);
+        var runnableArgumentCaptor = ArgumentCaptor.forClass(Runnable.class);
+
+        var gateClient = new GateClient(properties, httpClient, whiteList, API_KEY, executorService, clock);
+        verify(executorService).scheduleWithFixedDelay(runnableArgumentCaptor.capture(), eq(100L), eq(100L), eq(TimeUnit.MILLISECONDS));
+        Runnable updateTopologyTask = runnableArgumentCaptor.getValue();
+        assertThat(updateTopologyTask, notNullValue());
+
+        doReturnStatusCode(500, 500, 200).when(httpClient).execute(any());
+        doReturn(100L, 200L).when(clock).millis();
         gateClient.ping();
-        assertEquals(1, whiteList.size());
-        Thread.sleep(1000);
-        assertEquals(3, whiteList.size());
+        assertThat(whiteList.size(), is(1));
+        verify(clock, times(2)).millis();
+        reset(clock);
+
+        doReturn(199L).when(clock).millis();
+        updateTopologyTask.run();
+        assertThat(whiteList.size(), is(1));
+        verify(clock, atLeast(1)).millis();
+        reset(clock);
+
+        doReturn(200L).when(clock).millis();
+        updateTopologyTask.run();
+        assertThat(whiteList.size(), is(2));
+        verify(clock, atLeast(1)).millis();
+        reset(clock);
+
+        doReturn(300L).when(clock).millis();
+        updateTopologyTask.run();
+        assertThat(whiteList.size(), is(3));
+        verify(clock, atLeast(1)).millis();
+        reset(clock);
     }
 
     @Test
-    public void shouldNotPingNotWorkingHosts() throws BadRequestException, UnavailableClusterException {
+    void shouldNotPingNotWorkingHosts() throws Exception {
+        var whiteList = topologyOfElements("address1", "address2");
+        var properties = PropertiesUtil.ofEntries(Map.entry(Props.GREY_LIST_ELEMENTS_RECOVERY_TIME_MS.name(), "100"));
+        var executorService = mock(ScheduledExecutorService.class);
+        var clock = mock(Clock.class);
+        var gateClient = new GateClient(properties, httpClient, whiteList, API_KEY, executorService, clock);
+        var httpRequestCaptor = ArgumentCaptor.forClass(HttpUriRequest.class);
+        doReturnStatusCode(500, 200).when(httpClient).execute(any());
+        gateClient.ping();
+        assumeTrue(whiteList.size() == 1);
+        reset(httpClient);
+        var workingAddress = whiteList.next();
 
-        long startProcessingMs = System.currentTimeMillis();
+        doReturnStatusCode(200).when(httpClient).execute(any());
+        gateClient.ping();
+        gateClient.ping();
+        verify(httpClient, times(2)).execute(httpRequestCaptor.capture());
+        Set<String> uris = httpRequestCaptor.getAllValues().stream()
+                .map(HttpUriRequest::getURI)
+                .map(URI::toString)
+                .collect(Collectors.toUnmodifiableSet());
 
-        Properties properties = new Properties();
-        properties.setProperty("greyListElementsRecoveryTimeMs", "10000");
-        int count = 10;
-        for (int i = 0; i < count; i++) {
-            if (i % 2 == 0) {
-                whiteList.add(OK_200_ADDR);
-            } else {
-                whiteList.add(ERROR_5XX_ADDR_PROCESSING_TEST);
-            }
-        }
-
-        GateClient gateClient = new GateClient(properties, HTTP_CLIENT, whiteList, apiKey);
-        for (int i = 0; i < count * 3; i++) {
-            gateClient.ping();
-        }
-
-        long endProcessingMs = System.currentTimeMillis();
-        long timeOfProcessingMs = endProcessingMs - startProcessingMs;
-
-        assertTrue(timeOfProcessingMs > 5_000 && timeOfProcessingMs < 6_000);
+        assertThat(uris.size(), is(1));
+        assertThat(uris, hasItem(containsString(workingAddress)));
+        assertThat(whiteList.size(), is(1));
+        verify(httpClient, times(2)).execute(any(HttpUriRequest.class));
     }
 
     /**
@@ -114,14 +157,14 @@ public class GateClientTests {
      * @throws Exception Will be thrown if test incorrectly configure environment or if logic is incorrect.
      */
     @Test
-    public void sendMethodShouldAddAuthorizationHeader() throws Exception {
-        whiteList.add("some-host");
+    void sendMethodShouldAddAuthorizationHeader() throws Exception {
+        var whiteList = topologyOfElements("some-host");
         CloseableHttpClient httpClient = mockAlwaysSuccessHttpClient();
-        GateClient gateClient = new GateClient(properties, httpClient, whiteList, apiKey);
+        GateClient gateClient = new GateClient(new Properties(), httpClient, whiteList, API_KEY);
         String stream = "stream";
         byte[] data = "data".getBytes(StandardCharsets.UTF_8);
 
-        gateClient.send(apiKey, stream, data);
+        gateClient.send(API_KEY, stream, data);
 
         ArgumentCaptor<HttpUriRequest> requestCaptor = ArgumentCaptor.forClass(HttpUriRequest.class);
         verify(httpClient).execute(requestCaptor.capture());
@@ -139,5 +182,21 @@ public class GateClientTests {
         doReturn(httpResponseStatusLine).when(httpResponse).getStatusLine();
         doReturn(200).when(httpResponseStatusLine).getStatusCode();
         return httpClient;
+    }
+    
+    static Topology<String> topologyOfElements(String ...args) {
+        return new Topology<>(args);
+    }
+
+    static Stubber doReturnStatusCode(Integer code, Integer ...otherCodes) {
+        return doReturn(createResponseWithCode(code, otherCodes));
+    }
+
+    static CloseableHttpResponse createResponseWithCode(Integer code, Integer ...otherCodes) {
+        var statusLine = Mockito.mock(StatusLine.class);
+        when(statusLine.getStatusCode()).thenReturn(code, otherCodes);
+        var response = mock(CloseableHttpResponse.class);
+        doReturn(statusLine).when(response).getStatusLine();
+        return response;
     }
 }
