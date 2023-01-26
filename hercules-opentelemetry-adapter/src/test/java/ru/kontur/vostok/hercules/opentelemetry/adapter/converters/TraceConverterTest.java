@@ -57,7 +57,7 @@ public class TraceConverterTest {
                 .setResource(resource)
                 .build();
 
-        List<Event> events = TraceConverter.convert(List.of(resourceSpans));
+        List<Event> events = TraceConverter.convert(resourceSpans);
         Event event = events.get(0);
 
         Container payload = event.getPayload();

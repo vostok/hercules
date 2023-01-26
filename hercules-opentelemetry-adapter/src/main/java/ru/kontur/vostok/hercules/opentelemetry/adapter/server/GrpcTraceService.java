@@ -10,13 +10,16 @@ import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.gate.client.GateSender;
 import ru.kontur.vostok.hercules.gate.client.GateStatus;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.opentelemetry.adapter.converters.ServiceNameExtractor;
 import ru.kontur.vostok.hercules.opentelemetry.adapter.converters.TraceConverter;
 import ru.kontur.vostok.hercules.opentelemetry.adapter.metrics.GrpcServiceMetrics;
+import ru.kontur.vostok.hercules.opentelemetry.adapter.metrics.ServiceNameMetricsCollector;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -34,10 +37,14 @@ public class GrpcTraceService extends TraceServiceGrpc.TraceServiceImplBase {
     private final GateSender gateSender;
     private final String stream;
     private final GrpcServiceMetrics metrics;
+    private final ServiceNameMetricsCollector serviceNameMetricsCollector;
 
     public GrpcTraceService(GateSender gateSender, Properties properties, MetricsCollector metricsCollector) {
         this.gateSender = gateSender;
         this.metrics = new GrpcServiceMetrics(getClass().getSimpleName(), TimeSource.SYSTEM, metricsCollector);
+        this.serviceNameMetricsCollector = new ServiceNameMetricsCollector(
+                "totalEvents", getClass().getSimpleName(), 10_000, metricsCollector
+        );
         this.stream = PropertiesUtil.get(Props.STREAM, properties).get();
     }
 
@@ -53,7 +60,16 @@ public class GrpcTraceService extends TraceServiceGrpc.TraceServiceImplBase {
             StreamObserver<ExportTraceServiceResponse> responseObserver
     ) {
         long convertingEventsStartedAtMs = metrics.startMilliseconds();
-        List<Event> events = TraceConverter.convert(request.getResourceSpansList());
+
+        List<Event> events = new ArrayList<>();
+
+        request.getResourceSpansList().forEach(resource -> {
+            List<Event> resourceEvents = TraceConverter.convert(resource);
+            events.addAll(resourceEvents);
+
+            String serviceName = ServiceNameExtractor.getServiceName(resource.getResource());
+            serviceNameMetricsCollector.markEvent(serviceName, resourceEvents.size());
+        });
 
         long sendingEventsStartedAtMs = metrics.convertingEnded(convertingEventsStartedAtMs);
         GateStatus status = gateSender.send(events, false, stream);
