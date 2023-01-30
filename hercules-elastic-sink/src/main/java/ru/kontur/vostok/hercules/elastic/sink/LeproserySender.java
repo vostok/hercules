@@ -104,7 +104,7 @@ class LeproserySender {
         try {
             gateClient.send(leproseryStream, data);
 
-            LOGGER.info("Send to leprosery {} events", count);
+            LOGGER.debug("Send to leprosery {} events", count);
             leproseryEventsMeter.mark(count);
             leproseryEventsWithErrorsMeter.mark(eventErrorInfos.size() - count);
         } catch (BadRequestException | UnavailableClusterException e) {
