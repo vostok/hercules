@@ -15,14 +15,39 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Undertow library HTTP-server implementation.
+ *
  * @author Gregory Koshelev
  */
 public class UndertowHttpServer extends HttpServer {
 
     private Undertow undertow;
 
+    /**
+     * Constructor.
+     *
+     * @param host       HTTP-host.
+     * @param port       TCP-port of HTTP-server.
+     * @param properties Other properties.
+     * @param handler    Root HTTP-handler.
+     * @deprecated Use {@link #UndertowHttpServer(Properties, HttpHandler)} and pass host and port parameters using properties.
+     */
+    @Deprecated
     public UndertowHttpServer(String host, int port, Properties properties, HttpHandler handler) {
+
         super(host, port, properties, handler);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param properties Server parameters.
+     * @param handler    Root HTTP-handler.
+     * @see HttpServer.Props
+     * @see UndertowOptions
+     */
+    public UndertowHttpServer(Properties properties, HttpHandler handler) {
+        super(properties, handler);
     }
 
     @Override

@@ -5,7 +5,7 @@ import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
 import java.util.Properties;
 
 /**
- * Represents application version
+ * Represents application version.
  *
  * @author Gregory Koshelev
  */

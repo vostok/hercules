@@ -11,7 +11,7 @@ import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 public class StatusHandler implements HttpHandler {
     @Override
     public void handle(HttpServerRequest request) {
-        request.complete(statusCodeFromState(Application.application().state()));
+        request.complete(statusCodeFromState(Application.application().getState()));
     }
 
     private int statusCodeFromState(ApplicationState state) {

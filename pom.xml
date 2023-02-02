@@ -40,6 +40,7 @@
         <spotbugs-annotations.version>3.1.12</spotbugs-annotations.version>
         <junit.version>5.9.2</junit.version>
         <mockito.version>5.0.0</mockito.version>
+        <systemlambda.version>1.2.1</systemlambda.version>
     </properties>
 
     <modules>
@@ -77,7 +78,6 @@
         <module>hercules-tracing-api</module>
         <module>hercules-json</module>
         <module>hercules-curator</module>
-        <module>hercules-sd</module>
         <module>hercules-application</module>
         <module>hercules-clickhouse-util</module>
         <module>hercules-clickhouse-sink</module>
@@ -90,6 +90,7 @@
         <module>hercules-sentry-client-impl-v9</module>
         <module>hercules-splitter</module>
         <module>hercules-sentry-client-impl</module>
+        <module>hercules-coverage-aggregate</module>
     </modules>
 
     <dependencyManagement>
@@ -341,9 +342,40 @@
                 <version>${spotbugs-annotations.version}</version>
             </dependency>
 
+            <!-- region All Hercules components -->
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-util</artifactId>
+                <artifactId>hercules-application</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-auth</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-cassandra-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-cassandra-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-clickhouse-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-clickhouse-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-client</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>
@@ -353,17 +385,82 @@
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-application</artifactId>
+                <artifactId>hercules-curator</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-throttling</artifactId>
+                <artifactId>hercules-elastic-adapter</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-undertow-util</artifactId>
+                <artifactId>hercules-elastic-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-gate</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-gate-client</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-graphite-adapter</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-graphite-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-health</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-http</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-init</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-json</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-kafka-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-management-api</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-meta</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-opentelemetry-adapter</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-partitioner</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>
@@ -377,96 +474,6 @@
                 <version>${hercules.version}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-partitioner</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-meta</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-auth</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-kafka-util</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-uuid</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-cassandra-util</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-health</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-gateway-client</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-tags</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-http</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-sink</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-cassandra-sink</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-gate-client</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-json</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-curator</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-sd</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-clickhouse-util</artifactId>
-                <version>${hercules.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.kontur.vostok.hercules</groupId>
-                <artifactId>hercules-clickhouse-sink</artifactId>
-                <version>${hercules.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
@@ -488,6 +495,92 @@
                 <artifactId>hercules-sentry-client-impl-v9</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sentry-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-splitter</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-stream-api</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-stream-manager</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-stream-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-tags</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-throttling</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-timeline-api</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-timeline-manager</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-timeline-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-tracing-api</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-tracing-sink</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-tracing-sink-clickhouse</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-undertow-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-util</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-uuid</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <!-- endregion All Hercules components -->
 
             <!-- Test libraries -->
             <dependency>
@@ -521,6 +614,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>com.github.stefanbirkner</groupId>
+                <artifactId>system-lambda</artifactId>
+                <version>${systemlambda.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson.version}</version>
@@ -531,91 +630,28 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.8</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.1.2</version>
+                <inherited>true</inherited>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M8</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>me.fabriciorby</groupId>
-                        <artifactId>maven-surefire-junit5-tree-reporter</artifactId>
-                        <version>1.1.0</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <reportFormat>plain</reportFormat>
-                    <consoleOutputReporter>
-                        <disable>true</disable>
-                    </consoleOutputReporter>
-                    <statelessTestsetInfoReporter
-                        implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporterUnicode">
-                    </statelessTestsetInfoReporter>
-                </configuration>
+                <inherited>true</inherited>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.0.0-M8</version>
-                <configuration>
-                    <includes>
-                        <include>**/*IT.java</include>
-                    </includes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <inherited>true</inherited>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.1.2</version>
-                <executions>
-                    <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
-                        <configuration>
-                            <logViolationsToConsole>true</logViolationsToConsole>
-                            <consoleOutput>true</consoleOutput>
-                            <failOnViolation>false</failOnViolation>
-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                            <configLocation>checkstyle.xml</configLocation>
-                            <useFile>${project.build.directory}/checkstyle-report.txt</useFile>
-                        </configuration>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>10.3</version>
-                    </dependency>
-                </dependencies>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.8</version>
+                <inherited>true</inherited>
             </plugin>
         </plugins>
 
@@ -669,6 +705,97 @@
                         <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>0.8.8</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <phase>post-integration-test</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.0.0-M8</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>me.fabriciorby</groupId>
+                            <artifactId>maven-surefire-junit5-tree-reporter</artifactId>
+                            <version>1.1.0</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <reportFormat>plain</reportFormat>
+                        <consoleOutputReporter>
+                            <disable>true</disable>
+                        </consoleOutputReporter>
+                        <excludes>
+                            <exclude>**/*IntegrationTest.java</exclude>
+                            <exclude>**/*FunctionalTest.java</exclude>
+                        </excludes>
+                        <statelessTestsetInfoReporter
+                            implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5StatelessTestsetInfoTreeReporterUnicode">
+                        </statelessTestsetInfoReporter>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.0.0-M8</version>
+                    <configuration>
+                        <includes>
+                            <include>**/*IntegrationTest.java</include>
+                        </includes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>3.1.2</version>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>validate</phase>
+                            <configuration>
+                                <logViolationsToConsole>true</logViolationsToConsole>
+                                <consoleOutput>true</consoleOutput>
+                                <failOnViolation>false</failOnViolation>
+                                <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                                <configLocation>checkstyle.xml</configLocation>
+                                <useFile>${project.build.directory}/checkstyle-report.txt</useFile>
+                            </configuration>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>10.3</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -684,7 +811,7 @@
                         <version>3.0.0-M8</version>
                         <configuration>
                             <includes combine.children="append">
-                                <include>**/*FT.java</include>
+                                <include>**/*FunctionalTest.java</include>
                             </includes>
                         </configuration>
                     </plugin>
