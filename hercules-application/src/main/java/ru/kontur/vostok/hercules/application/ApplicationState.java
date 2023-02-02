@@ -1,22 +1,33 @@
 package ru.kontur.vostok.hercules.application;
 
 /**
+ * States of the {@link Application} class.
+ *
  * @author Gregory Koshelev
  */
 public enum ApplicationState {
-    INIT(0),
-    STARTING(10),
-    RUNNING(20),
-    STOPPING(30),
-    STOPPED(40);
+    /**
+     * After construction state.
+     */
+    INIT,
 
-    private final int order;
+    /**
+     * Performing context construction.
+     */
+    STARTING,
 
-    ApplicationState(int order) {
-        this.order = order;
-    }
+    /**
+     * Application in working condition.
+     */
+    RUNNING,
 
-    public int order() {
-        return order;
-    }
+    /**
+     * Starting of shutdown.
+     */
+    STOPPING,
+
+    /**
+     * Application doesn't work.
+     */
+    STOPPED,
 }

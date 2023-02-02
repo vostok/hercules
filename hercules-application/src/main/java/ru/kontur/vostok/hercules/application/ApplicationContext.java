@@ -4,9 +4,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
+ * Execution context of the application.
+ * <p>
+ * Used as an answer to {@code GET /about} request.
+ * </p>
+ *
  * @author Gregory Koshelev
  */
 public class ApplicationContext {
+
     private final String applicationName;
     private final String applicationId;
     private final String version;
@@ -18,6 +24,18 @@ public class ApplicationContext {
 
     private final ConcurrentMap<String, String> additionalContext = new ConcurrentHashMap<>();
 
+    /**
+     * Constructor.
+     *
+     * @param applicationName Application name (see {@link ApplicationRunner#getApplicationName()} for details).
+     * @param applicationId   Application id (see {@link ApplicationRunner#getApplicationId()} for details).
+     * @param version         Version string of the application, e.g {@code "1.0.0"}.
+     * @param commitId        Git commit hash of the build version.
+     * @param environment     Execution environment name.
+     * @param zone            Execution environment zone name.
+     * @param instanceId      Execution instance id.
+     * @param hostname        Current machine hostname.
+     */
     public ApplicationContext(
             String applicationName,
             String applicationId,
@@ -26,7 +44,8 @@ public class ApplicationContext {
             String environment,
             String zone,
             String instanceId,
-            String hostname) {
+            String hostname
+    ) {
         this.applicationName = applicationName;
         this.applicationId = applicationId;
         this.version = version;
@@ -70,12 +89,10 @@ public class ApplicationContext {
     }
 
     /**
-     * Returns additional context value by the key.
-     * These values can be exchanged thread-safely between different components.
+     * Returns additional context value by the key. These values can be exchanged thread-safely between different components.
      *
      * @param key the key whose associated value is to be returned
-     * @return the value to which the specified key is mapped, or
-     *         {@code null} if this map contains no mapping for the key
+     * @return the value to which the specified key is mapped, or {@code null} if this map contains no mapping for the key
      */
     public String get(String key) {
         return additionalContext.get(key);

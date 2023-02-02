@@ -11,7 +11,7 @@ import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.application.Application;
-import ru.kontur.vostok.hercules.application.Application.Container;
+import ru.kontur.vostok.hercules.application.Container;
 import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;

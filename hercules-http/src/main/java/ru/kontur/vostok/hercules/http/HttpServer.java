@@ -3,6 +3,7 @@ package ru.kontur.vostok.hercules.http;
 import ru.kontur.vostok.hercules.http.handler.HttpHandler;
 import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
+import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.validation.IntegerValidators;
 import ru.kontur.vostok.hercules.util.validation.LongValidators;
 import ru.kontur.vostok.hercules.util.validation.ValidationResult;
@@ -17,16 +18,43 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class HttpServer implements Lifecycle {
 
-    private final AtomicReference<HttpServerState> state = new AtomicReference<>(HttpServerState.INIT);
-
     protected final String host;
     protected final int port;
     protected final Properties properties;
     protected final HttpHandler handler;
+    private final AtomicReference<HttpServerState> state = new AtomicReference<>(HttpServerState.INIT);
 
+    /**
+     * Constructor.
+     *
+     * @param host       Host.
+     * @param port       TCP-port number.
+     * @param properties Properties.
+     * @param handler    Root HTTP-request handler.
+     * @deprecated Use {@link #HttpServer(Properties, HttpHandler)} instead and pass host and port using {@link Properties}
+     * @see #HttpServer(Properties, HttpHandler)
+     */
+    @Deprecated
     public HttpServer(String host, int port, Properties properties, HttpHandler handler) {
         this.host = host;
         this.port = port;
+        this.properties = properties;
+        this.handler = handler;
+    }
+
+    /**
+     * Constructor.
+     * <p>
+     * Host and port should be pass using {@link Properties}.
+     *
+     * @param properties Properties.
+     * @param handler    Root HTTP-request handler.
+     * @see Props#HOST
+     * @see Props#PORT
+     */
+    public HttpServer(Properties properties, HttpHandler handler) {
+        this.host = PropertiesUtil.get(Props.HOST, properties).orEmpty("0.0.0.0");
+        this.port = PropertiesUtil.get(Props.PORT, properties).orEmpty(8080);
         this.properties = properties;
         this.handler = handler;
     }
@@ -59,14 +87,40 @@ public abstract class HttpServer implements Lifecycle {
         return result;
     }
 
+    /**
+     * Start the HTTP-server implementation.
+     */
     protected void startInternal() {
     }
 
+    /**
+     * Stop the HTTP-server gracefully.
+     *
+     * @param timeout Time budget to stop the server.
+     * @param unit    Measure units of {@code timeout} parameter.
+     * @return {@code true} will be returned if there is no errors while stop.
+     */
     protected boolean stopInternal(long timeout, TimeUnit unit) {
         return true;
     }
 
+    /**
+     * Common HTTP-server properties.
+     */
     public static final class Props {
+
+        /**
+         * HTTP-host.
+         */
+        public static final Parameter<String> HOST = Parameter.stringParameter("host")
+                .build();
+
+        /**
+         * TCP-port number.
+         */
+        public static final Parameter<Integer> PORT = Parameter.integerParameter("port")
+                .withValidator(IntegerValidators.portValidator())
+                .build();
 
         /**
          * Maximum value of content length of HTTP-requests.

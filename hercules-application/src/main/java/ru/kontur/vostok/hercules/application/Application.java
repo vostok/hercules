@@ -2,47 +2,97 @@ package ru.kontur.vostok.hercules.application;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.configuration.PropertiesLoader;
-import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.configuration.supplier.PropertiesSupplier;
 import ru.kontur.vostok.hercules.configuration.util.ArgsParser;
-import ru.kontur.vostok.hercules.util.lifecycle.Lifecycle;
-import ru.kontur.vostok.hercules.util.lifecycle.Stoppable;
 import ru.kontur.vostok.hercules.util.net.LocalhostResolver;
-import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
-import ru.kontur.vostok.hercules.util.time.Timer;
+import ru.kontur.vostok.hercules.util.time.TimeSource.Result;
 
-import java.io.Closeable;
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
+ * Application controller class.
+ *
  * @author Gregory Koshelev
  */
-public class Application {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Application.class);
+public final class Application {
 
     private static volatile Application application;
-    private static AtomicReference<ApplicationState> state = new AtomicReference<>(ApplicationState.INIT);
-    private static final Container container = new Container();
 
-    private final String applicationName;
-    private final String applicationId;
+    private final Container container;
     private final ApplicationConfig config;
     private final ApplicationContext context;
+    private final Logger logger;
+    private final TimeSource timeSource;
+    private final CopyOnWriteArrayList<ApplicationStateObserver> applicationStateObservers = new CopyOnWriteArrayList<>();
+    private volatile ApplicationState state = ApplicationState.INIT;
+    private Thread shutdownHook;
 
-    private Application(String applicationName, String applicationId, ApplicationConfig config, ApplicationContext context) {
-        this.applicationName = applicationName;
-        this.applicationId = applicationId;
+    Application(
+            ApplicationConfig config,
+            ApplicationContext context,
+            Container container,
+            Logger logger,
+            TimeSource timeSource
+    ) {
         this.config = config;
         this.context = context;
+        this.container = container;
+        this.logger = logger;
+        this.timeSource = timeSource;
+
+        var stateObservers = this.config.getStateObservers();
+        if (stateObservers != null) {
+            stateObservers.forEach(this::addStateObserver);
+        }
     }
 
     /**
-     * @deprecated use {@link #run(String, String, String[], Starter)} instead
+     * Run the Hercules application.
+     *
+     * @param runner Hercules application runner.
+     * @param args   Command line arguments.
+     * @return Created application.
+     */
+    public static Application run(ApplicationRunner runner, String... args) {
+        if (application != null) {
+            application.expectStopped();
+        }
+        var logger = LoggerFactory.getLogger(Application.class);
+        boolean result;
+        try {
+            var cmdArguments = ArgsParser.parse(args);
+            var properties = PropertiesSupplier.defaultSupplier(cmdArguments).get();
+            var config = new ApplicationConfig(properties);
+            var contextConfig = new ApplicationContextConfig(properties);
+            var context = new ApplicationContext(
+                    runner.getApplicationName(),
+                    runner.getApplicationId(),
+                    Version.get().getVersion(),
+                    Version.get().getCommitId(),
+                    contextConfig.getEnvironment(),
+                    contextConfig.getZone(),
+                    contextConfig.getInstanceId(),
+                    LocalhostResolver.getLocalHostName());
+            application = new Application(config, context, new Container(), logger, TimeSource.SYSTEM);
+            result = application.start(runner);
+        } catch (Exception ex) {
+            logger.error("Unexpected error occurred while starting application", ex);
+            result = false;
+        }
+        if (!result) {
+            System.exit(1);
+        }
+        return application;
+    }
+
+    /**
+     * Run application.
+     *
+     * @see Application#run(ApplicationRunner, String[])
+     * @deprecated use {@link Application#run(ApplicationRunner, String[])} instead
      */
     @Deprecated
     public static void run(String applicationName, String applicationId, String[] args) {
@@ -50,205 +100,164 @@ public class Application {
         });
     }
 
+    /**
+     * Run application.
+     *
+     * @see Application#run(ApplicationRunner, String[])
+     * @deprecated use {@link Application#run(ApplicationRunner, String[])} instead
+     */
+    @Deprecated
     public static void run(String applicationName, String applicationId, String[] args, Starter starter) {
-        expectState(ApplicationState.INIT);
-        long start = System.currentTimeMillis();
-        LOGGER.info("Starting application {}", applicationName);
+        var runner = new ApplicationRunner() {
+            @Override
+            public String getApplicationId() {
+                return applicationId;
+            }
 
-        Map<String, String> parameters = ArgsParser.parse(args);
-        Properties properties = PropertiesLoader.load(parameters.getOrDefault("application.properties", "file://application.properties"));
+            @Override
+            public String getApplicationName() {
+                return applicationName;
+            }
 
-        ApplicationConfig applicationConfig = new ApplicationConfig(PropertiesUtil.ofScope(properties, Scopes.APPLICATION));
-
-        ApplicationContextConfig applicationContextConfig = new ApplicationContextConfig(PropertiesUtil.ofScope(properties, Scopes.CONTEXT));
-        ApplicationContext context = new ApplicationContext(
-                applicationName,
-                applicationId,
-                Version.get().getVersion(),
-                Version.get().getCommitId(),
-                applicationContextConfig.getEnvironment(),
-                applicationContextConfig.getZone(),
-                applicationContextConfig.getInstanceId(),
-                LocalhostResolver.getLocalHostName());
-
-        Application.application = new Application(applicationName, applicationId, applicationConfig, context);
-
-        changeState(ApplicationState.INIT, ApplicationState.STARTING);
-
-        try {
-            starter.start(properties, container);
-        } catch (Throwable t) {
-            LOGGER.error("Cannot start application due to", t);
-            shutdown();
-            System.exit(1);
-        }
-
-        Runtime.getRuntime().addShutdownHook(new Thread(Application::shutdown));
-
-        LOGGER.info(
-                "Application {} started for {} millis",
-                applicationName,
-                System.currentTimeMillis() - start);
-        changeState(ApplicationState.STARTING, ApplicationState.RUNNING);
+            @Override
+            public void init(Application application) {
+                starter.start(application.getConfig().getAllProperties(), application.getContainer());
+            }
+        };
+        run(runner, args);
     }
 
-    private static void shutdown() {
-        long start = System.currentTimeMillis();
-
-        LOGGER.info("Started {} application shutdown process", application.applicationName);
-        changeState(ApplicationState.STOPPING);
-
-        TimeSource.SYSTEM.sleep(application.config.getShutdownGracePeriodMs());
-
-        boolean stopped = container.stop(application.config.getShutdownTimeoutMs(), TimeUnit.MILLISECONDS);
-
-        LOGGER.info(
-                "Finished {} shutdown for {} millis with status {}",
-                application.applicationName,
-                System.currentTimeMillis() - start,
-                (stopped ? "OK" : "FAILED"));
-        changeState(ApplicationState.STOPPING, ApplicationState.STOPPED);
-    }
-
+    /**
+     * Get execution context of current application.
+     *
+     * @return Context of current application.
+     */
     public static ApplicationContext context() {
-        expectAtLeastState(ApplicationState.STARTING);
-
-        return application.context;
+        return application().context;
     }
 
+    /**
+     * Get current application.
+     *
+     * @return Current application.
+     */
     public static Application application() {
-        expectAtLeastState(ApplicationState.STARTING);
-
         return application;
     }
 
-    public String getApplicationName() {
-        return applicationName;
-    }
-
-    public String getApplicationId() {
-        return applicationId;
+    public Container getContainer() {
+        return container;
     }
 
     public ApplicationConfig getConfig() {
         return config;
     }
 
-    public ApplicationState state() {
-        return state.get();
+    public ApplicationState getState() {
+        return state;
     }
 
-    private static void expectState(ApplicationState expected) {
-        ApplicationState current = state.get();
-        if (current == expected) {
-            return;
-        }
-        throw new IllegalStateException("Expect state " + expected + ", but was " + current);
-    }
-
-    private static void changeState(ApplicationState expected, ApplicationState newState) {
-        if (state.compareAndSet(expected, newState)) {
-            return;
-        }
-        throw new IllegalStateException("Expect state " + expected + ", but was " + state.get());
-    }
-
-    private static void expectAtLeastState(ApplicationState expected) {
-        ApplicationState current = state.get();
-        if (current.order() >= expected.order()) {
-            return;
-        }
-        throw new IllegalStateException("Expect at least state " + expected + ", but was " + current);
-    }
-
-    private static void changeState(ApplicationState newState) {
-        state.set(newState);
+    public ApplicationContext getContext() {
+        return context;
     }
 
     /**
-     * Container registers components
-     * and provides graceful shutdown in a reversed order (LIFO fashion).
+     * Add {@link ApplicationStateObserver} to the subscription list.
+     *
+     * @param observer New observer.
      */
-    public static class Container {
-        private final ConcurrentLinkedDeque<Stoppable> components = new ConcurrentLinkedDeque<>();
+    public void addStateObserver(ApplicationStateObserver observer) {
+        applicationStateObservers.add(observer);
+    }
 
-        /**
-         * Register and start the component.
-         * <p>
-         * Registered component will properly stopped on application shutdown in an appropriate moment.
-         * Components are stopped in LIFO fashion.
-         *
-         * @param component the component
-         * @param <T>       implements {@link Lifecycle}
-         * @return the component
-         * @see #register(Stoppable)
-         */
-        public <T extends Lifecycle> T register(T component) {
-            components.push(component);
-            component.start();
-            return component;
+    /**
+     * Start application using given {@link ApplicationRunner runner}.
+     *
+     * @param runner {@link ApplicationRunner} that instantiate concrete application.
+     * @return {@code true} if startup process were successful, or {@code false} otherwise.
+     */
+    public synchronized boolean start(ApplicationRunner runner) {
+        if (state != ApplicationState.INIT && state != ApplicationState.STOPPED) {
+            throw new IllegalStateException("can start application only in " + ApplicationState.INIT + " or "
+                    + ApplicationState.STOPPED + " but current state was " + state);
         }
 
-        /**
-         * Register the component.
-         * <p>
-         * Registered component will properly stopped on application shutdown in an appropriate moment.
-         * Components are stopped in LIFO fashion.
-         *
-         * @param component the component
-         * @param <T>       implements {@link Stoppable}
-         * @return the component
-         * @see #register(Lifecycle)
-         */
-        public <T extends Stoppable> T register(T component) {
-            components.push(component);
-            return component;
-        }
-
-        /**
-         * Register the component.
-         * <p>
-         * Registered component will properly closed on application shutdown in an appropriate moment.
-         * Components are stopped in LIFO fashion.
-         *
-         * @param component the component
-         * @param <T>       implements Closeable
-         * @return the component
-         */
-        public <T extends Closeable> T register(T component) {
-            components.push(Stoppable.from(component));
-            return component;
-        }
-
-        /**
-         * Stop components one-by-one in LIFO fashion.
-         * <p>
-         * The method is package-private to avoid possible bugs when it is called externally.
-         *
-         * @param timeout the timeout
-         * @param unit    the time unit
-         * @return {@code true} if successfully stopped all components
-         */
-        boolean stop(long timeout, TimeUnit unit) {
-            Timer timer = TimeSource.SYSTEM.timer(unit.toMillis(timeout));
-            boolean stopped = true;
-            for (Stoppable component : components) {
-                try {
-                    boolean result = component.stop(timer.remainingTimeMs(), TimeUnit.MILLISECONDS);
-                    if (!result) {
-                        LOGGER.warn("Component " + component.getClass() + " has not been stopped properly");
-                    }
-                    stopped = stopped && result;
-                } catch (Throwable t) {
-                    LOGGER.error("Error on stopping " + component.getClass(), t);
-                    stopped = false;
-                }
-            }
-            return stopped;
+        try {
+            long initDurationMs = timeSource.measureMs(() -> {
+                changeState(ApplicationState.STARTING);
+                runner.init(this);
+            });
+            logger.info("Application {} initialized for {} millis", context.getApplicationName(), initDurationMs);
+            changeState(ApplicationState.RUNNING);
+            shutdownHook = new Thread(this::stop);
+            Runtime.getRuntime().addShutdownHook(shutdownHook);
+            return true;
+        } catch (Exception ex) {
+            logger.error("Fatal error occurred during application initialization", ex);
+            stop();
+            return false;
         }
     }
 
+    /**
+     * Stop the application.
+     */
+    public synchronized void stop() {
+        if (state != ApplicationState.STARTING && state != ApplicationState.RUNNING) {
+            return;
+        }
+        try {
+            Result<Boolean> hardResult = timeSource.measureMs(() -> {
+                changeState(ApplicationState.STOPPING);
+                timeSource.sleep(config.getShutdownGracePeriodMs());
+                logger.info("Started {} shutdown process", context.getApplicationName());
+                return container.stop(config.getShutdownTimeoutMs(), TimeUnit.MILLISECONDS);
+            });
+            logger.info("Finished {} shutting down for {} millis with status {}",
+                    context.getApplicationName(), hardResult.getDurationMs(), (hardResult.getValue() ? "OK" : "FAILED"));
+            changeState(ApplicationState.STOPPED);
+        } finally {
+            if (shutdownHook != null) {
+                try {
+                    Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                } catch (IllegalStateException ignore) {
+                    // VM already shutting down
+                }
+                shutdownHook = null;
+            }
+        }
+    }
+
+    private void expectStopped() {
+        var currentState = state;
+        if (currentState != ApplicationState.STOPPED) {
+            throw new IllegalStateException("Expect state " + ApplicationState.STOPPED + ", but was " + currentState);
+        }
+    }
+
+    private void changeState(ApplicationState newState) {
+        this.state = newState;
+        notifyState();
+    }
+
+    private void notifyState() {
+        for (ApplicationStateObserver observer : applicationStateObservers) {
+            try {
+                observer.onApplicationStateChanged(this, state);
+            } catch (Exception ex) {
+                logger.error("Application state observer {} thrown exception during state observers notification", observer, ex);
+            }
+        }
+    }
+
+    /**
+     * Interface for application context configuration methods.
+     *
+     * @deprecated Use {@link ApplicationRunner} instead.
+     */
+    @Deprecated
     public interface Starter {
+
         void start(Properties properties, Container container);
     }
 }
