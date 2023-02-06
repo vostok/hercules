@@ -91,6 +91,7 @@
         <module>hercules-splitter</module>
         <module>hercules-sentry-client-impl</module>
         <module>hercules-coverage-aggregate</module>
+        <module>hercules-radamant</module>
     </modules>
 
     <dependencyManagement>

@@ -1,12 +1,11 @@
 package ru.kontur.vostok.hercules.tags;
 
+import java.util.Optional;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.util.StandardExtractors;
 import ru.kontur.vostok.hercules.protocol.util.TagDescription;
 import ru.kontur.vostok.hercules.protocol.util.TagDescriptionBuilder;
-
-import java.util.Optional;
 
 /**
  * MetricsTags collection of metrics tags
@@ -33,6 +32,25 @@ public final class MetricsTags {
             .build();
 
     public static final TagDescription<Optional<String>> AGGREGATION_TYPE_TAG = TagDescriptionBuilder.string("aggregationType")
+            .optional()
+            .build();
+
+    public static final TagDescription<Optional<Container>> ENRICHMENT_TAG = TagDescriptionBuilder.container("enrichment")
+            .optional()
+            .build();
+
+    public static final TagDescription<Optional<String>> TOPIC_NAME_TAG = TagDescriptionBuilder
+            .string("topic")
+            .optional()
+            .build();
+
+    public static final TagDescription<Optional<String>> NAME_PATTERN_TAG = TagDescriptionBuilder
+            .string("name_pattern")
+            .optional()
+            .build();
+
+    public static final TagDescription<Optional<String>> NEW_NAME_TAG = TagDescriptionBuilder
+            .string("new_name")
             .optional()
             .build();
 }
