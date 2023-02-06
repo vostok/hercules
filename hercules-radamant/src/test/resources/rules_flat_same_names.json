@@ -1,0 +1,26 @@
+[
+  {
+    "rule_name": "test_rule",
+    "description": "description",
+    "pattern": "pattern",
+    "enrichment": {
+      "name_pattern": "new.metric.name.{1}",
+      "period": "60",
+      "expire after": "90",
+      "timestamp": "start of bucket",
+      "function": "sum"
+    }
+  },
+  {
+    "rule_name": "test_rule",
+    "description": "description",
+    "pattern": "pattern",
+    "enrichment": {
+      "name_pattern": "new.metric.name.{1}",
+      "period": "60",
+      "expire after": "90",
+      "timestamp": "start of bucket",
+      "function": "sum"
+    }
+  }
+]

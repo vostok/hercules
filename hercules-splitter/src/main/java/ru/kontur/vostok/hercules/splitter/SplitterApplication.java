@@ -1,5 +1,15 @@
 package ru.kontur.vostok.hercules.splitter;
 
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -16,8 +26,8 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.CommonMetrics;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.http.HttpServer;
-import ru.kontur.vostok.hercules.http.HttpStatusCodes;
 import ru.kontur.vostok.hercules.http.handler.InstrumentedRouteHandlerBuilder;
+import ru.kontur.vostok.hercules.http.handler.KafkaStreamsStatusHttpHandler;
 import ru.kontur.vostok.hercules.http.handler.RouteHandler;
 import ru.kontur.vostok.hercules.kafka.util.KafkaConfigs;
 import ru.kontur.vostok.hercules.kafka.util.consumer.Subscription;
@@ -40,17 +50,6 @@ import ru.kontur.vostok.hercules.splitter.service.spreader.RendezvousStreamingSp
 import ru.kontur.vostok.hercules.undertow.util.UndertowHttpServer;
 import ru.kontur.vostok.hercules.util.lifecycle.Stoppable;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * Splitter application entry point class.
@@ -191,28 +190,9 @@ public class SplitterApplication {
         serverProperties.setProperty(HttpServer.Props.IO_THREADS.name(), "1");
         serverProperties.setProperty(HttpServer.Props.WORKER_THREADS.name(), "1");
 
-        RouteHandler handler = new InstrumentedRouteHandlerBuilder(serverProperties, metricsCollector)
-                .get("/status", request -> {
-                    int code;
-                    switch (kafkaStreamsState.get()) {
-                        case CREATED:
-                            code = HttpStatusCodes.SERVICE_UNAVAILABLE;
-                            break;
-                        case REBALANCING:
-                        case RUNNING:
-                            code = HttpStatusCodes.OK;
-                            break;
-                        case PENDING_SHUTDOWN:
-                            code = HttpStatusCodes.GONE;
-                            break;
-                        default:
-                        case ERROR:
-                        case NOT_RUNNING:
-                            code = HttpStatusCodes.INTERNAL_SERVER_ERROR;
-                            break;
-                    }
-                    request.complete(code);
-                })
+        RouteHandler handler = new InstrumentedRouteHandlerBuilder(serverProperties,
+                metricsCollector)
+                .get("/status", new KafkaStreamsStatusHttpHandler(kafkaStreamsState))
                 .build();
 
         return new UndertowHttpServer(
