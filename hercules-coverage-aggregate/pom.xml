@@ -119,6 +119,10 @@
         </dependency>
         <dependency>
             <groupId>ru.kontur.vostok.hercules</groupId>
+            <artifactId>hercules-sd</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.kontur.vostok.hercules</groupId>
             <artifactId>hercules-sentry-client</artifactId>
         </dependency>
         <dependency>
