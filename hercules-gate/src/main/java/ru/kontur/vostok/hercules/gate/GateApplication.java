@@ -20,6 +20,7 @@ import ru.kontur.vostok.hercules.meta.stream.StreamRepository;
 import ru.kontur.vostok.hercules.meta.stream.StreamStorage;
 import ru.kontur.vostok.hercules.partitioner.HashPartitioner;
 import ru.kontur.vostok.hercules.partitioner.hash.NaiveHasher;
+import ru.kontur.vostok.hercules.sd.BeaconService;
 import ru.kontur.vostok.hercules.throttling.CapacityThrottle;
 import ru.kontur.vostok.hercules.throttling.ThrottledRequestProcessor;
 import ru.kontur.vostok.hercules.undertow.util.DefaultHttpServerRequestWeigher;
@@ -51,6 +52,7 @@ public class GateApplication {
                 Properties eventSenderProperties = PropertiesUtil.ofScope(properties, "gate.event.sender");
                 Properties sendRequestProcessorProperties = PropertiesUtil.ofScope(properties, "gate.send.request.processor");
                 Properties httpServerProperties = PropertiesUtil.ofScope(properties, Scopes.HTTP_SERVER);
+                Properties sdProperties = PropertiesUtil.ofScope(properties, Scopes.SERVICE_DISCOVERY);
 
                 metricsCollector = container.register(new MetricsCollector(metricsProperties));
                 CommonMetrics.registerCommonMetrics(metricsCollector);
@@ -70,6 +72,8 @@ public class GateApplication {
                 sendRequestProcessor = new SendRequestProcessor(sendRequestProcessorProperties, eventSender, eventValidator, metricsCollector);
 
                 container.register(createHttpServer(httpServerProperties));
+
+                container.register(new BeaconService(sdProperties, curatorClient));
             });
     }
 

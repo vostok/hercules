@@ -52,6 +52,7 @@
         <module>hercules-meta</module>
         <module>hercules-auth</module>
         <module>hercules-gate</module>
+        <module>hercules-sd</module>
         <module>hercules-stream-sink</module>
         <module>hercules-timeline-sink</module>
         <module>hercules-kafka-util</module>
@@ -479,6 +480,11 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-routing</artifactId>
+                <version>${hercules.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.kontur.vostok.hercules</groupId>
+                <artifactId>hercules-sd</artifactId>
                 <version>${hercules.version}</version>
             </dependency>
             <dependency>
