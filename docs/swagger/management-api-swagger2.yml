@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   description: 'Management api for Hercules. Uses for create, modify, delete streams and timelines'
-  version: 1.7.0
+  version: 1.9.0
   title: Hercules management API
 host: 'vm-hercules05:6309'
 schemes:
