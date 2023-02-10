@@ -2,14 +2,14 @@ package ru.kontur.vostok.hercules.elastic.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.elastic.sink.error.ElasticError;
 import ru.kontur.vostok.hercules.elastic.sink.error.ElasticErrorMetrics;
 import ru.kontur.vostok.hercules.elastic.sink.error.ErrorGroup;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexPolicy;
 import ru.kontur.vostok.hercules.elastic.sink.index.IndexResolver;
+import ru.kontur.vostok.hercules.elastic.sink.metrics.IndicesMetricsCollector;
+import ru.kontur.vostok.hercules.health.IMetricsCollector;
 import ru.kontur.vostok.hercules.health.Meter;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.json.Document;
 import ru.kontur.vostok.hercules.json.DocumentWriter;
 import ru.kontur.vostok.hercules.json.format.EventToJsonFormatter;
@@ -17,7 +17,8 @@ import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedExcep
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.util.EventUtil;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
-import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.sink.parallel.sender.ParallelSender;
+import ru.kontur.vostok.hercules.sink.parallel.sender.PreparedData;
 import ru.kontur.vostok.hercules.util.Maps;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
@@ -26,6 +27,8 @@ import ru.kontur.vostok.hercules.util.validation.ValidationResult;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +38,7 @@ import java.util.Properties;
 /**
  * @author Gregory Koshelev
  */
-public class ElasticSender extends Sender {
+public class ElasticSender extends ParallelSender<ElasticSender.ElasticPreparedData> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSender.class);
 
     private static final int EXPECTED_EVENT_SIZE_BYTES = 2_048;
@@ -45,12 +48,12 @@ public class ElasticSender extends Sender {
 
     private final EventToJsonFormatter eventFormatter;
 
-    private final ElasticClient client;
+    private final ElasticClient elasticClient;
 
     private final int retryLimit;
     private final boolean retryOnUnknownErrors;
+    private final boolean compressionGzipEnable;
 
-    private final boolean leproseryEnable;
     private final LeproserySender leproserySender;
 
     private final IndicesMetricsCollector totalEventsIndicesMetricsCollector;
@@ -59,29 +62,30 @@ public class ElasticSender extends Sender {
     private final Meter indexValidationErrorsMeter;
     private final ElasticErrorMetrics elasticErrorMetrics;
 
-    public ElasticSender(Properties properties, MetricsCollector metricsCollector) {
+    public ElasticSender(
+            Properties properties,
+            IndexPolicy indexPolicy,
+            ElasticClient elasticClient,
+            LeproserySender leproserySender,
+            IMetricsCollector metricsCollector
+    ) {
         super(properties, metricsCollector);
-
-        IndexPolicy indexPolicy = PropertiesUtil.get(Props.INDEX_POLICY, properties).get();
 
         Properties indexResolverProperties = PropertiesUtil.ofScope(properties, "elastic.index.resolver");
         List<IndexResolver> indexResolvers = PropertiesUtil.createClassInstanceList(indexResolverProperties, IndexResolver.class);
-        if(indexResolvers.isEmpty()) {
+        if (indexResolvers.isEmpty()) {
             throw new IllegalArgumentException("None of index resolvers are defined");
         }
         this.indexResolver = IndexResolver.forPolicy(indexPolicy, indexResolvers);
 
         this.eventFormatter = new EventToJsonFormatter(PropertiesUtil.ofScope(properties, "elastic.format"));
 
-        this.client = new ElasticClient(PropertiesUtil.ofScope(properties, "elastic.client"), indexPolicy, metricsCollector);
+        this.elasticClient = elasticClient;
+        this.leproserySender = leproserySender;
 
         this.retryLimit = PropertiesUtil.get(Props.RETRY_LIMIT, properties).get();
         this.retryOnUnknownErrors = PropertiesUtil.get(Props.RETRY_ON_UNKNOWN_ERRORS, properties).get();
-
-        this.leproseryEnable = PropertiesUtil.get(Props.LEPROSERY_ENABLE, properties).get();
-        this.leproserySender = leproseryEnable
-                ? new LeproserySender(PropertiesUtil.ofScope(properties, Scopes.LEPROSERY), metricsCollector)
-                : null;
+        this.compressionGzipEnable = PropertiesUtil.get(Props.COMPRESSION_GZIP_ENABLE, properties).get();
 
         this.totalEventsIndicesMetricsCollector = new IndicesMetricsCollector("totalEvents", 10_000, metricsCollector);
         this.nonRetryableEventsIndicesMetricsCollector = new IndicesMetricsCollector("nonRetryableEvents", 10_000, metricsCollector);
@@ -92,63 +96,85 @@ public class ElasticSender extends Sender {
 
     @Override
     public ProcessorStatus ping() {
-        return client.ping() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
+        return elasticClient.ping() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
     }
 
     @Override
-    protected int send(List<Event> events) throws BackendServiceFailedException {
-        if (events.size() == 0) {
-            return 0;
-        }
-
-        int droppedCount;
+    public ElasticPreparedData prepare(List<Event> events) {
         Map<ElasticDocument, ValidationResult> nonRetryableErrorsMap = new HashMap<>(events.size());
         //event-id -> elastic document
         Map<String, ElasticDocument> readyToSend = new HashMap<>(events.size());
+        for (Event event : events) {
+            Optional<String> index = indexResolver.resolve(event);
+            String nonNullIndex = index.orElse("null");
+            totalEventsIndicesMetricsCollector.markEvent(nonNullIndex);
+            Document jsonDocument = eventFormatter.format(event);
+            ElasticDocument document = new ElasticDocument(EventUtil.extractStringId(event), nonNullIndex, jsonDocument);
+            readyToSend.put(document.id(), document);
+
+            if (index.isEmpty()) {
+                indexValidationErrorsMeter.mark();
+                nonRetryableErrorsMap.put(document, UNDEFINED_INDEX_VALIDATION_RESULT);
+            }
+        }
+
+        byte[] dataToIndex = getDataToIndex(readyToSend, nonRetryableErrorsMap);
+        return new ElasticPreparedData(Collections.unmodifiableMap(readyToSend), nonRetryableErrorsMap, dataToIndex);
+    }
+
+    private byte[] getDataToIndex(Map<String, ElasticDocument> readyToSend, Map<ElasticDocument, ValidationResult> nonRetryableErrorsMap) {
+        try {
+            ByteArrayOutputStream dataStream = new ByteArrayOutputStream((readyToSend.size() - nonRetryableErrorsMap.size()) * EXPECTED_EVENT_SIZE_BYTES);//TODO: Replace EXPECTED_EVENT_SIZE_BYTES with heuristic is depending on Hercules event size
+            for (ElasticDocument document : readyToSend.values()) {
+                if (!nonRetryableErrorsMap.containsKey(document)) {
+                    writeEventToStream(dataStream, document.index(), document.id(), document.document());
+                }
+            }
+            byte[] data = dataStream.toByteArray();
+            return compressionGzipEnable ? elasticClient.compressData(data) : data;
+        } catch (IOException e) {
+            throw new RuntimeException("Error on write ElasticDocument", e);
+        }
+    }
+
+    @Override
+    public int send(ElasticPreparedData preparedData) throws BackendServiceFailedException {
+        if (preparedData.getEventsCount() == 0) {
+            return 0;
+        }
+
+        Map<String, ElasticDocument> readyToSend = preparedData.getReadyToSend();
+        Map<ElasticDocument, ValidationResult> nonRetryableErrorsMap = preparedData.nonRetryableErrorsMap;
 
         try {
-            for (Event event : events) {
-                Optional<String> index = indexResolver.resolve(event);
-                String nonNullIndex = index.orElse("null");
-                totalEventsIndicesMetricsCollector.markEvent(nonNullIndex);
-                Document jsonDocument = eventFormatter.format(event);
-                ElasticDocument document = new ElasticDocument(EventUtil.extractStringId(event), nonNullIndex, jsonDocument);
-                if (index.isPresent()) {
-                    readyToSend.put(document.id(), document);
+            int retryCount = retryLimit;
+            do {
+                ElasticResponseHandler.Result result = elasticClient.index(preparedData.dataToIndex, compressionGzipEnable);
+
+                if (result.getTotalErrors() == 0) {
+                    int droppedCount = errorsProcess(nonRetryableErrorsMap);
+
+                    return preparedData.getEventsCount() - droppedCount;
                 } else {
-                    indexValidationErrorsMeter.mark();
-                    nonRetryableErrorsMap.put(document, UNDEFINED_INDEX_VALIDATION_RESULT);
-                }
-            }
+                    int nonRetryableErrorsBeforeProcessSize = nonRetryableErrorsMap.size();
 
-            if (!readyToSend.isEmpty()) {
-                int retryCount = retryLimit;
-                do {
-                    ByteArrayOutputStream dataStream = new ByteArrayOutputStream(readyToSend.size() * EXPECTED_EVENT_SIZE_BYTES);//TODO: Replace EXPECTED_EVENT_SIZE_BYTES with heuristic is depending on Hercules event size
-                    for (ElasticDocument document : readyToSend.values()) {
-                        writeEventToStream(dataStream, document.index(), document.id(), document.document());
-                    }
+                    resultProcess(result, readyToSend).forEach((eventId, validationResult) ->
+                            nonRetryableErrorsMap.put(readyToSend.get(eventId), validationResult)
+                    );
 
-                    ElasticResponseHandler.Result result = client.index(dataStream.toByteArray());
-                    if (result.getTotalErrors() != 0) {
-                        resultProcess(result, readyToSend).forEach((eventId, validationResult) ->
-                                nonRetryableErrorsMap.put(readyToSend.remove(eventId), validationResult));
+                    if (nonRetryableErrorsMap.size() > nonRetryableErrorsBeforeProcessSize) {
+                        LOGGER.debug("Retry after add non retryable: " + nonRetryableErrorsMap.size() + ", readyToSend: " + readyToSend.size());
+                        preparedData.dataToIndex = getDataToIndex(readyToSend, nonRetryableErrorsMap);
                     } else {
-                        readyToSend.clear();
+                        LOGGER.debug("Retry retryable: " + nonRetryableErrorsMap.size() + ", readyToSend: " + readyToSend.size());
                     }
-                } while (!readyToSend.isEmpty() && 0 < retryCount--);
-
-                if (!readyToSend.isEmpty()) {
-                    throw new Exception("Have retryable errors in elasticsearch response");
                 }
-            }
+            } while (0 < retryCount--);
 
-            droppedCount = errorsProcess(nonRetryableErrorsMap);
+            throw new Exception("Have retryable errors in elasticsearch response");
         } catch (Exception ex) {
             throw new BackendServiceFailedException(ex);
         }
-
-        return events.size() - droppedCount;
     }
 
     private Map<String, ValidationResult> resultProcess(ElasticResponseHandler.Result result,
@@ -185,7 +211,7 @@ public class ElasticSender extends Sender {
             nonRetryableEventsIndicesMetricsCollector.markEvent(document.index());
         }
 
-        if (leproseryEnable) {
+        if (isLeproseryEnable()) {
             try {
                 leproserySender.convertAndSend(nonRetryableErrorsInfo);
                 return 0;
@@ -205,18 +231,48 @@ public class ElasticSender extends Sender {
         }
     }
 
-    private void writeEventToStream(ByteArrayOutputStream stream, String index, String documentId, Document document) throws IOException {
+    private boolean isLeproseryEnable() {
+        return leproserySender != null;
+    }
+
+    private void writeEventToStream(OutputStream stream, String index, String documentId, Document document) throws IOException {
         IndexToElasticJsonWriter.writeIndex(stream, index, documentId);
         stream.write('\n');
         DocumentWriter.writeTo(stream, document);
         stream.write('\n');
     }
 
-    private static class Props {
-        static final Parameter<IndexPolicy> INDEX_POLICY =
-                Parameter.enumParameter("elastic.index.policy", IndexPolicy.class).
-                        withDefault(IndexPolicy.DAILY).
-                        build();
+    public static class ElasticPreparedData implements PreparedData {
+        //event-id -> elastic document
+        private final Map<String, ElasticDocument> readyToSend;
+        private final Map<ElasticDocument, ValidationResult> nonRetryableErrorsMap;
+        private byte[] dataToIndex;
+
+        public ElasticPreparedData(
+                Map<String, ElasticDocument> readyToSend,
+                Map<ElasticDocument, ValidationResult> nonRetryableErrorsMap,
+                byte[] dataToIndex
+        ) {
+            this.readyToSend = readyToSend;
+            this.nonRetryableErrorsMap = nonRetryableErrorsMap;
+            this.dataToIndex = dataToIndex;
+        }
+
+        public Map<String, ElasticDocument> getReadyToSend() {
+            return readyToSend;
+        }
+
+        @Override
+        public int getEventsCount() {
+            return readyToSend.size();
+        }
+    }
+
+    static class Props {
+        static final Parameter<IndexPolicy> INDEX_POLICY = Parameter
+                .enumParameter("elastic.index.policy", IndexPolicy.class).
+                withDefault(IndexPolicy.DAILY).
+                build();
 
         static final Parameter<Integer> RETRY_LIMIT = Parameter
                 .integerParameter("retryLimit")
@@ -232,6 +288,11 @@ public class ElasticSender extends Sender {
         static final Parameter<Boolean> LEPROSERY_ENABLE = Parameter
                 .booleanParameter("leprosery.enable")
                 .withDefault(false)
+                .build();
+
+        static final Parameter<Boolean> COMPRESSION_GZIP_ENABLE = Parameter
+                .booleanParameter("elastic.client.compression.gzip.enable")
+                .withDefault(ElasticClientDefaults.DEFAULT_COMPRESSION_GZIP_ENABLE)
                 .build();
     }
 }

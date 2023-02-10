@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 /**
  * @author Gregory Koshelev
  */
-public class MetricsCollector implements Lifecycle {
+public class MetricsCollector implements IMetricsCollector, Lifecycle {
     private final MetricRegistry registry = new MetricRegistry();
 
     private final long period;

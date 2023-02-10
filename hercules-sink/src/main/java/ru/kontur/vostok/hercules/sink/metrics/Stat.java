@@ -18,7 +18,7 @@ import java.util.function.Supplier;
  *
  * @author Anton Akkuzin
  */
-public class Stat {
+public class Stat implements SinkMetrics.CurrentPartitionAssignmentSupplier {
 
     private final String consumerId;
     private final TimeSource time;
@@ -201,6 +201,7 @@ public class Stat {
         return events != 0 ? TimeUtil.millisToNanos(timeMs) / events : 0;
     }
 
+    @Override
     public Set<TopicPartition> getCurrentPartitionAssignment() {
         return currentAssignmentSupplier.get();
     }

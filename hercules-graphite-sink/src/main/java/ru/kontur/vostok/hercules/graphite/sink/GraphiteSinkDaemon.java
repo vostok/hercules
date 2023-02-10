@@ -1,28 +1,29 @@
 package ru.kontur.vostok.hercules.graphite.sink;
 
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.sink.AbstractSinkDaemon;
-import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.sink.AbstractSinkParallelDaemon;
+import ru.kontur.vostok.hercules.sink.parallel.sender.ParallelSender;
 
 import java.util.Properties;
 
-public class GraphiteSinkDaemon extends AbstractSinkDaemon {
+public class GraphiteSinkDaemon extends AbstractSinkParallelDaemon<GraphiteSender.GraphitePreparedData> {
     public static void main(String[] args) {
-        new GraphiteSinkDaemon().run(args);
+        Application.run(new GraphiteSinkDaemon(), args);
     }
 
     @Override
-    protected Sender createSender(Properties properties, MetricsCollector metricsCollector) {
+    protected ParallelSender<GraphiteSender.GraphitePreparedData> createSender(Properties properties, MetricsCollector metricsCollector) {
         return new GraphiteSender(properties, metricsCollector);
     }
 
     @Override
-    protected String getDaemonId() {
+    public String getApplicationId() {
         return "sink.graphite";
     }
 
     @Override
-    protected String getDaemonName() {
+    public String getApplicationName() {
         return "Hercules Graphite Sink";
     }
 }

@@ -55,6 +55,8 @@ public class ProcessorResult {
      * @return failed result
      */
     public static ProcessorResult fail() {
-        return new ProcessorResult(false, 0, 0);
+        return FAIL_RESULT;
     }
+
+    private static final ProcessorResult FAIL_RESULT = new ProcessorResult(false, 0, 0);
 }

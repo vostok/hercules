@@ -2,10 +2,13 @@ package ru.kontur.vostok.hercules.sink.metrics;
 
 import org.apache.kafka.common.TopicPartition;
 import org.jetbrains.annotations.NotNull;
+import ru.kontur.vostok.hercules.health.Histogram;
+import ru.kontur.vostok.hercules.health.IMetricsCollector;
 import ru.kontur.vostok.hercules.health.Meter;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
 import ru.kontur.vostok.hercules.health.Timer;
+import ru.kontur.vostok.hercules.sink.ProcessorResult;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -21,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SinkMetrics {
     private static final String SINK_METRICS_SCOPE = SinkMetrics.class.getSimpleName();
 
-    private final MetricsCollector metricsCollector;
+    private final IMetricsCollector metricsCollector;
     private final ConcurrentHashMap<String, ConsumerMetrics> consumerMetrics = new ConcurrentHashMap<>();
 
     private final Meter droppedEvents;
@@ -41,7 +44,20 @@ public class SinkMetrics {
     private final Timer filtrationTimePerEventNs;
     private final Timer processTimePerEventNs;
 
-    public SinkMetrics(@NotNull MetricsCollector metricsCollector) {
+    /**
+     * Parallel sink metrics
+     */
+    private final Timer deserializationTimeMs;
+    private final Timer processSendTimeMs;
+    private final Histogram batchEvents;
+    private final Histogram batchByteSize;
+    private final Map<Integer, Meter> batchPartitionsCount = new HashMap<>();
+
+    public final Histogram pollEvents;
+    public final Histogram totalQueueEvents;
+    public final Histogram sendingBatchesCount;
+
+    public SinkMetrics(@NotNull IMetricsCollector metricsCollector) {
         this.metricsCollector = metricsCollector;
 
         this.droppedEvents = metricsCollector.meter("droppedEvents");
@@ -54,12 +70,20 @@ public class SinkMetrics {
         this.successProcessAttempts = metricsCollector.meter(metricPath("successProcessAttempts"));
 
         this.pollTimeMs = metricsCollector.timer(metricPath("pollTimeMs"));
+        this.deserializationTimeMs = metricsCollector.timer(metricPath("deserializationTimeMs"));
         this.filtrationTimeMs = metricsCollector.timer(metricPath("filtrationTimeMs"));
         this.processTimeMs = metricsCollector.timer(metricPath("processTimeMs"));
+        this.processSendTimeMs = metricsCollector.timer(metricPath("processSendTimeMs"));
 
         this.pollTimePerEventNs = metricsCollector.timer(metricPath("pollTimePerEventNs"));
         this.filtrationTimePerEventNs = metricsCollector.timer(metricPath("filtrationTimePerEventNs"));
         this.processTimePerEventNs = metricsCollector.timer(metricPath("processTimePerEventNs"));
+
+        this.pollEvents = metricsCollector.histogram(metricPath("pollEvents"));
+        this.totalQueueEvents = metricsCollector.histogram(metricPath("totalQueueEvents"));
+        this.batchEvents = metricsCollector.histogram(metricPath("batchEvents"));
+        this.batchByteSize = metricsCollector.histogram(metricPath("batchByteSize"));
+        this.sendingBatchesCount = metricsCollector.histogram(metricPath("sendingBatchesCount"));
     }
 
     /**
@@ -73,6 +97,7 @@ public class SinkMetrics {
         this.processedEvents.mark(stat.getProcessedEvents());
         this.rejectedEvents.mark(stat.getRejectedEvents());
         this.totalEvents.mark(stat.getTotalEvents());
+        this.batchEvents.update(stat.getTotalEvents());
 
         this.totalProcessAttempts.mark();
         if (stat.isProcessSucceed()) {
@@ -91,15 +116,62 @@ public class SinkMetrics {
                 consumerId -> new ConsumerMetrics(metricsCollector, consumerId)).update(stat);
     }
 
+    public void update(KafkaEventSupplierStat stat) {
+        this.pollTimeMs.update(stat.getPollTimeMs());
+        this.pollTimePerEventNs.update(stat.getPollTimePerEventNs());
+
+        this.pollEvents.update(stat.getPollEventsCount());
+        this.totalQueueEvents.update(stat.getTotalEvents());
+
+        consumerMetrics.computeIfAbsent("0",
+                consumerId -> new ConsumerMetrics(metricsCollector, consumerId)).update(stat);
+    }
+
+    public void update(ParallelPrepareStat stat) {
+        this.droppedEvents.mark(stat.getDroppedEvents());
+        this.filteredEvents.mark(stat.getFilteredEvents());
+        this.totalEvents.mark(stat.getTotalEvents());
+
+        this.deserializationTimeMs.update(stat.getDeserializationTimeMs());
+        this.filtrationTimeMs.update(stat.getFiltrationTimeMs());
+        this.processTimeMs.update(stat.getProcessTimeMs());
+        this.filtrationTimePerEventNs.update(stat.getFiltrationTimePerEventNs());
+        this.processTimePerEventNs.update(stat.getProcessTimePerEventNs());
+    }
+
     /**
      * @return inner {@link MetricsCollector}
      */
-    public MetricsCollector getMetricsCollector() {
+    public IMetricsCollector getMetricsCollector() {
         return metricsCollector;
     }
 
     private String metricPath(String metricName) {
         return MetricsUtil.toMetricPath(SINK_METRICS_SCOPE, metricName);
+    }
+
+    public void updateBatch(int eventCount, long eventByteSize, int partitionCount) {
+        batchEvents.update(eventCount);
+        batchByteSize.update(eventByteSize);
+
+        batchPartitionsCount.computeIfAbsent(partitionCount, value ->
+                metricsCollector.meter(MetricsUtil.toMetricPath(SINK_METRICS_SCOPE, "batchPartitions", value.toString()))).mark();
+    }
+
+    public void update(ParallelSendStat stat) {
+        this.sendingBatchesCount.update(stat.getSendingBatches());
+
+        processSendTimeMs.update(stat.getProcessSendTimeMs());
+    }
+
+    public void update(ProcessorResult processorResult) {
+        this.processedEvents.mark(processorResult.getProcessedEvents());
+        this.rejectedEvents.mark(processorResult.getRejectedEvents());
+
+        this.totalProcessAttempts.mark();
+        if (processorResult.isSuccess()) {
+            this.successProcessAttempts.mark();
+        }
     }
 
     /**
@@ -108,7 +180,7 @@ public class SinkMetrics {
     private static class ConsumerMetrics {
         private final String consumerMetricsScope;
 
-        private final MetricsCollector metricsCollector;
+        private final IMetricsCollector metricsCollector;
 
         private final Timer pollTimeMs;
         private final Timer processTimeMs;
@@ -117,12 +189,12 @@ public class SinkMetrics {
         private final Map<TopicPartition, Meter> totalEventsPerPartition = new HashMap<>();
         private final Map<TopicPartition, Meter> batchSizePerPartition = new HashMap<>();
 
-        private ConsumerMetrics(@NotNull MetricsCollector metricsCollector, String consumerId) {
+        private ConsumerMetrics(@NotNull IMetricsCollector metricsCollector, String consumerId) {
             this.consumerMetricsScope = MetricsUtil.toMetricPath(SINK_METRICS_SCOPE, ConsumerMetrics.class.getSimpleName(), consumerId);
             this.metricsCollector = metricsCollector;
-            this.pollTimeMs = metricsCollector.timer(metricPath( "pollTimeMs"));
-            this.processTimeMs = metricsCollector.timer(metricPath( "processTimeMs"));
-            this.totalEvents = metricsCollector.meter(metricPath( "totalEvents"));
+            this.pollTimeMs = metricsCollector.timer(metricPath("pollTimeMs"));
+            this.processTimeMs = metricsCollector.timer(metricPath("processTimeMs"));
+            this.totalEvents = metricsCollector.meter(metricPath("totalEvents"));
         }
 
         private String metricPath(String... metricNameParts) {
@@ -146,6 +218,21 @@ public class SinkMetrics {
             clearUnsubscribedPartitionsMetrics(stat, batchSizePerPartition);
         }
 
+        /**
+         * Updates metric values by provided {@link Stat}.
+         *
+         * @param stat {@link Stat} contains calculated metric values
+         */
+        private void update(@NotNull KafkaEventSupplierStat stat) {
+            this.pollTimeMs.update(stat.getPollTimeMs());
+
+            updatePerPartitionMetrics(stat.getTotalEventsPerPartition(), totalEventsPerPartition, "totalEvents");
+            updatePerPartitionMetrics(stat.getBatchSizePerPartition(), batchSizePerPartition, "batchSize");
+
+            clearUnsubscribedPartitionsMetrics(stat, totalEventsPerPartition);
+            clearUnsubscribedPartitionsMetrics(stat, batchSizePerPartition);
+        }
+
         private void updatePerPartitionMetrics(Map<TopicPartition, Integer> data, Map<TopicPartition, Meter> metrics, String metricName) {
             for (Map.Entry<TopicPartition, Integer> entry : data.entrySet()) {
                 metrics.computeIfAbsent(
@@ -155,7 +242,7 @@ public class SinkMetrics {
             }
         }
 
-        private void clearUnsubscribedPartitionsMetrics(Stat stat, Map<TopicPartition, Meter> metrics) {
+        private void clearUnsubscribedPartitionsMetrics(CurrentPartitionAssignmentSupplier stat, Map<TopicPartition, Meter> metrics) {
             Set<TopicPartition> currentPartitionAssignment = stat.getCurrentPartitionAssignment();
             Iterator<Map.Entry<TopicPartition, Meter>> iterator = metrics.entrySet().iterator();
 
@@ -167,5 +254,9 @@ public class SinkMetrics {
                 }
             }
         }
+    }
+
+    public interface CurrentPartitionAssignmentSupplier {
+        Set<TopicPartition> getCurrentPartitionAssignment();
     }
 }

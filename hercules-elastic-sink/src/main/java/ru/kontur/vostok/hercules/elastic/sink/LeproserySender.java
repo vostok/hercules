@@ -4,12 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.configuration.Scopes;
+import ru.kontur.vostok.hercules.elastic.sink.metrics.IndicesMetricsCollector;
 import ru.kontur.vostok.hercules.gate.client.GateClient;
 import ru.kontur.vostok.hercules.gate.client.exception.BadRequestException;
 import ru.kontur.vostok.hercules.gate.client.exception.UnavailableClusterException;
 import ru.kontur.vostok.hercules.gate.client.util.EventWriterUtil;
+import ru.kontur.vostok.hercules.health.IMetricsCollector;
 import ru.kontur.vostok.hercules.health.Meter;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.json.DocumentWriter;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
@@ -71,7 +72,7 @@ class LeproserySender {
     private final Meter leproseryEventsWithErrorsMeter;
     private final IndicesMetricsCollector leproseryEventsIndicesMetricsCollector;
 
-    LeproserySender(Properties properties, MetricsCollector metricsCollector) {
+    LeproserySender(Properties properties, IMetricsCollector metricsCollector) {
         leproseryEventsMeter = metricsCollector.meter("leproseryEvents");
         leproseryEventsWithErrorsMeter = metricsCollector.meter("leproseryEventsWithErrors");
         leproseryEventsIndicesMetricsCollector = new IndicesMetricsCollector(

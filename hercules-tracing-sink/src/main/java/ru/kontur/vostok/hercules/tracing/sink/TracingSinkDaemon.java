@@ -1,8 +1,9 @@
 package ru.kontur.vostok.hercules.tracing.sink;
 
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.sink.AbstractSinkDaemon;
-import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.sink.AbstractSinkParallelDaemon;
+import ru.kontur.vostok.hercules.sink.parallel.sender.NoPrepareParallelSender;
 
 import java.util.Properties;
 
@@ -13,25 +14,25 @@ import java.util.Properties;
  *
  * @author Gregory Koshelev
  * @see TracingSender
- * @see AbstractSinkDaemon
+ * @see AbstractSinkParallelDaemon
  */
-public class TracingSinkDaemon extends AbstractSinkDaemon {
+public class TracingSinkDaemon extends AbstractSinkParallelDaemon<NoPrepareParallelSender.NoPrepareEvents> {
     public static void main(String[] args) {
-        new TracingSinkDaemon().run(args);
+        Application.run(new TracingSinkDaemon(), args);
     }
 
     @Override
-    protected Sender createSender(Properties senderProperties, MetricsCollector metricsCollector) {
+    protected NoPrepareParallelSender createSender(Properties senderProperties, MetricsCollector metricsCollector) {
         return new TracingSender(senderProperties, metricsCollector);
     }
 
     @Override
-    protected String getDaemonId() {
+    public String getApplicationId() {
         return "sink.tracing";
     }
 
     @Override
-    protected String getDaemonName() {
+    public String getApplicationName() {
         return "Tracing Sink";
     }
 }

@@ -10,7 +10,7 @@ import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
-import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.sink.parallel.sender.NoPrepareParallelSender;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.yandex.clickhouse.ClickHouseConnection;
 import ru.yandex.clickhouse.ClickHouseStatement;
@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Gregory Koshelev
  */
-public abstract class ClickHouseSender extends Sender {
+public abstract class ClickHouseSender extends NoPrepareParallelSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClickHouseSender.class);
 
     private final ClickHouseConnector connector;

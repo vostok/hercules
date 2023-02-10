@@ -2,6 +2,8 @@ package ru.kontur.vostok.hercules.elastic.sink;
 
 import ru.kontur.vostok.hercules.json.Document;
 
+import java.util.Objects;
+
 /**
  * @author Gregory Koshelev
  */
@@ -26,5 +28,20 @@ public class ElasticDocument {
 
     public Document document() {
         return document;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ElasticDocument that = (ElasticDocument) o;
+
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

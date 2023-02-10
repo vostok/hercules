@@ -1,7 +1,7 @@
-package ru.kontur.vostok.hercules.elastic.sink;
+package ru.kontur.vostok.hercules.elastic.sink.metrics;
 
+import ru.kontur.vostok.hercules.health.IMetricsCollector;
 import ru.kontur.vostok.hercules.health.Meter;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,12 +19,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class IndicesMetricsCollector {
     private final String name;
     private final int indicesLimit;
-    private final MetricsCollector metricsCollector;
+    private final IMetricsCollector metricsCollector;
     private final ConcurrentMap<String, Meter> meters = new ConcurrentHashMap<>();
     private final AtomicInteger reportedIndicesCount = new AtomicInteger(0);
     private final ConcurrentLinkedQueue<String> reportedIndices = new ConcurrentLinkedQueue<>();
 
-    public IndicesMetricsCollector(String name, int indicesLimit, MetricsCollector metricsCollector) {
+    public IndicesMetricsCollector(String name, int indicesLimit, IMetricsCollector metricsCollector) {
         this.name = name;
         this.indicesLimit = indicesLimit;
         this.metricsCollector = metricsCollector;

@@ -5,7 +5,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import ru.kontur.vostok.hercules.graphite.sink.GraphiteMetricData;
 import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
 import ru.kontur.vostok.hercules.util.time.MockTimeSource;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -82,10 +81,9 @@ public class EndpointTest {
 
         Endpoint endpoint = getEndpoint(new MockTimeSource(), 1);
 
-        Random random = new Random();
-        ArrayList<GraphiteMetricData> data = new ArrayList<>();
+        List<String> data = new ArrayList<>();
         for (int i = 0; i < 10000; i++) {
-            data.add(new GraphiteMetricData("name", random.nextLong(), random.nextDouble()));
+            data.add("name");
         }
         try (Channel channel = endpoint.channel()) {
             channel.send(data);
@@ -100,7 +98,7 @@ public class EndpointTest {
 
         Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
 
-        List<GraphiteMetricData> data = metricsList();
+        List<String> data = metricsList();
         try (Channel channel = endpoint.channel()) {
             channel.send(data);
         }
@@ -218,10 +216,10 @@ public class EndpointTest {
         return endpoint;
     }
 
-    private static List<GraphiteMetricData> metricsList() {
+    private static List<String> metricsList() {
         Random random = new Random();
-        ArrayList<GraphiteMetricData> data = new ArrayList<>();
-        data.add(new GraphiteMetricData("name", random.nextLong(), random.nextDouble()));
+        List<String> data = new ArrayList<>();
+        data.add("name." + random.nextInt());
         return data;
     }
 
