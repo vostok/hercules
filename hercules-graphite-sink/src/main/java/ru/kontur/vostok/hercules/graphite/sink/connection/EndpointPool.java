@@ -94,6 +94,10 @@ public class EndpointPool {
                     LOGGER.debug("Retry get channel, attempts left: " + attemptsLeft + ", retry limit: " + getRetryLimit(), ex);
                 }
             }
+
+            if (attemptsLeft > 0) {
+                LOGGER.debug("Retry get next topology, attempts left: " + attemptsLeft + " attempts: " + topology.size());
+            }
         }
 
         return null;

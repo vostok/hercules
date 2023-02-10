@@ -3,7 +3,6 @@ package ru.kontur.vostok.hercules.sink;
 import ru.kontur.vostok.hercules.kafka.util.consumer.Subscription;
 import ru.kontur.vostok.hercules.kafka.util.serialization.EventDeserializer;
 import ru.kontur.vostok.hercules.sink.metrics.SinkMetrics;
-import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
 import java.util.Properties;
@@ -25,22 +24,10 @@ public class SenderSink extends Sink {
                 properties,
                 sender,
                 Subscription.builder().
-                        include(PropertiesUtil.get(Props.PATTERN, properties).get()).
-                        exclude(PropertiesUtil.get(Props.PATTERN_EXCLUSIONS, properties).get()).
+                        include(PropertiesUtil.get(SinkProps.PATTERN, properties).get()).
+                        exclude(PropertiesUtil.get(SinkProps.PATTERN_EXCLUSIONS, properties).get()).
                         build(),
                 EventDeserializer.parseAllTags(),
                 sinkMetrics);
-    }
-
-    private static class Props {
-        static final Parameter<String[]> PATTERN =
-                Parameter.stringArrayParameter("pattern").
-                        required().
-                        build();
-
-        static final Parameter<String[]> PATTERN_EXCLUSIONS =
-                Parameter.stringArrayParameter("pattern.exclusions").
-                        withDefault(new String[0]).
-                        build();
     }
 }

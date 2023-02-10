@@ -1,8 +1,8 @@
 package ru.kontur.vostok.hercules.elastic.sink.error;
 
 import org.jetbrains.annotations.NotNull;
+import ru.kontur.vostok.hercules.health.IMetricsCollector;
 import ru.kontur.vostok.hercules.health.Meter;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.health.MetricsUtil;
 
 import java.util.Map;
@@ -20,7 +20,7 @@ public class ElasticErrorMetrics {
     private static final String UNKNOWN_ERRORS = "unknownErrors";
 
     private final String metricsPrefix;
-    private final MetricsCollector metricsCollector;
+    private final IMetricsCollector metricsCollector;
     private final Map<String, IndexErrors> indexErrorsMap = new ConcurrentHashMap<>();
 
     // fixme: HERCULES-1042 task
@@ -30,7 +30,7 @@ public class ElasticErrorMetrics {
     private final ConcurrentHashMap<String, Meter> errorTypesMeter = new ConcurrentHashMap<>();
 
 
-    public ElasticErrorMetrics(String metricsPrefix, @NotNull MetricsCollector metricsCollector) {
+    public ElasticErrorMetrics(String metricsPrefix, @NotNull IMetricsCollector metricsCollector) {
         this.metricsPrefix = metricsPrefix;
         this.metricsCollector = metricsCollector;
         this.retryableErrorsMeter = metricsCollector.meter(MetricsUtil
@@ -44,9 +44,9 @@ public class ElasticErrorMetrics {
     /**
      * Mark Elastic error.
      *
-     * @param index index-name
+     * @param index      index-name
      * @param errorGroup error group
-     * @param errorType type of the error
+     * @param errorType  type of the error
      */
     public void markError(String index, ErrorGroup errorGroup, String errorType) {
         String errorGroupName = errorGroupName(errorGroup);
@@ -72,8 +72,7 @@ public class ElasticErrorMetrics {
 
     private Meter createMeter(String errorType) {
         return metricsCollector.meter(MetricsUtil
-                .toMetricPathWithPrefix(metricsPrefix,
-                "errorTypes", MetricsUtil.sanitizeMetricName(errorType)));
+                .toMetricPathWithPrefix(metricsPrefix, "errorTypes", MetricsUtil.sanitizeMetricName(errorType)));
     }
 
     private class IndexErrors {

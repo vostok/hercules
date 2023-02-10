@@ -1,7 +1,5 @@
 package ru.kontur.vostok.hercules.graphite.sink.connection;
 
-import ru.kontur.vostok.hercules.graphite.sink.GraphiteMetricData;
-
 import java.util.List;
 
 /**
@@ -24,7 +22,7 @@ public class Channel implements AutoCloseable {
      * @param metrics metrics to send
      * @throws EndpointException in case of I/O errors or timeout
      */
-    public void send(List<GraphiteMetricData> metrics) throws EndpointException {
+    public void send(List<String> metrics) throws EndpointException {
         connection.send(metrics);
     }
 

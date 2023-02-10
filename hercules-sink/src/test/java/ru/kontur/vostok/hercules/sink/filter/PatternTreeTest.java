@@ -1,13 +1,16 @@
 package ru.kontur.vostok.hercules.sink.filter;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import ru.kontur.vostok.hercules.protocol.Type;
 import ru.kontur.vostok.hercules.protocol.Variant;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Anton Akkuzin
@@ -25,7 +28,7 @@ public class PatternTreeTest {
         }
 
         assert exception != null;
-        Assert.assertEquals("Type 'VECTOR' is not primitive.", exception.getMessage());
+        assertEquals("Type 'VECTOR' is not primitive.", exception.getMessage());
     }
 
     @Test
@@ -40,7 +43,7 @@ public class PatternTreeTest {
         }
 
         assert exception != null;
-        Assert.assertEquals("Pattern size should be equal to paths size.", exception.getMessage());
+        assertEquals("Pattern size should be equal to paths size.", exception.getMessage());
     }
 
     @Test
@@ -54,7 +57,7 @@ public class PatternTreeTest {
             thrown = true;
         }
 
-        Assert.assertTrue(thrown);
+        assertTrue(thrown);
     }
 
     @Test
@@ -72,37 +75,37 @@ public class PatternTreeTest {
             patternTree.put(pattern);
         }
 
-        Assert.assertTrue(patternTree.matches(List.of(
+        assertTrue(patternTree.matches(List.of(
                 Variant.ofString("a"),
                 Variant.ofInteger(99),
                 Variant.ofFloat(105.9f)
         )));
-        Assert.assertTrue(patternTree.matches(List.of(
+        assertTrue(patternTree.matches(List.of(
                 Variant.ofString("a"),
                 Variant.ofInteger(99),
                 Variant.ofFloat(999.9f)
         )));
-        Assert.assertTrue(patternTree.matches(List.of(
+        assertTrue(patternTree.matches(List.of(
                 Variant.ofString("a"),
                 Variant.ofInteger(99),
                 Variant.ofFloat(105.9f)
         )));
-        Assert.assertTrue(patternTree.matches(List.of(
+        assertTrue(patternTree.matches(List.of(
                 Variant.ofString("b"),
                 Variant.ofInteger(99),
                 Variant.ofFloat(3.14f)
         )));
-        Assert.assertTrue(patternTree.matches(List.of(
+        assertTrue(patternTree.matches(List.of(
                 Variant.ofString("b"),
                 Variant.ofInteger(99),
                 Variant.ofFloat(1)
         )));
-        Assert.assertTrue(patternTree.matches(List.of(
+        assertTrue(patternTree.matches(List.of(
                 Variant.ofString("c"),
                 Variant.ofInteger(1234),
                 Variant.ofFloat(999.9f)
         )));
-        Assert.assertFalse(patternTree.matches(List.of(
+        assertFalse(patternTree.matches(List.of(
                 Variant.ofString("a"),
                 Variant.ofInteger(99),
                 Variant.ofFloat(666)
@@ -127,24 +130,24 @@ public class PatternTreeTest {
         variants.add(Variant.ofInteger(1234));
         variants.add(null);
 
-        Assert.assertTrue(patternTree.matches(variants));
+        assertTrue(patternTree.matches(variants));
     }
 
     @Test
     public void shouldMatchToAllPrimitiveTypes() {
-        Assert.assertTrue(matchesToPrimitiveType(Type.BYTE, "123", Variant.ofByte((byte) 123)));
-        Assert.assertTrue(matchesToPrimitiveType(Type.SHORT, "123", Variant.ofShort((short) 123)));
-        Assert.assertTrue(matchesToPrimitiveType(Type.INTEGER, "1234", Variant.ofInteger(1234)));
-        Assert.assertTrue(matchesToPrimitiveType(Type.LONG, "123456789", Variant.ofLong(123456789)));
-        Assert.assertTrue(matchesToPrimitiveType(Type.FLAG, "true", Variant.ofFlag(true)));
-        Assert.assertTrue(matchesToPrimitiveType(Type.FLAG, "false", Variant.ofFlag(false)));
-        Assert.assertTrue(matchesToPrimitiveType(Type.FLOAT, "3.14", Variant.ofFloat(3.14f)));
-        Assert.assertTrue(matchesToPrimitiveType(Type.DOUBLE, "3.14", Variant.ofDouble(3.14)));
-        Assert.assertTrue(matchesToPrimitiveType(Type.STRING, "some_str", Variant.ofString("some_str")));
-        Assert.assertTrue(matchesToPrimitiveType(Type.NULL, "null", Variant.ofNull()));
+        assertTrue(matchesToPrimitiveType(Type.BYTE, "123", Variant.ofByte((byte) 123)));
+        assertTrue(matchesToPrimitiveType(Type.SHORT, "123", Variant.ofShort((short) 123)));
+        assertTrue(matchesToPrimitiveType(Type.INTEGER, "1234", Variant.ofInteger(1234)));
+        assertTrue(matchesToPrimitiveType(Type.LONG, "123456789", Variant.ofLong(123456789)));
+        assertTrue(matchesToPrimitiveType(Type.FLAG, "true", Variant.ofFlag(true)));
+        assertTrue(matchesToPrimitiveType(Type.FLAG, "false", Variant.ofFlag(false)));
+        assertTrue(matchesToPrimitiveType(Type.FLOAT, "3.14", Variant.ofFloat(3.14f)));
+        assertTrue(matchesToPrimitiveType(Type.DOUBLE, "3.14", Variant.ofDouble(3.14)));
+        assertTrue(matchesToPrimitiveType(Type.STRING, "some_str", Variant.ofString("some_str")));
+        assertTrue(matchesToPrimitiveType(Type.NULL, "null", Variant.ofNull()));
 
         UUID uuid = UUID.randomUUID();
-        Assert.assertTrue(matchesToPrimitiveType(Type.UUID, uuid.toString(), Variant.ofUuid(uuid)));
+        assertTrue(matchesToPrimitiveType(Type.UUID, uuid.toString(), Variant.ofUuid(uuid)));
     }
 
     private boolean matchesToPrimitiveType(Type type, String pattern, Variant variant) {

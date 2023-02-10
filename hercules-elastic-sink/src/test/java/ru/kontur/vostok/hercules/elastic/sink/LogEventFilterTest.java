@@ -122,7 +122,7 @@ public class LogEventFilterTest {
         Assert.assertFalse(filter.test(event));
     }
 
-    private EventBuilder getEventBuilder() {
+    static EventBuilder getEventBuilder() {
         return EventBuilder.create(
                 TimeUtil.millisToTicks(System.currentTimeMillis()),
                 "00000000-0000-0000-0000-000000000000");

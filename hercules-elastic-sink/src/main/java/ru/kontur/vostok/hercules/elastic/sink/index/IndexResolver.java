@@ -1,6 +1,7 @@
 package ru.kontur.vostok.hercules.elastic.sink.index;
 
 import ru.kontur.vostok.hercules.protocol.Event;
+import ru.kontur.vostok.hercules.util.text.StringUtil;
 import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.time.ZoneId;
@@ -8,15 +9,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 /**
  * Resolves the index name.
  * <p>
  * See Elasticsearch docs for details about index name restrictions:
- * https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-create-index.html
+ * <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-create-index.html">Create index API</a>
  * <p>
  * Inheritors must implement constructors with the same signature as {@link IndexResolver} itself.
+ *
  * @author Gregory Koshelev
  */
 public abstract class IndexResolver {
@@ -65,8 +66,6 @@ public abstract class IndexResolver {
         };
     }
 
-    private static final Pattern ILLEGAL_CHARS = Pattern.compile("[^-a-zA-Z0-9_.]");
-
     /**
      * Replace illegal characters in the index name with underscore {@code _}
      * and convert all of the characters to lower case.
@@ -77,8 +76,15 @@ public abstract class IndexResolver {
      * @return the sanitized index name
      */
     private static String sanitize(String index) {
-        return ILLEGAL_CHARS.matcher(index).replaceAll("_").
-                toLowerCase();
+        return StringUtil.sanitize(index, IndexResolver::isCorrectSymbol)
+                .toLowerCase();
+    }
+
+    private static boolean isCorrectSymbol(int ch) {
+        return ch == '-' || ch == '.' || ch == '_'
+                || '0' <= ch && ch <= '9'
+                || 'A' <= ch && ch <= 'Z'
+                || 'a' <= ch && ch <= 'z';
     }
 
     private static String resolvePostfix(String index, Event event, IndexPolicy indexPolicy) {

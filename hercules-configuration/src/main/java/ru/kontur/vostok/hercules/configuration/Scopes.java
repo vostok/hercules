@@ -30,6 +30,8 @@ public final class Scopes {
 
     public static final String SENDER = "sender";
 
+    public static final String STRATEGY = "strategy";
+
     public static final String SERVICE_DISCOVERY = "sd";
 
     public static final String LEPROSERY = "leprosery";

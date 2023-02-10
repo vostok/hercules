@@ -1,7 +1,6 @@
 package ru.kontur.vostok.hercules.sink.filter;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
@@ -10,6 +9,10 @@ import ru.kontur.vostok.hercules.util.time.TimeUtil;
 
 import java.util.List;
 import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Gregory Koshelev
@@ -24,18 +27,18 @@ public class EventFilterTest {
         properties.setProperty("1.props.on", "true");
 
         List<EventFilter> filters = EventFilter.from(properties);
-        Assert.assertEquals(2, filters.size());
-        Assert.assertEquals(SwitcherEventFilter.class, filters.get(0).getClass());
-        Assert.assertEquals(SwitcherEventFilter.class, filters.get(1).getClass());
+        assertEquals(2, filters.size());
+        assertEquals(SwitcherEventFilter.class, filters.get(0).getClass());
+        assertEquals(SwitcherEventFilter.class, filters.get(1).getClass());
 
         Event event = getEventBuilder().build();
         SwitcherEventFilter switcher = (SwitcherEventFilter) filters.get(0);
         /* Switcher '0' is off as property 'on' is false */
-        Assert.assertFalse(switcher.test(event));
+        assertFalse(switcher.test(event));
 
         switcher = (SwitcherEventFilter) filters.get(1);
         /* Switcher '1' is on as property 'on is true */
-        Assert.assertTrue(switcher.test(event));
+        assertTrue(switcher.test(event));
     }
 
     @Test
@@ -48,17 +51,17 @@ public class EventFilterTest {
         BlacklistEventFilter filter = new BlacklistEventFilter(properties);
 
         Event event = getEventBuilder().build();
-        Assert.assertTrue(filter.test(event));
+        assertTrue(filter.test(event));
 
         event = getEventBuilder().
                 tag("properties", Variant.ofContainer(Container.of("project", Variant.ofString("my_project")))).
                 build();
-        Assert.assertTrue(filter.test(event));
+        assertTrue(filter.test(event));
 
         event = getEventBuilder().
                 tag("properties", Variant.ofContainer(Container.of("project", Variant.ofString("bad_project")))).
                 build();
-        Assert.assertFalse(filter.test(event));
+        assertFalse(filter.test(event));
 
         event = getEventBuilder().
                 tag(
@@ -70,7 +73,7 @@ public class EventFilterTest {
                                         tag("id", Variant.ofInteger(123)).
                                         build())).
                 build();
-        Assert.assertFalse(filter.test(event));
+        assertFalse(filter.test(event));
 
         event = getEventBuilder().
                 tag(
@@ -82,7 +85,7 @@ public class EventFilterTest {
                                         tag("id", Variant.ofInteger(456)).
                                         build())).
                 build();
-        Assert.assertFalse(filter.test(event));
+        assertFalse(filter.test(event));
 
         event = getEventBuilder().
                 tag(
@@ -94,7 +97,7 @@ public class EventFilterTest {
                                         tag("id", Variant.ofInteger(456)).
                                         build())).
                 build();
-        Assert.assertTrue(filter.test(event));
+        assertTrue(filter.test(event));
     }
 
     @Test
@@ -107,17 +110,17 @@ public class EventFilterTest {
         WhitelistEventFilter filter = new WhitelistEventFilter(properties);
 
         Event event = getEventBuilder().build();
-        Assert.assertFalse(filter.test(event));
+        assertFalse(filter.test(event));
 
         event = getEventBuilder().
                 tag("properties", Variant.ofContainer(Container.of("project", Variant.ofString("my_project")))).
                 build();
-        Assert.assertFalse(filter.test(event));
+        assertFalse(filter.test(event));
 
         event = getEventBuilder().
                 tag("properties", Variant.ofContainer(Container.of("project", Variant.ofString("bad_project")))).
                 build();
-        Assert.assertTrue(filter.test(event));
+        assertTrue(filter.test(event));
 
         event = getEventBuilder().
                 tag(
@@ -129,7 +132,7 @@ public class EventFilterTest {
                                         tag("id", Variant.ofInteger(123)).
                                         build())).
                 build();
-        Assert.assertTrue(filter.test(event));
+        assertTrue(filter.test(event));
 
         event = getEventBuilder().
                 tag(
@@ -141,7 +144,7 @@ public class EventFilterTest {
                                         tag("id", Variant.ofInteger(456)).
                                         build())).
                 build();
-        Assert.assertTrue(filter.test(event));
+        assertTrue(filter.test(event));
 
         event = getEventBuilder().
                 tag(
@@ -153,7 +156,7 @@ public class EventFilterTest {
                                         tag("id", Variant.ofInteger(456)).
                                         build())).
                 build();
-        Assert.assertFalse(filter.test(event));
+        assertFalse(filter.test(event));
     }
 
     private EventBuilder getEventBuilder() {

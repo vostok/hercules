@@ -2,7 +2,7 @@ package ru.kontur.vostok.hercules.sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.health.MetricsCollector;
+import ru.kontur.vostok.hercules.health.IMetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class Sender extends Processor implements Lifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(Sender.class);
 
-    private final MetricsCollector metricsCollector;
+    private final IMetricsCollector metricsCollector;
 
     private final long pingPeriodMs;
     private final ScheduledExecutorService executor;
@@ -34,11 +34,11 @@ public abstract class Sender extends Processor implements Lifecycle {
      * @param properties       sender's properties.
      * @param metricsCollector metrics collector
      */
-    public Sender(Properties properties, MetricsCollector metricsCollector) {
+    public Sender(Properties properties, IMetricsCollector metricsCollector) {
         this(properties, metricsCollector, TimeSource.SYSTEM);
     }
 
-    Sender(Properties properties, MetricsCollector metricsCollector, TimeSource time) {
+    Sender(Properties properties, IMetricsCollector metricsCollector, TimeSource time) {
         super(time);
 
         this.metricsCollector = metricsCollector;
@@ -113,8 +113,8 @@ public abstract class Sender extends Processor implements Lifecycle {
 
     private static class Props {
         static final Parameter<Long> PING_PERIOD_MS =
-                Parameter.longParameter("pingPeriodMs").
-                        withDefault(5_000L).
-                        build();
+                Parameter.longParameter("pingPeriodMs")
+                        .withDefault(5_000L)
+                        .build();
     }
 }

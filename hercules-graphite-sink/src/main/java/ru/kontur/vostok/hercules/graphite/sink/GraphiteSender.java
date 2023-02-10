@@ -14,21 +14,24 @@ import ru.kontur.vostok.hercules.health.Timer;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
-import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.sink.parallel.sender.ParallelSender;
+import ru.kontur.vostok.hercules.sink.parallel.sender.PreparedData;
 import ru.kontur.vostok.hercules.util.metrics.GraphiteSanitizer;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
  * @author Gregory Koshelev
  */
-public class GraphiteSender extends Sender {
+public class GraphiteSender extends ParallelSender<GraphiteSender.GraphitePreparedData> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteSender.class);
 
     private final int retryLimit;
@@ -38,8 +41,6 @@ public class GraphiteSender extends Sender {
 
     private final Timer sendMetricsTimeMsTimer;
     private final Counter retryCounter;
-
-    private final AtomicLong sentMetricsCounter = new AtomicLong(0);
 
     public GraphiteSender(Properties properties, MetricsCollector metricsCollector) {
         super(properties, metricsCollector);
@@ -58,21 +59,27 @@ public class GraphiteSender extends Sender {
     }
 
     @Override
-    protected int send(List<Event> events) throws BackendServiceFailedException {
-        if (events.size() == 0) {
+    public GraphitePreparedData prepare(List<Event> events) {
+        List<String> metricsToSend = events.stream()
+                .map(event -> format(metricsConverter.convert(event)))
+                .collect(Collectors.toList());
+
+        return new GraphitePreparedData(metricsToSend);
+    }
+
+    @Override
+    public int send(GraphitePreparedData preparedData) throws BackendServiceFailedException {
+        if (preparedData.getEventsCount() == 0) {
             return 0;
         }
 
-        List<GraphiteMetricData> metricsToSend = events.stream()
-                .map(metricsConverter::convert)
-                .collect(Collectors.toList());
-
         try (AutoMetricStopwatch ignored = new AutoMetricStopwatch(sendMetricsTimeMsTimer, TimeUnit.MILLISECONDS)) {
-            sendMetrics(metricsToSend);
+            sendMetrics(preparedData.metricsToSend);
+        } catch (Exception exception) {
+            throw new BackendServiceFailedException(exception);
         }
 
-        sentMetricsCounter.addAndGet(metricsToSend.size());
-        return metricsToSend.size();
+        return preparedData.getEventsCount();
     }
 
     @Override
@@ -80,7 +87,7 @@ public class GraphiteSender extends Sender {
         return connector.isReady() ? ProcessorStatus.AVAILABLE : ProcessorStatus.UNAVAILABLE;
     }
 
-    private void sendMetrics(List<GraphiteMetricData> metrics) throws BackendServiceFailedException {
+    private void sendMetrics(List<String> metrics) throws BackendServiceFailedException {
         Exception lastException;
 
         int attemptsLeft = retryLimit;
@@ -110,6 +117,27 @@ public class GraphiteSender extends Sender {
         connector.close();
         return result;
     }
+
+    public static class GraphitePreparedData implements PreparedData {
+        private final List<String> metricsToSend;
+
+        public GraphitePreparedData(List<String> metricsToSend) {
+            this.metricsToSend = metricsToSend;
+        }
+
+        @Override
+        public int getEventsCount() {
+            return metricsToSend.size();
+        }
+    }
+
+    static String format(GraphiteMetricData metric) {
+        String value = FORMAT.get().format(metric.getMetricValue());
+        return metric.getMetricName() + ' ' + value + ' ' + metric.getMetricUnixTime() + '\n';
+    }
+
+    private static final ThreadLocal<DecimalFormat> FORMAT = ThreadLocal.withInitial(() ->
+            new DecimalFormat("0.000000", DecimalFormatSymbols.getInstance(Locale.ENGLISH)));
 
     private static class Props {
         static final Parameter<Integer> RETRY_LIMIT =

@@ -1,8 +1,9 @@
 package ru.kontur.vostok.hercules.tracing.sink.clickhouse;
 
+import ru.kontur.vostok.hercules.application.Application;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
-import ru.kontur.vostok.hercules.sink.AbstractSinkDaemon;
-import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.sink.AbstractSinkParallelDaemon;
+import ru.kontur.vostok.hercules.sink.parallel.sender.NoPrepareParallelSender;
 
 import java.util.Properties;
 
@@ -11,25 +12,25 @@ import java.util.Properties;
  *
  * @author Gregory Koshelev
  * @see ClickHouseTracingSender
- * @see AbstractSinkDaemon
+ * @see AbstractSinkParallelDaemon
  */
-public class ClickHouseTracingSinkDaemon extends AbstractSinkDaemon {
+public class ClickHouseTracingSinkDaemon extends AbstractSinkParallelDaemon<NoPrepareParallelSender.NoPrepareEvents> {
     public static void main(String[] args) {
-        new ClickHouseTracingSinkDaemon().run(args);
+        Application.run(new ClickHouseTracingSinkDaemon(), args);
     }
 
     @Override
-    protected Sender createSender(Properties senderProperties, MetricsCollector metricsCollector) {
+    protected NoPrepareParallelSender createSender(Properties senderProperties, MetricsCollector metricsCollector) {
         return new ClickHouseTracingSender(senderProperties, metricsCollector);
     }
 
     @Override
-    protected String getDaemonId() {
+    public String getApplicationId() {
         return "sink.tracing-clickhouse";
     }
 
     @Override
-    protected String getDaemonName() {
+    public String getApplicationName() {
         return "ClickHouse Tracing Sink";
     }
 }

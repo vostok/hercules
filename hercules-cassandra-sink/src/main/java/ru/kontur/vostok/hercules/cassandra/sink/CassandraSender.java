@@ -15,7 +15,7 @@ import ru.kontur.vostok.hercules.configuration.Scopes;
 import ru.kontur.vostok.hercules.health.MetricsCollector;
 import ru.kontur.vostok.hercules.kafka.util.processing.BackendServiceFailedException;
 import ru.kontur.vostok.hercules.protocol.Event;
-import ru.kontur.vostok.hercules.sink.Sender;
+import ru.kontur.vostok.hercules.sink.parallel.sender.NoPrepareParallelSender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 import ru.kontur.vostok.hercules.util.time.Timer;
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author Gregory Koshelev
  */
-public abstract class CassandraSender extends Sender {
+public abstract class CassandraSender extends NoPrepareParallelSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraSender.class);
 
     private final CassandraConnector cassandraConnector;

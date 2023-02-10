@@ -2,7 +2,6 @@ package ru.kontur.vostok.hercules.graphite.sink.connection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.kontur.vostok.hercules.graphite.sink.GraphiteMetricData;
 import ru.kontur.vostok.hercules.util.concurrent.ThreadFactories;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -16,10 +15,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -250,7 +246,7 @@ public class Endpoint {
          * @param metrics metrics to send
          * @throws EndpointException in case of I/O errors or timeout
          */
-        public void send(List<GraphiteMetricData> metrics) throws EndpointException {
+        public void send(List<String> metrics) throws EndpointException {
             timer.reset();
 
             Future<Result<Void, Exception>> asyncTask = executor.submit(() -> sendMetrics(metrics));
@@ -269,10 +265,10 @@ public class Endpoint {
             }
         }
 
-        private Result<Void, Exception> sendMetrics(List<GraphiteMetricData> metrics) {
+        private Result<Void, Exception> sendMetrics(List<String> metrics) {
             try {
-                for (GraphiteMetricData metric : metrics) {
-                    writer.write(format(metric));
+                for (String metric : metrics) {
+                    writer.write(metric);
                 }
                 writer.flush();
                 return Result.ok();
@@ -321,12 +317,4 @@ public class Endpoint {
             return time.milliseconds() > this.expiresAtMs;
         }
     }
-
-    static String format(GraphiteMetricData metric) {
-        String value = FORMAT.get().format(metric.getMetricValue());
-        return metric.getMetricName() + ' ' + value + ' ' + metric.getMetricUnixTime() + '\n';
-    }
-
-    private static final ThreadLocal<DecimalFormat> FORMAT = ThreadLocal.withInitial(() ->
-            new DecimalFormat("0.000000", DecimalFormatSymbols.getInstance(Locale.ENGLISH)));
 }

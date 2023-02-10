@@ -10,10 +10,10 @@ import ru.kontur.vostok.hercules.sentry.client.impl.SentryConnectorHolderImpl;
 import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.DsnFetcherClient;
 import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.DsnFetcherClient.DsnFetcherClientBuilder;
 import ru.kontur.vostok.hercules.sentry.client.impl.v9.connector.SentryConnectorHolderImplV9;
+import ru.kontur.vostok.hercules.sink.parallel.sender.NoPrepareParallelSender;
 import ru.kontur.vostok.hercules.util.routing.SentryDestination;
 import ru.kontur.vostok.hercules.sentry.client.api.SentryApiClient;
 import ru.kontur.vostok.hercules.sink.ProcessorStatus;
-import ru.kontur.vostok.hercules.sink.Sender;
 import ru.kontur.vostok.hercules.util.parameter.Parameter;
 import ru.kontur.vostok.hercules.util.properties.PropertiesUtil;
 
@@ -27,7 +27,7 @@ import ru.kontur.vostok.hercules.util.validation.LongValidators;
  *
  * @author Petr Demenev
  */
-public class SentrySender extends Sender {
+public class SentrySender extends NoPrepareParallelSender {
 
     private final SentrySyncProcessor processor;
     private final SentryApiClient sentryApiClient;
