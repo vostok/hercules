@@ -14,8 +14,6 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <hercules.version>1.10.0-SNAPSHOT</hercules.version>
-
         <kafka.version>2.4.0</kafka.version>
         <zookeeper.version>3.4.14</zookeeper.version>
         <curator.version>4.2.0</curator.version>
@@ -348,244 +346,244 @@
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-application</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-auth</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-cassandra-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-cassandra-util</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-clickhouse-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-clickhouse-util</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-client</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-configuration</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-curator</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-elastic-adapter</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-elastic-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-gate</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-gate-client</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-graphite-adapter</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-graphite-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-health</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-http</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-init</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-json</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-kafka-util</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-management-api</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-meta</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-opentelemetry-adapter</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-partitioner</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-protocol</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-protocol</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-routing</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-sd</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-sentry-client</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-sentry-client-impl</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-sentry-client-impl-v9</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-sentry-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-splitter</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-stream-api</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-stream-manager</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-stream-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-tags</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-throttling</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-timeline-api</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-timeline-manager</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-timeline-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-tracing-api</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-tracing-sink</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-tracing-sink-clickhouse</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-undertow-util</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-util</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.kontur.vostok.hercules</groupId>
                 <artifactId>hercules-uuid</artifactId>
-                <version>${hercules.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <!-- endregion All Hercules components -->
 
