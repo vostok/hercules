@@ -5,9 +5,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.kontur.vostok.hercules.health.Meter;
@@ -29,6 +26,10 @@ import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.Dsn;
 import ru.kontur.vostok.hercules.sentry.client.impl.exceptions.SentryApiException;
 import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.routing.SentryDestination;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SentryClientImpl implements SentryClient {
 
@@ -95,7 +96,7 @@ public class SentryClientImpl implements SentryClient {
         try {
             sentryEvent = (SentryEventImpl) eventConverter.convert(event);
         } catch (Exception e) {
-            LOGGER.error("An exception occurred while converting Hercules-event to Sentry-event.", e.getCause());
+            LOGGER.error("An exception occurred while converting Hercules-event to Sentry-event.", e);
             return Result.error(new ErrorInfo("Converting error", false));
         }
         Result<Dsn, ErrorInfo> dsnResult;

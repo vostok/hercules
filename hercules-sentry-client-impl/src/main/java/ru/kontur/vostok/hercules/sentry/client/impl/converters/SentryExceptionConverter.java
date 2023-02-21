@@ -1,14 +1,14 @@
 package ru.kontur.vostok.hercules.sentry.client.impl.converters;
 
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import ru.kontur.vostok.hercules.protocol.Container;
 import ru.kontur.vostok.hercules.protocol.util.ContainerUtil;
 import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryException;
 import ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model.SentryStackTrace;
 import ru.kontur.vostok.hercules.tags.ExceptionTags;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Allows convert exception details from a Hercules event to a Sentry exception interface
@@ -38,11 +38,11 @@ public class SentryExceptionConverter {
                 .ifPresent(sentryException::setValue);
         ContainerUtil.extract(exception, ExceptionTags.MODULE_TAG)
                 .ifPresent(sentryException::setModule);
-        ContainerUtil.extract(exception, ExceptionTags.STACK_FRAMES)
-                .ifPresent(value -> {
-                    SentryStackTrace stackTrace = SentryStackTraceConverter.convert(value);
-                    sentryException.setStacktrace(stackTrace);
-                });
+        sentryException.setStacktrace(
+                ContainerUtil.extract(exception, ExceptionTags.STACK_FRAMES)
+                        .map(SentryStackTraceConverter::convert)
+                        .orElseGet(() -> new SentryStackTrace().setFrames(List.of()))
+        );
         return sentryException;
     }
 }

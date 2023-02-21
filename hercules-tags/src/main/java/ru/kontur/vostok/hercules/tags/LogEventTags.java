@@ -16,21 +16,21 @@ public final class LogEventTags {
     /**
      * UTC offset in 100-ns ticks
      */
-    public static TagDescription<Optional<Long>> UTC_OFFSET_TAG = TagDescriptionBuilder.longTag("utcOffset")
+    public static final TagDescription<Optional<Long>> UTC_OFFSET_TAG = TagDescriptionBuilder.longTag("utcOffset")
         .optional()
         .build();
 
     /**
      * Rendered log message
      */
-    public static TagDescription<Optional<String>> MESSAGE_TAG = TagDescriptionBuilder.string("message")
+    public static final TagDescription<Optional<String>> MESSAGE_TAG = TagDescriptionBuilder.string("message")
         .optional()
         .build();
 
     /**
      * Message template
      */
-    public static TagDescription<Optional<String>> MESSAGE_TEMPLATE_TAG = TagDescriptionBuilder.string("messageTemplate")
+    public static final TagDescription<Optional<String>> MESSAGE_TEMPLATE_TAG = TagDescriptionBuilder.string("messageTemplate")
         .optional()
         .build();
 
@@ -44,7 +44,7 @@ public final class LogEventTags {
     /**
      * Exception
      */
-    public static TagDescription<Optional<Container>> EXCEPTION_TAG = TagDescriptionBuilder.container("exception")
+    public static final TagDescription<Optional<Container>> EXCEPTION_TAG = TagDescriptionBuilder.container("exception")
         .optional()
         .build();
 
