@@ -2,9 +2,11 @@ package ru.kontur.vostok.hercules.graphite.sink.connection;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import ru.kontur.vostok.hercules.util.functional.Result;
 import ru.kontur.vostok.hercules.util.net.InetSocketAddressUtil;
 import ru.kontur.vostok.hercules.util.time.MockTimeSource;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
@@ -16,14 +18,20 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 /**
  * @author Gregory Koshelev
@@ -36,10 +44,16 @@ public class EndpointTest {
     @Mock
     private OutputStream outputStream;
 
+    @Mock
+    private ExecutorService executorService;
+
+    @Mock
+    private Future<Result<Void, Exception>> future;
+
     @Test
     public void shouldCorrectlyLeaseConnectionIfFrozen() throws Exception {
         TimeSource time = new MockTimeSource();
-        Endpoint endpoint = getEndpoint(time, 1);
+        Endpoint endpoint = getEndpointWithMockExecutor(time, 1);
 
         assertEquals(0, endpoint.connections.size());
 
@@ -58,7 +72,7 @@ public class EndpointTest {
     public void shouldCorrectlyWorkAfterFreeze() throws Exception {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
         TimeSource time = new MockTimeSource();
-        Endpoint endpoint = getEndpoint(time, 1);
+        Endpoint endpoint = getEndpointWithMockExecutor(time, 1);
 
         assertEquals(0, endpoint.connections.size());
 
@@ -78,15 +92,27 @@ public class EndpointTest {
     @Test(expected = TimeoutException.class)
     public void shouldGetTimeout() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+        Mockito.when(executorService.submit(ArgumentMatchers.<Callable<Result<Void, Exception>>>any())).thenReturn(future);
+        Mockito.when(future.get(anyLong(), any())).thenThrow(new TimeoutException());
 
-        Endpoint endpoint = getEndpoint(new MockTimeSource(), 1);
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 1);
 
-        List<String> data = new ArrayList<>();
-        for (int i = 0; i < 10000; i++) {
-            data.add("name");
-        }
         try (Channel channel = endpoint.channel()) {
-            channel.send(data);
+            channel.send(metricsList());
+        } catch (EndpointException ex) {
+            throw ex.getCause();
+        }
+    }
+
+    @Test(expected = IOException.class)
+    public void shouldGotIOException() throws Throwable {
+        Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+        Mockito.when(executorService.submit(ArgumentMatchers.<Callable<Result<Void, Exception>>>any())).thenReturn(future);
+        Mockito.when(future.get(anyLong(), any())).thenReturn(Result.error(new IOException()));
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 10_000);
+
+        try (Channel channel = endpoint.channel()) {
+            channel.send(metricsList());
         } catch (EndpointException ex) {
             throw ex.getCause();
         }
@@ -95,20 +121,37 @@ public class EndpointTest {
     @Test
     public void shouldCorrectlySend() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+        Mockito.when(executorService.submit(ArgumentMatchers.<Callable<Result<Void, Exception>>>any())).thenReturn(future);
+        Mockito.when(future.get(anyLong(), any())).thenReturn(Result.ok());
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 10_000);
 
-        Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
-
-        List<String> data = metricsList();
         try (Channel channel = endpoint.channel()) {
-            channel.send(data);
+            channel.send(metricsList());
         }
+    }
+
+    @Test
+    public void shouldCorrectlyClose() throws Throwable {
+        Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+        Mockito.when(executorService.submit(ArgumentMatchers.<Callable<Result<Void, Exception>>>any())).thenReturn(future);
+        Mockito.when(future.get(anyLong(), any())).thenReturn(Result.ok());
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 10_000);
+
+        try (Channel channel = endpoint.channel()) {
+            channel.send(metricsList());
+        }
+        assertFalse(endpoint.connections.isEmpty());
+
+        endpoint.close();
+        assertTrue(endpoint.connections.isEmpty());
+        Mockito.verify(executorService).shutdown();
     }
 
     @Test
     public void shouldMaintainConnections() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
 
-        Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 10_000);
 
         for (int i = 0; i < CONNECTION_LIMIT; i++) {
             try (Channel channel = endpoint.channel()) {
@@ -123,7 +166,7 @@ public class EndpointTest {
     public void shouldNotCreateMoreThanLimitPlusThreadCount() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
 
-        Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 10_000);
 
         for (int i = 0; i < CONNECTION_LIMIT * 10; i++) {
             try (Channel channel = endpoint.channel()) {
@@ -138,7 +181,7 @@ public class EndpointTest {
     public void shouldNotCreateMoreThanLimitPlusThreadCount_manyThreads() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
 
-        Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 10_000);
 
         int parallelism = 3;
         ForkJoinPool customThreadPool = new ForkJoinPool(parallelism);
@@ -159,7 +202,7 @@ public class EndpointTest {
     @Test
     public void shouldMaintainOneConnections_channel() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
-        Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 10_000);
 
         try (Channel channel = endpoint.channel()) {
             assertNotNull(channel);
@@ -172,7 +215,7 @@ public class EndpointTest {
     @Test
     public void shouldMaintainOneConnections_channelForRetry() throws Throwable {
         Mockito.when(socket.getOutputStream()).thenReturn(new ByteArrayOutputStream());
-        Endpoint endpoint = getEndpoint(new MockTimeSource(), 10_000);
+        Endpoint endpoint = getEndpointWithMockExecutor(new MockTimeSource(), 10_000);
 
         try (Channel channel = endpoint.channelForRetry()) {
             assertNotNull(channel);
@@ -199,9 +242,7 @@ public class EndpointTest {
     }
 
     private Endpoint sendRetryTest() throws IOException, EndpointException {
-        TimeSource time = new MockTimeSource();
-        Endpoint endpoint = getEndpoint(time, 10_000);
-
+        Endpoint endpoint = getEndpoint();
 
         Mockito.when(socket.getOutputStream()).thenReturn(outputStream);
         Mockito.doThrow(new IOException()).when(outputStream).flush();
@@ -223,10 +264,26 @@ public class EndpointTest {
         return data;
     }
 
-    private Endpoint getEndpoint(TimeSource time, int requestTimeoutMs) {
+    private Endpoint getEndpoint() {
         return new Endpoint(
                 InetSocketAddressUtil.fromString("127.0.0.1", 2003),
                 2,
+                CONNECTION_LIMIT,
+                Long.MAX_VALUE,
+                2_000,
+                10_000,
+                new MockTimeSource()) {
+            @Override
+            Socket getSocket() {
+                return socket;
+            }
+        };
+    }
+
+    private Endpoint getEndpointWithMockExecutor(TimeSource time, int requestTimeoutMs) {
+        return new Endpoint(
+                executorService,
+                InetSocketAddressUtil.fromString("127.0.0.1", 2003),
                 CONNECTION_LIMIT,
                 Long.MAX_VALUE,
                 2_000,
@@ -239,5 +296,5 @@ public class EndpointTest {
         };
     }
 
-    private int CONNECTION_LIMIT = 4;
+    private final int CONNECTION_LIMIT = 4;
 }
