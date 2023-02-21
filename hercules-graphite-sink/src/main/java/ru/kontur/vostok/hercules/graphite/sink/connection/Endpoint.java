@@ -60,10 +60,21 @@ public class Endpoint {
             int requestTimeoutMs,
             TimeSource time
     ) {
-        this.executor = Executors.newFixedThreadPool(poolSize,
+        this(Executors.newFixedThreadPool(poolSize,
                 ThreadFactories.newNamedThreadFactory("endpoint_" + address, false)
-        );
+        ), address, connectionLimit, connectionTtlMs, socketTimeoutMs, requestTimeoutMs, time);
+    }
 
+    public Endpoint(
+            ExecutorService executor,
+            InetSocketAddress address,
+            int connectionLimit,
+            long connectionTtlMs,
+            int socketTimeoutMs,
+            int requestTimeoutMs,
+            TimeSource time
+    ) {
+        this.executor = executor;
         this.address = address;
         this.connectionLimit = connectionLimit;
         this.connectionTtlMs = connectionTtlMs;
