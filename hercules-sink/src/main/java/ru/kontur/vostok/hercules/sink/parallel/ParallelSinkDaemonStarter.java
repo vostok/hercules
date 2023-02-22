@@ -67,7 +67,7 @@ public class ParallelSinkDaemonStarter<T extends PreparedData> {
                 strategyProperties, topicPartitionQueues, batchSize, batchByteSize
         );
 
-        List<EventFilter> filters = EventFilter.from(PropertiesUtil.ofScope(properties, "filter"));
+        List<EventFilter> filters = EventFilter.from(PropertiesUtil.ofScope(sinkProperties, "filter"));
 
         SinkMetrics metrics = new SinkMetrics(metricsCollector);
         PrepareExecutor<T> prepareExecutor = new PrepareExecutorImpl<>(parallelSender, filters, metrics);
