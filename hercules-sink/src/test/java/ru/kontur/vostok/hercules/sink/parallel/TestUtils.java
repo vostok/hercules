@@ -7,7 +7,9 @@ import org.jetbrains.annotations.NotNull;
 import ru.kontur.vostok.hercules.protocol.Event;
 import ru.kontur.vostok.hercules.protocol.EventBuilder;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -27,6 +29,15 @@ public class TestUtils {
 
     public static ConsumerRecord<UUID, Event> eventRecord(TopicPartition topicPartition, Event event) {
         return new ConsumerRecord<>(topicPartition.topic(), topicPartition.partition(), offset++, UUID.randomUUID(), event);
+    }
+
+    public static Map<TopicPartition, Long> getBeginningOffsets(int partitionsSize) {
+        Map<TopicPartition, Long> startOffsets = new HashMap<>();
+        for (int partition = 0; partition < partitionsSize; partition++) {
+            TopicPartition tp = new TopicPartition(TOPIC, partition);
+            startOffsets.put(tp, 0L);
+        }
+        return startOffsets;
     }
 
     @NotNull

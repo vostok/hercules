@@ -22,7 +22,6 @@ import ru.kontur.vostok.hercules.sink.metrics.SinkMetrics;
 import ru.kontur.vostok.hercules.util.time.TimeSource;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -63,7 +62,7 @@ public class ParallelEventConsumerTest {
         TopicPartition topicPartition = new TopicPartition(TOPIC, 0);
 
         Event event = createEvent();
-        consumer.updateBeginningOffsets(getBeginningOffsets(1));
+        consumer.updateBeginningOffsets(TestUtils.getBeginningOffsets(1));
         consumer.schedulePollTask(() -> {
             consumer.rebalance(Collections.singletonList(topicPartition));
             consumer.addRecord(record(topicPartition, event));
@@ -83,7 +82,7 @@ public class ParallelEventConsumerTest {
         TopicPartition topicPartition0 = new TopicPartition(TOPIC, 0);
         TopicPartition topicPartition1 = new TopicPartition(TOPIC, 1);
 
-        consumer.updateBeginningOffsets(getBeginningOffsets(2));
+        consumer.updateBeginningOffsets(TestUtils.getBeginningOffsets(2));
         consumer.schedulePollTask(() -> {
             consumer.rebalance(List.of(topicPartition0, topicPartition1));
             consumer.addRecord(record(topicPartition1, createEvent()));
@@ -102,7 +101,7 @@ public class ParallelEventConsumerTest {
         TopicPartition topicPartition = new TopicPartition(TOPIC, 0);
 
         Event event = createEvent();
-        consumer.updateBeginningOffsets(getBeginningOffsets(1));
+        consumer.updateBeginningOffsets(TestUtils.getBeginningOffsets(1));
         consumer.schedulePollTask(() -> consumer.setPollException(new KafkaException("poll exception")));
         consumer.schedulePollTask(() -> {
             consumer.rebalance(Collections.singletonList(topicPartition));
@@ -123,7 +122,7 @@ public class ParallelEventConsumerTest {
         TopicPartition topicPartition = new TopicPartition(TOPIC, 0);
 
         Event event = createEvent();
-        consumer.updateBeginningOffsets(getBeginningOffsets(1));
+        consumer.updateBeginningOffsets(TestUtils.getBeginningOffsets(1));
         consumer.schedulePollTask(() -> {
             assertTrue(consumer.paused().isEmpty());
             consumer.rebalance(Collections.singletonList(topicPartition));
@@ -154,7 +153,7 @@ public class ParallelEventConsumerTest {
         TopicPartition topicPartition = new TopicPartition(TOPIC, 0);
 
         int offset = 100;
-        consumer.updateBeginningOffsets(getBeginningOffsets(1));
+        consumer.updateBeginningOffsets(TestUtils.getBeginningOffsets(1));
         consumer.schedulePollTask(() -> {
             consumer.rebalance(Collections.singletonList(topicPartition));
             consumer.addRecord(record(topicPartition, createEvent()));
@@ -202,15 +201,6 @@ public class ParallelEventConsumerTest {
                 props, subscription, consumer,
                 topicPartitionQueues, offsetsToCommitQueue, new NoOpProcessor(TimeSource.SYSTEM), new NoOpConsumerRebalanceListener(),
                 batchSize, 10_000_000L, metrics);
-    }
-
-    private static HashMap<TopicPartition, Long> getBeginningOffsets(int partitionsSize) {
-        HashMap<TopicPartition, Long> startOffsets = new HashMap<>();
-        for (int partition = 0; partition < partitionsSize; partition++) {
-            TopicPartition tp = new TopicPartition(TOPIC, partition);
-            startOffsets.put(tp, 0L);
-        }
-        return startOffsets;
     }
 
     static class NoOpProcessor extends Processor {
