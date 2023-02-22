@@ -25,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -123,6 +126,49 @@ public class ElasticSenderTest {
         int sended = elasticSender.send(preparedData);
         assertEquals(1, sended);
         assertEquals(2, preparedData.getReadyToSend().size());
+    }
+
+    /**
+     * Correct check none valid events to send after retry
+     */
+    @Test
+    public void notSendEmptyBodyAfterRetry() throws BackendServiceFailedException {
+        ElasticSender elasticSender = getElasticSender();
+        Event event = getEventBuilder()
+                .tag("properties", Variant.ofContainer(Container.of("elk-index", Variant.ofString("my_project-my_subproject"))))
+                .build();
+
+        ElasticSender.ElasticPreparedData preparedData = elasticSender.prepare(List.of(event));
+
+        String documentId = EventUtil.extractStringId(event);
+        ElasticError timeoutException = new ElasticError(ErrorGroup.NON_RETRYABLE, "mapper_parsing_exception",
+                preparedData.getReadyToSend().get(documentId).index(), documentId, "");
+
+        ElasticResponseHandler.Result result = new ElasticResponseHandler.Result(1, 0, 0, List.of(timeoutException));
+        when(elasticClient.index(any(), eq(true)))
+                .thenReturn(result);
+
+        int sended = elasticSender.send(preparedData);
+
+        verify(elasticClient, times(1)).index(any(), eq(true));
+        assertEquals(0, sended);
+    }
+
+    /**
+     * Correct check none valid events to send
+     */
+    @Test
+    public void notSendEmptyBody() throws BackendServiceFailedException {
+        ElasticSender elasticSender = getElasticSender();
+        Event event = getEventBuilder()
+                .tag("properties", Variant.ofContainer(Container.of("foo", Variant.ofString("bar"))))
+                .build();
+        ElasticSender.ElasticPreparedData elasticPreparedData = elasticSender.prepare(List.of(event));
+
+        int sended = elasticSender.send(elasticPreparedData);
+
+        verify(elasticClient, never()).index(any(), eq(true));
+        assertEquals(0, sended);
     }
 
     private static EventBuilder getEventBuilder() {

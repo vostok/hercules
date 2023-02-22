@@ -139,7 +139,7 @@ public class ElasticSender extends ParallelSender<ElasticSender.ElasticPreparedD
 
     @Override
     public int send(ElasticPreparedData preparedData) throws BackendServiceFailedException {
-        if (preparedData.getEventsCount() == 0) {
+        if (preparedData.isNoValidEvents()) {
             return 0;
         }
 
@@ -163,6 +163,12 @@ public class ElasticSender extends ParallelSender<ElasticSender.ElasticPreparedD
                     );
 
                     if (nonRetryableErrorsMap.size() > nonRetryableErrorsBeforeProcessSize) {
+                        if (preparedData.isNoValidEvents()) {
+                            int droppedCount = errorsProcess(nonRetryableErrorsMap);
+
+                            return preparedData.getEventsCount() - droppedCount;
+                        }
+
                         LOGGER.debug("Retry after add non retryable: " + nonRetryableErrorsMap.size() + ", readyToSend: " + readyToSend.size());
                         preparedData.dataToIndex = getDataToIndex(readyToSend, nonRetryableErrorsMap);
                     } else {
@@ -265,6 +271,10 @@ public class ElasticSender extends ParallelSender<ElasticSender.ElasticPreparedD
         @Override
         public int getEventsCount() {
             return readyToSend.size();
+        }
+
+        public boolean isNoValidEvents() {
+            return readyToSend.isEmpty() || nonRetryableErrorsMap.size() == readyToSend.size();
         }
     }
 
