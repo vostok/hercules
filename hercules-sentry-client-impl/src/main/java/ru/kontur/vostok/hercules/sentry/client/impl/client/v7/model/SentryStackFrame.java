@@ -1,9 +1,10 @@
 package ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("unused")
 public class SentryStackFrame {
@@ -22,7 +23,6 @@ public class SentryStackFrame {
     private String module;
     private Integer lineno;
     private Integer colno;
-    @Unsupported
     private String absPath;
     @Unsupported
     private String contextLine;
@@ -66,6 +66,10 @@ public class SentryStackFrame {
         return this.colno;
     }
 
+    public String getAbsPath() {
+        return absPath;
+    }
+
     public Map<String, Object> getUnknown() {
         return this.unknown;
     }
@@ -88,5 +92,9 @@ public class SentryStackFrame {
 
     public void setPackage(String _package) {
         this._package = _package;
+    }
+
+    public void setAbsPath(String absPath) {
+        this.absPath = absPath;
     }
 }

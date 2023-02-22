@@ -1,7 +1,10 @@
 package ru.kontur.vostok.hercules.sentry.client.impl.client.v7.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -22,7 +25,7 @@ public class SentryEvent {
     @Unsupported
     private Request request;
 
-    private Map<String, String> tags;
+    private Map<String, String> tags = new HashMap<>();
 
     private String release;
 
@@ -41,7 +44,7 @@ public class SentryEvent {
     @Unsupported
     private List<Breadcrumb> breadcrumbs;
 
-    private List<String> fingerprint;
+    private List<String> fingerprint = new ArrayList<>();
 
     private String transaction;
 
@@ -59,7 +62,7 @@ public class SentryEvent {
 
     private SentryLevel level;
 
-    private Map<String, Object> extra;
+    private Map<String, Object> extra = new HashMap<>();
 
     public List<SentryException> getExceptions() {
         if (exceptions == null) {
@@ -140,9 +143,8 @@ public class SentryEvent {
         this.sdk = sdk;
     }
 
-    public SentryEvent setTags(Map<String, String> tags) {
+    public void setTags(Map<String, String> tags) {
         this.tags = tags;
-        return this;
     }
 
     public void setRelease(String release) {
@@ -191,6 +193,14 @@ public class SentryEvent {
 
     public void setExtra(Map<String, Object> extra) {
         this.extra = extra;
+    }
+
+    public void putExtra(String key, Object value) {
+        extra.put(key, value);
+    }
+
+    public void putTag(String key, String value) {
+        tags.put(key, value);
     }
 
     public static class ListWrapper<T> {
